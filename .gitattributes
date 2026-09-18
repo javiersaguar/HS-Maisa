@@ -1,0 +1,7 @@
+# La Caja y el lote 2 son el input oficial: byte a byte, sin conversión de fin de línea.
+# Sin esto, core.autocrlf=true (defecto de Git for Windows) mete CR en los PDFs sin bytes NUL
+# y cambia su sha256: la identidad del fichero deja de coincidir entre portátiles.
+data/caja/** -text
+data/lote2/** -text
+*.pdf binary
+*.xlsx binary
