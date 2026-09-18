@@ -1,10 +1,14 @@
 {
   "ciclo": 4,
   "rama": "javier/ingesta",
-  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md", "docs/agentes/plan.json"],
+  "compartidos": [
+    "docs/agentes/BITACORA.md",
+    "docs/agentes/PARTE.md",
+    "docs/agentes/plan.json"
+  ],
   "agentes": {
     "D1": [
-      "scripts/escala_sintetica.py",
+      "scripts/bench_escala.py",
       "docs/agentes/ESCALA-10K.md"
     ],
     "D2": [
