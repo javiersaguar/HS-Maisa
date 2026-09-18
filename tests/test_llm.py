@@ -636,7 +636,7 @@ def test_caos_timeout_reintenta_y_deja_pendiente(bd, tmp_path, monkeypatch):
     intentos = [
         x[0] for x in bd.execute("SELECT intento FROM eventos WHERE etapa='extract' ORDER BY id")
     ]
-    assert intentos[-1] == 1 and hechos_de(bd, TEXTO) is None
+    assert intentos[-1] == 3 and hechos_de(bd, TEXTO) is None  # tres intentos consumidos, en la traza
     chaos.desactivar()
     Api = api_falsa(RESPUESTA_P001)
     monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
@@ -669,6 +669,10 @@ def test_timeout_real_de_httpx_se_traduce_a_llm_timeout(bd, tmp_path, monkeypatc
     ).fetchone()[0]
     assert ev == "LLM-TIMEOUT"
     assert Http.timeouts == [llm.TIMEOUT_S] * 3  # texto: 60 s por petición
+    intento = bd.execute(
+        "SELECT intento FROM eventos WHERE etapa='extract' AND estado='pendiente'"
+    ).fetchone()[0]
+    assert intento == 3  # la traza dice cuántos intentos se consumieron
 
 
 def test_timeout_por_modalidad(bd, tmp_path, monkeypatch):

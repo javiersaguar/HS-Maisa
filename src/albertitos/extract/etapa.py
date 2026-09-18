@@ -165,6 +165,7 @@ def _extraer_uno(
                 sha256=sha,
                 etapa=Etapa.EXTRACT,
                 estado=EstadoEvento.PENDIENTE,
+                intento=getattr(e, "intentos", 1),
                 latencia_ms=_ms(t0),
                 error_codigo=e.codigo,
                 detalle=str(e)[:200],

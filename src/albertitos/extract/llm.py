@@ -224,6 +224,7 @@ class ErrorLLM(Exception):
         super().__init__(f"{codigo}: {detalle}")
         self.codigo = codigo
         self.espera = espera  # segundos pedidos por el proveedor (cabecera Retry-After), si los dio
+        self.intentos = 1  # intentos consumidos antes de rendirse (lo fija _llamar): va al evento
 
 
 class ClienteLLM:
@@ -489,7 +490,9 @@ class ClienteLLM:
             pedida = getattr(ultimo, "espera", None)
             time.sleep(pedida if pedida is not None else min(8, 0.5 * 2**intento))
         codigo = getattr(ultimo, "codigo", None) or f"LLM-{type(ultimo).__name__}"
-        raise ErrorLLM(codigo, str(ultimo)[:200])
+        error = ErrorLLM(codigo, str(ultimo)[:200])
+        error.intentos = intento  # para la traza: "3 intentos y PENDIENTE", no "1"
+        raise error
 
     def _llamar_anthropic(
         self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1, marca: str = ""
