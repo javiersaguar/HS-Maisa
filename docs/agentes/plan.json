@@ -1,13 +1,17 @@
 {
   "ciclo": 1,
   "rama": "javier/ingesta",
-  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md"],
+  "compartidos": [
+    "docs/agentes/BITACORA.md",
+    "docs/agentes/PARTE.md"
+  ],
   "agentes": {
     "A1": [
       "src/albertitos/extract/etapa.py",
       "src/albertitos/extract/llm.py",
       "tests/test_llm.py",
-      "data/fixtures/hechos_muestra.jsonl"
+      "data/fixtures/hechos_muestra.jsonl",
+      "data/fixtures/hechos_caja.jsonl"
     ],
     "A2": [
       "src/albertitos/extract/plantillas.py",

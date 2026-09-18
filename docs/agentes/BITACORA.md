@@ -124,3 +124,9 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): revisando el falso positivo de discrepancia en scan_001; después las 500 (`--no-solo-pendientes --workers 4`) y `hechos_muestra.jsonl` definitivo.
 - necesito / bloqueo: PIDO A Javier/Miguel: subir `PROMPT_VERSION` a `p-0.2` en core/versions.py (el prompt cambió; hoy invalido la caché de visión a mano). PIDO A Mónica: qué hace la norma con `discrepancia_extractores` en escaneadas (hoy R6 → ESCALAR) y con `importe_ambiguo` (scan_001: las líneas del propio PDF no suman la base).
 - para los demás: Miguel → el ERP simulado de A3 sigue vivo en :8011 (`--tag v2-sim`); el v1 en :8009. A2 (si vuelve) → tus 6 plantillas coinciden 18/18 con el LLM; el contraste a 40 va tras la pasada completa.
+
+### 22:20 · A1 · ciclo 1 de A1 cerrado: 500/500 hechos, contraste 40/40, A3 cerrado
+- hice: pasos 1-8 completos con Helmcode (deepseek texto, qwen visión); 500/500 hechos (468 plantilla · 29 visión con doble lectura y reconciliación con el maestro · 3 texto LLM); `hechos_caja.jsonl` (500) y `hechos_muestra.jsonl` (21) exportados; contraste plantilla↔LLM 40/40; fix de `database is locked` con hilos; reintentos con variación; A3 cerrado y commiteado. Detalle y cifras en PARTE.md (sección A1).
+- toco ahora (ficheros): nada más este ciclo.
+- necesito / bloqueo: PIDO A Miguel: `hechos import data/fixtures/hechos_caja.jsonl` → `decide` → `package` antes de las 02:00. PIDO A Mónica: política para `discrepancia_extractores` (5 escaneadas), `importe_ambiguo` (2), `confianza=0.6` (6), `fecha=None` (3).
+- para los demás: la BD `dist/albertitos.db` de Javier tiene los 500 hechos y 102 lecturas en caché; en otros portátiles, `hechos import` evita gastar tokens.

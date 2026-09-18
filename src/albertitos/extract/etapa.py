@@ -41,7 +41,16 @@ DPI_VISION_2 = int(os.environ.get("ALBERTITOS_DPI_VISION_2", "200"))
 FRACCION_SUPERIOR_2 = float(os.environ.get("ALBERTITOS_FRACCION_SUPERIOR_2", "0.55"))
 VISION_DOBLE = os.environ.get("ALBERTITOS_VISION_DOBLE", "1") != "0"
 # Sólo se comparan los campos de identidad (los importes ya los cruzan validadores, maestro y ERP).
-CAMPOS_SEGUNDA_LECTURA = ("nif_emisor", "iban", "pedido", "num_factura")
+CAMPOS_SEGUNDA_LECTURA = (
+    "nif_emisor",
+    "iban",
+    "pedido",
+)  # num_factura no decide nada: no se compara
+# Ante desacuerdo entre las dos lecturas de un identificador, se elige la que coincide con el maestro
+# Y con el proveedor del pedido (dos evidencias independientes); queda en el evento y baja `confianza`.
+# Sin esa evidencia, el desacuerdo se queda como DISCREPANCIA_EXTRACTORES (la norma escala).
+RECONCILIAR_MAESTRO = os.environ.get("ALBERTITOS_RECONCILIAR_MAESTRO", "1") != "0"
+CONFIANZA_RECONCILIADA = 0.6
 
 
 @dataclass
@@ -133,13 +142,14 @@ def _extraer_uno(
                 coste_eur=uso.get("coste_eur", 0),
                 version=EXTRACTOR_VERSION,
                 detalle=f"{hechos.metodo.value} avisos={[a.value for a in hechos.avisos]}"
-                + (f" discrepancias={uso['discrepancias']}" if uso.get("discrepancias") else ""),
+                + (f" discrepancias={uso['discrepancias']}" if uso.get("discrepancias") else "")
+                + (f" reconciliado={uso['reconciliado']}" if uso.get("reconciliado") else ""),
             ),
         )
         conn.commit()
         return "ok", hechos.metodo.value, uso
     except ErrorLLM as e:
-        db.registrar_evento(
+        _evento_seguro(
             conn,
             Event(
                 file_id=file_id,
@@ -152,12 +162,11 @@ def _extraer_uno(
                 version=EXTRACTOR_VERSION,
             ),
         )
-        conn.commit()
         return "pendiente", e.codigo, {}
-    except Exception as e:  # PDF ilegible, fichero movido...: se registra y se sigue
+    except Exception as e:  # PDF ilegible, fichero movido, BD bloqueada...: se registra y se sigue
         codigo = f"EXTRACT-{type(e).__name__}"
         log.warning("%s: %s", file_id, e)
-        db.registrar_evento(
+        _evento_seguro(
             conn,
             Event(
                 file_id=file_id,
@@ -170,7 +179,6 @@ def _extraer_uno(
                 version=EXTRACTOR_VERSION,
             ),
         )
-        conn.commit()
         return "error", codigo, {}
 
 
@@ -208,11 +216,70 @@ def _segunda_lectura(
     uso["coste_eur"] = Decimal(str(uso.get("coste_eur", 0))) + Decimal(
         str(uso2.get("coste_eur", 0))
     )
-    if difs:
+    if not difs:
+        return uso
+    reconciliados = (
+        _reconciliar_con_maestro(llm.conn, hechos, otra, difs) if RECONCILIAR_MAESTRO else {}
+    )
+    if reconciliados:
+        uso["reconciliado"] = reconciliados
+        hechos.confianza = CONFIANZA_RECONCILIADA
+    restantes = {k: v for k, v in difs.items() if k not in reconciliados}
+    if restantes:
         if Aviso.DISCREPANCIA_EXTRACTORES not in hechos.avisos:
             hechos.avisos.append(Aviso.DISCREPANCIA_EXTRACTORES)
-        uso["discrepancias"] = {k: (str(a), str(b)) for k, (a, b) in difs.items()}
+        uso["discrepancias"] = {k: (str(a), str(b)) for k, (a, b) in restantes.items()}
     return uso
+
+
+def _reconciliar_con_maestro(
+    conn: sqlite3.Connection, hechos: InvoiceFacts, otra: InvoiceFacts, difs: dict[str, Any]
+) -> dict[str, Any]:
+    """Para cada identificador en desacuerdo, elige la lectura respaldada por el maestro y el pedido.
+
+    NIF: la lectura que es el NIF del proveedor al que pertenece el pedido (según el Excel).
+    IBAN: la lectura que es el IBAN de ese mismo proveedor.
+    Pedido: la lectura que existe en el Excel y cuyo proveedor tiene el NIF leído.
+    Devuelve {campo: {"lecturas": [a, b], "elegido": x, "evidencia": "..."}} y muta `hechos`."""
+    from albertitos.sources import snapshot
+
+    try:
+        maestro = snapshot.cargar_maestro_bd(conn)
+    except LookupError:
+        return {}
+    out: dict[str, Any] = {}
+    candidatos_pedido = [x for x in (hechos.pedido, otra.pedido) if x]
+    pedido = next((maestro.pedidos[x] for x in candidatos_pedido if x in maestro.pedidos), None)
+    if "pedido" in difs and pedido is not None:
+        validos = [x for x in candidatos_pedido if x in maestro.pedidos]
+        if len(validos) == 1:
+            out["pedido"] = {
+                "lecturas": [hechos.pedido, otra.pedido],
+                "elegido": validos[0],
+                "evidencia": "único que existe en el Excel",
+            }
+            hechos.pedido = validos[0]
+            pedido = maestro.pedidos[validos[0]]
+    proveedor = maestro.proveedores.get(pedido.proveedor_id) if pedido is not None else None
+    if "nif_emisor" in difs and proveedor is not None:
+        lecturas = [hechos.nif_emisor, otra.nif_emisor]
+        if lecturas.count(proveedor.nif) == 1:
+            out["nif_emisor"] = {
+                "lecturas": lecturas,
+                "elegido": proveedor.nif,
+                "evidencia": f"NIF de {proveedor.id}, proveedor del pedido {pedido.pedido}",
+            }
+            hechos.nif_emisor = proveedor.nif
+    if "iban" in difs and proveedor is not None and hechos.nif_emisor == proveedor.nif:
+        lecturas = [hechos.iban, otra.iban]
+        if lecturas.count(proveedor.iban) == 1:
+            out["iban"] = {
+                "lecturas": lecturas,
+                "elegido": proveedor.iban,
+                "evidencia": f"IBAN de {proveedor.id} en el maestro",
+            }
+            hechos.iban = proveedor.iban
+    return out
 
 
 def contrastar(
@@ -319,6 +386,19 @@ def extraer(
                 sumar(res)
     r.segundos = time.perf_counter() - t0
     return r
+
+
+def _evento_seguro(conn: sqlite3.Connection, ev: Event) -> None:
+    """Registrar un evento de error nunca puede tumbar el lote: si la BD no deja, se reintenta y se loguea."""
+    for intento in range(3):
+        try:
+            conn.rollback()
+            db.registrar_evento(conn, ev)
+            conn.commit()
+            return
+        except sqlite3.OperationalError as e:
+            log.warning("evento no registrado (%s), intento %s: %s", ev.file_id, intento + 1, e)
+            time.sleep(0.5 * (intento + 1))
 
 
 def _ms(t0: float) -> int:
