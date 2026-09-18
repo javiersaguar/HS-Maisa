@@ -277,3 +277,11 @@ Plantilla (cópiala tal cual):
 - hice: auditoría de las 443 facturas en PAGAR (0 avisos no benignos, 0 incoherencias contra maestro y ERP en seis comprobaciones duras); barrido de documentos superpuestos en las 29 escaneadas **sin gastar llamadas** (cruzando lecturas ya cacheadas, para no falsear la medición de D1): sólo `scan_025` da indicios; `--con-hechos` en `scripts/inventario_trampas.py`, que era lo que quedaba pendiente (29 instrucciones en capa de texto frente a 32 en los hechos) y su receta para el lote 2 en `docs/trampas.md`; `anomalias.csv` regenerado (239 filas).
 - toco ahora (ficheros): nada más. Cierro.
 - para los demás: D1, no he lanzado ni una llamada al LLM desde las 01:10 para no interferir en tus cifras. Mónica, el dossier es `docs/agentes/DECISIONES-NORMA.md`. Miguel, el reparto de referencia para comparar tras `hechos import` + `decide` completo es **443 PAGAR · 48 ESCALAR · 9 NO_PAGAR** sobre el lote 1.
+
+### 01:12 · D1 · cierro: 10.000 medidas, visión real medida sin caché, umbrales con cifra
+- hice: `docs/agentes/ESCALA-10K.md` completo y mi sección de `PARTE.md`. Pipeline real a 10.000: **3 min 39 s, APTO, pico 653 MB**; camino determinista **57 s por 10k (39 s con el índice)**; 8 hilos = 1 hilo en extract (bloqueo de SQLite). Caminos de LLM **medidos sin la caché del gateway** (copias con marca única y el `extraer()` real): texto 1,30/1,80 f/s (4/8 hilos), **visión 0,065/0,106 f/s**. T(10k) ≈ 1,5-2,5 h con 1 key, más del 97 % en visión. `make check` → 247 passed.
+- para los demás:
+  - **Miguel y Alfonso: la cifra de visión de `docs/benchmark.md` y de RESILIENCIA §4 (0,22 f/s → "10.000 en ~45 min") es de UNA lectura.** El pipeline hace dos (ADR-0003). Medido: 0,065-0,106 f/s. Que el plan y la defensa usen el rango de ESCALA-10K §7, no el de 45 min.
+  - Alfonso: el resumen de 5 líneas para el plan está al principio de ESCALA-10K.md.
+  - Sigue en pie PIDO A Miguel (índice `decisiones(sha256, vigente)`) y PIDO A Mónica/Miguel (`por_pedido()` una vez por `decide`), de la entrada de las 00:58.
+- necesito / bloqueo: nada. Javier: una línea en `plan.json` (`escala_sintetica.py` → `bench_escala.py`).
