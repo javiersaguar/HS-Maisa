@@ -1,0 +1,52 @@
+[project]
+name = "albertitos"
+version = "0.1.0"
+description = "Trabajador digital de cuentas a pagar para Alberto (HackSpain 2026 · reto Maisa)"
+requires-python = ">=3.12"
+dependencies = [
+  "anthropic>=1.7",
+  "pymupdf>=1.26",
+  "openpyxl>=3.1",
+  "httpx>=0.28",
+  "pydantic>=2.8",
+  "typer>=0.12",
+  "rich>=13",
+  "python-dotenv>=1.0",
+  "streamlit>=1.38",
+  "markdown>=3.6",
+]
+
+[project.scripts]
+albertitos = "albertitos.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/albertitos"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "T20"]
+ignore = ["E501"]  # la longitud del código la gobierna ruff format; los strings largos de mensajes se permiten
+# T20: print() prohibido salvo en la CLI y la consola (logging en el resto)
+per-file-ignores = { "src/albertitos/cli.py" = ["T20"], "src/albertitos/console/**" = ["T20"], "scripts/**" = ["T20"], ".claude/hooks/**" = ["T20"], "docs/**" = ["T20"] }
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "erp: necesita el ERP local en marcha (make erp-fast); se salta si no responde",
+  "llm: llama al LLM de verdad (cuesta dinero); no corre en make check",
+]
+addopts = "-m 'not llm'"

@@ -1,0 +1,18 @@
+name: check
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - name: ERP 2009 sin latencia (para los tests marcados erp)
+        run: (python3 data/caja/alberto_erp.py --rapido > erp.log 2>&1 &) && sleep 1 && curl -sf http://127.0.0.1:8009/erp/estado
+      - run: make check

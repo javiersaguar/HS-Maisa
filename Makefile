@@ -1,0 +1,78 @@
+UV ?= uv
+CAJA := data/caja
+ERP_URL ?= http://127.0.0.1:8009
+LOTE ?= 1
+
+.DEFAULT_GOAL := help
+.PHONY: help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench worktree clean
+
+help: ## Lista estos comandos
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  make %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+setup: ## Entorno idempotente (uv, deps, .env, verificación de la Caja y de los hooks)
+	./bootstrap.sh
+
+check: ## Lint + tests. Obligatorio verde antes de /handoff
+	$(UV) run ruff format --check src tests scripts
+	$(UV) run ruff check src tests scripts
+	$(UV) run pytest -q
+
+fmt: ## Formatea todo el código
+	$(UV) run ruff format src tests scripts .claude/hooks docs
+	$(UV) run ruff check --fix src tests scripts
+
+test: ## Sólo tests
+	$(UV) run pytest -q
+
+erp: ## ERP 2009 con latencia real (déjalo abierto en una terminal)
+	$(MAKE) -C $(CAJA) erp
+
+erp-fast: ## ERP sin latencia (tests y desarrollo)
+	$(MAKE) -C $(CAJA) erp-fast
+
+erp-lote2: ## ERP con la actualización del sábado (data/lote2/erp_export_lote2.csv)
+	$(MAKE) -C $(CAJA) erp-lote2 LOTE2_ERP=../lote2/erp_export_lote2.csv
+
+erp-lote2-fast: ## Igual, sin latencia
+	$(MAKE) -C $(CAJA) erp-lote2-fast LOTE2_ERP=../lote2/erp_export_lote2.csv
+
+erp-status: ## ¿Está vivo el ERP?
+	@curl --fail --silent --show-error $(ERP_URL)/erp/estado; echo
+
+caja-verify: ## Comprueba que data/caja coincide con el manifiesto (500 PDFs, NFC, hashes)
+	$(UV) run albertitos caja verify
+
+db: ## Crea/actualiza el esquema SQLite
+	$(UV) run albertitos db init
+
+run: ## Pipeline completo sobre la Caja
+	$(UV) run albertitos run
+
+status: ## Estado por etapa
+	$(UV) run albertitos status
+
+trace: ## Traza de una decisión: make trace FILE=factura_123.pdf
+	$(UV) run albertitos trace "$(FILE)"
+
+console: ## Consola Streamlit (sólo lectura sobre la BD)
+	$(UV) run streamlit run src/albertitos/console/app.py
+
+package: ## Genera y valida dist/entrega/*.jsonl (nunca a mano)
+	$(UV) run albertitos package
+
+validate: ## Valida un JSONL: make validate FILE=dist/entrega/outcomes.jsonl LOTE=1
+	$(UV) run albertitos validate "$(FILE)" --lote $(LOTE)
+
+plan-pdf: ## docs/plan/albertitos_plan.md -> dist/entrega/albertitos_plan.pdf
+	$(UV) run python docs/plan/build_pdf.py
+
+bench: ## Mide ficheros/s y coste con el hardware actual
+	$(UV) run albertitos bench
+
+worktree: ## Segundo agente en paralelo en tu máquina: make worktree NAME=javier-erp
+	@test -n "$(NAME)" || (echo 'uso: make worktree NAME=<nombre>-<tema>'; exit 1)
+	git worktree add ../HS-Maisa-$(NAME) -b $(NAME) 2>/dev/null || git worktree add ../HS-Maisa-$(NAME) $(NAME)
+	@echo 'cd ../HS-Maisa-$(NAME) && ./bootstrap.sh'
+
+clean: ## Borra BD y outcomes generados (la caché LLM también: cuesta dinero regenerarla)
+	rm -rf dist/albertitos.db dist/albertitos.db-wal dist/albertitos.db-shm dist/entrega

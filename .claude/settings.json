@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "sonnet",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(uv run *)",
+      "Bash(uv sync *)",
+      "Bash(uv add *)",
+      "Bash(uv remove *)",
+      "Bash(uv lock *)",
+      "Bash(make *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
+      "Bash(git worktree list *)",
+      "Bash(gh pr *)",
+      "Bash(gh repo view *)",
+      "Bash(curl *)",
+      "Bash(python3 data/caja/alberto_erp.py *)",
+      "Bash(pdftotext *)",
+      "Bash(pdfinfo *)",
+      "Bash(sqlite3 *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(sort *)",
+      "Bash(diff *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(sha256sum *)",
+      "Bash(unzip *)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:platform.claude.com)",
+      "WebFetch(domain:hackathon.maisa.ai)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git restore *)",
+      "Bash(git worktree remove *)",
+      "Bash(rm *)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/hooks/**)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git rebase *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py\"",
+            "timeout": 10,
+            "statusMessage": "Leyendo estado del repo, ERP y BD"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_bash.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_edit.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_py.py\"",
+            "timeout": 60,
+            "statusMessage": "ruff format + check"
+          }
+        ]
+      }
+    ]
+  }
+}

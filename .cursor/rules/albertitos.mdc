@@ -1,0 +1,8 @@
+---
+description: Normas del proyecto Albertitos (HackSpain 2026). Misma fuente de verdad que Claude Code.
+alwaysApply: true
+---
+Lee y respeta `CLAUDE.md` en la raíz y el `CLAUDE.md` del módulo que toques
+(`src/albertitos/<modulo>/CLAUDE.md`). Las restricciones de `.claude/rules/*.md` aplican igual.
+Los hooks de Claude Code no corren en Cursor: antes de commitear ejecuta `make check` y no toques
+`src/albertitos/core/` (contratos congelados), `data/caja/` (inmutable) ni `dist/**/*.jsonl` (generado).

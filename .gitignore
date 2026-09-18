@@ -1,0 +1,31 @@
+# entorno
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.python-version.local
+
+# secretos: sólo .env.example va al repo
+.env
+.env.*
+!.env.example
+
+# artefactos generados (BD, caché LLM, outcomes): se regeneran con make
+dist/
+*.db
+*.db-wal
+*.db-shm
+
+# clon local del repo de entrega (la-caja-outcomes) — nunca dentro de este repo
+la-caja-outcomes/
+
+# personal
+.claude/settings.local.json
+CLAUDE.local.md
+.DS_Store
+*.log
+
+# marcador de rol (merge/contratos) para los hooks: personal, nunca al repo
+.claude/dueno.local
+!docs/entregas.log
