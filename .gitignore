@@ -30,3 +30,10 @@ CLAUDE.local.md
 # marcador de rol (merge/contratos) para los hooks: personal, nunca al repo
 .claude/dueno.local
 !docs/entregas.log
+
+# informe: el .tex se versiona, el PDF se genera (dist/ está ignorado)
+docs/informe/*.aux
+docs/informe/*.log
+docs/informe/*.out
+docs/informe/*.toc
+docs/informe/*.pdf
