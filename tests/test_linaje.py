@@ -188,8 +188,11 @@ def test_sin_impacto_deja_un_evento_una_sola_vez(conn, base, maestro, erp):
     skips = conn.execute(
         "SELECT file_id, detalle FROM eventos WHERE etapa='decide' AND estado='skip' ORDER BY file_id"
     ).fetchall()
-    assert [s["file_id"] for s in skips] == ["b.pdf", "c.pdf"]
-    assert '"erp": "e-test→e2"' in skips[0]["detalle"]
+    sin_impacto = [s for s in skips if "sin impacto" in s["detalle"]]
+    assert [s["file_id"] for s in sin_impacto] == ["b.pdf", "c.pdf"]
+    assert '"erp": "e-test→e2"' in sin_impacto[0]["detalle"]
+    pendientes = [s for s in skips if "sin hechos" in s["detalle"]]
+    assert [s["file_id"] for s in pendientes] == ["d.pdf"]  # una vez, aunque haya dos pasadas
     por = conn.execute(
         "SELECT detalle FROM eventos WHERE etapa='decide' AND estado='ok' AND file_id='a.pdf' "
         "ORDER BY id DESC LIMIT 1"
@@ -203,6 +206,8 @@ def test_duplicados_se_ponen_y_se_quitan(conn, base, maestro, erp):
     r = _reprocesar(conn, maestro, erp)
     assert r.duplicados == (2, 0)
     assert r.impactados == {"a.pdf": "hechos cambiados", "e.pdf": "sin decisión"}
+    ev = conn.execute("SELECT detalle FROM eventos WHERE etapa='validate' AND file_id='a.pdf'")
+    assert '"accion": "puesto", "con": ["e.pdf"]' in ev.fetchone()["detalle"]
     assert _vigentes(conn)["a.pdf"] == "ESCALAR"
 
     for tabla in ("eventos", "decisiones", "hechos", "ficheros"):

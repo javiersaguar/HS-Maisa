@@ -57,6 +57,9 @@ Cómo se implementa:
   - Lo vigila `test_la_norma_solo_lee_su_pedido_y_su_nif`, que recorre cada norma del `REGISTRO` (la v4 entra sola al
     registrarse).
   - Si falla, hay que ampliar las claves en `linaje.py` o usar `--todo`.
+- **El linaje ve versiones, no código.** Si alguien corrige `norma_v3.py` sin cambiar `"v3"`, `reprocess --impacted`
+  no recalcula nada. `run` sí, porque decide todo cada vez. Regla: una norma publicada no se edita (la v4 es un
+  módulo nuevo). Mientras Mónica valida la v3, usar `run` o `reprocess --todo`.
 - Un evento `skip` por fichero confirmado (unas 500 filas la primera vez que cambia una versión). Repetir la pasada
   no los duplica.
 - Hoy no ganamos tiempo: recalcular las 500 tarda 0,43 s. Ganamos traza: cada recálculo dice por qué, y cada no

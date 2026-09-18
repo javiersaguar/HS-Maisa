@@ -54,9 +54,8 @@ def _correr(conn, caja_tmp: Path, caja: Path, entrega: Path, **kw):
         entrega=entrega,
         norma_version="v3",
         fecha_corte=date(2026, 9, 18),
-        extraer=False,
         maestro_xlsx=caja / MAESTRO_XLSX,
-        **kw,
+        **{"extraer": False, **kw},
     )
 
 
@@ -97,3 +96,55 @@ def test_run_no_entrega_si_falta_una_decision_y_no_pisa_la_anterior(conn, caja, 
     assert any(MUESTRA[2] in e for e in r.rechazo.errores)
     assert salida.read_bytes() == anterior  # la entrega válida anterior sigue intacta
     assert not list(entrega.glob("*.tmp"))
+
+
+ESCANEADA = "scan_002.pdf"  # sin capa de texto: sólo la lee el LLM (visión)
+
+
+def test_run_con_llm_caido_deja_pendiente_no_paga_y_reanuda(conn, caja, erp, tmp_path, monkeypatch):
+    """G4: con el LLM caído, extract deja PENDIENTE la escaneada, decide se la salta y package se
+    niega. Vuelto el LLM, el mismo run entrega. Cada transición deja un evento, sin copias."""
+    from albertitos.sources import chaos
+
+    monkeypatch.setattr(chaos, "RUTA", tmp_path / "chaos.json")
+    chaos.activar("llm_down")
+    caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA[:2])
+    shutil.copy(caja / "facturas" / ESCANEADA, caja_tmp / "facturas" / ESCANEADA)
+    entrega = tmp_path / "entrega"
+
+    for _ in range(2):  # dos run con el LLM caído: mismo estado y ningún evento de estado repetido
+        r = _correr(conn, caja_tmp, caja, entrega, extraer=True)
+        assert not r.ok and r.sin_hechos == [ESCANEADA]
+    assert not (entrega / "outcomes.jsonl").exists()
+    n = conn.execute("SELECT count(*) FROM decisiones WHERE file_id=?", (ESCANEADA,)).fetchone()[0]
+    assert n == 0  # sin hechos no hay decisión, y sin decisión no hay PAGAR
+    ev = [
+        (e["etapa"], e["estado"], e["error_codigo"]) for e in db.traza(conn, ESCANEADA)["eventos"]
+    ]
+    assert ("extract", "pendiente", "LLM-DOWN") in ev
+    assert ev.count(("decide", "skip", None)) == 1
+    assert ev.count(("emit", "pendiente", None)) == 1
+    rechazos = conn.execute(
+        "SELECT count(*) FROM eventos WHERE etapa='emit' AND estado='error' AND file_id IS NULL"
+    ).fetchone()[0]
+    assert rechazos == 2  # uno por intento de entrega
+
+    chaos.desactivar()  # vuelve el LLM; en el test (sin red), sus hechos
+    db.guardar_hechos(
+        conn,
+        InvoiceFacts(
+            file_id=ESCANEADA,
+            sha256=sha256_fichero(caja_tmp / "facturas" / ESCANEADA),
+            pedido="PO-2026-0002",
+            total=Decimal("943.80"),
+            metodo=MetodoExtraccion.LLM_VISION,
+            extractor_version=EXTRACTOR_VERSION,
+        ),
+    )
+    r = _correr(conn, caja_tmp, caja, entrega)
+    assert r.ok, r.texto()
+    emit = [e["estado"] for e in db.traza(conn, ESCANEADA)["eventos"] if e["etapa"] == "emit"]
+    assert emit == ["pendiente", "ok"]
+    r = _correr(conn, caja_tmp, caja, entrega)  # otra vez: nada nuevo por fichero en emit
+    emit = [e["estado"] for e in db.traza(conn, ESCANEADA)["eventos"] if e["etapa"] == "emit"]
+    assert emit == ["pendiente", "ok"]

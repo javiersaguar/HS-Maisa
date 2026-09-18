@@ -94,6 +94,22 @@ def extract(
     return extraer(conn, solo_pendientes=solo_pendientes, fixture=fixture, workers=workers).ok
 
 
+def registrar_transicion(conn: sqlite3.Connection, ev: Event) -> bool:
+    """Registra `ev` sólo si cambia el estado del fichero en esa etapa (el último evento de ese
+    fichero y etapa tiene otro estado o detalle). Repetir un run no llena la traza de copias."""
+    ultimo = conn.execute(
+        "SELECT estado, detalle FROM eventos WHERE file_id=? AND etapa=? ORDER BY id DESC LIMIT 1",
+        (ev.file_id, ev.etapa.value),
+    ).fetchone()
+    if ultimo is not None and (ultimo["estado"], ultimo["detalle"]) == (
+        ev.estado.value,
+        ev.detalle,
+    ):
+        return False
+    db.registrar_evento(conn, ev)
+    return True
+
+
 def marcar_duplicados(conn: sqlite3.Connection) -> tuple[int, int]:
     """Segunda pasada sobre los hechos: mismo pedido o mismo (NIF, nº factura) en más de un PDF →
     Aviso.DUPLICADO_SOSPECHOSO en todos ellos. La marca se recalcula entera: se pone donde hay grupo y
@@ -110,24 +126,41 @@ def marcar_duplicados(conn: sqlite3.Connection) -> tuple[int, int]:
             por_pedido.setdefault(h.pedido, []).append(h)
         if h.nif_emisor and h.num_factura:
             por_factura.setdefault((h.nif_emisor, h.num_factura), []).append(h)
-    duplicados = {
-        h.sha256
-        for grupo in list(por_pedido.values()) + list(por_factura.values())
-        if len(grupo) > 1
-        for h in grupo
-    }
+    con: dict[str, set[str]] = {}  # sha256 → file_id de los otros PDFs de sus grupos
+    for grupo in list(por_pedido.values()) + list(por_factura.values()):
+        if len(grupo) > 1:
+            for h in grupo:
+                con.setdefault(h.sha256, set()).update(o.file_id for o in grupo if o is not h)
     puestos = quitados = 0
     for h in hechos:
         marcado = Aviso.DUPLICADO_SOSPECHOSO in h.avisos
-        if h.sha256 in duplicados and not marcado:
+        if h.sha256 in con and not marcado:
             h.avisos.append(Aviso.DUPLICADO_SOSPECHOSO)
-            puestos += 1
-        elif h.sha256 not in duplicados and marcado:
+            puestos, accion = puestos + 1, "puesto"
+        elif h.sha256 not in con and marcado:
             h.avisos = [a for a in h.avisos if a != Aviso.DUPLICADO_SOSPECHOSO]
-            quitados += 1
+            quitados, accion = quitados + 1, "quitado"
         else:
             continue
         db.guardar_hechos(conn, h)
+        db.registrar_evento(
+            conn,
+            Event(
+                file_id=h.file_id,
+                sha256=h.sha256,
+                etapa=Etapa.VALIDATE,
+                estado=EstadoEvento.OK,
+                version=EXTRACTOR_VERSION,
+                detalle=json.dumps(
+                    {
+                        "aviso": Aviso.DUPLICADO_SOSPECHOSO.value,
+                        "accion": accion,
+                        "con": sorted(con.get(h.sha256, ())),
+                    },
+                    ensure_ascii=False,
+                ),
+            ),
+        )
     conn.commit()
     return puestos, quitados
 
@@ -184,5 +217,35 @@ def decide(
             ),
         )
         n += 1
+    _registrar_sin_hechos(conn, norma_version)
     conn.commit()
     return n
+
+
+def _registrar_sin_hechos(conn: sqlite3.Connection, norma_version: str) -> None:
+    """decide/skip para cada fichero que decide se salta por no tener hechos (PENDIENTE de extract),
+    con el último error de extract. Sin él, la traza de un PENDIENTE acabaría en extract."""
+    filas = conn.execute(
+        """SELECT f.file_id, f.sha256,
+                  (SELECT e.error_codigo FROM eventos e WHERE e.file_id = f.file_id
+                     AND e.etapa = 'extract' ORDER BY e.id DESC LIMIT 1) AS error
+           FROM ficheros f
+           LEFT JOIN hechos h ON h.sha256 = f.sha256 AND h.extractor_version = ?
+           WHERE h.sha256 IS NULL""",
+        (EXTRACTOR_VERSION,),
+    ).fetchall()
+    for f in filas:
+        registrar_transicion(
+            conn,
+            Event(
+                file_id=f["file_id"],
+                sha256=f["sha256"],
+                etapa=Etapa.DECIDE,
+                estado=EstadoEvento.SKIP,
+                version=norma_version,
+                detalle=json.dumps(
+                    {"pendiente": "sin hechos: no se decide", "extract": f["error"]},
+                    ensure_ascii=False,
+                ),
+            ),
+        )

@@ -1,13 +1,23 @@
-"""Empaquetado de la entrega: BD → dist/entrega/*.jsonl, siempre pasando por el validador."""
+"""Empaquetado de la entrega: BD → dist/entrega/*.jsonl, siempre pasando por el validador.
+
+Eventos (etapa emit): uno por intento y lote (sin file_id: OK con nº de líneas, o ERROR con los
+errores) y, por fichero, uno cuando cambia lo entregado o cuando no se puede entregar (PENDIENTE:
+sin decisión vigente, la entrega se niega).
+"""
 
 from __future__ import annotations
 
 import json
+import logging
+import sqlite3
 from pathlib import Path
 
 from albertitos.core import db
-from albertitos.core.contracts import Outcome, Resultado
+from albertitos.core.contracts import EstadoEvento, Etapa, Event, Outcome, Resultado
+from albertitos.pipeline.etapas import registrar_transicion
 from albertitos.pipeline.validar import InformeValidacion, listar_pdfs, validar_jsonl
+
+log = logging.getLogger(__name__)
 
 
 class EntregaInvalida(Exception):
@@ -32,11 +42,13 @@ def empaquetar(
     # Una entrega inválida nunca pisa la última válida de dist/entrega/.
     generados: list[tuple[Path, InformeValidacion]] = []
     temporales: list[tuple[Path, Path]] = []
+    entregados: list[tuple[int, str, list[sqlite3.Row]]] = []
     try:
         for lote, nombre, directorio in lotes:
             esperados = listar_pdfs(directorio)
+            filas = db.decisiones_vigentes(conn, lote=lote)
             outcomes: list[Outcome] = []
-            for fila in db.decisiones_vigentes(conn, lote=lote):
+            for fila in filas:
                 extra: dict[str, str] = {}
                 if con_traza:
                     motivos = json.loads(fila["motivos_json"])
@@ -59,11 +71,93 @@ def empaquetar(
             informe = validar_jsonl(tmp, esperados, lote)
             informe.ruta = str(destino)
             if not informe.ok:
+                sin_decision = sorted(set(esperados) - {str(x["file_id"]) for x in filas})
+                _eventos_rechazo(conn, lote, nombre, informe, sin_decision)
                 raise EntregaInvalida(informe)
             generados.append((destino, informe))
+            entregados.append((lote, nombre, filas))
         for tmp, destino in temporales:
             tmp.replace(destino)
     finally:
         for tmp, _ in temporales:
             tmp.unlink(missing_ok=True)
+    _eventos_entrega(conn, entregados)
     return generados
+
+
+def _eventos_rechazo(
+    conn, lote: int, nombre: str, informe: InformeValidacion, sin_decision: list[str]
+) -> None:
+    try:
+        db.registrar_evento(
+            conn,
+            Event(
+                etapa=Etapa.EMIT,
+                estado=EstadoEvento.ERROR,
+                error_codigo="ENTREGA-INVALIDA",
+                detalle=json.dumps(
+                    {
+                        "lote": lote,
+                        "entrega": nombre,
+                        "n_errores": len(informe.errores),
+                        "errores": informe.errores[:5],
+                    },
+                    ensure_ascii=False,
+                ),
+            ),
+        )
+        ids = {
+            r["file_id"]: r["sha256"]
+            for r in conn.execute(
+                "SELECT file_id, sha256 FROM ficheros WHERE lote=?", (lote,)
+            ).fetchall()
+        }
+        for fid in sin_decision:
+            registrar_transicion(
+                conn,
+                Event(
+                    file_id=fid,
+                    sha256=ids.get(fid),
+                    etapa=Etapa.EMIT,
+                    estado=EstadoEvento.PENDIENTE,
+                    detalle=json.dumps(
+                        {"entrega": nombre, "pendiente": "sin decisión vigente: package se niega"},
+                        ensure_ascii=False,
+                    ),
+                ),
+            )
+        conn.commit()
+    except sqlite3.Error as e:  # la traza nunca bloquea (ni desbloquea) una entrega
+        log.warning("no se pudieron registrar los eventos de emit: %s", e)
+
+
+def _eventos_entrega(conn, entregados: list[tuple[int, str, list[sqlite3.Row]]]) -> None:
+    try:
+        for lote, nombre, filas in entregados:
+            db.registrar_evento(
+                conn,
+                Event(
+                    etapa=Etapa.EMIT,
+                    estado=EstadoEvento.OK,
+                    detalle=json.dumps(
+                        {"lote": lote, "entrega": nombre, "lineas": len(filas)}, ensure_ascii=False
+                    ),
+                ),
+            )
+            for fila in filas:
+                registrar_transicion(
+                    conn,
+                    Event(
+                        file_id=fila["file_id"],
+                        sha256=fila["sha256"],
+                        etapa=Etapa.EMIT,
+                        estado=EstadoEvento.OK,
+                        version=fila["norma_version"],
+                        detalle=json.dumps(  # sin id de decisión: run redecide todo cada vez
+                            {"entrega": nombre, "result": fila["resultado"]}, ensure_ascii=False
+                        ),
+                    ),
+                )
+        conn.commit()
+    except sqlite3.Error as e:
+        log.warning("no se pudieron registrar los eventos de emit: %s", e)

@@ -357,6 +357,7 @@ def run(
     con_traza: bool = typer.Option(
         True, "--con-traza/--sin-traza", help="motivo, regla y norma_version en cada línea"
     ),
+    salida: Path = typer.Option(ENTREGA, help="carpeta de la entrega (ensayos y demo: otra)"),
 ) -> None:
     """ingest → maestro → erp pull (si no hay) → extract → duplicados → decide → package."""
     from albertitos.pipeline.run import correr
@@ -366,7 +367,7 @@ def run(
         _conn(),
         caja=CAJA,
         lote2=LOTE2,
-        entrega=ENTREGA,
+        entrega=salida,
         norma_version=norma,
         fecha_corte=corte,
         extraer=extraer,
@@ -438,13 +439,12 @@ def package(
     ),
     salida: Path = ENTREGA,
 ) -> None:
-    """BD → dist/entrega/outcomes*.jsonl, validados. Se niega si falta alguna decisión."""
+    """BD → dist/entrega/outcomes*.jsonl, validados. Se niega si falta alguna decisión.
+    Sólo escribe en la BD eventos de emit (la traza de lo entregado)."""
     from albertitos.pipeline import package as pk
 
     try:
-        for ruta, inf in pk.empaquetar(
-            _conn(solo_lectura=True), salida, CAJA, LOTE2, con_traza=con_traza
-        ):
+        for ruta, inf in pk.empaquetar(_conn(), salida, CAJA, LOTE2, con_traza=con_traza):
             rprint(inf.texto(), "→", ruta)
     except pk.EntregaInvalida as e:
         rprint(f"[red]NO se escribe la entrega:[/red]\n{e}")

@@ -4,7 +4,7 @@ ERP_URL ?= http://127.0.0.1:8009
 LOTE ?= 1
 
 .DEFAULT_GOAL := help
-.PHONY: agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench worktree clean
+.PHONY: agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench demo-caos worktree clean
 
 help: ## Lista estos comandos
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  make %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -68,6 +68,9 @@ plan-pdf: ## docs/plan/albertitos_plan.md -> dist/entrega/albertitos_plan.pdf
 
 bench: ## Mide ficheros/s y coste con el hardware actual
 	$(UV) run albertitos bench
+
+demo-caos: ## Demo de resiliencia (~60 s) sobre una copia de la BD: LLM caído → PENDIENTE → vuelve → reanuda
+	$(UV) run python scripts/demo_caos.py
 
 worktree: ## Segundo agente en paralelo en tu máquina: make worktree NAME=javier-erp
 	@test -n "$(NAME)" || (echo 'uso: make worktree NAME=<nombre>-<tema>'; exit 1)
