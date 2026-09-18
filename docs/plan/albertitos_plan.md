@@ -20,7 +20,14 @@ decidir para cada factura PAGAR, NO_PAGAR o ESCALAR, sin pagar dos veces y sin p
 - **Consola**: Streamlit de sólo lectura: cola de escalados, traza de una decisión, panel operativo.
 
 ### Flujo de datos y estado
-*(rellenar: qué entra y sale de cada etapa, qué tabla escribe, qué evento emite)*
+| Etapa | Entra | Sale (tabla) | Evento |
+|---|---|---|---|
+| ingest | PDF | `ficheros` (sha256, nombre NFC, páginas, ¿texto?) | `ingest` sólo si es nuevo o cambió |
+| extract | PDF → plantilla, o texto/imagen → LLM | `hechos` (`InvoiceFacts` + `hechos_hash`), `cache_llm` | `extract` ok / pendiente / retry con tokens, coste y error |
+| validate | todos los hechos | aviso `duplicado_sospechoso` (se pone y se quita) | `validate` con los otros PDF del grupo |
+| enrich | bridge ERP 2009 y Excel | `snapshots` (ERP v1/v2, maestro por hash) | `enrich` por consulta (ORA-00600, 429, token) |
+| decide | hechos + maestro + ERP + `fecha_corte` | `decisiones` (historial; `vigente`) | `decide` ok (resultado, reglas KO, por qué) o skip (pendiente o sin impacto) |
+| emit | decisiones vigentes | `dist/entrega/*.jsonl`, validado, todo o nada | `emit` por intento y lote; por fichero, si cambia lo entregado |
 
 ### Reparto entre agentes, modelos y personas
 - El **modelo** extrae campos (y lee las 29 escaneadas). No decide.
@@ -29,10 +36,30 @@ decidir para cada factura PAGAR, NO_PAGAR o ESCALAR, sin pagar dos veces y sin p
 - Los **agentes de código** (Claude Code) construyeron el sistema con contratos congelados y hooks; no forman parte del runtime.
 
 ### Observabilidad y recuperación
-*(rellenar: tabla de eventos, qué señales ve Alberto, qué pasa si el LLM cae — PENDIENTE, circuit breaker, caché, reanudación sin duplicados por sha256)*
+- **Traza:** `albertitos trace <file_id>` y la vista Traza de la consola enseñan hechos (método y tokens),
+  versión del maestro, asiento del ERP (con sus reintentos), las 6 reglas con evidencia y lo entregado.
+  Los eventos de estado sólo se escriben cuando el estado cambia, así que repetir no ensucia la traza.
+- **Si el LLM cae:** la factura queda PENDIENTE (sin hechos no hay decisión, y sin decisión no hay PAGAR)
+  y `package` se niega a entregar. La entrega anterior sigue intacta. Al volver el LLM, el mismo `run`
+  reanuda. `make demo-caos` lo enseña de punta a punta en 21,9 s.
+- **Sin duplicados al reanudar:** la identidad es el sha256 y la caché del LLM también va por sha256.
+  Dos pasadas dan el mismo JSONL byte a byte.
+- **Cambios de datos o norma:** `reprocess --impacted` recalcula sólo lo que el cambio toca y dice por
+  qué (ADR-0006).
 
 ### Escala, evolución y coste
-*(rellenar desde `docs/benchmark.md`: ficheros/s medidos, hardware, fórmula de coste, límites, qué cambia con emails/Excel/escaneados)*
+Medido en un portátil i5-1235U con 7,7 GB y Windows 11, con 4 hilos (`docs/benchmark.md`):
+- **Pasada completa en frío:** 500 facturas en 204 s (2,5 ficheros/s), APTO.
+- **Con la caché del LLM llena:** 15 s (33 ficheros/s) y 0 tokens.
+- **Reprocesar un cambio de ERP:** 2 de 500 facturas en 0,04 s.
+
+468 de 500 salen por plantilla (3 ms). El LLM lee 32: 29 escaneadas (p50 17 s) y 3 de texto (3,3 s).
+**Coste marginal: 0 € por factura** (modelos abiertos en suscripción plana). El coste real es el fijo,
+399 €/mes (0,04 € por factura con 10.000 al mes).
+
+El cuello de botella es la visión, que satura con 4 hilos (0,22 ficheros/s). Escalar 10× no exige pagar
+más LLM, sino que menos facturas lleguen a él (más plantillas). Un formato nuevo (email, Excel) es un
+conector de `extract/` que produce el mismo `InvoiceFacts`; la norma no cambia.
 
 ## 2. ADRs / trade-offs
 
