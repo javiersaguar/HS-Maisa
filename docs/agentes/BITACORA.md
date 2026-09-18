@@ -309,3 +309,31 @@ Plantilla (cópiala tal cual):
 - hice: merge de los ciclos 3 y 4 en `main` (`5eeb562`, 261 tests; conflicto sólo en el índice de ADRs, resuelto conservando los ocho); `plan.json` corregido con `scripts/bench_escala.py`; plan del sábado en `docs/PLAN-SABADO.md`; parte del ciclo 4 archivado; `PLAN-05.md`.
 - toco ahora (ficheros): nada más; escriben E1, E2 y E3 por la mañana.
 - para los demás: el ciclo 5 convierte en comprobaciones automáticas las tres cosas que anoche estuvieron a punto de costarnos la elegibilidad: BD contaminada por el lote simulado, `marcar_duplicados` que sólo corre dentro de `run`, y el hash del material. E1 preflight · E2 auditoría de entrega · E3 materiales + runbook cronometrado. Miguel: te pedirán enganchar la auditoría de E2 a `package`.
+
+### 02:00 · Miguel · índice, visión y auditoría en package
+- hice (rama `miguel/pipeline`, sin push):
+  - `6ae7c21` **core, esquema v2**: `CREATE INDEX IF NOT EXISTS ix_decisiones_sha_vigente ON decisiones(sha256, vigente)` (lo pidió D1). Compatible, ningún resultado cambia. `reprocess --todo` en el i5: sobre la BD real (copia) **0,35 → 0,11 s**; tras 8 pasadas (4.500 previas) **2,34 → 0,16 s**; a **10.000** (los 500 hechos reales ×20) **160,6 → 4,1 s**, y con 10.000 previas **297,6 → 4,0 s**. Plan de SQLite: `SCAN decisiones` → `SEARCH … USING INDEX`.
+  - Ensayo de la reimportación en una copia: el fixture no ha cambiado desde 444b2f9 (en Windows sólo difiere en CRLF). `hechos import` → `reprocess --todo` → duplicados +2 −0 · 500/500 · 0 cambian · 0,13 s → `package` **APTO 443 / 48 / 9**. Cambian 8 motivos de R6 (la evidencia llega entera) y 0 resultados. La BD real, cuando dé el OK.
+  - `64fc573` **docs**: `benchmark.md` y el plan usan la visión con doble lectura y sin la caché del gateway: 0,065 f/s con 4 hilos y 0,106 con 8 (ESCALA-10K §4). Recomendación: `ALBERTITOS_WORKERS=8` cuando haya escaneadas nuevas. Mi p50 de 17,3 s (19/09 00:14) sigue siendo medida, pero pudo pegar en la caché del gateway; ya no se usa para extrapolar.
+  - `aebc59d` **pipeline**: `package` (y `run`) auditan la BD **después** de validar los JSONL y **antes** de sustituir los `.tmp`. Si sale roja: `EntregaInvalida`, evento emit/error `AUDITORIA-ROJA`, emit/pendiente por cada fichero señalado, y la entrega anterior intacta. Si la auditoría lanza una excepción: `AUDITORIA-ERROR`, y tampoco se entrega. `--sin-auditoria` la salta a mano; queda "no ejecutada" en el evento del lote. **Hoy no hay auditoría que enganchar**: el CLI lo avisa en amarillo y entrega como antes.
+- toco ahora (ficheros): nada más.
+- necesito / bloqueo:
+  - **PIDO A Javier/E2, el contrato de la auditoría** (para no duplicar tu lógica; `src/` no puede importar `scripts/`):
+    - `src/albertitos/pipeline/auditoria.py`. Te cedo ese único fichero de `pipeline/`: añádelo a `plan.json` como de E2.
+    - `auditar(conn: sqlite3.Connection, lotes: dict[int, Path]) -> InformeAuditoria`. `lotes` es lo que `package` acaba de validar: `{1: data/caja/facturas}`, más `{2: data/lote2/facturas}` si existe.
+    - `InformeAuditoria`: `rojos: dict[str, list[str]]` (comprobación → file_id; vacío = verde), `ambar` igual, `ok` = ningún rojo, `texto()` legible.
+    - Sólo lee: nada de `init_schema` ni `commit`.
+    - `scripts/auditoria_entrega.py` queda como envoltorio de CLI (`--db`, `--lote`, `--json` = el informe serializado).
+    - En cuanto exista, `package` la usa sin tocar nada más, y deja de saltarse `tests/test_pipeline.py::test_auditoria_real_de_e2_caza_un_duplicado_pagado_dos_veces`: dos facturas del mismo pedido en PAGAR tienen que dar rojo y nombrar a las dos; tres facturas sin ningún PAGAR, verde. Si lo ves distinto, dilo aquí antes de escribirlo.
+  - **OJO con `scan_025`**: si la evidencia `"None"` es ROJO (así lo pide PLAN-05), en cuanto se enganche, `make package` se negará sobre la BD real hasta que Mónica decida y se reextraiga. Lo correcto es que se niegue. La salida de emergencia es `package --sin-auditoria`, y deja traza.
+  - **PIDO A Javier:**
+    - `scripts/bench_escala.py` no arranca en Windows: `condiciones()` lee `/proc/meminfo`.
+    - Con el esquema v2, las BD del banco ya nacen con el índice. Para volver a comparar sin él, haz `DROP INDEX ix_decisiones_sha_vigente` en la copia.
+    - ESCALA-10K §5 y §10 pueden citar las cifras a 10.000 de arriba (medidas en el i5, BD sintética; `benchmark.md` dice cómo).
+    - ADR-0004 (línea 69) sigue diciendo "0,22 → 0,22 (satura en 4)". Necesita la misma nota de corrección que RESILIENCIA §4 (E1).
+  - **PIDO A Mónica:**
+    - (a) Decide `DOCUMENTO_SUPERPUESTO` en `ANOMALIAS_HUMANO` **antes de las 17:00**: con la auditoría enganchada, el `"None"` de `scan_025` bloquea la entrega de seguro de las 17:30.
+    - (b) Al reimportar cambia el texto citado en 8 motivos de R6, sin cambiar ningún resultado. Dos mejoran mucho: `factura_5402.pdf` cita ahora "Escalar a revision humana 1 0,00" y `factura_6612.pdf` "Bloquear conciliacion hasta revision manual (1 ud): EUR 0.00", en vez de trozos de las líneas. Las otras 6 (`2026-07-09_P010`, `2026-23904_construcciones`, `F26-2201_transportes`, `F26-3355_mensajería`, `F26-7728_limpiezas2`, `FA-3388_ofimática`) alargan la cita hasta incluir la orden.
+- para los demás:
+  - **Aviso de core** (compatible): esquema v2, un índice nuevo. Haced `/sync` + `make db`. Cualquier comando que escriba también lo crea solo.
+  - Para leer escaneadas nuevas (lote 2), `ALBERTITOS_WORKERS=8`.
