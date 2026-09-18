@@ -5,15 +5,19 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import time
 from decimal import Decimal
 
 import pytest
+from dotenv import load_dotenv
 
 from albertitos.core.contracts import Aviso, InvoiceFacts, MetodoExtraccion
 from albertitos.core.versions import EXTRACTOR_VERSION
 from albertitos.extract import etapa, llm, plantillas
 from albertitos.pipeline import etapas
 from albertitos.sources import chaos
+
+load_dotenv(".env")
 
 TEXTO = "2026-01-08_P001.pdf"
 SCAN = "scan_001.pdf"
@@ -78,6 +82,9 @@ def bd(conn, caja, tmp_path, monkeypatch):
     etapas.ingest(conn, d, 1)
     monkeypatch.setattr(chaos, "RUTA", tmp_path / "chaos.json")
     monkeypatch.setattr(llm.time, "sleep", lambda s: None)
+    # Los tests offline simulan el SDK de Anthropic (`_api`); el proveedor real de .env no debe entrar.
+    monkeypatch.setenv("ALBERTITOS_LLM_PROVEEDOR", "anthropic")
+    monkeypatch.setattr(etapa, "VISION_DOBLE", False)
     # Las plantillas de A2 ya resuelven facturas reales sin LLM; aquí probamos el camino LLM, así que
     # se anulan por defecto (el test de plantilla las vuelve a activar con una falsa).
     monkeypatch.setattr(plantillas, "extraer_por_plantilla", lambda texto, *, file_id, sha256: None)
@@ -190,13 +197,44 @@ def test_api_simulada_extrae_cachea_y_segunda_pasada_gratis(bd, tmp_path, monkey
     assert (r2.por_metodo, r2.tokens_in, Api.messages.llamadas) == ({"cache": 1}, 0, 1)
 
 
-def test_escaneada_va_por_vision(bd, tmp_path, monkeypatch):
+def test_escaneada_va_por_vision_con_doble_lectura(bd, tmp_path, monkeypatch):
+    monkeypatch.setattr(etapa, "VISION_DOBLE", True)
     Api = api_falsa({**RESPUESTA_P001, "pedido": "PO-2026-0001"})
     monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
     r = etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
-    assert r.por_metodo == {"llm_vision": 1}
+    assert r.por_metodo == {"llm_vision": 1} and Api.messages.llamadas == 2  # dos renderizados
     h = hechos_de(bd, SCAN)
     assert h.metodo == MetodoExtraccion.LLM_VISION and Aviso.SIN_TEXTO in h.avisos
+    assert Aviso.DISCREPANCIA_EXTRACTORES not in h.avisos  # misma lectura → sin discrepancia
+    assert bd.execute("SELECT count(*) FROM cache_llm").fetchone()[0] == 2  # variante dpi130 aparte
+
+
+def test_doble_lectura_discrepante_marca_aviso(bd, tmp_path, monkeypatch):
+    monkeypatch.setattr(etapa, "VISION_DOBLE", True)
+    respuestas = iter(
+        [
+            {**RESPUESTA_P001, "nif_emisor": "898120774"},
+            {**RESPUESTA_P001, "nif_emisor": "B98120774"},
+        ]
+    )
+
+    class Msgs:
+        llamadas = 0
+
+        def create(self, **kw):
+            Msgs.llamadas += 1
+            return api_falsa(next(respuestas)).messages.create(**kw)
+
+    class Api:
+        messages = Msgs()
+
+    monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
+    assert r.ok == 1 and Msgs.llamadas == 2
+    h = hechos_de(bd, SCAN)
+    assert (
+        Aviso.DISCREPANCIA_EXTRACTORES in h.avisos and h.nif_emisor == "898120774"
+    )  # se conserva la 1ª; la norma escala
 
 
 def test_trampa_deja_evidencia_no_orden(bd, tmp_path, monkeypatch):
@@ -246,16 +284,30 @@ def test_presupuesto_corta_y_deja_pendiente(bd, tmp_path, monkeypatch):
 
 # ----------------------------------------------------------------------------- contra la API real (cuestan dinero)
 
+
+def _hay_key() -> bool:
+    a = os.environ.get("ANTHROPIC_API_KEY", "")
+    o = os.environ.get("ALBERTITOS_LLM_API_KEY", "")
+    return (a.startswith("sk-ant-") and not a.endswith("...")) or bool(o)
+
+
 necesita_key = pytest.mark.skipif(
-    not os.environ.get("ANTHROPIC_API_KEY", "").startswith("sk-ant-")
-    or os.environ.get("ANTHROPIC_API_KEY", "").endswith("..."),
-    reason="sin ANTHROPIC_API_KEY real",
+    not _hay_key(), reason="sin key de LLM real (ANTHROPIC_API_KEY o ALBERTITOS_LLM_API_KEY)"
 )
+
+
+@pytest.fixture
+def bd_real(bd, monkeypatch):
+    monkeypatch.delenv("ALBERTITOS_LLM_PROVEEDOR", raising=False)
+    load_dotenv(".env")
+    monkeypatch.setattr(llm.time, "sleep", time.sleep)
+    return bd
 
 
 @pytest.mark.llm
 @necesita_key
-def test_real_factura_con_texto(bd, tmp_path):
+def test_real_factura_con_texto(bd_real, tmp_path):
+    bd = bd_real
     r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
     assert r.ok == 1 and r.tokens_in > 0, r.texto()
     h = hechos_de(bd, TEXTO)
@@ -274,7 +326,8 @@ def test_real_factura_con_texto(bd, tmp_path):
 
 @pytest.mark.llm
 @necesita_key
-def test_real_escaneada_por_vision(bd, tmp_path):
+def test_real_escaneada_por_vision(bd_real, tmp_path):
+    bd = bd_real
     r = etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
     assert r.por_metodo == {"llm_vision": 1}, r.texto()
     h = hechos_de(bd, SCAN)

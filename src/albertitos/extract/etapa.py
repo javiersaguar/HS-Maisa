@@ -19,11 +19,12 @@ import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 from albertitos.core import db
-from albertitos.core.contracts import EstadoEvento, Etapa, Event, InvoiceFacts
+from albertitos.core.contracts import Aviso, EstadoEvento, Etapa, Event, InvoiceFacts
 from albertitos.core.versions import EXTRACTOR_VERSION
 from albertitos.extract import pdf, plantillas, validadores
 from albertitos.extract.llm import ClienteLLM, ErrorLLM, EstadoLLM
@@ -32,6 +33,9 @@ log = logging.getLogger(__name__)
 
 DIRECTORIOS = {1: Path("data/caja/facturas"), 2: Path("data/lote2/facturas")}
 DPI_VISION = int(os.environ.get("ALBERTITOS_DPI_VISION", "150"))
+DPI_VISION_2 = int(os.environ.get("ALBERTITOS_DPI_VISION_2", "130"))
+# Segunda lectura de cada escaneada con otro renderizado; si los campos clave difieren, Aviso.DISCREPANCIA_EXTRACTORES.
+VISION_DOBLE = os.environ.get("ALBERTITOS_VISION_DOBLE", "1") != "0"
 
 
 @dataclass
@@ -105,6 +109,8 @@ def _extraer_uno(
             hechos = plantillas.extraer_por_plantilla(texto, file_id=file_id, sha256=sha)
         if hechos is None:
             hechos, uso = llm.extraer(sha256=sha, file_id=file_id, texto=texto, png=png)
+            if png is not None and VISION_DOBLE:
+                uso = _segunda_lectura(hechos, uso, llm, ruta, sha, file_id)
         hechos.avisos = validadores.validar(hechos)
         db.guardar_hechos(conn, hechos)
         db.registrar_evento(
@@ -159,6 +165,89 @@ def _extraer_uno(
         )
         conn.commit()
         return "error", codigo, {}
+
+
+def _segunda_lectura(
+    hechos: InvoiceFacts, uso: dict[str, Any], llm: ClienteLLM, ruta: Path, sha: str, file_id: str
+) -> dict[str, Any]:
+    """Escaneadas: segunda pasada con otro renderizado. Si los campos clave no coinciden, se marca
+    DISCREPANCIA_EXTRACTORES (la norma escala) y se guarda la evidencia en el uso/evento."""
+    try:
+        png2 = pdf.imagen_png(ruta, dpi=DPI_VISION_2)
+        otra, uso2 = llm.extraer(
+            sha256=sha, file_id=file_id, png=png2, variante=f"dpi{DPI_VISION_2}"
+        )
+    except ErrorLLM as e:  # la segunda lectura es opcional: sin ella, se sigue con la primera
+        log.warning("%s: segunda lectura no disponible (%s)", file_id, e.codigo)
+        return uso
+    difs = validadores.discrepancias(hechos, otra)
+    uso = dict(uso)
+    for k in ("tokens_in", "tokens_out"):
+        uso[k] = int(uso.get(k, 0)) + int(uso2.get(k, 0))
+    uso["coste_eur"] = Decimal(str(uso.get("coste_eur", 0))) + Decimal(
+        str(uso2.get("coste_eur", 0))
+    )
+    if difs:
+        if Aviso.DISCREPANCIA_EXTRACTORES not in hechos.avisos:
+            hechos.avisos.append(Aviso.DISCREPANCIA_EXTRACTORES)
+        uso["discrepancias"] = {k: (str(a), str(b)) for k, (a, b) in difs.items()}
+    return uso
+
+
+def contrastar(
+    conn: sqlite3.Connection, *, n: int = 40, workers: int = 4, semilla: int = 7
+) -> dict[str, Any]:
+    """Pasa el LLM (texto) por `n` facturas que salieron por plantilla y compara con `discrepancias`.
+
+    No toca `hechos`: sólo devuelve el informe (y deja las lecturas en caché con variante 'contraste').
+    Es la única forma de descartar que un parser se equivoque en bloque sobre cientos de facturas."""
+    import random
+    from concurrent.futures import ThreadPoolExecutor as _Pool
+
+    filas = conn.execute(
+        """SELECT f.file_id, f.sha256, f.lote, h.hechos_json FROM hechos h JOIN ficheros f ON f.sha256 = h.sha256
+           WHERE h.extractor_version = ? AND h.metodo = 'plantilla' ORDER BY f.file_id""",
+        (EXTRACTOR_VERSION,),
+    ).fetchall()
+    rng = random.Random(semilla)
+    muestra = rng.sample([dict(f) for f in filas], min(n, len(filas)))
+    estado = EstadoLLM()
+    ruta_db = conn.execute("PRAGMA database_list").fetchone()[2]
+
+    def uno(fila: dict[str, Any]) -> dict[str, Any]:
+        c = db.conectar(ruta_db)
+        try:
+            base = InvoiceFacts.model_validate_json(fila["hechos_json"])
+            texto = pdf.texto_de(ruta_pdf(fila["file_id"], int(fila["lote"] or 1)))
+            cli = ClienteLLM(c, estado=estado)
+            otra, uso = cli.extraer(
+                sha256=fila["sha256"], file_id=fila["file_id"], texto=texto, variante="contraste"
+            )
+            difs = validadores.discrepancias(base, otra)
+            return {
+                "file_id": fila["file_id"],
+                "ok": not difs,
+                "discrepancias": {k: (str(a), str(b)) for k, (a, b) in difs.items()},
+                "tokens": int(uso.get("tokens_in", 0)) + int(uso.get("tokens_out", 0)),
+            }
+        except ErrorLLM as e:
+            return {"file_id": fila["file_id"], "ok": None, "error": e.codigo}
+        finally:
+            c.close()
+
+    with _Pool(max_workers=workers) as pool:
+        resultados = list(pool.map(uno, muestra))
+    coinciden = sum(1 for r in resultados if r["ok"] is True)
+    difieren = [r for r in resultados if r["ok"] is False]
+    fallos = [r for r in resultados if r["ok"] is None]
+    return {
+        "n": len(resultados),
+        "coinciden": coinciden,
+        "difieren": difieren,
+        "fallos": fallos,
+        "tokens": sum(r.get("tokens", 0) for r in resultados),
+        "plantillas_en_bd": len(filas),
+    }
 
 
 def extraer(
