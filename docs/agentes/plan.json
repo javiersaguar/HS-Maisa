@@ -6,12 +6,22 @@
     "E1": [
       "scripts/preflight_lote2.py",
       "tests/test_preflight.py",
-      "src/albertitos/sources/estado_bd.py"
+      "src/albertitos/sources/estado_bd.py",
+      "src/albertitos/extract/llm.py",
+      "tests/test_llm.py",
+      "src/albertitos/extract/CLAUDE.md",
+      "src/albertitos/sources/CLAUDE.md",
+      "docs/adr/0002-plantillas-deterministas-y-contraste-llm.md",
+      "docs/adr/0005-snapshot-del-erp-en-local-y-diff-por-version.md",
+      "docs/agentes/RESILIENCIA-Y-COSTE.md"
     ],
     "E2": [
       "scripts/auditoria_entrega.py",
       "tests/test_auditoria.py",
-      "docs/agentes/AUDITORIA-ENTREGA.md"
+      "docs/agentes/AUDITORIA-ENTREGA.md",
+      "src/albertitos/extract/etapa.py",
+      "tests/test_superpuesto.py",
+      "docs/trampas.md"
     ],
     "E3": [
       "scripts/verificar_material.py",
