@@ -146,7 +146,7 @@ def imagenes_pdf(ruta: Path) -> str:
         )
 
 
-def inventariar(caja: Path, maestro, erp, corte: date):
+def inventariar(facturas_dir: Path, maestro, erp, corte: date):
     filas = []
     facturas = {}
     cobertura = Counter()
@@ -156,7 +156,7 @@ def inventariar(caja: Path, maestro, erp, corte: date):
     def anomalia(file_id, tipo, evidencia):
         filas.append(dict(file_id=file_id, tipo=tipo, evidencia=evidencia, hipotesis=TIPOS[tipo]))
 
-    for ruta in sorted((caja / "facturas").glob("*.pdf")):
+    for ruta in sorted(facturas_dir.glob("*.pdf")):
         file_id = ruta.name
         if not unicodedata.is_normalized("NFC", file_id):
             raise ValueError(f"Nombre fuera de NFC: {file_id!r}")
@@ -281,12 +281,14 @@ def inventariar(caja: Path, maestro, erp, corte: date):
     )
 
 
-def informe(maestro, erp, corte, filas, cobertura, paginas, huella, facturas, hora):
+def informe(
+    maestro, erp, corte, filas, cobertura, paginas, huella, facturas, hora, facturas_dir=None
+):
     grupos = {t: [f for f in filas if f["tipo"] == t] for t in TIPOS}
     por_pedido = erp.por_pedido()
     secciones = [
         f"## Inventario A3 · {hora}",
-        f"Fuentes: `data/caja/facturas/*.pdf`, `{maestro.origen}`, snapshot ERP `{erp.version}`. "
+        f"Fuentes: `{facturas_dir or 'data/caja/facturas'}/*.pdf`, `{maestro.origen}`, snapshot ERP `{erp.version}`. "
         f"Maestro `{maestro.version}`. Corte **{corte}**, parámetro explícito. "
         f"Huella SHA-256 del conjunto ordenado (nombre UTF-8 + NUL + SHA-256 binario por PDF): `{huella}`.",
         "Este inventario describe la Caja presente; no acredita el ZIP/hash oficial. "
@@ -475,10 +477,29 @@ def main():
     parser.add_argument(
         "--db", type=Path, default=Path(os.environ.get("ALBERTITOS_DB", "dist/albertitos.db"))
     )
-    parser.add_argument("--erp", default="v1")
+    parser.add_argument(
+        "--facturas",
+        type=Path,
+        default=None,
+        help="directorio de PDFs a barrer (por defecto <caja>/facturas). Para el lote 2: data/lote2/facturas",
+    )
+    parser.add_argument(
+        "--erp",
+        "--erp-tag",
+        dest="erp",
+        default="v1",
+        help="tag del snapshot ERP en la BD (v1, v2, v2-sim)",
+    )
     parser.add_argument("--fecha-corte", default=os.environ.get("ALBERTITOS_FECHA_CORTE"))
-    parser.add_argument("--csv", type=Path, default=Path("data/fixtures/anomalias.csv"))
+    parser.add_argument(
+        "--csv", "--salida", dest="csv", type=Path, default=Path("data/fixtures/anomalias.csv")
+    )
     parser.add_argument("--docs", type=Path, default=Path("docs/trampas.md"))
+    parser.add_argument(
+        "--sin-docs",
+        action="store_true",
+        help="no reescribe docs/trampas.md (obligatorio al barrer un lote simulado o parcial)",
+    )
     parser.add_argument(
         "--solo-resumen",
         action="store_true",
@@ -497,29 +518,37 @@ def main():
     maestro = cargar_maestro(args.caja / "FINAL_v7_DEFINITIVO_ahorasi.xlsx")
     with closing(db.conectar(args.db, solo_lectura=True)) as conn:
         erp = cargar_erp_bd(conn, args.erp)
-    filas, cobertura, paginas, huella, facturas = inventariar(args.caja, maestro, erp, corte)
+    facturas_dir = args.facturas or (args.caja / "facturas")
+    if not facturas_dir.is_dir():
+        parser.error(f"no existe el directorio de facturas {facturas_dir}")
+    filas, cobertura, paginas, huella, facturas = inventariar(facturas_dir, maestro, erp, corte)
     if not paginas:
         parser.error("no hay PDFs; no se sobrescribe el inventario")
     hora = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M %Z")
-    reporte = informe(maestro, erp, corte, filas, cobertura, paginas, huella, facturas, hora)
+    reporte = informe(
+        maestro, erp, corte, filas, cobertura, paginas, huella, facturas, hora, facturas_dir
+    )
     args.csv.parent.mkdir(parents=True, exist_ok=True)
     with args.csv.open("w", encoding="utf-8", newline="") as salida:
         writer = csv.DictWriter(salida, fieldnames=("file_id", "tipo", "evidencia", "hipotesis"))
         writer.writeheader()
         writer.writerows(filas)
-    anterior = (
-        args.docs.read_text(encoding="utf-8") if args.docs.exists() else "# Trampas de la Caja\n"
-    )
-    bloque = INICIO + "\n\n" + reporte + "\n\n" + FIN
-    if INICIO in anterior and FIN in anterior:
-        antes, resto = anterior.split(INICIO, 1)
-        _, despues = resto.split(FIN, 1)
-        contenido = antes + bloque + despues
-    else:
-        contenido = anterior.rstrip() + "\n\n" + bloque + "\n"
-    args.docs.parent.mkdir(parents=True, exist_ok=True)
-    args.docs.write_text(contenido, encoding="utf-8")
-    if args.solo_resumen:
+    if not args.sin_docs:
+        anterior = (
+            args.docs.read_text(encoding="utf-8")
+            if args.docs.exists()
+            else "# Trampas de la Caja\n"
+        )
+        bloque = INICIO + "\n\n" + reporte + "\n\n" + FIN
+        if INICIO in anterior and FIN in anterior:
+            antes, resto = anterior.split(INICIO, 1)
+            _, despues = resto.split(FIN, 1)
+            contenido = antes + bloque + despues
+        else:
+            contenido = anterior.rstrip() + "\n\n" + bloque + "\n"
+        args.docs.parent.mkdir(parents=True, exist_ok=True)
+        args.docs.write_text(contenido, encoding="utf-8")
+    if True:  # el resumen por categoría sale siempre; el reporte completo sólo sin --solo-resumen
         print(
             tabla(
                 ("Tipo", "Ficheros", "Filas"),
@@ -534,12 +563,12 @@ def main():
             )
         )
         print("Cobertura:", dict(cobertura))
-    else:
+    if not args.solo_resumen:
         print(reporte)
     print(
         f"{len(filas)} filas; {len({f['file_id'] for f in filas})} ficheros; {sum(paginas.values())} PDFs; {time.perf_counter() - inicio:.2f} s; ERP {erp.version}; corte {corte}"
     )
-    print(f"Escritos {args.csv} y {args.docs}")
+    print(f"Escrito {args.csv}" + ("" if args.sin_docs else f" y {args.docs}"))
 
 
 if __name__ == "__main__":
