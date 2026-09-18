@@ -25,7 +25,9 @@ MAESTRO_XLSX = "FINAL_v7_DEFINITIVO_ahorasi.xlsx"
 
 @dataclass
 class ResumenRun:
-    ingeridos: int = 0
+    ingeridos: int = 0  # nuevos o cambiados: lo ya registrado no se vuelve a abrir
+    ficheros: int = 0
+    segundos: float = 0.0
     maestro_version: str = ""
     erp_version: str = ""
     extraidos: int | None = None  # None = extract no corrió (saltado o no implementado)
@@ -48,7 +50,7 @@ class ResumenRun:
             else f"no corrió ({self.extract_nota})"
         )
         lineas = [
-            f"ingest: {self.ingeridos} · maestro {self.maestro_version} · erp {self.erp_version}",
+            f"ingest: {self.ingeridos} nuevos de {self.ficheros} · maestro {self.maestro_version} · erp {self.erp_version}",
             f"extract: {extract} · sin hechos: {len(self.sin_hechos)}"
             + (
                 f" → {self.sin_hechos[:5]}{' …' if len(self.sin_hechos) > 5 else ''}"
@@ -63,6 +65,10 @@ class ResumenRun:
             lineas.append(
                 f"NO se escribe la entrega (la anterior, si había, sigue intacta):\n{self.rechazo.texto()}"
             )
+        fps = self.ficheros / self.segundos if self.segundos else 0.0
+        lineas.append(
+            f"tiempo: {self.segundos:.1f} s · {self.ficheros} ficheros · {fps:.1f} ficheros/s"
+        )
         return "\n".join(lineas)
 
 
@@ -92,6 +98,7 @@ def correr(
 ) -> ResumenRun:
     from albertitos.sources import excel, snapshot
 
+    t0 = time.perf_counter()
     r = ResumenRun()
     r.ingeridos = etapas.ingest(conn, caja / "facturas", 1)
     if lote2 is not None and (lote2 / "facturas").exists():
@@ -126,6 +133,8 @@ def correr(
         r.entregas = package.empaquetar(conn, entrega, caja, lote2, con_traza=con_traza)
     except package.EntregaInvalida as ex:
         r.rechazo = ex.informe
+    r.ficheros = conn.execute("SELECT count(*) n FROM ficheros").fetchone()["n"]
+    r.segundos = time.perf_counter() - t0
     return r
 
 

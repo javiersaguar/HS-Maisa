@@ -34,14 +34,21 @@ log = logging.getLogger(__name__)
 
 
 def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
-    """Registra cada PDF por sha256. Repetir no duplica; renombrar un PDF actualiza su file_id."""
+    """Registra cada PDF por sha256 y devuelve cuántos son nuevos o cambiaron (nombre, lote).
+    Repetir no duplica filas ni eventos: lo ya registrado sólo se hashea. Renombrar actualiza el file_id."""
     from albertitos.extract import pdf  # import tardío: pymupdf tarda en cargar
 
+    conocidos = {
+        r["sha256"]: (r["file_id"], r["lote"])
+        for r in conn.execute("SELECT sha256, file_id, lote FROM ficheros")
+    }
     n = 0
     for ruta in sorted(Path(directorio).glob("*.pdf")):
         t0 = time.perf_counter()
         file_id = unicodedata.normalize("NFC", ruta.name)
         sha = sha256_fichero(ruta)
+        if conocidos.get(sha) == (file_id, lote):
+            continue
         try:
             paginas, tiene_texto = pdf.info(ruta)
             db.guardar_fichero(

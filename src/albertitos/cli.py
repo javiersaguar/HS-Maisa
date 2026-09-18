@@ -173,7 +173,7 @@ def ingest(directorio: Path = typer.Option(CAJA / "facturas", "--dir"), lote: in
     from albertitos.pipeline import etapas
 
     n = etapas.ingest(_conn(), directorio, lote)
-    rprint(f"[green]{n} ficheros[/green] ingeridos de {directorio} (lote {lote})")
+    rprint(f"[green]{n} ficheros nuevos o cambiados[/green] en {directorio} (lote {lote})")
 
 
 @app.command()
@@ -452,11 +452,15 @@ def package(
 
 
 @app.command()
-def bench() -> None:
+def bench(
+    desde: str | None = typer.Option(
+        None, help="sólo eventos con ts >= este ISO (UTC), p. ej. el inicio de un run"
+    ),
+) -> None:
     """Cifras medidas desde el log de eventos (para docs/benchmark.md)."""
     from albertitos.pipeline import bench as b
 
-    print(b.texto(b.medir(_conn(solo_lectura=True))))
+    print(b.texto(b.medir(_conn(solo_lectura=True), desde=desde)))
 
 
 @app.command()

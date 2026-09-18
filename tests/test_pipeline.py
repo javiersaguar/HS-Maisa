@@ -9,6 +9,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from albertitos.core import db
 from albertitos.core.contracts import InvoiceFacts, MetodoExtraccion
 from albertitos.core.hashing import sha256_fichero
@@ -73,6 +75,9 @@ def test_run_sin_llm_entrega_valida_e_idempotente(conn, caja, erp, tmp_path):
     r2 = _correr(conn, caja_tmp, caja, entrega)
     assert r2.ok and r2.duplicados == 0
     assert salida.read_bytes() == primera  # dos run → mismo JSONL, byte a byte
+    assert (r2.ingeridos, r2.ficheros) == (0, 3)  # lo ya registrado no se reabre
+    n_ingest = conn.execute("SELECT count(*) FROM eventos WHERE etapa='ingest'").fetchone()[0]
+    assert n_ingest == 3  # un evento por fichero, no uno por run
 
     inf = validar_jsonl(salida, listar_pdfs(caja_tmp / "facturas"), 1)
     assert inf.ok and inf.n_lineas == 3, inf.texto()
@@ -148,3 +153,30 @@ def test_run_con_llm_caido_deja_pendiente_no_paga_y_reanuda(conn, caja, erp, tmp
     r = _correr(conn, caja_tmp, caja, entrega)  # otra vez: nada nuevo por fichero en emit
     emit = [e["estado"] for e in db.traza(conn, ESCANEADA)["eventos"] if e["etapa"] == "emit"]
     assert emit == ["pendiente", "ok"]
+
+
+def test_bench_mide_la_ventana_y_filtra_desde(conn):
+    from datetime import UTC, datetime
+
+    from albertitos.core.contracts import EstadoEvento, Etapa, Event
+    from albertitos.pipeline import bench
+
+    def ev(fid: str, seg: int, estado=EstadoEvento.OK, **kw):
+        ts = datetime(2026, 9, 19, 10, 0, seg, tzinfo=UTC)
+        db.registrar_evento(
+            conn, Event(file_id=fid, etapa=Etapa.EXTRACT, estado=estado, ts=ts, **kw)
+        )
+
+    ev("viejo.pdf", 0, latencia_ms=1)  # de una pasada anterior
+    for i, fid in enumerate(["a.pdf", "b.pdf", "c.pdf"]):
+        ev(fid, 10 + i, latencia_ms=100 * (i + 1), tokens_in=10, coste_eur=Decimal(0))
+    ev("c.pdf", 11, EstadoEvento.RETRY, error_codigo="LLM-429")
+
+    todo = bench.medir(conn)["etapas"]["extract"]
+    assert todo["ficheros"] == 4 and todo["fps"] == pytest.approx(4 / 12)
+    m = bench.medir(conn, desde="2026-09-19T10:00:05")
+    e = m["etapas"]["extract"]
+    assert (e["ficheros"], e["p50_ms"], e["tin"], e["eur"]) == (3, 200.0, 30, 0)
+    assert e["fps"] == pytest.approx(3 / 2)
+    assert m["reintentos"] == {"LLM-429": 1}
+    assert "1.5 ficheros/s" in bench.texto(m)
