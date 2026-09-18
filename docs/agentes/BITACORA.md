@@ -130,3 +130,9 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): nada más este ciclo.
 - necesito / bloqueo: PIDO A Miguel: `hechos import data/fixtures/hechos_caja.jsonl` → `decide` → `package` antes de las 02:00. PIDO A Mónica: política para `discrepancia_extractores` (5 escaneadas), `importe_ambiguo` (2), `confianza=0.6` (6), `fecha=None` (3).
 - para los demás: la BD `dist/albertitos.db` de Javier tiene los 500 hechos y 102 lecturas en caché; en otros portátiles, `hechos import` evita gastar tokens.
+
+### 22:45 · plataforma · ciclo 1 cerrado / ciclo 2 abierto (2 agentes)
+- hice: parte del ciclo 1 archivado en `partes/PARTE-01.md`; `PARTE.md` vacío para B1/B2; `plan.json` ciclo 2; `PLAN-02.md` con los prompts. `extract/etapa.py`: `ALBERTITOS_DIR_LOTE2`/`ALBERTITOS_DIR_CAJA` (env) para ensayar el lote 2 sin tocar `data/lote2/`.
+- toco ahora (ficheros): nada más; escriben B1 y B2.
+- necesito / bloqueo: Javier hace `git push` + merge a main antes de lanzar (main ya tiene hasta 3e217c0; faltan ef4d441, 0779512 y este).
+- para los demás: B1 = ensayo del lote 2 en frío (sources/, inventario, skill lote2); B2 = resiliencia demostrable y coste real (extract/llm+etapa, bench). Miguel: `hechos import data/fixtures/hechos_caja.jsonl` → `decide` → `package` (repliegue 1, 02:00).

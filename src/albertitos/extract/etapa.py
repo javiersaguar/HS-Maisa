@@ -31,7 +31,12 @@ from albertitos.extract.llm import ClienteLLM, ErrorLLM, EstadoLLM
 
 log = logging.getLogger(__name__)
 
-DIRECTORIOS = {1: Path("data/caja/facturas"), 2: Path("data/lote2/facturas")}
+DIRECTORIOS = {
+    1: Path(os.environ.get("ALBERTITOS_DIR_CAJA", "data/caja/facturas")),
+    2: Path(
+        os.environ.get("ALBERTITOS_DIR_LOTE2", "data/lote2/facturas")
+    ),  # ensayos: apuntar a un lote simulado
+}
 DPI_VISION = int(os.environ.get("ALBERTITOS_DPI_VISION", "150"))
 # Segunda lectura de cada escaneada: recorte de la parte superior (identificadores) a más resolución.
 # Medido el 18/09: a 130 dpi la segunda lectura era PEOR que la primera (B99 por B98, 51,27 por 61,27) y
