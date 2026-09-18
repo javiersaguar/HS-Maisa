@@ -120,6 +120,38 @@ Los 5 salen en **`intento=2`**, visible en `eventos`:
 **Mejora de este ciclo:** el gateway manda `Retry-After` en el 429 y `llm.py` lo tiraba, esperando a
 ciegas 1/2/4 s. Ahora se respeta lo que pide el proveedor (tope de 60 s para no colgar el lote).
 
+### (b bis) Con el proveedor caído, el breaker también salta — 0,8 s  *(corregido por E1, 19/09)*
+
+Hasta este ciclo, `llm_down` lanzaba el error **antes** de contar el fallo: el contador no subía y con
+una caída el breaker no se abría nunca, aunque el guion lo prometiera. Ya cuenta igual que un fallo real.
+Comando reproducible, sobre una BD de ensayo (nunca la real) y sin salir a la red:
+
+```bash
+export ALBERTITOS_DB=dist/ensayo/breaker.db ALBERTITOS_CHAOS=dist/ensayo/breaker.chaos.json
+uv run albertitos db init && uv run albertitos ingest --dir data/caja/facturas
+ls data/caja/facturas/scan_0*.pdf | head -8 | xargs -n1 basename > dist/ensayo/ocho_escaneadas.txt
+uv run albertitos chaos --llm-down
+uv run albertitos extract --fixture dist/ensayo/ocho_escaneadas.txt --workers 1
+```
+
+```
+extract: 0/8 ok · 8 pendientes · 0 pdf ilegibles · métodos {} · errores
+{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3} · tokens 0/0 · 0.0000 EUR · 0.5 s (16.21 ficheros/s)
+
+  scan_001.pdf   pendiente  LLM-DOWN           LLM-DOWN: caos: proveedor caído
+  …
+  scan_006.pdf   pendiente  LLM-CIRCUIT-OPEN   LLM-CIRCUIT-OPEN: 5 fallos seguidos; reabre en 60s
+  scan_007.pdf   pendiente  LLM-CIRCUIT-OPEN   LLM-CIRCUIT-OPEN: 5 fallos seguidos; reabre en 60s
+  scan_008.pdf   pendiente  LLM-CIRCUIT-OPEN   LLM-CIRCUIT-OPEN: 5 fallos seguidos; reabre en 60s
+```
+
+Lo que se enseña: **a partir del quinto fallo dejamos de castigar al proveedor**, y lo pendiente sigue
+pendiente (nada se paga a ciegas). Con hilos también corta: el breaker se comprueba antes de cada
+intento, no sólo al empezar cada fichero.
+
+`make demo-caos` usa 3 facturas y 3 hilos, así que ahí el breaker **no** llega a verse con el umbral de
+5: los tres entran antes de que ninguno falle. Para enseñarlo en esa demo, `ALBERTITOS_BREAKER_FALLOS=2`.
+
 ### (c) El modelo devuelve basura — 23,2 s, y salta el circuit breaker
 
 ```

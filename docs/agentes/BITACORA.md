@@ -309,3 +309,55 @@ Plantilla (cópiala tal cual):
 - hice: merge de los ciclos 3 y 4 en `main` (`5eeb562`, 261 tests; conflicto sólo en el índice de ADRs, resuelto conservando los ocho); `plan.json` corregido con `scripts/bench_escala.py`; plan del sábado en `docs/PLAN-SABADO.md`; parte del ciclo 4 archivado; `PLAN-05.md`.
 - toco ahora (ficheros): nada más; escriben E1, E2 y E3 por la mañana.
 - para los demás: el ciclo 5 convierte en comprobaciones automáticas las tres cosas que anoche estuvieron a punto de costarnos la elegibilidad: BD contaminada por el lote simulado, `marcar_duplicados` que sólo corre dentro de `run`, y el hash del material. E1 preflight · E2 auditoría de entrega · E3 materiales + runbook cronometrado. Miguel: te pedirán enganchar la auditoría de E2 a `package`.
+
+### 01:50 · E1 · arranco preflight, breaker y documentación
+- hice: leídos PLAN-05 (versión ampliada), CLAUDE.md de extract/ y sources/, skill /lote2, PARTE-04 (D1 y D2) y ESCALA-10K §4. BD limpia (500 del lote 1, 0 fantasmas), caos apagado, snapshots erp v1 y v2-sim + maestro.
+- toco ahora (ficheros): `sources/estado_bd.py` y `scripts/preflight_lote2.py` con sus tests; después el breaker en `extract/llm.py`; al final la documentación (ADR-0002, ADR-0005, los dos CLAUDE.md de módulo y RESILIENCIA §4).
+- necesito / bloqueo: nada. No toco la BD real salvo con `--limpiar`/`--respaldar` explícitos, ni `dist/entrega/`, ni etapa.py (E2), ni la skill (E3).
+- para los demás: E2, el preflight expondrá `sources.estado_bd` con funciones puras (ficheros_fantasma, sin_hechos, sin_decision, huerfanos, ultimo_erp, resumen_estado): impórtalas, no las dupliques. Aviso ya de un riesgo que voy a cubrir: el último snapshot del ERP por fecha es **v2-sim**, así que `decide`/`run` sin `--erp` decidirían con el simulado.
+
+### 01:48 · E2 · arranco auditoría de entrega y DOCUMENTO_SUPERPUESTO
+- hice: leídos PLAN-05 (versión ampliada, commit 3dfb6af), CLAUDE.md, reglas de entrega y texto-es-dato, DECISIONES-NORMA, trampas.md (D2) y PARTE-04. `dist/entrega/outcomes.jsonl` = `5ec17aaa…41d73a3` antes de empezar.
+- toco ahora (ficheros): `scripts/auditoria_entrega.py` + `tests/test_auditoria.py` + `docs/agentes/AUDITORIA-ENTREGA.md`; después `extract/etapa.py` (segunda lectura como evidencia) + `tests/test_superpuesto.py` + `docs/trampas.md`. Reextracción sólo en una copia: `dist/ensayo/e2.db`.
+- necesito / bloqueo: nada.
+- para los demás: E1, un dato para tu preflight: en la BD real el último snapshot del ERP por `creado_en` es **v1** (19:55 UTC), no v2-sim (18:46 UTC); lo he mirado en solo lectura a la 01:25. Con el orden actual, `decide` sin `--erp` usa v1. El riesgo aparece en cuanto alguien haga un `erp pull` del simulado. E3: mi auditoría tendrá `--db`, directorios por lote (`--dir-lote1`, `--dir-lote2`) y `--json`. Tus funciones de `estado_bd.py`, E1: las importo si están cuando las necesite; si no, SQL propio.
+
+### 01:47 · E3 · arranco verificador y ensayo aislado
+- hice: leídos PLAN-05 adjunto y ampliación local, skill lote2, antecedente B1, ADR-0006 y PLAN-SABADO. Rama javier/ingesta confirmada.
+- toco ahora (ficheros): scripts/verificar_material.py, tests/test_material.py, .claude/skills/lote2/SKILL.md, docs/agentes/ENSAYO-LOTE2.md. Ensayo sólo en dist/ensayo/ensayo.db por backup SQLite y salida dist/ensayo/entrega.
+- necesito / bloqueo: PIDO A Miguel: run actual no admite --erp; requisito del plan exige ERP explícito. Añadir --erp a CLI/run; mientras ensayaré el flujo completo con destino ERP explícito mediante API si lo permite, o variante extract + marcar_duplicados + decide --erp justificada. PIDO A E1/E2: publicar opciones --db, directorios por lote y --erp explícito para ejecutar vuestros scripts sobre el simulado sin falsos fantasmas.
+- para los demás: no escribo BD/entrega reales, data/, sources/ ni extract/. Hashes antes/después incluidos en parte.
+
+### 01:53 · E3 · verificador probado y ensayo arrancado
+- hice: 17 tests verdes en 0,34 s; verificador sólo lee ZIP/directorio y v1. Backup SQLite en dist/ensayo/ensayo.db, preflight E1 sale 0 (0,174 s), 10 PDFs simulados APTO (0,350 s), caja verify --lote 2 --dir sim --esperados 10 OK (0,070 s). No se genera manifiesto simulado: manifest escribe data/lote2.sha256 fijo.
+- toco ahora (ficheros): script/tests E3 y runbook; ensayando sólo copia y dist/ensayo/entrega.
+- necesito / bloqueo: run carece --erp incluso por API. Voy a medir run íntegro en la copia sólo tras comprobar que el snapshot más reciente es v1 y verificar todas las decisiones resultantes contra v1. En el runbook operativo dejaré alternativa explícita extract + reprocess --todo --erp v1 (incluye marcar_duplicados), hasta que Miguel añada --erp.
+- para los demás: E1, --dir-lote2 sim/ se respeta pero el texto aún rotula data/lote2/facturas; ámbar de 10 simuladas esperado. E2, sigo esperando auditoría con --dir-lote2; no tocaré tu código.
+
+### 02:12 · E2 · auditoría de entrega lista (63abec8)
+- hice: `scripts/auditoria_entrega.py` (sólo lectura, 0,3 s sobre la BD real) + `tests/test_auditoria.py` (10 tests, 0,1 s, sin red). Rojos: fantasmas · conjunto sin decisión · pago doble · duplicado sin marcar con algún PAGAR · PAGAR que no cuadra con el maestro/ERP con que se decidió · decisión tomada con otros hechos · evidencia falsa ("None", cita que no está en el PDF, cita vieja en el motivo de R6) · entrega en disco inválida. Ámbar: duplicado sin marcar sin PAGAR · hechos reescritos tras decidir · evidencia no literal · reparto > 15 % ESCALAR o > 5 % NO_PAGAR · PAGAR con confianza < 1 · entrega en disco desfasada.
+- verificado: contra `dist/albertitos.db` → `VEREDICTO: ROJO` sólo por `scan_025.pdf` (texto_sospechoso = 'None' y el motivo de R6 lo cita); ámbar: 5 PAGAR con confianza 0,6 (scan_006, 009, 011, 012, 017). 0 pago doble, 0 PAGAR incoherentes de 443, 0 decisiones viejas, 29 evidencias de capa de texto literales.
+- toco ahora (ficheros): `extract/etapa.py` (la segunda lectura también aporta evidencia) + `tests/test_superpuesto.py`; después `docs/trampas.md` y `docs/agentes/AUDITORIA-ENTREGA.md`.
+- para los demás:
+  - E3: `uv run python scripts/auditoria_entrega.py --db <bd> --lote 1|2|ambos --dir-lote1 <dir> --dir-lote2 <dir> --entrega <dir> [--json]`. Sale 1 si hay rojo. Para el simulado: `--db dist/ensayo/ensayo.db --dir-lote2 data/fixtures/lote2_sim/facturas --entrega dist/ensayo/entrega`. Ojo: los `L2-*` son copias del lote 1, así que `pago_doble`/duplicados saldrán si alguien decide sin `marcar_duplicados`, y los fantasmas saldrán si el directorio del lote 2 no coincide con el ingerido.
+  - PIDO A Miguel: que `package` (o `/entrega`) ejecute `scripts/auditoria_entrega.py` antes de escribir y se niegue si sale 1. Referencia del lote 1 para comparar: 443 PAGAR · 48 ESCALAR · 9 NO_PAGAR (v3, ERP v1, maestro 80911e429c6c).
+
+### 01:54 · E3 · run completo y diff medidos
+- hice: ZIP simulado sólo en dist/ensayo con 10 PDF+CSV verificado (3 altas,2 cambios) en 0,429 s. ingest 0,233 s; run íntegro 1,380 s (10 extraídos, 0 pendientes, 20 marcas duplicado, 510 decisiones con ERP v1 comprobado). Es caliente: las 2 escaneadas salen de caché.
+- resultado: 9 originales del lote 1 PAGAR→ESCALAR por los 10 duplicados simulados; el décimo original ya escalaba. ERP pull v2-sim 3,969 s (519 asientos,31 consultas,3 reintentos); diff 0,135 s; reprocess --impacted --erp v2-sim 0,220 s: 2 de 510 recalculadas, 508 intactas por diff. Inventario --con-hechos 0,393 s (15 filas/10 ficheros).
+- toco ahora (ficheros): skill y ensayo; esperando auditoría E2 para cerrar antes de empaquetar los dos JSONL.
+- necesito / bloqueo: PIDO A E2: avisa cuando auditoria_entrega.py esté lista; la copia contiene scan_025 con evidencia None heredada, mediré el rojo sin arreglar decisiones.
+- para los demás: no se ejecutó manifest simulado porque escribe data/lote2.sha256; verify --dir sí funciona. BD y entrega reales siguen fuera de mis escrituras.
+
+### 02:20 · E1 · cierro: preflight, breaker que se abre de verdad y documentación al día
+- hice: **A** `scripts/preflight_lote2.py` + `sources/estado_bd.py` (9 comprobaciones, salida 1 en rojo, `--limpiar` y `--respaldar` con la API de backup; contra la BD real: todo verde, y ya hay `dist/albertitos.db.bak`). **B** el breaker: `llm_down` lanzaba el error antes de contar el fallo, así que no se abría nunca; ahora `extract --fixture <8 escaneadas> --workers 1` con el proveedor caído da `{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3}` en 0,5 s, y corta también con hilos. **C** ADR-0002 y 0005 con las cifras definitivas, RESILIENCIA §3 (comando del breaker) y §4 (nota: la visión real es 0,065-0,106 f/s, no 0,22), y los dos CLAUDE.md de módulo reescritos. `make check`: 299.
+- corrijo mi entrada de las 01:50: el último snapshot del ERP **es v1**, como decía E2; el riesgo sólo aparece si alguien hace `erp pull` del simulado. El preflight lo vigila igualmente.
+- **RESPONDO A E3:** el preflight acepta `--db`, `--dir-lote1`, `--dir-lote2`, `--fixture`, `--erp-url`, `--erp-lote2`, `--erp-esperado`, `--limpiar` y `--respaldar`. Con `--db dist/ensayo/ensayo.db` y los directorios del simulado no verás falsos fantasmas.
+- **PIDO A Alfonso:** para el minuto 8-10, usa el comando de `RESILIENCIA-Y-COSTE.md §3 (b bis)`: 8 escaneadas y un hilo, 0,8 s, y se ve el salto de `LLM-DOWN` a `LLM-CIRCUIT-OPEN`. `make demo-caos` fija 3 hilos y 3 facturas, así que ahí el breaker no se ve con el umbral por defecto.
+- **PIDO A Miguel:** que `demo_caos.py` respete `ALBERTITOS_WORKERS` del entorno, y que `ALBERTITOS_BREAKER_FALLOS`/`_SEGUNDOS` entren en `.env.example` (no son míos).
+
+### 01:56 · E3 · auditoría bloquea cierre correctamente
+- hice: auditoría E2 integrada en la copia (0,244 s, exit 1): único rojo es scan_025.pdf con evidencia None heredada (campo y motivo). No hay fantasmas, pagos duplicados, PAGAR incoherentes ni decisiones con otros hechos. Lote2=10 ESCALAR, esperado al duplicar 10 originales.
+- toco ahora (ficheros): runbook con corte obligatorio antes de package si hay rojo, y ensayo con cifras calientes/0 tokens claramente separadas de visión fría.
+- necesito / bloqueo: PIDO A E2: cuando quede listo el detector, necesito repetir en mi copia únicamente la reextracción de scan_025 desde caché para ensayar la recuperación completa; registraré el cambio bajo norma v3, sin aplicar nada a la BD real y sin fijar la política de Mónica.
+- para los demás: ejecutar extract + reprocess --todo --erp <tag> es alternativa disponible a run --erp (ausente); reprocess incluye marcar_duplicados. No habrá package final hasta pasar auditoría.
