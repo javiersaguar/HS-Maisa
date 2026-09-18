@@ -211,6 +211,7 @@ def test_escaneada_va_por_vision_con_doble_lectura(bd, tmp_path, monkeypatch):
 
 def test_doble_lectura_discrepante_marca_aviso(bd, tmp_path, monkeypatch):
     monkeypatch.setattr(etapa, "VISION_DOBLE", True)
+    monkeypatch.setattr(etapa, "RECONCILIAR_MAESTRO", False)
     respuestas = iter(
         [
             {**RESPUESTA_P001, "nif_emisor": "898120774"},
@@ -332,3 +333,70 @@ def test_real_escaneada_por_vision(bd_real, tmp_path):
     assert r.por_metodo == {"llm_vision": 1}, r.texto()
     h = hechos_de(bd, SCAN)
     assert h.total is not None and h.nif_emisor is not None
+
+
+def _dos_lecturas(monkeypatch, primera: dict, segunda: dict):
+    respuestas = iter([primera, segunda])
+
+    class Msgs:
+        llamadas = 0
+
+        def create(self, **kw):
+            Msgs.llamadas += 1
+            return api_falsa(next(respuestas)).messages.create(**kw)
+
+    class Api:
+        messages = Msgs()
+
+    monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
+    return Msgs
+
+
+def test_reconciliacion_con_maestro_elige_la_lectura_respaldada(bd, tmp_path, monkeypatch, maestro):
+    """Dos lecturas discrepan en NIF e IBAN; una coincide con el proveedor del pedido → se elige con evidencia."""
+    from albertitos.sources import snapshot
+
+    monkeypatch.setattr(etapa, "VISION_DOBLE", True)
+    monkeypatch.setattr(etapa, "RECONCILIAR_MAESTRO", True)
+    snapshot.guardar_maestro(
+        bd, maestro
+    )  # PO-2026-0001 → P001 (B46102331, ES2100491500051234567890)
+    base = {**RESPUESTA_P001, "pedido": "PO-2026-0001"}
+    _dos_lecturas(
+        monkeypatch,
+        {**base, "nif_emisor": "B45102331", "iban": "ES21 0049 1500 0512 3456 7890"},
+        {**base, "nif_emisor": "B46102331", "iban": "ES21 0049 1500 0512 3456 7891"},
+    )
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
+    assert r.ok == 1
+    h = hechos_de(bd, SCAN)
+    assert (
+        h.nif_emisor == "B46102331" and h.iban == "ES2100491500051234567890"
+    )  # una lectura de cada, la del maestro
+    assert (
+        Aviso.DISCREPANCIA_EXTRACTORES not in h.avisos
+        and h.confianza == etapa.CONFIANZA_RECONCILIADA
+    )
+    ev = bd.execute("SELECT detalle FROM eventos WHERE etapa='extract' AND estado='ok'").fetchone()[
+        0
+    ]
+    assert "reconciliado=" in ev and "B45102331" in ev  # ambas lecturas quedan como evidencia
+
+
+def test_reconciliacion_sin_evidencia_mantiene_discrepancia(bd, tmp_path, monkeypatch, maestro):
+    from albertitos.sources import snapshot
+
+    monkeypatch.setattr(etapa, "VISION_DOBLE", True)
+    monkeypatch.setattr(etapa, "RECONCILIAR_MAESTRO", True)
+    snapshot.guardar_maestro(bd, maestro)
+    base = {**RESPUESTA_P001, "pedido": "PO-2026-0001"}
+    _dos_lecturas(
+        monkeypatch, {**base, "nif_emisor": "B45102331"}, {**base, "nif_emisor": "B44102331"}
+    )  # ninguna es la del maestro
+    etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
+    h = hechos_de(bd, SCAN)
+    assert (
+        Aviso.DISCREPANCIA_EXTRACTORES in h.avisos
+        and h.nif_emisor == "B45102331"
+        and h.confianza is None
+    )

@@ -1,31 +1,27 @@
 {
-  "ciclo": 1,
+  "ciclo": 2,
   "rama": "javier/ingesta",
-  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md"],
+  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md", "docs/agentes/plan.json"],
   "agentes": {
-    "A1": [
-      "src/albertitos/extract/etapa.py",
-      "src/albertitos/extract/llm.py",
-      "tests/test_llm.py",
-      "data/fixtures/hechos_muestra.jsonl"
-    ],
-    "A2": [
-      "src/albertitos/extract/plantillas.py",
-      "src/albertitos/extract/validadores.py",
-      "src/albertitos/extract/instrucciones.py",
-      "src/albertitos/extract/pdf.py",
-      "tests/test_extract.py",
-      "tests/test_plantillas.py"
-    ],
-    "A3": [
+    "B1": [
       "src/albertitos/sources/*",
       "tests/test_erp.py",
       "tests/test_excel.py",
       "tests/test_snapshot.py",
       "scripts/inventario_trampas.py",
+      "data/fixtures/lote2_sim/*",
+      "data/fixtures/lote2_sim/facturas/*",
       "docs/trampas.md",
-      "data/fixtures/anomalias.csv",
-      "data/fixtures/erp_lote2_simulado.csv"
+      "docs/agentes/ENSAYO-LOTE2.md",
+      ".claude/skills/lote2/SKILL.md"
+    ],
+    "B2": [
+      "src/albertitos/extract/llm.py",
+      "src/albertitos/extract/etapa.py",
+      "tests/test_llm.py",
+      "scripts/bench_llm.py",
+      "docs/agentes/RESILIENCIA-Y-COSTE.md",
+      ".env.example"
     ]
   }
 }

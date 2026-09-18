@@ -103,7 +103,32 @@ TOOL_OPENAI = {
 }
 CODIGOS_REINTENTABLES = {408, 409, 425, 429, 500, 502, 503, 504}
 MAX_TOKENS_TEXTO = int(os.environ.get("ALBERTITOS_MAX_TOKENS_TEXTO", "2000"))
-MAX_TOKENS_VISION = int(os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "8000"))  # qwen3.6 razona ~3000 tokens antes de la tool call
+MAX_TOKENS_VISION = int(
+    os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "8000")
+)  # qwen3.6 razona ~3000 tokens antes de la tool call
+
+
+def _peticion_usuario(texto: str | None, intento: int) -> str:
+    """El texto del usuario. En reintentos cambia ligeramente: el gateway cachea por cuerpo de petición y,
+    si no, tres reintentos idénticos devuelven la misma respuesta vacía al instante."""
+    base = "Extrae los campos de esta factura.\n\n" + (texto or "(imagen adjunta)")
+    if intento > 1:
+        base += f"\n\n(Lectura {intento}: responde únicamente con la herramienta registrar_hechos.)"
+    return base
+
+
+def _json_en_texto(contenido: str) -> dict[str, Any] | None:
+    contenido = contenido.strip()
+    if contenido.startswith("```"):
+        contenido = contenido.strip("`").split("\n", 1)[-1].rsplit("```", 1)[0]
+    ini, fin = contenido.find("{"), contenido.rfind("}")
+    if ini == -1 or fin <= ini:
+        return None
+    try:
+        obj = json.loads(contenido[ini : fin + 1])
+    except ValueError:
+        return None
+    return obj if isinstance(obj, dict) else None
 
 
 def proveedor_por_defecto() -> str:
@@ -212,6 +237,9 @@ class ClienteLLM:
                 db.ahora_iso(),
             ),
         )
+        # Commit inmediato: sin él, el hilo retiene el bloqueo de escritura durante la siguiente
+        # llamada de red (20-40 s en visión) y los demás hilos mueren con "database is locked".
+        self.conn.commit()
 
     def coste(self, tin: int, tout: int) -> Decimal:
         return (Decimal(tin) * self.precio_in + Decimal(tout) * self.precio_out) / Decimal(
@@ -304,9 +332,9 @@ class ClienteLLM:
                 if chaos.modo() == "llm_429" and intento == 1:
                     raise ErrorLLM("LLM-429", "caos: rate limit")
                 if self.proveedor == "anthropic":
-                    datos, tin, tout = self._llamar_anthropic(modelo, texto, png)
+                    datos, tin, tout = self._llamar_anthropic(modelo, texto, png, intento)
                 else:
-                    datos, tin, tout = self._llamar_openai(modelo, texto, png)
+                    datos, tin, tout = self._llamar_openai(modelo, texto, png, intento)
                 if chaos.modo() == "llm_invalid":
                     raise ErrorLLM("LLM-INVALID", "caos: respuesta inválida")
                 eur = self._registrar_exito(tin, tout)
@@ -335,7 +363,7 @@ class ClienteLLM:
         raise ErrorLLM(codigo, str(ultimo)[:200])
 
     def _llamar_anthropic(
-        self, modelo: str, texto: str | None, png: bytes | None
+        self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1
     ) -> tuple[dict[str, Any], int, int]:
         import anthropic
 
@@ -354,7 +382,7 @@ class ClienteLLM:
         contenido.append(
             {
                 "type": "text",
-                "text": "Extrae los campos de esta factura.\n\n" + (texto or "(imagen adjunta)"),
+                "text": _peticion_usuario(texto, intento),
             }
         )
         try:
@@ -382,12 +410,12 @@ class ClienteLLM:
         return dict(bloque.input), int(r.usage.input_tokens), int(r.usage.output_tokens)
 
     def _llamar_openai(
-        self, modelo: str, texto: str | None, png: bytes | None
+        self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1
     ) -> tuple[dict[str, Any], int, int]:
         contenido: list[dict[str, Any]] = [
             {
                 "type": "text",
-                "text": "Extrae los campos de esta factura.\n\n" + (texto or "(imagen adjunta)"),
+                "text": _peticion_usuario(texto, intento),
             }
         ]
         if png is not None:
@@ -424,9 +452,12 @@ class ClienteLLM:
             d = r.json()
             msg = d["choices"][0]["message"]
             llamadas = msg.get("tool_calls") or []
-            if not llamadas:
-                raise ErrorLLM("LLM-INVALID", f"sin tool_calls: {str(msg.get('content'))[:80]}")
-            datos = json.loads(llamadas[0]["function"]["arguments"])
+            if llamadas:
+                datos = json.loads(llamadas[0]["function"]["arguments"])
+            else:  # algunos modelos devuelven el JSON en content en vez de tool_call: se acepta si es un objeto
+                datos = _json_en_texto(str(msg.get("content") or ""))
+                if datos is None:
+                    raise ErrorLLM("LLM-INVALID", f"sin tool_calls: {str(msg.get('content'))[:80]}")
             uso = d.get("usage") or {}
             return datos, int(uso.get("prompt_tokens") or 0), int(uso.get("completion_tokens") or 0)
         except (KeyError, ValueError, TypeError) as e:
