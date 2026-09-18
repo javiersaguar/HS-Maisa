@@ -19,6 +19,9 @@ from albertitos.sources import chaos
 
 load_dotenv(".env")
 
+# La de verdad, capturada antes de que el fixture `bd` la anule (los tests de camino LLM la quitan).
+PLANTILLA_REAL = plantillas.extraer_por_plantilla
+
 TEXTO = "2026-01-08_P001.pdf"
 SCAN = "scan_001.pdf"
 TRAMPA = "F26-2201_transportes.pdf"
@@ -191,7 +194,9 @@ def test_api_simulada_extrae_cachea_y_segunda_pasada_gratis(bd, tmp_path, monkey
     monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
     r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
     assert (r.ok, r.por_metodo, r.tokens_in, r.tokens_out) == (1, {"llm_texto": 1}, 1000, 150)
-    assert r.coste_eur > 0 and bd.execute("SELECT count(*) FROM cache_llm").fetchone()[0] == 1
+    # coste 0: los modelos abiertos de Helmcode no se pagan por token (suscripción plana).
+    # Lo que importa aquí es que se cachea; el precio por modelo se prueba en test_precios_*.
+    assert r.coste_eur == 0 and bd.execute("SELECT count(*) FROM cache_llm").fetchone()[0] == 1
     assert etapa.candidatos(bd) and TEXTO not in {c["file_id"] for c in etapa.candidatos(bd)}
     r2 = etapa.extraer(bd, solo_pendientes=False, fixture=fixture_de(tmp_path, TEXTO))
     assert (r2.por_metodo, r2.tokens_in, Api.messages.llamadas) == ({"cache": 1}, 0, 1)
@@ -400,3 +405,218 @@ def test_reconciliacion_sin_evidencia_mantiene_discrepancia(bd, tmp_path, monkey
         and h.nif_emisor == "B45102331"
         and h.confianza is None
     )
+
+
+# --------------------------------------------------------------- precios por modelo (B2)
+
+
+def test_precios_modelos_abiertos_son_cero(bd):
+    """Helmcode cobra suscripción plana por key, no por token, en los modelos abiertos.
+
+    Medido el 18/09/2026: los frontier (claude-*, gpt-5.6-*, gemini-*) devuelven 402 sin crédito,
+    así que el coste marginal real de nuestro camino es 0. Poner 3/15 EUR/Mtok inflaba el
+    benchmark a 2,30 EUR que nadie paga, y eso en la defensa es una cifra indefendible.
+    """
+    c = llm.ClienteLLM(bd)
+    for modelo in ("deepseek-v4-flash", "qwen3.6", "glm5.3-flash", "gemma4"):
+        assert c.coste(1_000_000, 1_000_000, modelo) == Decimal("0"), modelo
+
+
+def test_precio_de_modelo_desconocido_usa_el_respaldo(bd, monkeypatch):
+    monkeypatch.setenv("ALBERTITOS_PRECIO_IN_EUR_MTOK", "3")
+    monkeypatch.setenv("ALBERTITOS_PRECIO_OUT_EUR_MTOK", "15")
+    c = llm.ClienteLLM(bd)
+    assert c.coste(1_000_000, 0, "modelo-que-no-conozco") == Decimal("3")
+    assert c.coste(0, 1_000_000, "modelo-que-no-conozco") == Decimal("15")
+
+
+def test_precios_json_sobrescribe_la_tabla(bd, monkeypatch):
+    monkeypatch.setenv("ALBERTITOS_PRECIOS_JSON", '{"qwen3.6": [1.5, 6]}')
+    c = llm.ClienteLLM(bd)
+    assert c.coste(1_000_000, 0, "qwen3.6") == Decimal("1.5")
+    assert c.coste(0, 1_000_000, "qwen3.6") == Decimal("6")
+    assert c.coste(1_000_000, 0, "deepseek-v4-flash") == Decimal("0")  # el resto, intacto
+
+
+def test_precios_json_ilegible_no_revienta(bd, monkeypatch):
+    monkeypatch.setenv("ALBERTITOS_PRECIOS_JSON", "{esto no es json")
+    assert llm.ClienteLLM(bd).coste(1_000_000, 0, "qwen3.6") == Decimal("0")
+
+
+# ------------------------------------------------------------------- Retry-After (B2)
+
+
+def test_retry_after_en_segundos_y_en_fecha():
+    """Helmcode documenta 429 + Retry-After. Esperar lo que pide evita el segundo 429."""
+    assert llm._retry_after({"retry-after": "12"}) == 12.0
+    assert llm._retry_after({"Retry-After": "3.5"}) == 3.5
+    assert llm._retry_after({}) is None
+    assert llm._retry_after({"retry-after": "  "}) is None
+    assert llm._retry_after({"retry-after": "mañana"}) is None
+    assert llm._retry_after({"retry-after": "-5"}) is None
+    assert llm._retry_after({"retry-after": "9999"}) == 60.0  # tope: no colgamos el lote
+
+
+def test_el_429_del_gateway_se_espera_lo_que_pide(bd, monkeypatch):
+    """El backoff a ciegas (1/2/4 s) reintentaba antes de tiempo y cobraba otro 429."""
+    esperas: list[float] = []
+    monkeypatch.setattr(llm.time, "sleep", lambda s: esperas.append(s))
+
+    class Http:
+        def post(self, *_a, **_k):
+            class R:
+                status_code = 429
+                headers = {"retry-after": "7"}
+                text = "rate limited"
+
+            return R()
+
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat")
+    with pytest.raises(llm.ErrorLLM) as e:
+        c._llamar("deepseek-v4-flash", texto="factura", png=None)
+    assert e.value.codigo == "LLM-429"
+    assert esperas == [7.0, 7.0, 7.0], f"debería esperar lo que pide el proveedor, esperó {esperas}"
+
+
+# --------------------------------------------------------------- modelo de respaldo (B2)
+
+
+def _http_falso(guion: list):
+    """Cliente HTTP de mentira: `guion` dice qué devolver por modelo pedido."""
+
+    class Http:
+        peticiones: list[str] = []
+
+        def post(self, _ruta, json=None, **_k):
+            modelo = json["model"]
+            Http.peticiones.append(modelo)
+            for esperado, respuesta in guion:
+                if esperado == modelo:
+                    return respuesta
+            raise AssertionError(f"modelo inesperado: {modelo}")
+
+    return Http
+
+
+def _respuesta_ok(datos: dict, tin: int = 900, tout: int = 120):
+    class R:
+        status_code = 200
+        headers: dict[str, str] = {}
+
+        @staticmethod
+        def json():
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "tool_calls": [
+                                {"function": {"arguments": json.dumps(datos)}},
+                            ]
+                        }
+                    }
+                ],
+                "usage": {"prompt_tokens": tin, "completion_tokens": tout},
+            }
+
+    return R()
+
+
+def _respuesta_rota():
+    class R:
+        status_code = 503
+        headers: dict[str, str] = {}
+        text = "upstream caído"
+
+    return R()
+
+
+def test_respaldo_responde_cuando_el_principal_agota_reintentos(bd, monkeypatch):
+    """Principal caído → UNA llamada al respaldo, y el uso dice qué modelo respondió."""
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", "glm5.3-flash")
+    monkeypatch.setattr(llm.time, "sleep", lambda _s: None)
+    Http = _http_falso(
+        [("deepseek-v4-flash", _respuesta_rota()), ("glm5.3-flash", _respuesta_ok(RESPUESTA_P001))]
+    )
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat")
+    hechos, uso = c.extraer(sha256="b" * 64, file_id=TEXTO, texto="factura de prueba")
+    assert hechos.num_factura == "2026/11604"
+    assert uso["modelo"] == "glm5.3-flash" and uso["respaldo"] is True
+    assert Http.peticiones == ["deepseek-v4-flash"] * 3 + ["glm5.3-flash"]  # 3 + 1, no 3 + 3
+
+
+def test_sin_respaldo_configurado_queda_pendiente(bd, monkeypatch):
+    """La degradación por defecto sigue siendo PENDIENTE: sin hechos no hay decisión."""
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.delenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", raising=False)
+    monkeypatch.setattr(llm.time, "sleep", lambda _s: None)
+    Http = _http_falso([("deepseek-v4-flash", _respuesta_rota())])
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat")
+    with pytest.raises(llm.ErrorLLM):
+        c.extraer(sha256="c" * 64, file_id=TEXTO, texto="factura de prueba")
+    assert Http.peticiones == ["deepseek-v4-flash"] * 3
+
+
+def test_el_respaldo_no_se_usa_para_una_key_mala(bd, monkeypatch):
+    """Si la key es inválida, el respaldo del mismo gateway tampoco va a funcionar."""
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", "glm5.3-flash")
+    monkeypatch.setattr(llm.time, "sleep", lambda _s: None)
+
+    class R:
+        status_code = 401
+        headers: dict[str, str] = {}
+        text = "key inválida"
+
+    Http = _http_falso([("deepseek-v4-flash", R())])
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat", modelo_texto="deepseek-v4-flash")
+    with pytest.raises(llm.ErrorLLM) as e:
+        c.extraer(sha256="d" * 64, file_id=TEXTO, texto="factura")
+    assert e.value.codigo == "LLM-AUTH"
+    assert "glm5.3-flash" not in Http.peticiones
+
+
+def test_el_respaldo_cachea_con_clave_propia(bd, monkeypatch):
+    """Cada modelo cachea aparte: reutilizar la clave del principal guardaría una lectura ajena."""
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", "glm5.3-flash")
+    monkeypatch.setattr(llm.time, "sleep", lambda _s: None)
+    Http = _http_falso(
+        [("deepseek-v4-flash", _respuesta_rota()), ("glm5.3-flash", _respuesta_ok(RESPUESTA_P001))]
+    )
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat")
+    c.extraer(sha256="e" * 64, file_id=TEXTO, texto="factura")
+    claves = [f[0] for f in bd.execute("SELECT clave FROM cache_llm").fetchall()]
+    assert any(k.endswith("glm5.3-flash") for k in claves), claves
+    assert not any(k.endswith("deepseek-v4-flash") for k in claves), claves
+
+
+def test_contrastar_acota_por_lote_y_por_file_id(bd, monkeypatch):
+    """Petición de B1: contrastar sólo el lote 2, o una lista concreta de facturas."""
+    pedidos: list[str] = []
+
+    def falso(self, *, sha256, file_id, texto=None, png=None, variante="", marca=""):
+        pedidos.append(file_id)
+        return (
+            InvoiceFacts(
+                file_id=file_id,
+                sha256=sha256,
+                metodo=MetodoExtraccion.LLM_TEXTO,
+                extractor_version=EXTRACTOR_VERSION,
+            ),
+            {"tokens_in": 1, "tokens_out": 1, "coste_eur": Decimal("0"), "modelo": "m"},
+        )
+
+    monkeypatch.setattr(llm.ClienteLLM, "extraer", falso)
+    monkeypatch.setattr(plantillas, "extraer_por_plantilla", PLANTILLA_REAL)  # aquí sí las queremos
+    etapa.extraer(bd, solo_pendientes=False)  # llena hechos por plantilla
+    del pedidos[:]
+    etapa.contrastar(bd, file_ids=[TEXTO], workers=1)
+    assert pedidos == [TEXTO], pedidos
+    del pedidos[:]
+    etapa.contrastar(bd, lote=2, workers=1)
+    assert pedidos == [], "no hay ficheros de lote 2 en esta BD de test"

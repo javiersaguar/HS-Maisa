@@ -146,7 +146,11 @@ def _extraer_uno(
                 tokens_out=int(uso.get("tokens_out", 0)),
                 coste_eur=uso.get("coste_eur", 0),
                 version=EXTRACTOR_VERSION,
+                # el modelo va en el evento: sin él, tras un fallback no se sabe quién leyó
+                # la factura, y la traza (20 pts) tiene que poder responder a eso.
                 detalle=f"{hechos.metodo.value} avisos={[a.value for a in hechos.avisos]}"
+                + (f" modelo={uso['modelo']}" if uso.get("modelo") else "")
+                + (" respaldo=si" if uso.get("respaldo") else "")
                 + (f" discrepancias={uso['discrepancias']}" if uso.get("discrepancias") else "")
                 + (f" reconciliado={uso['reconciliado']}" if uso.get("reconciliado") else ""),
             ),
@@ -288,22 +292,41 @@ def _reconciliar_con_maestro(
 
 
 def contrastar(
-    conn: sqlite3.Connection, *, n: int = 40, workers: int = 4, semilla: int = 7
+    conn: sqlite3.Connection,
+    *,
+    n: int = 40,
+    workers: int = 4,
+    semilla: int = 7,
+    lote: int | None = None,
+    file_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Pasa el LLM (texto) por `n` facturas que salieron por plantilla y compara con `discrepancias`.
 
     No toca `hechos`: sólo devuelve el informe (y deja las lecturas en caché con variante 'contraste').
-    Es la única forma de descartar que un parser se equivoque en bloque sobre cientos de facturas."""
+    Es la única forma de descartar que un parser se equivoque en bloque sobre cientos de facturas.
+
+    `lote` y `file_ids` acotan la muestra (petición de B1, bitácora 18/09): en el lote 2 interesa
+    contrastar SÓLO lo nuevo, y además es la única vía de que una factura de plantilla pase por el
+    LLM y suelte su `texto_sospechoso`. Una instrucción con redacción nueva, en una factura que
+    resuelve la plantilla, hoy sólo la ven las regex de `instrucciones.py`."""
     import random
     from concurrent.futures import ThreadPoolExecutor as _Pool
 
-    filas = conn.execute(
-        """SELECT f.file_id, f.sha256, f.lote, h.hechos_json FROM hechos h JOIN ficheros f ON f.sha256 = h.sha256
-           WHERE h.extractor_version = ? AND h.metodo = 'plantilla' ORDER BY f.file_id""",
-        (EXTRACTOR_VERSION,),
-    ).fetchall()
+    sql = """SELECT f.file_id, f.sha256, f.lote, h.hechos_json FROM hechos h JOIN ficheros f ON f.sha256 = h.sha256
+             WHERE h.extractor_version = ? AND h.metodo = 'plantilla'"""
+    params: list[Any] = [EXTRACTOR_VERSION]
+    if lote is not None:
+        sql += " AND f.lote = ?"
+        params.append(lote)
+    if file_ids:
+        quiero = [unicodedata.normalize("NFC", x) for x in file_ids]
+        sql += f" AND f.file_id IN ({','.join('?' * len(quiero))})"
+        params.extend(quiero)
+    filas = conn.execute(sql + " ORDER BY f.file_id", params).fetchall()
     rng = random.Random(semilla)
-    muestra = rng.sample([dict(f) for f in filas], min(n, len(filas)))
+    candidatas = [dict(f) for f in filas]
+    # con una lista explícita se contrastan todas: el llamador ya ha elegido
+    muestra = candidatas if file_ids else rng.sample(candidatas, min(n, len(candidatas)))
     estado = EstadoLLM()
     ruta_db = conn.execute("PRAGMA database_list").fetchone()[2]
 

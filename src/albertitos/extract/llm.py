@@ -102,18 +102,51 @@ TOOL_OPENAI = {
     },
 }
 CODIGOS_REINTENTABLES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+# Tarifa por modelo, EUR por millón de tokens (entrada, salida). Medido el 18/09/2026:
+# Helmcode NO cobra por token los modelos abiertos, cobra una suscripción plana por key
+# (helmcode.com/pricing: Starter 399 €/mes · Growth 1.299 € · Scale 3.199 €). Los "frontier"
+# (claude-*, gpt-5.6-*, gemini-*) se pagan de crédito prepago y hoy devuelven 402 sin saldo.
+# Por eso los abiertos van a 0: poner 3/15 EUR/Mtok inflaba el benchmark a 2,30 EUR inexistentes.
+# Se puede sobrescribir con ALBERTITOS_PRECIOS_JSON='{"modelo": [in, out], ...}'.
+PRECIOS_POR_MODELO: dict[str, tuple[str, str]] = {
+    "deepseek-v4-flash": ("0", "0"),
+    "qwen3.6": ("0", "0"),
+    "glm5.3-flash": ("0", "0"),
+    "gemma4": ("0", "0"),
+}
+
+
+def _precios_por_modelo() -> dict[str, tuple[Decimal, Decimal]]:
+    tabla = {m: (Decimal(a), Decimal(b)) for m, (a, b) in PRECIOS_POR_MODELO.items()}
+    crudo = os.environ.get("ALBERTITOS_PRECIOS_JSON", "").strip()
+    if crudo:
+        try:
+            for modelo, par in json.loads(crudo).items():
+                tabla[modelo] = (Decimal(str(par[0])), Decimal(str(par[1])))
+        except (ValueError, TypeError, IndexError, KeyError):
+            log.warning("ALBERTITOS_PRECIOS_JSON ilegible; uso la tabla por defecto")
+    return tabla
+
+
 MAX_TOKENS_TEXTO = int(os.environ.get("ALBERTITOS_MAX_TOKENS_TEXTO", "2000"))
 MAX_TOKENS_VISION = int(
     os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "8000")
 )  # qwen3.6 razona ~3000 tokens antes de la tool call
 
 
-def _peticion_usuario(texto: str | None, intento: int) -> str:
+def _peticion_usuario(texto: str | None, intento: int, marca: str = "") -> str:
     """El texto del usuario. En reintentos cambia ligeramente: el gateway cachea por cuerpo de petición y,
-    si no, tres reintentos idénticos devuelven la misma respuesta vacía al instante."""
+    si no, tres reintentos idénticos devuelven la misma respuesta vacía al instante.
+
+    `marca` sirve para lo mismo a propósito: al medir capacidad hay que impedir que el gateway
+    sirva de SU caché, o las tandas con más hilos salen artificialmente rápidas (se detecta porque
+    los tokens de entrada son idénticos entre tandas). Vacía en producción: no cambia nada."""
     base = "Extrae los campos de esta factura.\n\n" + (texto or "(imagen adjunta)")
     if intento > 1:
         base += f"\n\n(Lectura {intento}: responde únicamente con la herramienta registrar_hechos.)"
+    if marca:
+        base += f"\n\n(ref. {marca})"
     return base
 
 
@@ -129,6 +162,23 @@ def _json_en_texto(contenido: str) -> dict[str, Any] | None:
     except ValueError:
         return None
     return obj if isinstance(obj, dict) else None
+
+
+def _retry_after(cabeceras: Any) -> float | None:
+    """Segundos de la cabecera `Retry-After` (segundos o fecha HTTP). None si no viene o es absurda."""
+    crudo = (cabeceras.get("retry-after") or cabeceras.get("Retry-After") or "").strip()
+    if not crudo:
+        return None
+    try:
+        segundos = float(crudo)
+    except ValueError:
+        from email.utils import parsedate_to_datetime
+
+        try:
+            segundos = parsedate_to_datetime(crudo).timestamp() - time.time()
+        except (TypeError, ValueError):
+            return None
+    return min(segundos, 60.0) if 0 < segundos else None
 
 
 def proveedor_por_defecto() -> str:
@@ -155,9 +205,10 @@ class EstadoLLM:
 
 
 class ErrorLLM(Exception):
-    def __init__(self, codigo: str, detalle: str = "") -> None:
+    def __init__(self, codigo: str, detalle: str = "", espera: float | None = None) -> None:
         super().__init__(f"{codigo}: {detalle}")
         self.codigo = codigo
+        self.espera = espera  # segundos pedidos por el proveedor (cabecera Retry-After), si los dio
 
 
 class ClienteLLM:
@@ -182,9 +233,15 @@ class ClienteLLM:
         self.base_url = os.environ.get(
             "ALBERTITOS_LLM_BASE_URL", "https://api.helmcode.com/v1"
         ).rstrip("/")
-        # EUR por millón de tokens: REVISAR con la tarifa vigente antes del benchmark.
+        # EUR por millón de tokens. Por modelo: los abiertos de Helmcode son 0 (suscripción plana).
+        # ALBERTITOS_PRECIO_*_EUR_MTOK sigue sirviendo de respaldo para modelos desconocidos.
+        self.precios = _precios_por_modelo()
         self.precio_in = Decimal(os.environ.get("ALBERTITOS_PRECIO_IN_EUR_MTOK", "3"))
         self.precio_out = Decimal(os.environ.get("ALBERTITOS_PRECIO_OUT_EUR_MTOK", "15"))
+        self.modelo_texto_fallback = os.environ.get("ALBERTITOS_MODELO_TEXTO_FALLBACK", "").strip()
+        self.modelo_vision_fallback = os.environ.get(
+            "ALBERTITOS_MODELO_VISION_FALLBACK", ""
+        ).strip()
 
     # ------------------------------------------------------------------ infraestructura
 
@@ -241,10 +298,10 @@ class ClienteLLM:
         # llamada de red (20-40 s en visión) y los demás hilos mueren con "database is locked".
         self.conn.commit()
 
-    def coste(self, tin: int, tout: int) -> Decimal:
-        return (Decimal(tin) * self.precio_in + Decimal(tout) * self.precio_out) / Decimal(
-            1_000_000
-        )
+    def coste(self, tin: int, tout: int, modelo: str = "") -> Decimal:
+        """Coste de una llamada. 0 en los modelos abiertos del gateway (suscripción plana)."""
+        pin, pout = self.precios.get(modelo, (self.precio_in, self.precio_out))
+        return (Decimal(tin) * pin + Decimal(tout) * pout) / Decimal(1_000_000)
 
     def _comprobar_disponible(self) -> None:
         modo = chaos.modo()
@@ -262,8 +319,8 @@ class ClienteLLM:
                     "LLM-PRESUPUESTO", f"gastados {e.gastado:.4f} EUR de {e.presupuesto}"
                 )
 
-    def _registrar_exito(self, tin: int, tout: int) -> Decimal:
-        eur = self.coste(tin, tout)
+    def _registrar_exito(self, tin: int, tout: int, modelo: str = "") -> Decimal:
+        eur = self.coste(tin, tout, modelo)
         with self.estado.lock:
             self.estado.gastado += eur
             self.estado.fallos_seguidos = 0
@@ -285,6 +342,7 @@ class ClienteLLM:
         texto: str | None = None,
         png: bytes | None = None,
         variante: str = "",
+        marca: str = "",
     ) -> tuple[InvoiceFacts, dict[str, Any]]:
         """Devuelve (hechos, uso). Lanza ErrorLLM si no se puede: el llamador registra PENDIENTE.
 
@@ -307,7 +365,36 @@ class ClienteLLM:
                 "modelo": modelo,
             }
         self._comprobar_disponible()
-        respuesta = self._llamar(modelo, texto=texto, png=png)
+        try:
+            respuesta = self._llamar(modelo, texto=texto, png=png, marca=marca)
+        except ErrorLLM as e:
+            respaldo = self._modelo_respaldo(png is not None)
+            if respaldo is None or e.codigo in ("LLM-CONFIG", "LLM-AUTH", "LLM-PRESUPUESTO"):
+                raise  # sin respaldo configurado, o un fallo que el respaldo tampoco arregla
+            log.warning(
+                "%s agotó reintentos (%s); pruebo el respaldo %s", modelo, e.codigo, respaldo
+            )
+            clave = self._clave(sha256, respaldo, variante)  # el respaldo cachea aparte
+            cacheada = self._de_cache(clave)
+            if cacheada is not None:
+                hechos = self._a_hechos(
+                    cacheada,
+                    sha256=sha256,
+                    file_id=file_id,
+                    texto=texto,
+                    metodo=MetodoExtraccion.CACHE,
+                )
+                return hechos, {
+                    "tokens_in": 0,
+                    "tokens_out": 0,
+                    "coste_eur": Decimal("0"),
+                    "cache": True,
+                    "modelo": respaldo,
+                    "respaldo": True,
+                }
+            respuesta = self._llamar(respaldo, texto=texto, png=png, intentos=1, marca=marca)
+            modelo = respaldo
+            respuesta["uso"]["respaldo"] = True
         uso = respuesta["uso"]
         hechos = self._a_hechos(
             respuesta["input"],
@@ -321,10 +408,30 @@ class ClienteLLM:
         )
         return hechos, uso
 
+    def _modelo_respaldo(self, es_vision: bool) -> str | None:
+        """Modelo de respaldo para este camino, o None si no hay ninguno configurado.
+
+        Medido el 18/09/2026 contra el gateway: para TEXTO, `glm5.3-flash` responde con tool call
+        y acierta los campos (14,8 s frente a 4,3 s de deepseek). Para VISIÓN sólo hay modelos
+        abiertos con imagen (`qwen3.6`, `gemma4`, y de hecho también `deepseek-v4-flash` y
+        `glm5.3-flash`, que la doc da como sin visión y sí la aceptan). Ninguno lee bien el NIF:
+        el respaldo compra DISPONIBILIDAD, no precisión; la precisión la da la reconciliación
+        con el maestro en etapa.py. Los frontier (claude-*, gpt-5.6-*, gemini-*) dan 402 sin crédito.
+        """
+        elegido = self.modelo_vision_fallback if es_vision else self.modelo_texto_fallback
+        principal = self.modelo_vision if es_vision else self.modelo_texto
+        return elegido or None if elegido != principal else None
+
     # ------------------------------------------------------------------ llamadas con reintentos
 
     def _llamar(
-        self, modelo: str, *, texto: str | None, png: bytes | None, intentos: int = 3
+        self,
+        modelo: str,
+        *,
+        texto: str | None,
+        png: bytes | None,
+        intentos: int = 3,
+        marca: str = "",
     ) -> dict[str, Any]:
         ultimo: Exception | None = None
         for intento in range(1, intentos + 1):
@@ -332,12 +439,12 @@ class ClienteLLM:
                 if chaos.modo() == "llm_429" and intento == 1:
                     raise ErrorLLM("LLM-429", "caos: rate limit")
                 if self.proveedor == "anthropic":
-                    datos, tin, tout = self._llamar_anthropic(modelo, texto, png, intento)
+                    datos, tin, tout = self._llamar_anthropic(modelo, texto, png, intento, marca)
                 else:
-                    datos, tin, tout = self._llamar_openai(modelo, texto, png, intento)
+                    datos, tin, tout = self._llamar_openai(modelo, texto, png, intento, marca)
                 if chaos.modo() == "llm_invalid":
                     raise ErrorLLM("LLM-INVALID", "caos: respuesta inválida")
-                eur = self._registrar_exito(tin, tout)
+                eur = self._registrar_exito(tin, tout, modelo)
                 return {
                     "input": datos,
                     "uso": {
@@ -358,12 +465,13 @@ class ClienteLLM:
                 ultimo = e
                 self._registrar_fallo()
                 log.warning("LLM %s intento %s/%s: %s", modelo, intento, intentos, e)
-            time.sleep(min(8, 0.5 * 2**intento))
+            pedida = getattr(ultimo, "espera", None)
+            time.sleep(pedida if pedida is not None else min(8, 0.5 * 2**intento))
         codigo = getattr(ultimo, "codigo", None) or f"LLM-{type(ultimo).__name__}"
         raise ErrorLLM(codigo, str(ultimo)[:200])
 
     def _llamar_anthropic(
-        self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1
+        self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1, marca: str = ""
     ) -> tuple[dict[str, Any], int, int]:
         import anthropic
 
@@ -382,7 +490,7 @@ class ClienteLLM:
         contenido.append(
             {
                 "type": "text",
-                "text": _peticion_usuario(texto, intento),
+                "text": _peticion_usuario(texto, intento, marca),
             }
         )
         try:
@@ -410,12 +518,12 @@ class ClienteLLM:
         return dict(bloque.input), int(r.usage.input_tokens), int(r.usage.output_tokens)
 
     def _llamar_openai(
-        self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1
+        self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1, marca: str = ""
     ) -> tuple[dict[str, Any], int, int]:
         contenido: list[dict[str, Any]] = [
             {
                 "type": "text",
-                "text": _peticion_usuario(texto, intento),
+                "text": _peticion_usuario(texto, intento, marca),
             }
         ]
         if png is not None:
@@ -443,7 +551,9 @@ class ClienteLLM:
         if r.status_code in (401, 403):
             raise ErrorLLM("LLM-AUTH", r.text[:120])
         if r.status_code == 429:
-            raise ErrorLLM("LLM-429", r.text[:120])
+            # Helmcode documenta 429 + Retry-After (100 RPM, 5 concurrentes por modelo, 2M TPM).
+            # Esperar lo que pide el proveedor evita el segundo 429 que el backoff a ciegas provoca.
+            raise ErrorLLM("LLM-429", r.text[:120], espera=_retry_after(r.headers))
         if r.status_code in CODIGOS_REINTENTABLES:
             raise ErrorLLM(f"LLM-HTTP-{r.status_code}", r.text[:120])
         if r.status_code != 200:
