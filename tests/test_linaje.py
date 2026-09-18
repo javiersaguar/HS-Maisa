@@ -289,3 +289,21 @@ def test_la_norma_solo_lee_su_pedido_y_su_nif(caja, norma):
         m2, e2 = _perturbar(maestro, erp, h.pedido, linaje.clave_nif(h.nif_emisor))
         antes, despues = decidir(h, maestro, erp, ctx), decidir(h, m2, e2, ctx)
         assert (despues.resultado, despues.motivos) == (antes.resultado, antes.motivos), h.file_id
+
+
+def test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide(conn, base, maestro, erp):
+    """Javier: el hash excluye `texto_sospechoso`, pero R6 lo cita en el motivo. Un fixture reimportado
+    con evidencia nueva deja el hash igual; si no se redecidiera, la entrega citaría el fragmento viejo."""
+    import time
+
+    fila = conn.execute("SELECT hechos_json FROM hechos WHERE sha256=?", ("a" * 64,)).fetchone()
+    a = InvoiceFacts.model_validate_json(fila[0])
+    nueva = a.model_copy(update={"texto_sospechoso": "fragmento nuevo"})
+    assert nueva.hash() == a.hash()
+    time.sleep(0.01)  # la reimportación llega después de la decisión
+    db.guardar_hechos(conn, nueva)
+    assert _evaluar(conn, maestro, erp).impactados == {
+        "a.pdf": "hechos reescritos tras decidir (evidencia)"
+    }
+    _reprocesar(conn, maestro, erp)
+    assert _evaluar(conn, maestro, erp).impactados == {}

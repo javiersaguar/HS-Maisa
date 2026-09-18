@@ -4,7 +4,9 @@ Una decisión depende de sus hechos, de la norma y de la fecha de corte; del mae
 depende de lo que la norma lee con el pedido y el NIF de la factura (v3: R1 busca el proveedor por NIF,
 R2 el pedido, R5 los asientos del pedido; `tests/test_linaje.py` lo comprueba para cada norma del
 REGISTRO). Así que:
-- hechos, norma o fecha de corte distintos → se recalcula;
+- hechos, norma o fecha de corte distintos → se recalcula. "Hechos distintos" es `hechos_hash` distinto
+  o hechos reescritos después de la decisión: el hash excluye la evidencia (`texto_sospechoso`,
+  `confianza`), que sí aparece en el motivo, y un fixture reimportado con evidencia nueva no se colaría;
 - maestro o ERP distintos → se recalcula sólo si el diff entre la versión con la que se decidió y la de
   destino toca su pedido o su NIF. Las demás NO se tocan: conservan la versión con la que se decidieron
   y se deja un evento `decide/skip` que dice que el diff no les afecta.
@@ -15,7 +17,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from albertitos.core import db
@@ -76,8 +78,9 @@ def evaluar(
     """Clasifica cada fichero frente al destino (norma, corte, maestro, ERP). `todo` recalcula todo."""
     filas = conn.execute(
         """
-        SELECT f.file_id, f.sha256, h.hechos_json, h.hechos_hash AS h_hash, d.id AS decision,
-               d.hechos_hash AS d_hash, d.norma_version, d.fecha_corte, d.maestro_version, d.erp_version
+        SELECT f.file_id, f.sha256, h.hechos_json, h.hechos_hash AS h_hash, h.creado_en AS h_en,
+               d.id AS decision, d.hechos_hash AS d_hash, d.decidido_en AS d_en, d.norma_version,
+               d.fecha_corte, d.maestro_version, d.erp_version
         FROM ficheros f
         LEFT JOIN decisiones d ON d.sha256 = f.sha256 AND d.vigente = 1
         LEFT JOIN hechos h ON h.sha256 = f.sha256 AND h.extractor_version = ?
@@ -120,6 +123,9 @@ def evaluar(
         if f["d_hash"] != f["h_hash"]:
             out.impactados[fid] = "hechos cambiados"
             continue
+        if _posterior(f["h_en"], f["d_en"]):
+            out.impactados[fid] = "hechos reescritos tras decidir (evidencia)"
+            continue
         if f["norma_version"] != norma_version:
             out.impactados[fid] = f"norma {f['norma_version']}→{norma_version}"
             continue
@@ -153,6 +159,13 @@ def evaluar(
                 {"file_id": fid, "sha256": f["sha256"], "decision": f["decision"], **confirmado}
             )
     return out
+
+
+def _posterior(a: str | None, b: str | None) -> bool:
+    """¿El instante ISO `a` es estrictamente posterior a `b`? (distinta precisión: se parsea)"""
+    if not a or not b:
+        return False
+    return datetime.fromisoformat(a) > datetime.fromisoformat(b)
 
 
 def impactados(conn: sqlite3.Connection, **kw: Any) -> dict[str, str]:

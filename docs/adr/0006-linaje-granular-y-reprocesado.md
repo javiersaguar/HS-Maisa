@@ -57,6 +57,12 @@ Cómo se implementa:
   - Lo vigila `test_la_norma_solo_lee_su_pedido_y_su_nif`, que recorre cada norma del `REGISTRO` (la v4 entra sola al
     registrarse).
   - Si falla, hay que ampliar las claves en `linaje.py` o usar `--todo`.
+- **El hash de los hechos excluye la evidencia** (`texto_sospechoso`, `confianza`), pero R6 cita el fragmento
+  en el motivo. Lo detectó Javier el 19/09: un fixture reimportado con evidencia nueva dejaría el hash
+  igual y la entrega citaría el fragmento viejo. Por eso unos hechos **reescritos después de la
+  decisión** también cuentan como impactados (`hechos.creado_en` > `decidido_en`), y lo cubre
+  `test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide`. Coste: reimportar todo recalcula todo,
+  que es lo prudente.
 - **El linaje ve versiones, no código.** Si alguien corrige `norma_v3.py` sin cambiar `"v3"`, `reprocess --impacted`
   no recalcula nada. `run` sí, porque decide todo cada vez. Regla: una norma publicada no se edita (la v4 es un
   módulo nuevo). Mientras Mónica valida la v3, usar `run` o `reprocess --todo`.
