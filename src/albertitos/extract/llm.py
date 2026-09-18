@@ -11,7 +11,9 @@ import json
 import logging
 import os
 import sqlite3
+import threading
 import time
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
@@ -82,6 +84,21 @@ TOOL = {
 }
 
 
+@dataclass
+class EstadoLLM:
+    """Estado compartido por todos los ClienteLLM de una ejecución (uno por hilo): presupuesto,
+    circuit breaker y el cliente HTTP (thread-safe). Protegido por un lock."""
+
+    presupuesto: Decimal = field(
+        default_factory=lambda: Decimal(os.environ.get("ALBERTITOS_PRESUPUESTO_EUR", "5"))
+    )
+    gastado: Decimal = Decimal("0")
+    fallos_seguidos: int = 0
+    abierto_hasta: float = 0.0
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    api: Any = None
+
+
 class ErrorLLM(Exception):
     def __init__(self, codigo: str, detalle: str = "") -> None:
         super().__init__(f"{codigo}: {detalle}")
@@ -95,33 +112,34 @@ class ClienteLLM:
         *,
         modelo_texto: str | None = None,
         modelo_vision: str | None = None,
+        estado: EstadoLLM | None = None,
     ) -> None:
         self.conn = conn
+        self.estado = estado or EstadoLLM()
         self.modelo_texto = modelo_texto or os.environ.get(
             "ALBERTITOS_MODELO_TEXTO", "claude-sonnet-5"
         )
         self.modelo_vision = modelo_vision or os.environ.get(
             "ALBERTITOS_MODELO_VISION", "claude-sonnet-5"
         )
-        self.presupuesto = Decimal(os.environ.get("ALBERTITOS_PRESUPUESTO_EUR", "5"))
         # EUR por millón de tokens: REVISAR con la tarifa vigente antes del benchmark.
         self.precio_in = Decimal(os.environ.get("ALBERTITOS_PRECIO_IN_EUR_MTOK", "3"))
         self.precio_out = Decimal(os.environ.get("ALBERTITOS_PRECIO_OUT_EUR_MTOK", "15"))
-        self.gastado = Decimal("0")
-        self.fallos_seguidos = 0
-        self.abierto_hasta = 0.0  # circuit breaker
-        self._cliente: Any = None
 
     # ------------------------------------------------------------------ infraestructura
 
     def _api(self) -> Any:
-        if self._cliente is None:
-            import anthropic
+        with self.estado.lock:
+            if self.estado.api is None:
+                import anthropic
 
-            self._cliente = anthropic.Anthropic(
-                timeout=60.0, max_retries=0
-            )  # los reintentos los llevamos nosotros
-        return self._cliente
+                # los reintentos los llevamos nosotros (eventos por intento)
+                self.estado.api = anthropic.Anthropic(timeout=60.0, max_retries=0)
+            return self.estado.api
+
+    @property
+    def gastado(self) -> Decimal:
+        return self.estado.gastado
 
     def _clave(self, sha256: str, modelo: str) -> str:
         return f"{sha256}|{PROMPT_VERSION}|{modelo}"
@@ -156,15 +174,17 @@ class ClienteLLM:
         modo = chaos.modo()
         if modo == "llm_down":
             raise ErrorLLM("LLM-DOWN", "caos: proveedor caído")
-        if time.time() < self.abierto_hasta:
-            raise ErrorLLM(
-                "LLM-CIRCUIT-OPEN",
-                f"{self.fallos_seguidos} fallos seguidos; reabre en {self.abierto_hasta - time.time():.0f}s",
-            )
-        if self.gastado >= self.presupuesto:
-            raise ErrorLLM(
-                "LLM-PRESUPUESTO", f"gastados {self.gastado:.4f} EUR de {self.presupuesto}"
-            )
+        e = self.estado
+        with e.lock:
+            if time.time() < e.abierto_hasta:
+                raise ErrorLLM(
+                    "LLM-CIRCUIT-OPEN",
+                    f"{e.fallos_seguidos} fallos seguidos; reabre en {e.abierto_hasta - time.time():.0f}s",
+                )
+            if e.gastado >= e.presupuesto:
+                raise ErrorLLM(
+                    "LLM-PRESUPUESTO", f"gastados {e.gastado:.4f} EUR de {e.presupuesto}"
+                )
 
     # ------------------------------------------------------------------ API pública
 
@@ -237,8 +257,9 @@ class ClienteLLM:
                     raise ErrorLLM("LLM-INVALID", "respuesta sin tool_use")
                 tin, tout = r.usage.input_tokens, r.usage.output_tokens
                 eur = self.coste(tin, tout)
-                self.gastado += eur
-                self.fallos_seguidos = 0
+                with self.estado.lock:
+                    self.estado.gastado += eur
+                    self.estado.fallos_seguidos = 0
                 return {
                     "input": dict(bloque.input),
                     "uso": {
@@ -257,9 +278,10 @@ class ClienteLLM:
                 ErrorLLM,
             ) as e:
                 ultimo = e
-                self.fallos_seguidos += 1
-                if self.fallos_seguidos >= 5:
-                    self.abierto_hasta = time.time() + 60
+                with self.estado.lock:
+                    self.estado.fallos_seguidos += 1
+                    if self.estado.fallos_seguidos >= 5:
+                        self.estado.abierto_hasta = time.time() + 60
                 log.warning("LLM intento %s/%s falló: %s", intento, intentos, e)
                 time.sleep(min(8, 0.5 * 2**intento))
         codigo = getattr(ultimo, "codigo", None) or f"LLM-{type(ultimo).__name__}"
