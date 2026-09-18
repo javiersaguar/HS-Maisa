@@ -28,30 +28,42 @@ def empaquetar(
     lotes = [(1, "outcomes.jsonl", Path(caja_dir) / "facturas")]
     if lote2_dir and (Path(lote2_dir) / "facturas").exists():
         lotes.append((2, "outcomes_lote2.jsonl", Path(lote2_dir) / "facturas"))
+    # Todo o nada: se escribe a .tmp, se validan todos los lotes y sólo entonces se sustituyen.
+    # Una entrega inválida nunca pisa la última válida de dist/entrega/.
     generados: list[tuple[Path, InformeValidacion]] = []
-    for lote, nombre, directorio in lotes:
-        esperados = listar_pdfs(directorio)
-        outcomes: list[Outcome] = []
-        for fila in db.decisiones_vigentes(conn, lote=lote):
-            extra: dict[str, str] = {}
-            if con_traza:
-                motivos = json.loads(fila["motivos_json"])
-                fallo = next((m for m in motivos if not m["ok"]), None)
-                extra = {
-                    "norma_version": fila["norma_version"],
-                    "motivo": fallo["detalle"] if fallo else "todas las reglas cumplidas",
-                }
-                if fallo:
-                    extra["regla"] = fallo["regla_id"]
-            outcomes.append(
-                Outcome(file_id=fila["file_id"], result=Resultado(fila["resultado"]), **extra)
-            )
-        destino = salida / nombre
-        with open(destino, "w", encoding="utf-8", newline="\n") as f:
-            for o in outcomes:
-                f.write(o.linea() + "\n")
-        informe = validar_jsonl(destino, esperados, lote)
-        if not informe.ok:
-            raise EntregaInvalida(informe)
-        generados.append((destino, informe))
+    temporales: list[tuple[Path, Path]] = []
+    try:
+        for lote, nombre, directorio in lotes:
+            esperados = listar_pdfs(directorio)
+            outcomes: list[Outcome] = []
+            for fila in db.decisiones_vigentes(conn, lote=lote):
+                extra: dict[str, str] = {}
+                if con_traza:
+                    motivos = json.loads(fila["motivos_json"])
+                    fallo = next((m for m in motivos if not m["ok"]), None)
+                    extra = {
+                        "norma_version": fila["norma_version"],
+                        "motivo": fallo["detalle"] if fallo else "todas las reglas cumplidas",
+                    }
+                    if fallo:
+                        extra["regla"] = fallo["regla_id"]
+                outcomes.append(
+                    Outcome(file_id=fila["file_id"], result=Resultado(fila["resultado"]), **extra)
+                )
+            destino = salida / nombre
+            tmp = destino.with_name(nombre + ".tmp")
+            temporales.append((tmp, destino))
+            with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+                for o in outcomes:
+                    f.write(o.linea() + "\n")
+            informe = validar_jsonl(tmp, esperados, lote)
+            informe.ruta = str(destino)
+            if not informe.ok:
+                raise EntregaInvalida(informe)
+            generados.append((destino, informe))
+        for tmp, destino in temporales:
+            tmp.replace(destino)
+    finally:
+        for tmp, _ in temporales:
+            tmp.unlink(missing_ok=True)
     return generados

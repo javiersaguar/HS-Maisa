@@ -1,7 +1,7 @@
 """Etapas del pipeline sobre la BD. Cada etapa es idempotente y emite eventos.
 
 ingest  → PDF → ficheros                       (implementado)
-extract → PDF → hechos (plantilla | LLM)        (pendiente: Alfonso, extract/)
+extract → PDF → hechos (plantilla | LLM)        (extract/etapa.py, Javier)
 decide  → hechos + maestro + ERP → decisiones   (implementado con la norma v3; Mónica valida)
 emit    → decisiones → outcomes.jsonl           (pipeline/package.py)
 """
