@@ -160,7 +160,7 @@ def test_extract_con_el_llm_caido_saca_las_de_plantilla_y_deja_pendientes_las_es
     trampa = hechos[CON_INSTRUCCION]
     assert Aviso.TEXTO_INSTRUCCION in trampa.avisos
     assert trampa.texto_sospechoso
-    assert trampa.texto_sospechoso in pdf.texto_de(LOTE2_SIM / CON_INSTRUCCION), (
+    assert trampa.texto_sospechoso in " ".join(pdf.texto_de(LOTE2_SIM / CON_INSTRUCCION).split()), (
         "la evidencia tiene que ser una cita literal, no un resumen"
     )
     assert "cumplimiento" in trampa.texto_sospechoso.lower()
