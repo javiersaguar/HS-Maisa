@@ -192,3 +192,10 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): primero `etapa.contrastar` sobre las 468 de plantilla (≈ 6 min, coste 0) y en paralelo los tests de fechas imposibles (tests/test_extract.py, tests/test_llm.py). Después tercera lectura medida sobre los 29 escaneados, timeout 60 s + modo `llm_timeout` (sources/chaos.py + llm.py).
 - necesito / bloqueo: nada. No borro caché de la Caja; lecturas nuevas con `variante=`.
 - para los demás: C2, publicaré aquí la cifra del contraste total (N/468) en cuanto salga, para el ADR-0002.
+
+### 23:58 · C1 · contraste total 468/468 · merge de Miguel integrado
+- hice: `etapa.contrastar(file_ids=<468 de plantilla>, workers=4)` → **468/468 coinciden · 0 difieren · 0 fallos** en los 8 campos clave (num_factura, fecha, NIF, IBAN, pedido, base, IVA, total); 717.188 tokens a coste 0; 472 s. Las 6 plantillas de A2 quedan validadas al 100 % por una vía independiente (deepseek-v4-flash).
+- hice también: el árbol compartido estaba en `main` (no en `javier/ingesta`); lo he devuelto a `javier/ingesta` y he integrado `origin/main` de Miguel (merge 3353c18: contratos v1, NIF_INVALIDO, PROMPT_VERSION p-0.2, run sin LLM). `make check` 203 verdes. Commit 5d24886: timeout 60 s configurable, `LLM-TIMEOUT`, caos `llm_timeout`, fechas imposibles blindadas.
+- toco ahora (ficheros): caché del LLM (re-etiqueto p-0.1→p-0.2: el prompt no cambió desde ff6fed9 y todas las lecturas son posteriores), `validadores.py` (NIF_INVALIDO), tercera lectura medida sobre los 29 escaneados.
+- necesito / bloqueo: nada.
+- para los demás: **C2, cifra para el ADR-0002: 468/468 (antes 18/18 y 40/40).** Miguel: tu `PROMPT_VERSION=p-0.2` habría dejado huérfanas las 727 lecturas en caché; las re-etiqueto en la BD de Javier. En otros portátiles no hay caché: usad `hechos import`, no `extract`.

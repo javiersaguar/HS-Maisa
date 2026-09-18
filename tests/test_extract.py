@@ -303,3 +303,28 @@ def test_fixture_fechas_imposibles_quedan_en_none():
     for fid in ("2026-03-19_P008.pdf", "FA-1123_construcciones.pdf", "FA-2967_seguridad.pdf"):
         assert hechos[fid]["fecha"] is None, fid
         assert "campo_ausente" in hechos[fid]["avisos"], fid
+
+
+def test_nif_mal_formado_da_nif_invalido_no_extraccion_parcial():
+    """Aviso.NIF_INVALIDO ya existe en core (Miguel, 18/09): la causa se nombra bien."""
+    from decimal import Decimal
+
+    h = InvoiceFacts(
+        file_id="x.pdf",
+        sha256="a" * 64,
+        metodo=MetodoExtraccion.PLANTILLA,
+        extractor_version="e",
+        nif_emisor="B4610233",
+        iban="ES2100491500051234567890",
+        pedido="PO-2026-0001",
+        fecha="2026-01-08",
+        num_factura="1",
+        base=Decimal("100.00"),
+        iva=Decimal("21.00"),
+        total=Decimal("121.00"),
+    )
+    avisos = validadores.validar(h)
+    assert Aviso.NIF_INVALIDO in avisos and Aviso.EXTRACCION_PARCIAL not in avisos
+    assert Aviso.NIF_INVALIDO not in validadores.validar(
+        h.model_copy(update={"nif_emisor": "B46102331", "avisos": []})
+    )
