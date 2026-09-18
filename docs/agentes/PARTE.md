@@ -36,7 +36,14 @@ Partes anteriores en `partes/` (01: A1-A3 · 02: B1-B2 · 03: C1-C2).
   - El campo `texto_sospechoso` del LLM viene con la palabra `"None"` en **838 lecturas cacheadas**; sólo afectaba a un hecho guardado, pero con el lote 2 volvería a pasar.
   - `scan_025.pdf` y `scan_023.pdf` comparten trampa: **otro documento transparentándose** (en `scan_025`, invertido, con sello "URGENTE"). No hay aviso honesto para eso en `core`.
   - La exportación de fixtures arrastraba los 10 ficheros del lote 2 simulado: cualquiera que importara `hechos_caja.jsonl` se traía hechos de ficheros que no tiene.
-- Pendiente / no llegué a: `--con-hechos` en `scripts/inventario_trampas.py` (era opcional): sumaría los avisos de visión al inventario sin releer los PDFs. Queda para el ciclo 5.
+- Hecho después (mientras terminaba D1, con permiso de Javier):
+  - **CI desbloqueada**: parche de una línea en `tests/test_lote2_sim.py` (cita literal con espacios normalizados). `make check` verde, 247 tests.
+  - **Adelanto de Mónica** en `rules/norma_v3.py`: evidencia a 300 caracteres y `NIF_INVALIDO` en `ANOMALIAS_HUMANO`; 0 decisiones cambian. Dossier con los ficheros afectados por cada política abierta en `docs/agentes/DECISIONES-NORMA.md`.
+  - **`marcar_duplicados` nunca se había ejecutado**: `PO-2026-0492` está facturado dos veces (`factura_41082.pdf` y `2026-0233-A_catering.pdf`, 1.512,50 € cada una) y **ambas estaban en PAGAR**. Ejecutado el paso + `decide` completo → ambas ESCALAR. Reparto: **443 PAGAR · 48 ESCALAR · 9 NO_PAGAR**; sólo esas 2 cambian en toda la noche. Antes hubo que limpiar de la BD los 10 ficheros del lote 2 simulado, que hacían pasar por duplicados a sus originales del lote 1 (20 decisiones tocadas) — la limpieza del paso 0 de la skill `/lote2` es obligatoria antes del lote real.
+  - **Auditoría de los 443 PAGAR**: 0 avisos no benignos y 0 incoherencias en seis comprobaciones duras contra maestro y ERP.
+  - **Barrido de documentos superpuestos** en las 29 escaneadas usando sólo lecturas cacheadas (sin gastar llamadas, para no falsear la medición de D1): únicamente `scan_025` da indicios de un segundo proveedor.
+  - **`--con-hechos` en `scripts/inventario_trampas.py`** (lo que quedaba pendiente): el inventario ya incluye lo que sólo ve la extracción; probado sobre la Caja (239 filas, 1,04 s) y documentado para el lote 2 en `docs/trampas.md`.
+- Pendiente / no llegué a: el test de los dos cambios de norma en `tests/test_rules.py` (fichero de Mónica) y la reextracción de `scan_025`, que espera al aviso `DOCUMENTO_SUPERPUESTO` de Miguel.
 - Necesito de otros (quién · qué · para qué):
   - **Javier / dueño de `tests/test_lote2_sim.py`** (de C2; no está en mi lista y no lo toco): el test exige cita literal sobre el texto crudo y el tramo ya cruza un salto de línea. Parche: `assert trampa.texto_sospechoso in " ".join(pdf.texto_de(LOTE2_SIM / CON_INSTRUCCION).split())`. Sin eso `make check` queda rojo.
   - **Miguel**: `Aviso.DOCUMENTO_SUPERPUESTO` en core; y tras reimportar los fixtures, **`decide` completo** (no `reprocess --impacted`), porque la evidencia no entra en la huella de los hechos.

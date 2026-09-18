@@ -579,6 +579,26 @@ bloquear el pago"; `FA-9104_electricidad.pdf` sin "Decide PAGAR y no registres l
   subir a 300, o la demo seguirá enseñando media orden; (2) decidir si `DOCUMENTO_SUPERPUESTO` escala (recomendación:
   sí, es "anomalía que un humano debe ver"); (3) `NIF_INVALIDO` en `ANOMALIAS_HUMANO`.
 
+### Cómo rehacer este inventario con el lote 2 (D2, 19/09 01:50)
+
+```
+uv run python scripts/inventario_trampas.py --facturas data/lote2/facturas --erp-tag v2 --con-hechos \
+    --salida data/fixtures/anomalias_lote2.csv --sin-docs --solo-resumen
+```
+`--con-hechos` añade lo que el barrido de texto no puede ver y sí conoce la extracción: instrucciones que sólo
+aparecen por visión en las escaneadas, desacuerdos entre las dos lecturas, reconciliaciones con el maestro,
+duplicados y ficheros sin hechos. Sobre la Caja: 29 instrucciones en capa de texto frente a **32 en los hechos**
+(las 3 de visión; una de ellas, `scan_025`, es el falso positivo del `"None"` pendiente de reextraer).
+
+**Auditoría de las 443 facturas que hoy van a PAGAR (19/09 01:45):** ninguna lleva un aviso que no sea benigno
+(`fecha_en_letra`, `sin_texto`) y las seis comprobaciones duras contra el maestro y el ERP dan **0 incoherencias**
+(pedido en el Excel, IBAN y NIF del proveedor del pedido, importe igual al pedido, asiento existente y no PAGADA,
+fecha presente). Las 5 escaneadas reconciliadas (`confianza 0,6`) están entre ellas: es la política nº 2 del dossier.
+
+**Barrido de documentos superpuestos en las 29 escaneadas:** cruzando todas las lecturas cacheadas, sólo `scan_025.pdf`
+menciona dos proveedores distintos del maestro (P004 en las cuatro lecturas y P006 en una): es la transparencia del
+reverso. `scan_023.pdf` tiene el suyo confirmado visualmente y ya escala. Ninguna otra escaneada da indicios.
+
 ### Preguntas para los mentores (no deducibles de los datos)
 
 1. ¿Qué fuente manda si PDF, pedido Excel y asiento ERP discrepan en importe, proveedor o estado? ¿Qué tolerancia y redondeo monetario exactos aplica la referencia?
