@@ -26,4 +26,18 @@
 Respuestas: *(anotar aquí con hora y quién respondió)*
 
 ## Turnos de sueño
-*(rellenar: quién duerme cuándo; mientras Miguel duerme no hay merges a main, el trabajo se acumula en ramas)*
+**Propuesta (Miguel, sáb 01:00): cada uno confirma o corrige su fila en el canal.** Está sacada de los hitos de
+arriba. Criterio: nadie duerme durante un hito suyo, y el domingo descansa primero quien defiende.
+
+| Persona | Sáb 19 | Dom 20 | Hitos que no se puede perder |
+|---|---|---|---|
+| Miguel | 02:00–09:00 | 02:30–06:30 | 17:30 entrega de seguro · 18:00 lote 2 (reprocess) · 23:00 dato en vivo y benchmark · 08:00 entrega final |
+| Javier | 03:00–10:00 | 02:00–06:30 | 18:00 lote 2 + ERP v2 (`/lote2`) |
+| Alfonso | 02:00–09:00 | 02:00–08:00 | 10:00 muestra etiquetada · 12:00 repliegue 2 · defensa |
+| Mónica | 01:30–08:30 | 02:00–07:00 | 10:00 muestra etiquetada · 18:00 norma v4 |
+| Alejandro | 02:00–09:00 | 02:30–07:30 | 12:00 consola con BD real · 20:00 repliegue 3 |
+
+- Mientras Miguel duerme no hay merges a `main`: el trabajo se acumula en ramas (`/handoff` deja la PR lista).
+- Los agentes en segundo plano pueden seguir de noche en ramas; nada se entrega ni se mergea sin una persona despierta.
+- El sábado entre las 02:00 y las 08:00 no hay ningún hito. La entrega válida del lote 1 ya existe
+  (`dist/entrega/outcomes.jsonl`, APTO, 18/09 23:05), así que el repliegue 1 de las 02:00 está cubierto.
