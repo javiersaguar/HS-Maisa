@@ -103,7 +103,7 @@ TOOL_OPENAI = {
 }
 CODIGOS_REINTENTABLES = {408, 409, 425, 429, 500, 502, 503, 504}
 MAX_TOKENS_TEXTO = int(os.environ.get("ALBERTITOS_MAX_TOKENS_TEXTO", "2000"))
-MAX_TOKENS_VISION = int(os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "3000"))
+MAX_TOKENS_VISION = int(os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "8000"))  # qwen3.6 razona ~3000 tokens antes de la tool call
 
 
 def proveedor_por_defecto() -> str:
