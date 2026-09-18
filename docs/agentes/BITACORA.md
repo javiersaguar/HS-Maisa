@@ -304,3 +304,8 @@ Plantilla (cópiala tal cual):
   - Alfonso: el resumen de 5 líneas para el plan está al principio de ESCALA-10K.md.
   - Sigue en pie PIDO A Miguel (índice `decisiones(sha256, vigente)`) y PIDO A Mónica/Miguel (`por_pedido()` una vez por `decide`), de la entrada de las 00:58.
 - necesito / bloqueo: nada. Javier: una línea en `plan.json` (`escala_sintetica.py` → `bench_escala.py`).
+
+### 01:30 · plataforma · ciclo 4 cerrado / ciclo 5 abierto (3 agentes, para el sábado por la mañana)
+- hice: merge de los ciclos 3 y 4 en `main` (`5eeb562`, 261 tests; conflicto sólo en el índice de ADRs, resuelto conservando los ocho); `plan.json` corregido con `scripts/bench_escala.py`; plan del sábado en `docs/PLAN-SABADO.md`; parte del ciclo 4 archivado; `PLAN-05.md`.
+- toco ahora (ficheros): nada más; escriben E1, E2 y E3 por la mañana.
+- para los demás: el ciclo 5 convierte en comprobaciones automáticas las tres cosas que anoche estuvieron a punto de costarnos la elegibilidad: BD contaminada por el lote simulado, `marcar_duplicados` que sólo corre dentro de `run`, y el hash del material. E1 preflight · E2 auditoría de entrega · E3 materiales + runbook cronometrado. Miguel: te pedirán enganchar la auditoría de E2 a `package`.

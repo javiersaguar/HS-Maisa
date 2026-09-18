@@ -1,31 +1,23 @@
 {
-  "ciclo": 4,
+  "ciclo": 5,
   "rama": "javier/ingesta",
-  "compartidos": [
-    "docs/agentes/BITACORA.md",
-    "docs/agentes/PARTE.md",
-    "docs/agentes/plan.json"
-  ],
+  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md", "docs/agentes/plan.json"],
   "agentes": {
-    "D1": [
-      "scripts/bench_escala.py",
-      "docs/agentes/ESCALA-10K.md"
+    "E1": [
+      "scripts/preflight_lote2.py",
+      "tests/test_preflight.py",
+      "src/albertitos/sources/estado_bd.py"
     ],
-    "D2": [
-      "src/albertitos/extract/*",
-      "src/albertitos/sources/*",
-      "tests/test_llm.py",
-      "tests/test_extract.py",
-      "tests/test_plantillas.py",
-      "tests/test_erp.py",
-      "tests/test_excel.py",
-      "tests/test_snapshot.py",
-      "scripts/inventario_trampas.py",
-      "data/fixtures/hechos_caja.jsonl",
-      "data/fixtures/hechos_muestra.jsonl",
-      "data/fixtures/anomalias.csv",
-      "docs/trampas.md",
-      "docs/agentes/CONTRASTE-TOTAL.md"
+    "E2": [
+      "scripts/auditoria_entrega.py",
+      "tests/test_auditoria.py",
+      "docs/agentes/AUDITORIA-ENTREGA.md"
+    ],
+    "E3": [
+      "scripts/verificar_material.py",
+      "tests/test_material.py",
+      ".claude/skills/lote2/SKILL.md",
+      "docs/agentes/ENSAYO-LOTE2.md"
     ]
   }
 }
