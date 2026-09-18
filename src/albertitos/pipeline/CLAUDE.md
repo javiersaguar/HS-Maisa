@@ -6,7 +6,7 @@
 | `run.py` | `correr(...)`: el `run` entero (ingest → maestro → ERP → extract → duplicados → decide → package) → `ResumenRun`. Sin extract, decide con los hechos que haya. `reprocesar(...)`: `reprocess --impacted` → `ResumenReproceso` | hecho |
 | `linaje.py` | `evaluar(...)`: qué recalcular y por qué (hechos, norma, corte, o el diff de maestro/ERP toca su pedido o NIF), qué sigue valiendo con otra versión (evento `decide/skip`); `diff_maestro`; `diff_decisiones(desde_id=)` antes/después. ADR-0006 | hecho |
 | `validar.py` | `listar_pdfs`, `validar_jsonl`: replica el verificador privado (conjunto exacto, NFC, únicos, enum, BOM) | hecho |
-| `package.py` | `empaquetar`: BD → `dist/entrega/*.jsonl` todo o nada (`.tmp` → validar todos los lotes → sustituir); una entrega inválida no pisa la anterior. Eventos emit: uno por intento y lote; por fichero, al cambiar lo entregado o si no se puede entregar | hecho |
+| `package.py` | `empaquetar`: BD → `dist/entrega/*.jsonl` todo o nada (`.tmp` → validar todos los lotes → **auditar** → sustituir); una entrega inválida o con la auditoría roja (o rota) no pisa la anterior. `auditar=` recibe `Auditor = (conn, {lote: dir}) -> InformeAuditoria` (`ok`, `rojos`, `texto()`); `auditor_de_entrega()` lo toma de `pipeline/auditoria.py` (E2) cuando exista, y el CLI lo pasa en `package` y `run` (`--sin-auditoria` lo salta a mano). Eventos emit: uno por intento y lote (`auditoria`: verde / no ejecutada; `AUDITORIA-ROJA`/`AUDITORIA-ERROR` si niega); por fichero, al cambiar lo entregado o si no se puede entregar | hecho; falta `pipeline/auditoria.py` (E2) |
 | `bench.py` | cifras medidas desde `eventos` para `docs/benchmark.md` | hecho |
 
 ## Invariantes
