@@ -17,6 +17,11 @@ from rich.table import Table
 
 load_dotenv()
 
+# En Windows la consola va en cp1252: sin esto, una tilde, una → o un ✗ tumban la CLI (también --help).
+for _flujo in (sys.stdout, sys.stderr):
+    if hasattr(_flujo, "reconfigure") and (_flujo.encoding or "").lower() not in ("utf-8", "utf8"):
+        _flujo.reconfigure(encoding="utf-8", errors="replace")
+
 app = typer.Typer(
     no_args_is_help=True, help="Albertitos · el LLM extrae, la norma decide, la BD recuerda."
 )
@@ -31,6 +36,9 @@ CAJA = Path("data/caja")
 LOTE2 = Path("data/lote2")
 MANIFIESTO = Path("data/caja.sha256")
 ENTREGA = Path("dist/entrega")
+RAICES = {1: CAJA, 2: LOTE2}
+MANIFIESTOS = {1: MANIFIESTO, 2: Path("data/lote2.sha256")}
+ESPERADOS = {1: 500, 2: 40}
 
 
 def _conn(solo_lectura: bool = False):
@@ -70,60 +78,90 @@ def db_init() -> None:
 
 
 @caja_app.command("verify")
-def caja_verify(lote: int = typer.Option(1, help="1 = Caja, 2 = lote sorpresa")) -> None:
-    """Comprueba nº de PDFs, nombres en NFC y (lote 1) hashes frente a data/caja.sha256."""
-    directorio = (CAJA if lote == 1 else LOTE2) / "facturas"
+def caja_verify(
+    lote: int = typer.Option(1, help="1 = Caja, 2 = lote sorpresa"),
+    carpeta: Path | None = typer.Option(
+        None, "--dir", help="carpeta de PDFs a comprobar (por defecto data/caja|lote2/facturas)"
+    ),
+    esperados: int | None = typer.Option(
+        None, help="nº de PDFs esperado (por defecto 500 | 40; con --dir, sin comprobar)"
+    ),
+) -> None:
+    """Comprueba nº de PDFs, nombres en NFC y hashes frente al manifiesto del lote
+    (data/caja.sha256 | data/lote2.sha256), comparando por nombre de fichero."""
+    directorio = carpeta or RAICES[lote] / "facturas"
     if not directorio.exists():
         rprint(f"[red]{directorio} no existe[/red]")
         raise typer.Exit(1)
     pdfs = sorted(p for p in directorio.iterdir() if p.suffix.lower() == ".pdf")
     problemas: list[str] = []
+    notas: list[str] = []
     for p in pdfs:
         if not unicodedata.is_normalized("NFC", p.name):
             problemas.append(
                 f"nombre en NFD (no NFC): {p.name!r} → renómbralo; el file_id debe ser NFC"
             )
-    esperado = 500 if lote == 1 else None
+    esperado = esperados if esperados is not None else (None if carpeta else ESPERADOS[lote])
     if esperado and len(pdfs) != esperado:
         problemas.append(f"hay {len(pdfs)} PDFs, se esperaban {esperado}")
-    if lote == 1 and MANIFIESTO.exists():
-        manifiesto = dict(
-            linea.split("  ", 1)[::-1]
-            for linea in MANIFIESTO.read_text().splitlines()
-            if "  " in linea
-        )
+    ruta_manifiesto = MANIFIESTOS[lote]
+    if ruta_manifiesto.exists():
+        manifiesto = {  # nombre NFC del PDF → sha256, sólo lo que cuelga de facturas/
+            ruta.rsplit("/", 1)[-1]: h
+            for h, ruta in (
+                linea.split("  ", 1)
+                for linea in ruta_manifiesto.read_text(encoding="utf-8").splitlines()
+                if "  " in linea
+            )
+            if "/facturas/" in ruta
+        }
+        vistos = set()
         for p in pdfs:
-            h = hashlib.sha256(p.read_bytes()).hexdigest()
-            rel = f"data/caja/facturas/{unicodedata.normalize('NFC', p.name)}"
-            if rel not in manifiesto:
-                problemas.append(f"no está en el manifiesto: {rel}")
-            elif manifiesto[rel] != h:
-                problemas.append(
-                    f"hash distinto: {rel} (¿la Caja oficial de las 21:00 cambió este PDF?)"
-                )
+            nombre = unicodedata.normalize("NFC", p.name)
+            vistos.add(nombre)
+            if nombre not in manifiesto:
+                problemas.append(f"no está en {ruta_manifiesto}: {nombre}")
+            elif manifiesto[nombre] != hashlib.sha256(p.read_bytes()).hexdigest():
+                problemas.append(f"hash distinto de {ruta_manifiesto}: {nombre}")
+        faltan = sorted(set(manifiesto) - vistos)
+        if faltan:
+            problemas.append(
+                f"faltan {len(faltan)} PDFs del manifiesto: {faltan[:5]}{' …' if len(faltan) > 5 else ''}"
+            )
     elif lote == 1:
         problemas.append(
             "no hay data/caja.sha256: genera el manifiesto con `albertitos caja manifest` desde la Caja oficial"
         )
+    else:
+        notas.append(
+            f"sin {ruta_manifiesto}: tras descomprimir el lote real, `albertitos caja manifest --lote {lote}`"
+        )
     con_tilde = sum(1 for p in pdfs if any(ord(c) > 127 for c in p.name))
     rprint(f"{len(pdfs)} PDFs en {directorio} · {con_tilde} con caracteres no ASCII")
+    for x in notas:
+        rprint(f"  [yellow]·[/yellow] {x}")
     for x in problemas:
         rprint(f"  [red]✗[/red] {x}")
     if problemas:
         raise typer.Exit(1)
-    rprint("[green]Caja OK[/green]")
+    rprint(f"[green]Lote {lote} OK[/green]")
 
 
 @caja_app.command("manifest")
-def caja_manifest() -> None:
-    """Escribe data/caja.sha256 con el hash de cada fichero de la Caja (hazlo sólo desde la Caja oficial)."""
+def caja_manifest(lote: int = typer.Option(1, help="1 = Caja, 2 = lote sorpresa")) -> None:
+    """Escribe el manifiesto del lote (data/caja.sha256 | data/lote2.sha256) con el hash de cada
+    fichero. Hazlo sólo desde el zip oficial, recién descomprimido."""
+    raiz, destino = RAICES[lote], MANIFIESTOS[lote]
+    if not raiz.exists():
+        rprint(f"[red]{raiz} no existe[/red]")
+        raise typer.Exit(1)
     lineas = []
-    for p in sorted(CAJA.rglob("*")):
+    for p in sorted(raiz.rglob("*")):
         if p.is_file() and "__pycache__" not in p.parts:
             rel = unicodedata.normalize("NFC", str(p).replace(os.sep, "/"))
             lineas.append(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {rel}")
-    MANIFIESTO.write_text("\n".join(lineas) + "\n", encoding="utf-8")
-    rprint(f"[green]{len(lineas)} hashes[/green] en {MANIFIESTO}")
+    destino.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    rprint(f"[green]{len(lineas)} hashes[/green] en {destino}")
 
 
 # ----------------------------------------------------------------------------- etapas
