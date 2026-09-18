@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+import time
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
+from albertitos.core.contracts import ErpSnapshot, MasterSnapshot
 from albertitos.core.versions import EXTRACTOR_VERSION
-from albertitos.pipeline import etapas, package
+from albertitos.pipeline import etapas, linaje, package
 from albertitos.pipeline.validar import InformeValidacion
 
 log = logging.getLogger(__name__)
@@ -30,6 +32,7 @@ class ResumenRun:
     extract_nota: str = ""
     sin_hechos: list[str] = field(default_factory=list)
     duplicados: int = 0
+    duplicados_quitados: int = 0
     decididas: int = 0
     entregas: list[tuple[Path, InformeValidacion]] = field(default_factory=list)
     rechazo: InformeValidacion | None = None
@@ -52,7 +55,7 @@ class ResumenRun:
                 if self.sin_hechos
                 else ""
             ),
-            f"duplicados marcados: {self.duplicados} · decisiones: {self.decididas}",
+            f"duplicados: +{self.duplicados} −{self.duplicados_quitados} · decisiones: {self.decididas}",
         ]
         for ruta, inf in self.entregas:
             lineas.append(f"{inf.texto()} → {ruta}")
@@ -115,7 +118,7 @@ def correr(
             log.warning(r.extract_nota)
     r.sin_hechos = sin_hechos(conn)
 
-    r.duplicados = etapas.marcar_duplicados(conn)
+    r.duplicados, r.duplicados_quitados = etapas.marcar_duplicados(conn)
     r.decididas = etapas.decide(
         conn, norma_version=norma_version, fecha_corte=fecha_corte, maestro=m, erp=e
     )
@@ -123,4 +126,78 @@ def correr(
         r.entregas = package.empaquetar(conn, entrega, caja, lote2, con_traza=con_traza)
     except package.EntregaInvalida as ex:
         r.rechazo = ex.informe
+    return r
+
+
+@dataclass
+class ResumenReproceso:
+    destino: str = ""  # "norma v3 · corte 2026-09-18 · maestro … · erp …"
+    total: int = 0
+    impactados: dict[str, str] = field(default_factory=dict)
+    recalculadas: int = 0
+    sin_impacto: int = 0  # decididas con otra versión de maestro/ERP que el diff no toca
+    pendientes: list[str] = field(default_factory=list)
+    duplicados: tuple[int, int] = (0, 0)
+    cambios: list[dict[str, str]] = field(default_factory=list)
+    segundos: float = 0.0
+
+    def texto(self, max_cambios: int = 30) -> str:
+        lineas = [
+            f"destino: {self.destino}",
+            f"duplicados: +{self.duplicados[0]} −{self.duplicados[1]}"
+            f" · sin impacto por diff: {self.sin_impacto}"
+            f" · pendientes sin hechos: {len(self.pendientes)}",
+            f"{self.recalculadas} de {self.total} recalculadas · {len(self.cambios)} cambian"
+            f" · {self.segundos:.2f} s",
+        ]
+        for c in self.cambios[:max_cambios]:
+            por = self.impactados.get(c["file_id"], "")
+            lineas.append(f"  {c['file_id']}: {c['antes']} → {c['despues']}  ({por})")
+        if len(self.cambios) > max_cambios:
+            lineas.append(f"  … y {len(self.cambios) - max_cambios} más")
+        return "\n".join(lineas)
+
+
+def reprocesar(
+    conn: sqlite3.Connection,
+    *,
+    norma_version: str,
+    fecha_corte: date,
+    maestro: MasterSnapshot,
+    erp: ErpSnapshot,
+    lote: int | None = None,
+    todo: bool = False,
+) -> ResumenReproceso:
+    """`reprocess --impacted`: duplicados → linaje → decide sólo lo impactado → diff de esta pasada.
+    Las no impactadas no se tocan; las decididas con otra versión que el diff no toca dejan un evento."""
+    t0 = time.perf_counter()
+    r = ResumenReproceso(
+        destino=f"norma {norma_version} · corte {fecha_corte} · maestro {maestro.version} · erp {erp.version}"
+    )
+    r.duplicados = etapas.marcar_duplicados(conn)
+    lin = linaje.evaluar(
+        conn,
+        norma_version=norma_version,
+        fecha_corte=fecha_corte,
+        maestro=maestro,
+        erp=erp,
+        extractor_version=EXTRACTOR_VERSION,
+        lote=lote,
+        todo=todo,
+    )
+    r.total, r.impactados, r.pendientes = lin.total, lin.impactados, lin.pendientes
+    desde = linaje.ultima_decision(conn)
+    r.recalculadas = etapas.decide(
+        conn,
+        norma_version=norma_version,
+        fecha_corte=fecha_corte,
+        maestro=maestro,
+        erp=erp,
+        solo=list(lin.impactados),
+        por=lin.impactados,
+    )
+    linaje.registrar_sin_impacto(conn, lin, norma_version)
+    r.sin_impacto = len(lin.sin_impacto)
+    r.cambios = linaje.diff_decisiones(conn, desde_id=desde)
+    r.segundos = time.perf_counter() - t0
     return r

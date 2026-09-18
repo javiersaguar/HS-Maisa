@@ -281,42 +281,32 @@ def decide(norma: str = "v3", fecha_corte: str | None = None, erp: str | None = 
 
 @app.command()
 def reprocess(
-    impacted: bool = True,
+    impacted: bool = typer.Option(
+        True, "--impacted/--no-impacted", help="sólo lo impactado (por defecto)"
+    ),
+    todo: bool = typer.Option(False, "--todo", help="recalcula todo sin mirar el linaje"),
     norma: str = "v3",
     fecha_corte: str | None = None,
     erp: str | None = None,
     lote: int | None = None,
 ) -> None:
-    """Recalcula sólo lo impactado por un cambio de norma/maestro/ERP/hechos y muestra el diff."""
-    from albertitos.core.versions import EXTRACTOR_VERSION
-    from albertitos.pipeline import etapas, linaje
+    """Recalcula sólo lo impactado (hechos, norma, fecha de corte, o el diff de maestro/ERP toca su
+    pedido o su NIF) y muestra qué cambia en esta pasada."""
+    from albertitos.pipeline.run import reprocesar
     from albertitos.sources import snapshot
 
+    corte = _fecha_corte(fecha_corte)
     conn = _conn()
-    m = snapshot.cargar_maestro_bd(conn)
-    e = snapshot.cargar_erp_bd(conn, erp)
-    objetivo = linaje.impactados(
+    r = reprocesar(
         conn,
         norma_version=norma,
-        maestro_version=m.version,
-        erp_version=e.version,
-        extractor_version=EXTRACTOR_VERSION,
+        fecha_corte=corte,
+        maestro=snapshot.cargar_maestro_bd(conn),
+        erp=snapshot.cargar_erp_bd(conn, erp),
         lote=lote,
+        todo=todo or not impacted,
     )
-    total = conn.execute("SELECT count(*) n FROM ficheros").fetchone()["n"]
-    rprint(f"impactados: [bold]{len(objetivo)}[/bold] de {total}")
-    n = etapas.decide(
-        conn,
-        norma_version=norma,
-        fecha_corte=_fecha_corte(fecha_corte),
-        maestro=m,
-        erp=e,
-        solo=objetivo,
-    )
-    cambios = linaje.diff_decisiones(conn)
-    rprint(f"[green]{n} recalculadas[/green] · {len(cambios)} cambian de resultado")
-    for c in cambios[:30]:
-        rprint(f"  {c['file_id']}: {c['antes']} → {c['despues']}")
+    rprint(r.texto())
 
 
 @app.command()

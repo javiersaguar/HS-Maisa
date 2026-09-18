@@ -41,4 +41,11 @@ decidir para cada factura PAGAR, NO_PAGAR o ESCALAR, sin pagar dos veces y sin p
 ### ADR-0001 · El LLM extrae; la norma decide
 *(resumen)*
 
+### ADR-0002 · Reprocesar sólo lo que el cambio toca
+Una decisión depende de sus hechos, de la norma, de la fecha de corte y del pedido y el NIF de la factura en el maestro y el ERP.
+`reprocess --impacted` recalcula sólo las decisiones cuyo pedido o NIF toca el diff de maestro o ERP, y dice por qué.
+Las demás conservan la versión con la que se decidieron y dejan un evento "sin impacto": no se reescribe el historial.
+Ensayo ERP v1→v2-sim: **2 de 500 recalculadas, cambian 2**, en 0,04 s (antes: 510 de 510). Vuelta a v1: estado idéntico al original.
+Riesgo aceptado: depende de que la norma lea sólo esas claves. Un test lo comprueba en cada norma registrada, y `--todo` es la salida.
+
 ### ADR-000N · …

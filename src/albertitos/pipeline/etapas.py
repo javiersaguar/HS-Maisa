@@ -94,9 +94,11 @@ def extract(
     return extraer(conn, solo_pendientes=solo_pendientes, fixture=fixture, workers=workers).ok
 
 
-def marcar_duplicados(conn: sqlite3.Connection) -> int:
+def marcar_duplicados(conn: sqlite3.Connection) -> tuple[int, int]:
     """Segunda pasada sobre los hechos: mismo pedido o mismo (NIF, nº factura) en más de un PDF →
-    Aviso.DUPLICADO_SOSPECHOSO en todos ellos. Cambia hechos_hash, así que el linaje los reprocesa."""
+    Aviso.DUPLICADO_SOSPECHOSO en todos ellos. La marca se recalcula entera: se pone donde hay grupo y
+    se quita donde ya no lo hay (p. ej. tras borrar los `L2-*` de un ensayo). Sólo esta función pone
+    ese aviso. Cambia hechos_hash, así que el linaje los reprocesa. Devuelve (puestos, quitados)."""
     filas = conn.execute(
         "SELECT sha256, hechos_json FROM hechos WHERE extractor_version=?", (EXTRACTOR_VERSION,)
     ).fetchall()
@@ -108,17 +110,26 @@ def marcar_duplicados(conn: sqlite3.Connection) -> int:
             por_pedido.setdefault(h.pedido, []).append(h)
         if h.nif_emisor and h.num_factura:
             por_factura.setdefault((h.nif_emisor, h.num_factura), []).append(h)
-    marcados = 0
-    for grupo in list(por_pedido.values()) + list(por_factura.values()):
-        if len(grupo) < 2:
+    duplicados = {
+        h.sha256
+        for grupo in list(por_pedido.values()) + list(por_factura.values())
+        if len(grupo) > 1
+        for h in grupo
+    }
+    puestos = quitados = 0
+    for h in hechos:
+        marcado = Aviso.DUPLICADO_SOSPECHOSO in h.avisos
+        if h.sha256 in duplicados and not marcado:
+            h.avisos.append(Aviso.DUPLICADO_SOSPECHOSO)
+            puestos += 1
+        elif h.sha256 not in duplicados and marcado:
+            h.avisos = [a for a in h.avisos if a != Aviso.DUPLICADO_SOSPECHOSO]
+            quitados += 1
+        else:
             continue
-        for h in grupo:
-            if Aviso.DUPLICADO_SOSPECHOSO not in h.avisos:
-                h.avisos.append(Aviso.DUPLICADO_SOSPECHOSO)
-                db.guardar_hechos(conn, h)
-                marcados += 1
+        db.guardar_hechos(conn, h)
     conn.commit()
-    return marcados
+    return puestos, quitados
 
 
 def decide(
@@ -129,8 +140,10 @@ def decide(
     maestro: MasterSnapshot,
     erp: ErpSnapshot,
     solo: list[str] | None = None,
+    por: dict[str, str] | None = None,
 ) -> int:
-    """Aplica la norma a los hechos de cada fichero (o sólo a `solo`) y guarda la decisión vigente."""
+    """Aplica la norma a los hechos de cada fichero (o sólo a `solo`) y guarda la decisión vigente.
+    `por` (file_id → motivo del linaje) va al evento: la traza dice por qué se recalculó."""
     from albertitos.rules import REGISTRO
 
     norma = REGISTRO[norma_version]
@@ -164,7 +177,8 @@ def decide(
                     {
                         "resultado": decision.resultado.value,
                         "reglas_ko": decision.reglas_incumplidas,
-                    },
+                    }
+                    | ({"por": por[fila["file_id"]]} if por and fila["file_id"] in por else {}),
                     ensure_ascii=False,
                 ),
             ),
