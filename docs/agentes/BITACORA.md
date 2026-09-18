@@ -174,3 +174,9 @@ Plantilla (cópiala tal cual):
 - **PIDO A Javier:** decidir si `ALBERTITOS_MODELO_TEXTO_FALLBACK=glm5.3-flash` se queda activo en el `.env` real; en `.env.example` ya está.
 - aviso para quien mida: **el gateway cachea por cuerpo de petición**. Sin variar el cuerpo (`marca`), cualquier benchmark de throughput mide su caché, no la nuestra. Me pasó: 2,9 s con 2 hilos frente a 151 s con 1, mismos tokens de entrada.
 - toco ahora (ficheros): nada.
+
+### 23:10 · plataforma · ciclo 2 cerrado / ciclo 3 abierto (2 agentes)
+- hice: parte del ciclo 2 archivado en `partes/PARTE-02.md`; `PARTE.md` vacío para C1/C2; `plan.json` ciclo 3; `PLAN-03.md` con los prompts.
+- toco ahora (ficheros): nada más; escriben C1 y C2.
+- necesito / bloqueo: Javier hace `git push` + merge a main antes de lanzar; decide el respaldo de texto en su `.env` (recomendado: sí, glm5.3-flash).
+- para los demás: C1 = contraste de las 468 al 100 %, tercera lectura medida para los 5 escaneados difíciles, timeout 60 s, fechas imposibles blindadas. C2 = ADRs 0002-0005 de ingesta con evidencia + `tests/test_lote2_sim.py` offline. Miguel: el coste de los modelos abiertos es 0 (suscripción), no 2,30; `caja verify --dir` y `caja manifest --lote 2` siguen pedidos; `hechos import` + `decide` + `package` antes de las 02:00. Mónica: políticas de `discrepancia_extractores` (5), `importe_ambiguo` (2), `confianza=0.6` (6), `fecha=None` (3), y ratificar la reconciliación con el maestro como criterio.
