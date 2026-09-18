@@ -33,9 +33,15 @@ log = logging.getLogger(__name__)
 
 DIRECTORIOS = {1: Path("data/caja/facturas"), 2: Path("data/lote2/facturas")}
 DPI_VISION = int(os.environ.get("ALBERTITOS_DPI_VISION", "150"))
-DPI_VISION_2 = int(os.environ.get("ALBERTITOS_DPI_VISION_2", "130"))
-# Segunda lectura de cada escaneada con otro renderizado; si los campos clave difieren, Aviso.DISCREPANCIA_EXTRACTORES.
+# Segunda lectura de cada escaneada: recorte de la parte superior (identificadores) a más resolución.
+# Medido el 18/09: a 130 dpi la segunda lectura era PEOR que la primera (B99 por B98, 51,27 por 61,27) y
+# generaba discrepancias falsas; a 200 dpi la página entera dispara los tokens y qwen se pierde. El recorte
+# superior a 200 dpi cuesta lo mismo que la página a 150 y lee mejor NIF/IBAN/pedido.
+DPI_VISION_2 = int(os.environ.get("ALBERTITOS_DPI_VISION_2", "200"))
+FRACCION_SUPERIOR_2 = float(os.environ.get("ALBERTITOS_FRACCION_SUPERIOR_2", "0.55"))
 VISION_DOBLE = os.environ.get("ALBERTITOS_VISION_DOBLE", "1") != "0"
+# Sólo se comparan los campos de identidad (los importes ya los cruzan validadores, maestro y ERP).
+CAMPOS_SEGUNDA_LECTURA = ("nif_emisor", "iban", "pedido", "num_factura")
 
 
 @dataclass
@@ -126,7 +132,8 @@ def _extraer_uno(
                 tokens_out=int(uso.get("tokens_out", 0)),
                 coste_eur=uso.get("coste_eur", 0),
                 version=EXTRACTOR_VERSION,
-                detalle=f"{hechos.metodo.value} avisos={[a.value for a in hechos.avisos]}",
+                detalle=f"{hechos.metodo.value} avisos={[a.value for a in hechos.avisos]}"
+                + (f" discrepancias={uso['discrepancias']}" if uso.get("discrepancias") else ""),
             ),
         )
         conn.commit()
@@ -167,20 +174,34 @@ def _extraer_uno(
         return "error", codigo, {}
 
 
+def _recorte_superior_png(ruta: Path, *, dpi: int, fraccion: float) -> bytes:
+    import pymupdf
+
+    with pymupdf.open(ruta) as doc:
+        pagina = doc[0]
+        r = pagina.rect
+        clip = pymupdf.Rect(r.x0, r.y0, r.x1, r.y0 + r.height * fraccion)
+        return pagina.get_pixmap(dpi=dpi, clip=clip).tobytes("png")
+
+
 def _segunda_lectura(
     hechos: InvoiceFacts, uso: dict[str, Any], llm: ClienteLLM, ruta: Path, sha: str, file_id: str
 ) -> dict[str, Any]:
-    """Escaneadas: segunda pasada con otro renderizado. Si los campos clave no coinciden, se marca
-    DISCREPANCIA_EXTRACTORES (la norma escala) y se guarda la evidencia en el uso/evento."""
+    """Escaneadas: segunda pasada sobre el recorte superior a más resolución. Si los identificadores
+    no coinciden, se marca DISCREPANCIA_EXTRACTORES (la norma escala) y queda la evidencia en el uso."""
     try:
-        png2 = pdf.imagen_png(ruta, dpi=DPI_VISION_2)
+        png2 = _recorte_superior_png(ruta, dpi=DPI_VISION_2, fraccion=FRACCION_SUPERIOR_2)
         otra, uso2 = llm.extraer(
-            sha256=sha, file_id=file_id, png=png2, variante=f"dpi{DPI_VISION_2}"
+            sha256=sha, file_id=file_id, png=png2, variante=f"sup{DPI_VISION_2}"
         )
     except ErrorLLM as e:  # la segunda lectura es opcional: sin ella, se sigue con la primera
         log.warning("%s: segunda lectura no disponible (%s)", file_id, e.codigo)
         return uso
-    difs = validadores.discrepancias(hechos, otra)
+    difs = {
+        k: v
+        for k, v in validadores.discrepancias(hechos, otra).items()
+        if k in CAMPOS_SEGUNDA_LECTURA and getattr(otra, k) is not None
+    }
     uso = dict(uso)
     for k in ("tokens_in", "tokens_out"):
         uso[k] = int(uso.get(k, 0)) + int(uso2.get(k, 0))
