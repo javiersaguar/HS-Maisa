@@ -132,6 +132,16 @@ def _precios_por_modelo() -> dict[str, tuple[Decimal, Decimal]]:
 # Timeout de lectura por petición. B2 midió colas de 94 s con p50 de 2,9 s: mejor cortar y reintentar
 # (el reintento cambia el texto y suele entrar) que esperar tres minutos a una petición colgada.
 TIMEOUT_S = float(os.environ.get("ALBERTITOS_LLM_TIMEOUT_S", "60"))
+# Visión aparte (medido 18/09): qwen3.6 a 150 dpi tarda p50 11-13 s, p95 25-36 s y como máximo ~41 s por
+# lectura; con 60 s se cortaban lecturas legítimas de imágenes más grandes. 90 s = 2,2× el máximo observado
+# y sigue por debajo de la cola de 94 s que queremos cortar.
+TIMEOUT_VISION_S = float(os.environ.get("ALBERTITOS_LLM_TIMEOUT_VISION_S", "90"))
+
+
+def timeout_para(png: bytes | None) -> float:
+    return TIMEOUT_VISION_S if png is not None else TIMEOUT_S
+
+
 # Caos `llm_timeout`: cuánto "cuelga" la petición simulada antes de fallar (segundos).
 CAOS_TIMEOUT_ESPERA_S = float(os.environ.get("ALBERTITOS_CAOS_TIMEOUT_ESPERA_S", "1"))
 MAX_TOKENS_TEXTO = int(os.environ.get("ALBERTITOS_MAX_TOKENS_TEXTO", "2000"))
@@ -446,7 +456,8 @@ class ClienteLLM:
                 if chaos.modo() == "llm_timeout":
                     time.sleep(CAOS_TIMEOUT_ESPERA_S)  # el proveedor "no contesta"
                     raise ErrorLLM(
-                        "LLM-TIMEOUT", f"caos: sin respuesta en {TIMEOUT_S:.0f} s (simulado)"
+                        "LLM-TIMEOUT",
+                        f"caos: sin respuesta en {timeout_para(png):.0f} s (simulado)",
                     )
                 if self.proveedor == "anthropic":
                     datos, tin, tout = self._llamar_anthropic(modelo, texto, png, intento, marca)
@@ -505,6 +516,7 @@ class ClienteLLM:
         )
         try:
             r = self._api().messages.create(
+                timeout=timeout_para(png),
                 model=modelo,
                 max_tokens=MAX_TOKENS_VISION if png is not None else MAX_TOKENS_TEXTO,
                 system=PROMPT_SISTEMA,
@@ -555,10 +567,14 @@ class ClienteLLM:
             "tool_choice": {"type": "function", "function": {"name": TOOL["name"]}},
         }
         try:
-            r = self._http().post("/chat/completions", json=cuerpo)
+            r = self._http().post(
+                "/chat/completions",
+                json=cuerpo,
+                timeout=httpx.Timeout(timeout_para(png), connect=15.0),
+            )
         except httpx.TimeoutException as e:
             raise ErrorLLM(
-                "LLM-TIMEOUT", f"sin respuesta en {TIMEOUT_S:.0f} s ({type(e).__name__})"
+                "LLM-TIMEOUT", f"sin respuesta en {timeout_para(png):.0f} s ({type(e).__name__})"
             ) from e
         except httpx.HTTPError as e:
             raise ErrorLLM("LLM-RED", f"{type(e).__name__}: {e}"[:120]) from e

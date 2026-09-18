@@ -199,3 +199,10 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): caché del LLM (re-etiqueto p-0.1→p-0.2: el prompt no cambió desde ff6fed9 y todas las lecturas son posteriores), `validadores.py` (NIF_INVALIDO), tercera lectura medida sobre los 29 escaneados.
 - necesito / bloqueo: nada.
 - para los demás: **C2, cifra para el ADR-0002: 468/468 (antes 18/18 y 40/40).** Miguel: tu `PROMPT_VERSION=p-0.2` habría dejado huérfanas las 727 lecturas en caché; las re-etiqueto en la BD de Javier. En otros portátiles no hay caché: usad `hechos import`, no `extract`.
+
+### 23:36 · C1 · corrección de horas · NIF_INVALIDO integrado
+- corrijo: mis dos entradas anteriores llevan hora adelantada; se escribieron a las 23:24 y 23:32 (reloj del portátil).
+- hice: `validadores.py` usa `Aviso.NIF_INVALIDO` (antes `EXTRACCION_PARCIAL`) para NIF mal formados; revalidados los 510 hechos: 0 cambian → no hay que reextraer ni reimportar (commit dc499b8). Caché re-etiquetada p-0.1→p-0.2 (728 filas, 0 choques); los 32 hechos LLM del lote 1 se resuelven desde caché.
+- toco ahora (ficheros): tercera lectura de los 29 escaneados en curso (qwen 300 dpi tercio superior + deepseek página 150 dpi; ~20 min), después medición del timeout 180 vs 60 s con `scripts/bench_llm.py`. `docs/agentes/CONTRASTE-TOTAL.md` en marcha.
+- necesito / bloqueo: PIDO A Mónica: añadir `Aviso.NIF_INVALIDO` a `ANOMALIAS_HUMANO` de norma_v3 (hoy no cambia ningún resultado; mejora la traza).
+- para los demás: C2, la cifra del ADR-0002 es 468/468; la del ADR-0003 (tercera lectura) llegará con la tabla.

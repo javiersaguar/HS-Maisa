@@ -652,9 +652,11 @@ def test_timeout_real_de_httpx_se_traduce_a_llm_timeout(bd, tmp_path, monkeypatc
 
     class Http:
         llamadas = 0
+        timeouts: list[float] = []
 
         def post(self, *a, **k):
             Http.llamadas += 1
+            Http.timeouts.append(k["timeout"].read)
             raise httpx.ReadTimeout("simulado")
 
     monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
@@ -666,6 +668,25 @@ def test_timeout_real_de_httpx_se_traduce_a_llm_timeout(bd, tmp_path, monkeypatc
         "SELECT error_codigo FROM eventos WHERE etapa='extract' AND estado='pendiente'"
     ).fetchone()[0]
     assert ev == "LLM-TIMEOUT"
+    assert Http.timeouts == [llm.TIMEOUT_S] * 3  # texto: 60 s por petición
+
+
+def test_timeout_por_modalidad(bd, tmp_path, monkeypatch):
+    """Visión tiene su propio timeout (más largo): qwen razona decenas de segundos por imagen."""
+    import httpx
+
+    monkeypatch.setenv("ALBERTITOS_LLM_PROVEEDOR", "openai_compat")
+    monkeypatch.setenv("ALBERTITOS_LLM_API_KEY", "clave-de-prueba")
+    vistos: list[float] = []
+
+    class Http:
+        def post(self, *a, **k):
+            vistos.append(k["timeout"].read)
+            raise httpx.ReadTimeout("simulado")
+
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
+    assert vistos and set(vistos) == {llm.TIMEOUT_VISION_S} and llm.TIMEOUT_VISION_S > llm.TIMEOUT_S
 
 
 def test_fecha_imposible_no_se_inventa(bd, monkeypatch):
