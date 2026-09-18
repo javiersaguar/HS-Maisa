@@ -636,7 +636,9 @@ def test_caos_timeout_reintenta_y_deja_pendiente(bd, tmp_path, monkeypatch):
     intentos = [
         x[0] for x in bd.execute("SELECT intento FROM eventos WHERE etapa='extract' ORDER BY id")
     ]
-    assert intentos[-1] == 3 and hechos_de(bd, TEXTO) is None  # tres intentos consumidos, en la traza
+    assert (
+        intentos[-1] == 3 and hechos_de(bd, TEXTO) is None
+    )  # tres intentos consumidos, en la traza
     chaos.desactivar()
     Api = api_falsa(RESPUESTA_P001)
     monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
