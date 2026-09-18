@@ -43,6 +43,8 @@ class ClienteERP:
         max_intentos: int = 8,
         timeout: float = 15.0,
     ) -> None:
+        if rps <= 0 or max_intentos < 1:
+            raise ValueError("rps debe ser positivo y max_intentos al menos 1")
         self.url = (url or os.environ.get("ALBERTITOS_ERP_URL", "http://127.0.0.1:8009")).rstrip(
             "/"
         )
@@ -57,11 +59,23 @@ class ClienteERP:
         self.reintentos = 0
         self._ultima = 0.0
 
+    def close(self) -> None:
+        self.http.close()
+
+    def __enter__(self) -> ClienteERP:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
+
     # ------------------------------------------------------------------ fontanería
 
     def _evento(self, **kw) -> None:
         if self.conn is not None:
             db.registrar_evento(self.conn, Event(etapa=Etapa.ENRICH, **kw))
+            # La traza sobrevive también a un pull fallido y no retiene el bloqueo
+            # de escritura de SQLite mientras esperamos al bridge o al Retry-After.
+            self.conn.commit()
 
     def _respetar_ritmo(self) -> None:
         espera = self.intervalo - (time.perf_counter() - self._ultima)
@@ -93,20 +107,54 @@ class ClienteERP:
             if auth and (
                 not self.token
                 or self.usos >= RENOVAR_A_LOS_USOS
-                or time.time() - self.token_desde > RENOVAR_A_LOS_SEGUNDOS
+                or time.monotonic() - self.token_desde >= RENOVAR_A_LOS_SEGUNDOS
             ):
                 self.login()
             self._respetar_ritmo()
             t0 = time.perf_counter()
             cab = {"X-ERP-Token": self.token or ""} if auth else {}
-            r = self.http.request(
-                metodo, f"{self.url}{ruta}", params=params, data=data, headers=cab
-            )
+            # El bridge contesta 429 antes de leer el cuerpo del POST. Cerrar esa
+            # conexión impide que el formulario pendiente corrompa el siguiente login.
+            if data is not None:
+                cab["Connection"] = "close"
             self.consultas += 1
             if auth:
                 self.usos += 1
             que = f"{metodo} {ruta} {params or ''}".strip()
+            try:
+                r = self.http.request(
+                    metodo, f"{self.url}{ruta}", params=params, data=data, headers=cab
+                )
+            except httpx.RequestError as exc:
+                ultimo = "ERP-TIMEOUT" if isinstance(exc, httpx.TimeoutException) else "ERP-RED"
+                repetir = intento < self.max_intentos
+                self.reintentos += int(repetir)
+                self._evento(
+                    file_id=file_id,
+                    estado=EstadoEvento.RETRY if repetir else EstadoEvento.ERROR,
+                    intento=intento,
+                    latencia_ms=_ms(t0),
+                    error_codigo=ultimo,
+                    detalle=f"{que}: {type(exc).__name__}",
+                    version="erp-2009",
+                )
+                if repetir:
+                    time.sleep(0.2 * intento)
+                continue
             if r.status_code == 200:
+                try:
+                    raiz = ET.fromstring(r.content)
+                except ET.ParseError as exc:
+                    self._evento(
+                        file_id=file_id,
+                        estado=EstadoEvento.ERROR,
+                        intento=intento,
+                        latencia_ms=_ms(t0),
+                        error_codigo="ERP-XML",
+                        detalle=que,
+                        version="erp-2009",
+                    )
+                    raise ErrorERP("ERP-XML", que) from exc
                 self._evento(
                     file_id=file_id,
                     estado=EstadoEvento.OK,
@@ -115,30 +163,31 @@ class ClienteERP:
                     detalle=que,
                     version="erp-2009",
                 )
-                return ET.fromstring(r.content)
+                return raiz
             codigo, msg = self._codigo_error(r.content, r.status_code)
             ultimo = codigo
-            self.reintentos += 1
+            definitivo = r.status_code in (400, 404) or (codigo == "SES-401" and not auth)
+            repetir = not definitivo and intento < self.max_intentos
+            self.reintentos += int(repetir)
             self._evento(
                 file_id=file_id,
-                estado=EstadoEvento.RETRY,
+                estado=EstadoEvento.RETRY if repetir else EstadoEvento.ERROR,
                 intento=intento,
                 latencia_ms=_ms(t0),
                 error_codigo=codigo,
                 detalle=f"{que}: {msg[:80]}",
+                version="erp-2009",
             )
+            if definitivo:
+                raise ErrorERP(codigo, msg)
+            if not repetir:
+                break
             if codigo == "SES-401":
-                if not auth:
-                    raise ErrorERP(
-                        codigo, msg
-                    )  # credenciales malas en el login: no tiene arreglo reintentando
                 self.token = None
             elif r.status_code == 429:
                 time.sleep(float(r.headers.get("Retry-After", "1")))
             elif codigo == "ORA-00600":
                 time.sleep(0.05 * intento)  # "Reintente la misma consulta. Funciona."
-            elif r.status_code in (400, 404):
-                raise ErrorERP(codigo, msg)
             else:
                 time.sleep(0.2 * intento)
         raise ErrorERP(
@@ -149,10 +198,18 @@ class ClienteERP:
         raiz = self._enviar(
             "POST", "/erp/login", data={"usuario": USUARIO, "clave": CLAVE}, auth=False
         )
-        self.token = raiz.findtext("token")
-        self.token_desde = time.time()
+        self.token = (raiz.findtext("token") or "").strip() or None
+        if self.token is None:
+            self._evento(
+                estado=EstadoEvento.ERROR,
+                error_codigo="ERP-FORMATO",
+                detalle="POST /erp/login: falta token",
+                version="erp-2009",
+            )
+            raise ErrorERP("ERP-FORMATO", "login sin token")
+        self.token_desde = time.monotonic()
         self.usos = 0
-        return self.token or ""
+        return self.token
 
     def _get(
         self, ruta: str, params: dict[str, str] | None = None, *, file_id: str | None = None
@@ -187,11 +244,20 @@ class ClienteERP:
         for a in primera:
             asientos[a.asiento_id] = a
         for n in range(2, paginas + 1):
-            for a in self.pagina(n)[0]:
+            filas, nuevas_paginas, nuevo_total = self.pagina(n)
+            if (nuevas_paginas, nuevo_total) != (paginas, total):
+                self._snapshot_incompleto("El ERP cambió durante la descarga; repita el snapshot")
+            for a in filas:
+                if a.asiento_id in asientos:
+                    self._snapshot_incompleto(f"Asiento duplicado entre páginas: {a.asiento_id}")
                 asientos[a.asiento_id] = a
         if len(asientos) != total:
-            log.warning("ERP: meta.total=%s pero se han leído %s asientos", total, len(asientos))
+            self._snapshot_incompleto(
+                f"meta.total={total} pero se han leído {len(asientos)} asientos"
+            )
         est = self.estado()
+        if int(est.get("asientos", "-1")) != total:
+            self._snapshot_incompleto("El total del ERP cambió al finalizar la descarga")
         s = ErpSnapshot(
             version=tag,
             asientos=asientos,
@@ -203,6 +269,16 @@ class ClienteERP:
         if self.conn is not None:
             self.conn.commit()
         return s
+
+    def _snapshot_incompleto(self, detalle: str) -> None:
+        log.error("ERP: %s", detalle)
+        self._evento(
+            estado=EstadoEvento.ERROR,
+            error_codigo="ERP-INCOMPLETO",
+            detalle=detalle,
+            version="erp-2009",
+        )
+        raise ErrorERP("ERP-INCOMPLETO", detalle)
 
 
 def _ms(t0: float) -> int:
