@@ -53,3 +53,21 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): nada hasta tener key. Después: pasos 1-2 (una de texto, una escaneada), 4-5 (muestra + `hechos_muestra.jsonl`), 8 (las 500).
 - necesito / bloqueo: **sigo sin `ANTHROPIC_API_KEY` real** (placeholder en .env). PIDO A Javier.
 - para los demás: A2 → (1) tus plantillas ya cubren 18/21 de la muestra a coste 0, enhorabuena; cuando cambies un parser avísame para reextraer con `solo_pendientes=False` (los hechos de plantilla no se recalculan solos). (2) Los 11 IBAN del maestro FALLAN mod-97 (sintéticos): `Aviso.IBAN_INVALIDO` sale en toda la Caja; propongo quitarlo o dejarlo sólo si el formato es imposible (longitud/país), y decírselo a Mónica. A3 → he visto tus cambios en sources/ y test_snapshot: no los toco.
+
+### 20:53 · A3 · fuentes probadas y lote preparado
+- hice: maestro real 11 proveedores / 516 pedidos / 41 avisos; loader mantiene versión 80911e429c6c. Tests nuevos prueban cierre de libros, duplicados conflictivos y normalización. Diff ya incluye pedidos eliminados y pedido anterior al reasignar asiento.
+- toco ahora (ficheros): inventario CSV/docs, pruebas de integración A3.
+- necesito / bloqueo: ninguno. Puerto 8010 pertenece a otro servicio y no se toca; bridge lote2 simulado arriba en http://127.0.0.1:8011 (PID WSL 2168965).
+- para los demás: crearé snapshot v2-sim para ensayar diff; es SIMULADO y no es el ERP oficial. A1/Miguel usad explícitamente ERP v1 para las decisiones del lote 1. CSV erp_lote2_simulado.csv listo para ensayar reprocess (3 nuevos, 2 cambiados).
+
+### 21:01 · A3 · CSV de anomalías disponible
+- hice: primer inventario completo en 0,93 s: 500 PDFs, 471 con texto/29 sin texto; 192 filas en 154 ficheros, nueve campos cubiertos en los 471 salvo 3 fechas imposibles (sin campos omitidos ni ambiguos).
+- toco ahora (ficheros): revisión del inventario y docs/trampas.md; validación final de ERP/diff.
+- necesito / bloqueo: PIDO A Javier: confirmar procedencia/hash oficial de la Caja antes de tratar estas cifras como oficiales.
+- para los demás: A2/Mónica, data/fixtures/anomalias.csv YA está disponible: fecha_en_letra 90, texto_instruccion 29 (incluye las 13 conocidas), sin_texto 29, importe_distinto_pedido 13, iban_distinto_maestro 8, cuota_iva_no_cuadra 6, fecha_invalida 3, pedido_inexistente 3, nif_fuera_maestro 3, pedido_repetido 2 (un grupo), nif_distinto_pedido 2, total_no_cuadra 2, caracteres_invisibles 2. Ninguna fecha futura al corte 2026-09-18 ni duplicado (NIF,número) entre los 471 legibles. IVA impreso dice 21% en todos: las 6 cuotas incorrectas NO deben confundirse con 0 incidencias de IVA.
+
+### 21:02 · A1 · hechos_muestra.jsonl PARCIAL publicado (18/21, plantilla)
+- hice: `data/fixtures/hechos_muestra.jsonl` con los 18 hechos que las plantillas de A2 resolvieron sin LLM (verificado 2026-01-08_P001 contra el PDF: num 2026/11604, pedido PO-2026-0096, total 3012.89). Faltan las 3 escaneadas (scan_001, fax_2026_0411, copia_2026_0518): necesitan visión → key.
+- toco ahora (ficheros): nada; espero key.
+- necesito / bloqueo: PIDO A Javier: `ANTHROPIC_API_KEY`. En cuanto esté, reextraigo la muestra, reviso 5 a mano y reexporto las 21.
+- para los demás: Mónica/Miguel → `uv run albertitos hechos import data/fixtures/hechos_muestra.jsonl` ya carga 18 hechos reales (tras `make db && uv run albertitos ingest`). Ojo: llevan `iban_invalido` en avisos por los IBAN sintéticos (ver entrada de 20:58).
