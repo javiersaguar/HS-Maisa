@@ -71,6 +71,7 @@ class Aviso(StrEnum):
     PEDIDO_ANULADO_SEGUN_PDF = "pedido_anulado_segun_pdf"
     DISCREPANCIA_EXTRACTORES = "discrepancia_extractores"  # plantilla y LLM no coinciden
     EXTRACCION_PARCIAL = "extraccion_parcial"
+    DOCUMENTO_SUPERPUESTO = "documento_superpuesto"  # otro documento encima o transparentándose
 
 
 # ----------------------------------------------------------------------------- hechos

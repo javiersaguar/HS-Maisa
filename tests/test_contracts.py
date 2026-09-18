@@ -93,6 +93,9 @@ def test_contratos_v1_compatibles_hacia_atras():
     assert recargado.hash() == antiguo.hash()
     nuevo = hechos(avisos=[Aviso.IBAN_INVALIDO, Aviso.NIF_INVALIDO])
     assert nuevo.hash() != antiguo.hash()
+    superpuesto = hechos(avisos=[Aviso.SIN_TEXTO, Aviso.DOCUMENTO_SUPERPUESTO])
+    assert InvoiceFacts.model_validate_json(superpuesto.model_dump_json()) == superpuesto
+    assert Aviso("documento_superpuesto") is Aviso.DOCUMENTO_SUPERPUESTO
     # decidido_en ya no es obligatorio: la norma no lo pone, lo sella core.db
     d = Decision(
         file_id="f.pdf",
