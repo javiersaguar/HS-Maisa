@@ -16,4 +16,4 @@ claude                      # las reglas del equipo se cargan solas (CLAUDE.md, 
 - Plazos y repliegues: [`docs/hitos.md`](docs/hitos.md) · defensa: [`docs/guion-defensa.md`](docs/guion-defensa.md) · trampas de los datos: [`docs/trampas.md`](docs/trampas.md).
 - Entrega (repo aparte, 3 ficheros): `/entrega` en Claude Code.
 
-Este repo es la solución. **No es el repo de entrega** (`la-caja-outcomes`), que sólo lleva `outcomes.jsonl`, `outcomes_lote2.jsonl` y `albertitos_plan.pdf`.
+Este repo es la solución. **No es el repo de entrega** ([`HS-Maisa-Entrega`](https://github.com/javiersaguar/HS-Maisa-Entrega), público), que sólo lleva `outcomes.jsonl`, `outcomes_lote2.jsonl` y `albertitos_plan.pdf`.

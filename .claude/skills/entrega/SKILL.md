@@ -1,6 +1,6 @@
 ---
 name: entrega
-description: Runbook de entrega al repo público la-caja-outcomes (outcomes.jsonl, outcomes_lote2.jsonl, albertitos_plan.pdf). Úsalo para la entrega de seguro del sábado 17:30 y la final del domingo 08:00.
+description: Runbook de entrega al repo público HS-Maisa-Entrega (outcomes.jsonl, outcomes_lote2.jsonl, albertitos_plan.pdf). Úsalo para la entrega de seguro del sábado 17:30 y la final del domingo 08:00.
 disable-model-invocation: true
 allowed-tools: Bash(make *) Bash(uv run *) Bash(git *) Bash(gh *) Bash(ls *) Bash(sha256sum *)
 ---
@@ -22,20 +22,24 @@ uv run albertitos validate dist/entrega/outcomes_lote2.jsonl --lote 2   # si exi
 ```
 Después lanza el subagente `auditor-outcomes` y lee su informe. Si marca algo rojo, para.
 
-## 3. Publicar en el repo separado
+## 3. Publicar en el repo separado (https://github.com/javiersaguar/HS-Maisa-Entrega, público)
+El valor por defecto es ese; `ENTREGA_REPO` en el entorno lo sobrescribe (no se lee `.env`: los agentes no tienen permiso).
 ```
-ENTREGA=$(grep ^ENTREGA_REPO .env | cut -d= -f2)
-gh repo view "$ENTREGA" >/dev/null 2>&1 || gh repo create "$ENTREGA" --public --description "HackSpain 2026 · entrega Albertitos"
-test -d ../la-caja-outcomes || gh repo clone "$ENTREGA" ../la-caja-outcomes
-cd ../la-caja-outcomes && (git pull --ff-only || true)
-cp "$OLDPWD/dist/entrega/outcomes.jsonl" "$OLDPWD/dist/entrega/albertitos_plan.pdf" .
-cp "$OLDPWD/dist/entrega/outcomes_lote2.jsonl" . 2>/dev/null || true
+SOL="$PWD"; ENTREGA="${ENTREGA_REPO:-javiersaguar/HS-Maisa-Entrega}"; DEST=../HS-Maisa-Entrega
+gh repo view "$ENTREGA" --json visibility -q .visibility          # tiene que decir PUBLIC
+test -d "$DEST/.git" || gh repo clone "$ENTREGA" "$DEST"          # la primera vez el repo está vacío: clona igual (aviso)
+cd "$DEST" && (git pull --ff-only origin main 2>/dev/null || true)
+cp "$SOL/dist/entrega/outcomes.jsonl" "$SOL/dist/entrega/albertitos_plan.pdf" .
+cp "$SOL/dist/entrega/outcomes_lote2.jsonl" . 2>/dev/null || true
 ls -A          # DEBE listar sólo: .git outcomes.jsonl outcomes_lote2.jsonl albertitos_plan.pdf
 ```
-Si `ls -A` muestra cualquier otra cosa (README, .gitignore, código), bórrala antes de commitear.
+Si `ls -A` muestra cualquier otra cosa (README, .gitignore, LICENSE, código), bórrala antes de commitear. No crees
+README desde la web de GitHub: la raíz tiene que tener **exactamente** los tres ficheros.
 ```
-git add -A && git commit -m "entrega $(date +%FT%H:%M)" && git push
-git rev-parse HEAD
+git add -A && git commit -m "entrega $(date +%FT%H:%M)"
+git push -u origin HEAD:main      # la primera vez crea la rama main en el repo vacío; después, igual
+git rev-parse HEAD                # este commit es el que registrará la organización a las 11:00
+cd "$SOL"
 ```
 
 ## 4. Registrar
@@ -44,4 +48,5 @@ Anota en `docs/entregas.log` (en este repo): fecha, commit del repo de entrega, 
 ## Antes del domingo 08:00 comprueba además
 - `outcomes_lote2.jsonl` existe aunque el lote 2 no haya ido bien: 40 líneas, una por fichero. Un ESCALAR honesto vale; una línea ausente = NO APTO.
 - El PDF abre y tiene las dos secciones (Arquitectura, ADRs).
-- El repo es público: `gh repo view "$ENTREGA" --json visibility`.
+- El repo es público: `gh repo view javiersaguar/HS-Maisa-Entrega --json visibility`.
+- La organización clona y registra el commit a las **11:00** (cierre interno 10:30): nada de pushes después.
