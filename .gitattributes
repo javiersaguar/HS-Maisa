@@ -5,3 +5,9 @@ data/caja/** -text
 data/lote2/** -text
 *.pdf binary
 *.xlsx binary
+
+# Bitácora y parte: varios agentes y personas añaden a la vez. Con union, git junta las dos versiones
+# en vez de dejar un conflicto (se pierde el orden entre ramas, no el contenido). Sólo para ficheros
+# de texto que se escriben añadiendo: en una tabla editada en el mismo sitio duplicaría filas.
+docs/agentes/BITACORA.md merge=union
+docs/agentes/PARTE.md merge=union
