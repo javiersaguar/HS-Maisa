@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 RUTA = Path(os.environ.get("ALBERTITOS_CHAOS", "dist/chaos.json"))
-MODOS = ("llm_down", "llm_429", "llm_invalid")
+MODOS = ("llm_down", "llm_429", "llm_invalid", "llm_timeout")
 
 
 def activar(modo: str) -> None:

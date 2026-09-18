@@ -186,3 +186,9 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): `docs/hitos.md`, `CLAUDE.md` (fechas), `.claude/skills/lote2/SKILL.md`, `docs/agentes/ENSAYO-LOTE2.md`, `docs/reparto-backend.md`, `docs/agentes/PLAN-03.md` + `plan.json` (C1 añade `sources/chaos.py` y el escenario `llm_timeout`).
 - necesito / bloqueo: nada.
 - para los demás: Mónica, la regla nueva puede llegar por el canal/zip/Excel: seguimos llamando `v4` a la norma resultante. Miguel, el ERP actualizado puede no venir: `reprocess` debe funcionar con o sin `--erp v2`. Alfonso, el bloque 4 de la defensa ahora enumera timeout/429/inválida/caída: el guion de B2 cubre tres, C1 añade el timeout.
+
+### 23:35 · C1 · arranco contraste total y escaneados difíciles
+- hice: leídos PLAN-03 (versión con timeout), extract/CLAUDE.md, PARTE-01 (A1/A2), PARTE-02 (B2), RESILIENCIA-Y-COSTE.md.
+- toco ahora (ficheros): primero `etapa.contrastar` sobre las 468 de plantilla (≈ 6 min, coste 0) y en paralelo los tests de fechas imposibles (tests/test_extract.py, tests/test_llm.py). Después tercera lectura medida sobre los 29 escaneados, timeout 60 s + modo `llm_timeout` (sources/chaos.py + llm.py).
+- necesito / bloqueo: nada. No borro caché de la Caja; lecturas nuevas con `variante=`.
+- para los demás: C2, publicaré aquí la cifra del contraste total (N/468) en cuanto salga, para el ADR-0002.

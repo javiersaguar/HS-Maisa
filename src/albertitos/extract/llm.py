@@ -129,6 +129,11 @@ def _precios_por_modelo() -> dict[str, tuple[Decimal, Decimal]]:
     return tabla
 
 
+# Timeout de lectura por petición. B2 midió colas de 94 s con p50 de 2,9 s: mejor cortar y reintentar
+# (el reintento cambia el texto y suele entrar) que esperar tres minutos a una petición colgada.
+TIMEOUT_S = float(os.environ.get("ALBERTITOS_LLM_TIMEOUT_S", "60"))
+# Caos `llm_timeout`: cuánto "cuelga" la petición simulada antes de fallar (segundos).
+CAOS_TIMEOUT_ESPERA_S = float(os.environ.get("ALBERTITOS_CAOS_TIMEOUT_ESPERA_S", "1"))
 MAX_TOKENS_TEXTO = int(os.environ.get("ALBERTITOS_MAX_TOKENS_TEXTO", "2000"))
 MAX_TOKENS_VISION = int(
     os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "8000")
@@ -251,7 +256,7 @@ class ClienteLLM:
                 import anthropic
 
                 # los reintentos los llevamos nosotros (eventos por intento)
-                self.estado.api = anthropic.Anthropic(timeout=60.0, max_retries=0)
+                self.estado.api = anthropic.Anthropic(timeout=TIMEOUT_S, max_retries=0)
             return self.estado.api
 
     def _http(self) -> httpx.Client:
@@ -263,7 +268,7 @@ class ClienteLLM:
                 self.estado.http = httpx.Client(
                     base_url=self.base_url,
                     headers={"Authorization": f"Bearer {key}"},
-                    timeout=httpx.Timeout(180.0, connect=15.0),
+                    timeout=httpx.Timeout(TIMEOUT_S, connect=15.0),
                 )
             return self.estado.http
 
@@ -438,6 +443,11 @@ class ClienteLLM:
             try:
                 if chaos.modo() == "llm_429" and intento == 1:
                     raise ErrorLLM("LLM-429", "caos: rate limit")
+                if chaos.modo() == "llm_timeout":
+                    time.sleep(CAOS_TIMEOUT_ESPERA_S)  # el proveedor "no contesta"
+                    raise ErrorLLM(
+                        "LLM-TIMEOUT", f"caos: sin respuesta en {TIMEOUT_S:.0f} s (simulado)"
+                    )
                 if self.proveedor == "anthropic":
                     datos, tin, tout = self._llamar_anthropic(modelo, texto, png, intento, marca)
                 else:
@@ -546,6 +556,10 @@ class ClienteLLM:
         }
         try:
             r = self._http().post("/chat/completions", json=cuerpo)
+        except httpx.TimeoutException as e:
+            raise ErrorLLM(
+                "LLM-TIMEOUT", f"sin respuesta en {TIMEOUT_S:.0f} s ({type(e).__name__})"
+            ) from e
         except httpx.HTTPError as e:
             raise ErrorLLM("LLM-RED", f"{type(e).__name__}: {e}"[:120]) from e
         if r.status_code in (401, 403):

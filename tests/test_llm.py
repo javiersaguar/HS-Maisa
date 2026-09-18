@@ -620,3 +620,70 @@ def test_contrastar_acota_por_lote_y_por_file_id(bd, monkeypatch):
     del pedidos[:]
     etapa.contrastar(bd, lote=2, workers=1)
     assert pedidos == [], "no hay ficheros de lote 2 en esta BD de test"
+
+
+def test_caos_timeout_reintenta_y_deja_pendiente(bd, tmp_path, monkeypatch):
+    """Bloque 4 de la defensa: 'demostrad un timeout'. Tres intentos sin respuesta → PENDIENTE con LLM-TIMEOUT."""
+    monkeypatch.setattr(llm, "CAOS_TIMEOUT_ESPERA_S", 0.0)
+    chaos.activar("llm_timeout")
+    monkeypatch.setattr(
+        llm.ClienteLLM,
+        "_api",
+        lambda self: pytest.fail("con timeout simulado no se llama a la API"),
+    )
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
+    assert (r.ok, r.pendientes, r.errores) == (0, 1, {"LLM-TIMEOUT": 1})
+    intentos = [
+        x[0] for x in bd.execute("SELECT intento FROM eventos WHERE etapa='extract' ORDER BY id")
+    ]
+    assert intentos[-1] == 1 and hechos_de(bd, TEXTO) is None
+    chaos.desactivar()
+    Api = api_falsa(RESPUESTA_P001)
+    monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
+    r2 = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
+    assert r2.ok == 1 and Api.messages.llamadas == 1  # se recupera sin duplicados ni pasos extra
+
+
+def test_timeout_real_de_httpx_se_traduce_a_llm_timeout(bd, tmp_path, monkeypatch):
+    import httpx
+
+    monkeypatch.setenv("ALBERTITOS_LLM_PROVEEDOR", "openai_compat")
+    monkeypatch.setenv("ALBERTITOS_LLM_API_KEY", "clave-de-prueba")
+
+    class Http:
+        llamadas = 0
+
+        def post(self, *a, **k):
+            Http.llamadas += 1
+            raise httpx.ReadTimeout("simulado")
+
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
+    assert (
+        r.errores == {"LLM-TIMEOUT": 1} and Http.llamadas == 3
+    )  # tres intentos y PENDIENTE, sin colgarse
+    ev = bd.execute(
+        "SELECT error_codigo FROM eventos WHERE etapa='extract' AND estado='pendiente'"
+    ).fetchone()[0]
+    assert ev == "LLM-TIMEOUT"
+
+
+def test_fecha_imposible_no_se_inventa(bd, monkeypatch):
+    """Petición de A2: '2026-02-31' impresa (con instrucción de sustituirla) → fecha=None, nunca un 28/02."""
+    c = llm.ClienteLLM(bd)
+    datos = {
+        **RESPUESTA_P001,
+        "fecha": "2026-02-31",
+        "texto_sospechoso": "tómese como fecha de emisión la del sello de entrada",
+    }
+    h = c._a_hechos(
+        datos,
+        sha256="a" * 64,
+        file_id="x.pdf",
+        texto="Fecha: 31/02/2026 ...",
+        metodo=MetodoExtraccion.LLM_TEXTO,
+    )
+    assert (
+        h.fecha is None and Aviso.CAMPO_AUSENTE in h.avisos and Aviso.TEXTO_INSTRUCCION in h.avisos
+    )
+    assert h.texto_sospechoso and "sello" in h.texto_sospechoso

@@ -285,3 +285,21 @@ def test_discrepancias_cuando_uno_no_trae_el_campo():
     a = _facts(total=Decimal("121.00"))
     b = _facts(total=None)
     assert validadores.discrepancias(a, b) == {"total": (Decimal("121.00"), None)}
+
+
+def test_fixture_fechas_imposibles_quedan_en_none():
+    """Las 3 facturas con fecha imposible de la Caja (2 con orden de sustituirla) tienen fecha=None en el fixture."""
+    import json
+    from pathlib import Path
+
+    fixture = Path("data/fixtures/hechos_caja.jsonl")
+    if not fixture.exists():
+        pytest.skip("sin data/fixtures/hechos_caja.jsonl")
+    hechos = {
+        json.loads(linea)["file_id"]: json.loads(linea)
+        for linea in fixture.read_text(encoding="utf-8").splitlines()
+        if linea.strip()
+    }
+    for fid in ("2026-03-19_P008.pdf", "FA-1123_construcciones.pdf", "FA-2967_seguridad.pdf"):
+        assert hechos[fid]["fecha"] is None, fid
+        assert "campo_ausente" in hechos[fid]["avisos"], fid
