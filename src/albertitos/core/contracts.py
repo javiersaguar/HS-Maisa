@@ -66,6 +66,7 @@ class Aviso(StrEnum):
     IVA_NO_ESTANDAR = "iva_no_estandar"  # ≠ 21 % o mal calculado
     TOTAL_NO_CUADRA = "total_no_cuadra"  # base + IVA ≠ total (±0,01)
     IBAN_INVALIDO = "iban_invalido"  # falla mod-97
+    NIF_INVALIDO = "nif_invalido"  # formato o letra/dígito de control incorrectos
     DUPLICADO_SOSPECHOSO = "duplicado_sospechoso"  # mismo nº factura/pedido/importe que otro PDF
     PEDIDO_ANULADO_SEGUN_PDF = "pedido_anulado_segun_pdf"
     DISCREPANCIA_EXTRACTORES = "discrepancia_extractores"  # plantilla y LLM no coinciden
@@ -215,7 +216,7 @@ class Decision(BaseModel):
     hechos_hash: str
     maestro_version: str
     erp_version: str
-    decidido_en: datetime
+    decidido_en: datetime | None = None  # lo sella core.db: decidir() no mira el reloj
 
     @field_validator("file_id")
     @classmethod

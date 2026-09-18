@@ -13,7 +13,7 @@ import logging
 import sqlite3
 import time
 import unicodedata
-from datetime import UTC, date, datetime
+from datetime import date
 from pathlib import Path
 
 from albertitos.core import db
@@ -150,7 +150,6 @@ def decide(
         t0 = time.perf_counter()
         hechos = InvoiceFacts.model_validate_json(fila["hechos_json"])
         decision = norma.decidir(hechos, maestro, erp, ctx)
-        decision.decidido_en = datetime.now(UTC)
         db.guardar_decision(conn, decision)
         db.registrar_evento(
             conn,

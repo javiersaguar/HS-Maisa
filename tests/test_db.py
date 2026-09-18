@@ -35,6 +35,15 @@ def test_decision_nueva_desplaza_a_la_anterior(conn):
     assert [d["vigente"] for d in t["decisiones"]] == [0, 1]
 
 
+def test_guardar_decision_sella_decidido_en_si_no_viene(conn):
+    db.guardar_fichero(
+        conn, sha256="a" * 64, file_id="a.pdf", lote=1, bytes_=10, paginas=1, tiene_texto=True
+    )
+    db.guardar_decision(conn, _decision(Resultado.PAGAR).model_copy(update={"decidido_en": None}))
+    fila = db.decisiones_vigentes(conn)[0]
+    assert datetime.fromisoformat(fila["decidido_en"]).tzinfo is not None
+
+
 def test_eventos_y_resumen(conn):
     db.guardar_fichero(
         conn, sha256="a" * 64, file_id="a.pdf", lote=1, bytes_=10, paginas=1, tiene_texto=True

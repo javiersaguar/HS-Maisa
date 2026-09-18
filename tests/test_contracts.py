@@ -5,6 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from albertitos.core.contracts import (
+    Aviso,
     Decision,
     InvoiceFacts,
     MetodoExtraccion,
@@ -83,3 +84,25 @@ def test_decision_motivo_principal():
     )
     assert d.motivo_principal == "v3.R2: pedido no existe"
     assert d.reglas_incumplidas == ["v3.R2"]
+
+
+def test_contratos_v1_compatibles_hacia_atras():
+    # hechos guardados antes de NIF_INVALIDO siguen cargando; el aviso nuevo cambia el hash (linaje)
+    antiguo = hechos(avisos=[Aviso.IBAN_INVALIDO])
+    recargado = InvoiceFacts.model_validate_json(antiguo.model_dump_json())
+    assert recargado.hash() == antiguo.hash()
+    nuevo = hechos(avisos=[Aviso.IBAN_INVALIDO, Aviso.NIF_INVALIDO])
+    assert nuevo.hash() != antiguo.hash()
+    # decidido_en ya no es obligatorio: la norma no lo pone, lo sella core.db
+    d = Decision(
+        file_id="f.pdf",
+        sha256="x" * 64,
+        resultado=Resultado.PAGAR,
+        motivos=[],
+        norma_version="v3",
+        fecha_corte=date(2026, 9, 18),
+        hechos_hash="h",
+        maestro_version="m",
+        erp_version="e",
+    )
+    assert d.decidido_en is None
