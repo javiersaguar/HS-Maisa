@@ -1,7 +1,7 @@
 """Etapas del pipeline sobre la BD. Cada etapa es idempotente y emite eventos.
 
 ingest  → PDF → ficheros                       (implementado)
-extract → PDF → hechos (plantilla | LLM)        (pendiente: Alfonso, extract/)
+extract → PDF → hechos (plantilla | LLM)        (extract/etapa.py, Javier)
 decide  → hechos + maestro + ERP → decisiones   (implementado con la norma v3; Mónica valida)
 emit    → decisiones → outcomes.jsonl           (pipeline/package.py)
 """
@@ -13,7 +13,7 @@ import logging
 import sqlite3
 import time
 import unicodedata
-from datetime import UTC, date, datetime
+from datetime import date
 from pathlib import Path
 
 from albertitos.core import db
@@ -150,7 +150,6 @@ def decide(
         t0 = time.perf_counter()
         hechos = InvoiceFacts.model_validate_json(fila["hechos_json"])
         decision = norma.decidir(hechos, maestro, erp, ctx)
-        decision.decidido_en = datetime.now(UTC)
         db.guardar_decision(conn, decision)
         db.registrar_evento(
             conn,

@@ -22,3 +22,6 @@
 | Fecha | Qué | Por qué | Quién |
 |---|---|---|---|
 | 2026-09-18 | v1 inicial | plataforma | Javier (Miguel valida) |
+| 2026-09-18 | v1 aceptada. `+Aviso.NIF_INVALIDO` | A2 valida la letra/dígito de control del NIF y necesita decirlo sin abusar de `CAMPO_AUSENTE`. Produce extract/validadores; consume rules/ | Miguel |
+| 2026-09-18 | `Decision.decidido_en` opcional; lo sella `core.db.guardar_decision` | `decidir()` queda pura (sin reloj) y `pipeline/` sin `datetime.now()`. Compatible: quien lo pase, se respeta | Miguel |
+| 2026-09-18 | **Descartado** `Aviso.PEDIDO_SIN_NIF_MAESTRO` | No es un hecho del PDF sino del maestro: meterlo en `InvoiceFacts` haría que `hechos_hash` cambiase al cambiar el Excel. Ya está en `MasterSnapshot.avisos_calidad` (20 pedidos) y la R2 lo recoge en `Motivo.evidencia` | Miguel |

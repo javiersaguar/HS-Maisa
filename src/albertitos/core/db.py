@@ -86,7 +86,8 @@ def guardar_hechos(conn: sqlite3.Connection, hechos: InvoiceFacts) -> None:
 
 
 def guardar_decision(conn: sqlite3.Connection, d: Decision) -> None:
-    """Idempotente por linaje: la decisión nueva pasa a vigente y las anteriores del fichero a 0."""
+    """Idempotente por linaje: la decisión nueva pasa a vigente y las anteriores del fichero a 0.
+    `decidido_en` se sella aquí si no viene: el reloj es de la BD, no de la norma."""
     conn.execute("UPDATE decisiones SET vigente=0 WHERE sha256=? AND vigente=1", (d.sha256,))
     conn.execute(
         """INSERT INTO decisiones (sha256, file_id, resultado, norma_version, fecha_corte, hechos_hash,
@@ -102,7 +103,7 @@ def guardar_decision(conn: sqlite3.Connection, d: Decision) -> None:
             d.maestro_version,
             d.erp_version,
             json.dumps([m.model_dump(mode="json") for m in d.motivos], ensure_ascii=False),
-            d.decidido_en.isoformat(),
+            d.decidido_en.isoformat() if d.decidido_en else ahora_iso(),
         ),
     )
 

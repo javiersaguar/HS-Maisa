@@ -320,35 +320,34 @@ def reprocess(
 
 
 @app.command()
-def run(norma: str = "v3", fecha_corte: str | None = None) -> None:
+def run(
+    norma: str = "v3",
+    fecha_corte: str | None = None,
+    extraer: bool = typer.Option(
+        True, "--extraer/--sin-extraer", help="--sin-extraer: sólo hechos ya en la BD, sin LLM"
+    ),
+    con_traza: bool = typer.Option(
+        True, "--con-traza/--sin-traza", help="motivo, regla y norma_version en cada línea"
+    ),
+) -> None:
     """ingest → maestro → erp pull (si no hay) → extract → duplicados → decide → package."""
-    from albertitos.pipeline import etapas, package
-    from albertitos.sources import excel, snapshot
+    from albertitos.pipeline.run import correr
 
-    conn = _conn()
-    etapas.ingest(conn, CAJA / "facturas", 1)
-    if (LOTE2 / "facturas").exists():
-        etapas.ingest(conn, LOTE2 / "facturas", 2)
-    m = excel.cargar_maestro(CAJA / "FINAL_v7_DEFINITIVO_ahorasi.xlsx")
-    snapshot.guardar_maestro(conn, m)
-    try:
-        e = snapshot.cargar_erp_bd(conn, None)
-    except LookupError:
-        from albertitos.sources import erp as erp_mod
-
-        e = erp_mod.ClienteERP(conn=conn).descargar_todo("v1")
-        snapshot.guardar_erp(conn, e)
-    try:
-        etapas.extract(conn, workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")))
-    except NotImplementedError as ex:
-        rprint(f"[yellow]{ex}[/yellow]")
-        raise typer.Exit(3) from None
-    etapas.marcar_duplicados(conn)
-    etapas.decide(
-        conn, norma_version=norma, fecha_corte=_fecha_corte(fecha_corte), maestro=m, erp=e
+    corte = _fecha_corte(fecha_corte)  # antes de trabajar: sin fecha de corte no se decide
+    r = correr(
+        _conn(),
+        caja=CAJA,
+        lote2=LOTE2,
+        entrega=ENTREGA,
+        norma_version=norma,
+        fecha_corte=corte,
+        extraer=extraer,
+        workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")),
+        con_traza=con_traza,
     )
-    for ruta, inf in package.empaquetar(conn, ENTREGA, CAJA, LOTE2):
-        rprint(inf.texto(), "→", ruta)
+    rprint(r.texto())
+    if not r.ok:
+        raise typer.Exit(1)
 
 
 # ----------------------------------------------------------------------------- operación
@@ -405,7 +404,12 @@ def validate(ruta: Path, lote: int = 1) -> None:
 
 
 @app.command()
-def package(con_traza: bool = False, salida: Path = ENTREGA) -> None:
+def package(
+    con_traza: bool = typer.Option(
+        True, "--con-traza/--sin-traza", help="motivo, regla y norma_version en cada línea"
+    ),
+    salida: Path = ENTREGA,
+) -> None:
     """BD → dist/entrega/outcomes*.jsonl, validados. Se niega si falta alguna decisión."""
     from albertitos.pipeline import package as pk
 
