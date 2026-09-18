@@ -1,4 +1,4 @@
-# ADR-0002 · Reprocesar sólo lo que el cambio toca, sin reescribir las decisiones que siguen valiendo
+# ADR-0006 · Reprocesar sólo lo que el cambio toca, sin reescribir las decisiones que siguen valiendo
 
 - **Estado:** aceptado
 - **Fecha:** 2026-09-18 23:40 · **Dueño:** Miguel · **Módulos:** pipeline/linaje.py, pipeline/run.py, pipeline/etapas.py, cli.py
