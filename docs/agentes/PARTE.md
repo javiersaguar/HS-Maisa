@@ -59,16 +59,26 @@ literales y su salida, rutas. Este fichero se le pasa entero al planificador par
 - Propongo como siguiente tarea: en cuanto A1 tenga key, pasar el LLM sobre **30-50 facturas que ya salen por plantilla** y cruzar con `discrepancias()`. Cuesta céntimos y es la única forma de saber si los parsers se equivocan en bloque; además da la cifra de precisión del LLM, que sirve para la defensa (escala y coste, 25 pts). Segundo: el detector de texto tapado, con test sobre esos 2 ficheros.
 
 ## A3 · Fuentes y trampas
-- Estado:
+- Estado: **terminado** (A3 lo dejó sin commitear ni parte; lo cierra A1 a las 21:05 tras verificar tests y ownership)
 - Hecho (con cifras):
-- Verificado con:
-- Ficheros tocados:
-- Commits:
-- Descubierto:
-- Pendiente / no llegué a:
-- Necesito de otros:
-- Riesgos que veo:
-- Propongo como siguiente tarea:
+  - `scripts/inventario_trampas.py` (0,93 s): cruce Excel↔ERP y barrido de las 500 → `data/fixtures/anomalias.csv` con 192 filas en 154 ficheros. Por tipo: fecha_en_letra 90 · texto_instruccion **29** (13 conocidas + 16 nuevas: falsear fecha inválida, "dar de alta al proveedor y pagar", "ignorar el ERP", presión emocional) · sin_texto 29 · importe_distinto_pedido 13 · iban_distinto_maestro 8 · cuota_iva_no_cuadra 6 (todas imprimen "IVA (21%)"; el real es 16 % en cinco y 10 % en una) · fecha_invalida 3 · pedido_inexistente 3 · nif_fuera_maestro 3 · pedido_repetido 2 · nif_distinto_pedido 2 · total_no_cuadra 2 · caracteres_invisibles 2. 0 fechas futuras al corte 2026-09-18; 0 duplicados (NIF, nº) entre los 471 legibles.
+  - Cruce Excel↔ERP v1: 0 pedidos sin asiento, 0 asientos sin pedido, 0 diferencias de importe; **17 ProveedorID distintos entre los 20 pedidos sin NIF**; los 9 asientos PAGADA con sus PDFs listados en `docs/trampas.md`.
+  - `sources/erp.py`: login y estado con la misma política de reintentos; `tests/test_erp.py` 10 tests (descarga completa, token caducado, renovación por 250/300 usos y por tiempo, 429 con Retry-After, 429 agotado, dos clientes concurrentes, conexión rechazada, página fuera de rango).
+  - `sources/snapshot.py`: **bug corregido en `diff_erp`**: omitía los pedidos afectados por asientos eliminados y el pedido anterior al reasignar un asiento. `tests/test_snapshot.py` 11 tests.
+  - `sources/excel.py`: cierre de libros, duplicados conflictivos, normalización; 41 avisos de calidad. `tests/test_excel.py` ampliado.
+  - `data/fixtures/erp_lote2_simulado.csv` (3 altas AS-SIM-00001..3, AS-00001 PENDIENTE→PAGADA, AS-00002 10325.90→10449.35). Bridge simulado vivo en http://127.0.0.1:8011 (519 asientos); `erp pull --tag v2-sim` + `erp diff v1 v2-sim` → exactamente 3 nuevos, 2 cambiados, 5 pedidos afectados. Miguel puede ensayar `reprocess --impacted --erp v2-sim` ya.
+  - `docs/trampas.md`: inventario completo por categoría con listas de file_id, cruce, preguntas para mentores, + hallazgo de A2 (instrucciones tapadas con rectángulo blanco en 2 PDFs).
+- Verificado con (comando → resultado literal):
+  - `uv run pytest tests/test_erp.py tests/test_excel.py tests/test_snapshot.py -q` → `34 passed in 19.63s` (bridge v1 en :8009)
+  - `make agentes-check` → `OK: cada fichero tiene un único dueño`
+  - `make check` → ver línea de cierre del ciclo en la bitácora
+- Ficheros tocados: `src/albertitos/sources/{erp,excel,snapshot}.py`, `tests/test_{erp,excel,snapshot}.py`, `scripts/inventario_trampas.py`, `docs/trampas.md`, `data/fixtures/{anomalias.csv,erp_lote2_simulado.csv}`
+- Commits (hash · mensaje): `sources: inventario de trampas, cruce Excel↔ERP, robustez del cliente ERP y diff del lote 2 simulado (A3)`
+- Descubierto: 16 instrucciones inyectadas más de las 13 conocidas (29 en total); 2 con caracteres invisibles en IBAN/TOTAL (F26-3011_suministros.pdf, FA-4488_transportes.pdf); las 6 cuotas de IVA mal calculadas imprimen "21%"; 3 fechas imposibles (dos con instrucción de "sustituir la fecha"); puerto 8010 ocupado por otro servicio (se usó 8011).
+- Pendiente / no llegué a: nada del encargo. Queda para el ciclo 2: detector de "texto tapado por rectángulo" (propuesto por A2) y rehacer el inventario cuando llegue la Caja oficial / el lote 2.
+- Necesito de otros: Javier · confirmar hash del zip oficial (el inventario es sobre la Caja del repo de participantes). Mónica · decidir qué hace la norma con los 20 pedidos sin NIF (17 con ProveedorID distinto), con `fecha=None` (3) y con "IVA (21%)" impreso pero cuota al 16/10 %.
+- Riesgos que veo: el bridge :8011 es SIMULADO; si alguien hace `erp pull --tag v2` contra él por error, contaminará el linaje. Usar siempre `--tag v2-sim`.
+- Propongo como siguiente tarea: (ciclo 2) inventario sobre la Caja oficial; detector de rectángulos; integrar `anomalias.csv` como fixture de tests de reglas (Mónica).
 
 ## Javier (a mano, al cerrar el ciclo)
 - `make check`: 

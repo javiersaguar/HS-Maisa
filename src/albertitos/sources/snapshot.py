@@ -44,16 +44,20 @@ def cargar_erp_bd(conn: sqlite3.Connection, version: str | None = None) -> ErpSn
 
 
 def diff_erp(a: ErpSnapshot, b: ErpSnapshot) -> dict[str, Any]:
+    """Diferencias contables, con todos los pedidos cuyo contexto ha cambiado."""
     nuevos = sorted(set(b.asientos) - set(a.asientos))
     eliminados = sorted(set(a.asientos) - set(b.asientos))
     cambiados: dict[str, dict[str, tuple[Any, Any]]] = {}
-    for k in set(a.asientos) & set(b.asientos):
+    for k in sorted(set(a.asientos) & set(b.asientos)):
         x, y = a.asientos[k].model_dump(mode="json"), b.asientos[k].model_dump(mode="json")
         delta = {campo: (x[campo], y[campo]) for campo in x if x[campo] != y[campo]}
         if delta:
             cambiados[k] = delta
     pedidos_afectados = sorted(
-        {b.asientos[k].pedido for k in nuevos} | {b.asientos[k].pedido for k in cambiados}
+        {b.asientos[k].pedido for k in nuevos}
+        | {a.asientos[k].pedido for k in eliminados}
+        | {a.asientos[k].pedido for k in cambiados}
+        | {b.asientos[k].pedido for k in cambiados}
     )
     return {
         "de": a.version,
