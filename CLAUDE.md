@@ -66,5 +66,5 @@ por ruta están en `.claude/rules/`.
 - Si un hook te bloquea, su mensaje dice qué hacer en su lugar. No busques rodeos; si crees que el hook está mal, díselo a Javier.
 
 ## Fechas (hora Madrid)
-Vie 18 21:00 Caja oficial (`make caja-verify`) · Sáb 19 17:30 entrega de seguro · Sáb 18:00 lote 2 + ERP + norma v4 (`/lote2`) ·
-Dom 20 02:00 congelación · Dom 08:00 entrega final (`/entrega`) · Dom 10:30 clonan · defensa 10 min (2/2/4/2).
+La Caja oficial es el repo de participantes (ya en `data/caja`, manifiesto `data/caja.sha256`) · Sáb 19 17:30 entrega de seguro · Sáb 18:00 lote 2 + ERP actualizado + una regla nueva (`/lote2`) ·
+Dom 20 02:00 congelación · Dom 08:00 entrega final (`/entrega`) · Dom 10:30 cierre interno (oficial 11:00) · defensa 10 min (2/2/4/2; el bloque 4 pide demostrar timeout, rate limit, respuesta inválida o caída).

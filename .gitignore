@@ -17,7 +17,8 @@ dist/
 *.db-wal
 *.db-shm
 
-# clon local del repo de entrega (la-caja-outcomes) — nunca dentro de este repo
+# clon local del repo de entrega (HS-Maisa-Entrega, en ../) — nunca dentro de este repo
+HS-Maisa-Entrega/
 la-caja-outcomes/
 
 # personal

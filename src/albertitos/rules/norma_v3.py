@@ -37,6 +37,7 @@ ANOMALIAS_HUMANO = {
     Aviso.PEDIDO_ANULADO_SEGUN_PDF,
     Aviso.DISCREPANCIA_EXTRACTORES,
     Aviso.EXTRACCION_PARCIAL,
+    Aviso.NIF_INVALIDO,  # NIF con forma imposible: hoy 0 facturas, pero el lote 2 puede traerlos
     Aviso.IMPORTE_AMBIGUO,
 }
 
@@ -224,7 +225,7 @@ def regla_6_anomalias(
     if graves:
         detalle = "anomalía que debe ver una persona: " + ", ".join(a.value for a in graves)
         if h.texto_sospechoso:
-            detalle += f' · el documento dice: "{h.texto_sospechoso[:120]}"'
+            detalle += f' · el documento dice: "{h.texto_sospechoso[:300]}"'  # el tramo entero: a 120 se cortaba la orden
         return _ko(
             "R6", detalle, avisos=[a.value for a in graves], texto_sospechoso=h.texto_sospechoso
         )

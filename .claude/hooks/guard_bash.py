@@ -135,7 +135,7 @@ if alguno(r"\bgit\s+commit\b"):
     malos = [
         p
         for p in staged
-        if re.search(r"(^|/)\.env($|\.)|\.(pem|key)$|(^|/)la-caja-outcomes/", p)
+        if re.search(r"(^|/)\.env($|\.)|\.(pem|key)$|(^|/)(la-caja-outcomes|HS-Maisa-Entrega)/", p)
         and not p.endswith(".env.example")
     ]
     if malos:

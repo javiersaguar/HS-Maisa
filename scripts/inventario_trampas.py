@@ -68,6 +68,19 @@ INSTRUCCION = re.compile(
     re.I,
 )
 MONEDA = r"(?:EUR\s*)?(-?\d[\d.,]*)(?:\s*€)?"
+# Lo que el barrido de texto NO puede ver y sí ve la extracción: instrucciones que sólo aparecen por
+# visión (escaneadas), desacuerdos entre las dos lecturas, reconciliaciones con el maestro. Se añaden
+# con --con-hechos leyendo la BD en solo lectura; el tipo lleva el prefijo `hechos_`.
+TIPOS_HECHOS = {
+    "hechos_texto_instruccion": "Instrucción vista por la extracción (en escaneadas, sólo por visión); es evidencia, no una orden.",
+    "hechos_discrepancia_extractores": "Las dos lecturas del escaneado no coinciden en un identificador; escalar.",
+    "hechos_reconciliado_con_maestro": "Identificador elegido por coincidir con el proveedor del pedido; confianza reducida.",
+    "hechos_duplicado_sospechoso": "Otra factura del lote comparte pedido o (NIF, número); nunca pagar dos veces.",
+    "hechos_nif_invalido": "NIF con forma imposible.",
+    "hechos_importe_ambiguo": "Las líneas del documento no suman la base.",
+    "hechos_sin_hechos": "El fichero no tiene hechos extraídos (pendiente o error): no se puede decidir.",
+}
+
 INICIO = "<!-- A3: inventario generado INICIO -->"
 FIN = "<!-- A3: inventario generado FIN -->"
 
@@ -470,6 +483,75 @@ def informe(
     return "\n\n".join(secciones)
 
 
+def filas_de_hechos(db_path: Path, file_ids: set[str]):
+    """Filas de anomalías que sólo conoce la extracción, leyendo la BD en solo lectura."""
+    import json
+
+    from albertitos.core import db as _db
+
+    filas = []
+    try:
+        conn = _db.conectar(db_path, solo_lectura=True)
+    except Exception as e:  # sin BD el inventario de texto sigue valiendo
+        print(f"[aviso] no se pudo leer {db_path}: {e}")
+        return filas
+    with closing(conn):
+        con_hechos = set()
+        for fila in conn.execute(
+            "select f.file_id, h.hechos_json from ficheros f left join hechos h on h.sha256 = f.sha256"
+        ):
+            file_id = fila["file_id"]
+            if file_id not in file_ids:
+                continue
+            if fila["hechos_json"] is None:
+                filas.append(
+                    dict(
+                        file_id=file_id,
+                        tipo="hechos_sin_hechos",
+                        evidencia="sin hechos en la BD",
+                        hipotesis=TIPOS_HECHOS["hechos_sin_hechos"],
+                    )
+                )
+                continue
+            con_hechos.add(file_id)
+            h = json.loads(fila["hechos_json"])
+            for aviso in h.get("avisos", []):
+                tipo = f"hechos_{aviso}"
+                if tipo in TIPOS_HECHOS:
+                    evidencia = (
+                        (h.get("texto_sospechoso") or "")[:240]
+                        if aviso == "texto_instruccion"
+                        else h.get("metodo", "")
+                    )
+                    filas.append(
+                        dict(
+                            file_id=file_id,
+                            tipo=tipo,
+                            evidencia=evidencia,
+                            hipotesis=TIPOS_HECHOS[tipo],
+                        )
+                    )
+            if h.get("confianza") is not None and h["confianza"] < 1.0:
+                filas.append(
+                    dict(
+                        file_id=file_id,
+                        tipo="hechos_reconciliado_con_maestro",
+                        evidencia=f"confianza {h['confianza']}",
+                        hipotesis=TIPOS_HECHOS["hechos_reconciliado_con_maestro"],
+                    )
+                )
+        for file_id in sorted(file_ids - con_hechos - {f["file_id"] for f in filas}):
+            filas.append(
+                dict(
+                    file_id=file_id,
+                    tipo="hechos_sin_hechos",
+                    evidencia="no está en la BD",
+                    hipotesis=TIPOS_HECHOS["hechos_sin_hechos"],
+                )
+            )
+    return filas
+
+
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -495,6 +577,11 @@ def main():
         "--csv", "--salida", dest="csv", type=Path, default=Path("data/fixtures/anomalias.csv")
     )
     parser.add_argument("--docs", type=Path, default=Path("docs/trampas.md"))
+    parser.add_argument(
+        "--con-hechos",
+        action="store_true",
+        help="añade lo que sólo ve la extracción (instrucciones por visión, discrepancias, duplicados) leyendo la BD",
+    )
     parser.add_argument(
         "--sin-docs",
         action="store_true",
@@ -524,6 +611,10 @@ def main():
     filas, cobertura, paginas, huella, facturas = inventariar(facturas_dir, maestro, erp, corte)
     if not paginas:
         parser.error("no hay PDFs; no se sobrescribe el inventario")
+    if args.con_hechos:
+        extra = filas_de_hechos(args.db, {r.name for r in facturas_dir.glob("*.pdf")})
+        filas.extend(extra)
+        print(f"+{len(extra)} filas desde los hechos de {args.db}")
     hora = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M %Z")
     reporte = informe(
         maestro, erp, corte, filas, cobertura, paginas, huella, facturas, hora, facturas_dir
@@ -558,7 +649,7 @@ def main():
                         len({f["file_id"] for f in filas if f["tipo"] == t}),
                         sum(f["tipo"] == t for f in filas),
                     )
-                    for t in TIPOS
+                    for t in (*TIPOS, *TIPOS_HECHOS)
                 ),
             )
         )

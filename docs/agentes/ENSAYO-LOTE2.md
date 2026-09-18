@@ -1,6 +1,6 @@
 # Ensayo en frío del lote 2 (viernes 18/09, 22:10-22:40) · B1
 
-Objetivo: que el sábado a las 18:00 el lote 2 (40 facturas + `erp_export_lote2.csv` + norma v4) entre en ~15 minutos con
+Objetivo: que el sábado a las 18:00 el lote 2 (40 facturas + `erp_export_lote2.csv` + una regla nueva; la web del 18/09 23:00 ya no habla de "norma v4" ni de un fichero) entre en ~15 minutos con
 comandos ya probados. Se ensayó con **`data/fixtures/lote2_sim/`** (10 PDFs derivados de la Caja con sha distinto: una
 por cada una de las 6 plantillas de A2, una de dos páginas, una con instrucción inyectada, dos escaneadas) y el ERP
 simulado de A3 (`data/fixtures/erp_lote2_simulado.csv` en `:8011`: 3 altas, 2 cambios). **Nada de esto es el lote real.**
@@ -48,7 +48,7 @@ Con el lote real, la misma tabla se construye con `erp diff v1 v2` + `hechos` (c
 - [ ] **2 (1 min)** bridge v2 en :8011 con `--lote2 data/lote2/erp_export_lote2.csv` · `curl …/erp/estado` → `SI` · `ALBERTITOS_ERP_URL=http://127.0.0.1:8011 uv run albertitos erp pull --tag v2` · `uv run albertitos erp diff v1 v2` → pegar en `docs/reprocesado-lote2.md`
 - [ ] **3 (2-6 min)** `ingest --dir data/lote2/facturas --lote 2` · `extract --workers 4` · `status` (0 sin hechos; si quedan PENDIENTE, repetir `extract --workers 4`: los reintentos cambian el texto y suelen entrar) · inventario `--facturas data/lote2/facturas --erp-tag v2 --sin-docs --solo-resumen` → frases nuevas a B2/A2
 - [ ] **3b (B2, 1-2 min)** contraste LLM del lote 2 para `texto_sospechoso` en las de plantilla (cuando exista la opción)
-- [ ] **4 (Mónica)** norma v4 → `norma_v4.py` + tests + ADR
+- [ ] **4 (Mónica)** regla nueva (fichero, canal o Excel) → `norma_v4.py` + tests + ADR
 - [ ] **5 (Miguel, 1 min)** `reprocess --impacted --norma v4 --erp v2` → `docs/reprocesado-lote2.md` con "recalculadas N, cambian K" y la lista cruzada de §3 construida con el diff real
 - [ ] **6** `/entrega` → `outcomes.jsonl` + `outcomes_lote2.jsonl` (40 líneas exactas) + `albertitos_plan.pdf`
 

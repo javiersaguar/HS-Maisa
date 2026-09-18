@@ -37,9 +37,9 @@ El sábado Alberto enviará un lote adicional y una regla nueva. El domingo podr
 
 ## Qué recibís
 
-| Viernes 21:00 | Sábado 18:00 |
+| Viernes 19:00 | Sábado 18:00 |
 | --- | --- |
-| 500 facturas PDF, Excel, ERP local| 40 facturas adicionales, actualización del ERP y norma v4 |
+| 500 facturas PDF, Excel, ERP local| 40 facturas adicionales |
 | Esta guía y la rúbrica | Escenario sorpresa |
 
 ## Qué se entrega (domingo 10:30, Madrid)

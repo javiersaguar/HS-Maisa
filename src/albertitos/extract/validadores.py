@@ -123,10 +123,10 @@ def validar(h: InvoiceFacts) -> list[Aviso]:
 
     if h.iban and not iban_bien_formado(h.iban):
         avisos.append(Aviso.IBAN_INVALIDO)
-    # TODO(Miguel, core/): falta un Aviso.NIF_INVALIDO. Mientras no exista, un NIF con forma
-    # imposible se marca como EXTRACCION_PARCIAL (propuesto a Javier en la bitácora del 18/09).
+    # NIF con forma imposible (p. ej. 8 caracteres). Sólo forma: la letra de control no se exige porque
+    # los NIF de la Caja son sintéticos (46/468 la pasan); `nif_letra_control_ok` queda para datos reales.
     if h.nif_emisor and not nif_bien_formado(h.nif_emisor):
-        avisos.append(Aviso.EXTRACCION_PARCIAL)
+        avisos.append(Aviso.NIF_INVALIDO)
 
     vistos: list[Aviso] = []
     for a in avisos:

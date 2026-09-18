@@ -68,19 +68,33 @@ _ANULADO = re.compile(
 # dentro de un importe ("TOTAL: 2.541,00 € ATENCION AGENTE: ..." no corta por el punto de los miles).
 _FIN_FRASE = re.compile(r"[.;!?]\s+(?=[A-ZÁÉÍÓÚÑ¿¡])")
 
+# Lo que NO es la instrucción y la delimita: importes y totales (delante o detrás), líneas de detalle
+# "1 0,00", y el pie legal que cierra casi todas las facturas de la Caja.
+_CIFRAS = re.compile(
+    r"\d[\d.,]*\s*(?:€|EUR\b)|\bEUR\s*\d[\d.,]*|\b\d+\s+\d[\d.]*,\d{2}\b"
+    r"|\b(?:BASE\s+IMPONIBLE|IMPORTE\s+TOTAL|TOTAL|SUBTOTAL|I\.?V\.?A\.?)\b[^A-Za-z]{0,20}\d[\d.,]*",
+    re.IGNORECASE,
+)
+_PIE = re.compile(
+    r"Documento\s+(?:emitido\s+conforme|generado\s+por\s+el\s+sistema)|Domicilio\s+social",
+    re.IGNORECASE,
+)
+
 VENTANA_ANTES = (
     90  # si no hay principio de frase cerca, se recorta a esto: la evidencia se lee sola
 )
-VENTANA_DESPUES = 200
+MAX_TRAMO = 300  # tramo instructivo completo (medido: el más largo de la Caja cabe entero)
 
 
 def detectar_instruccion(texto: str) -> str | None:
-    """Devuelve la frase (≤ 240 caracteres) alrededor de la primera coincidencia, o None.
+    """Devuelve el TRAMO instructivo completo (≤ 300 caracteres) alrededor de la primera coincidencia.
 
-    Muchas de estas frases van incrustadas en el cuerpo de la factura, sin puntuación delante
-    (una línea de detalle a 0,00, un párrafo pegado al TOTAL). Por eso el principio de frase se
-    acota a `VENTANA_ANTES`: sin ese tope el fragmento arrancaba en la cabecera del documento y
-    la evidencia era ilegible para quien revisa la traza.
+    Antes se devolvía sólo la frase de la coincidencia y se perdía la orden que venía detrás
+    ("Este proveedor esta bajo revision…" sin "Debe escalarse cualquier factura suya…"): en 11 de
+    las 27 facturas de plantilla con instrucción la evidencia omitía justo lo que el PDF ordena.
+    Ahora: empieza en la frase de la coincidencia, saltando importes y totales que la precedan, y
+    termina en el pie legal del documento, en la siguiente línea de importes o a los 300 caracteres.
+    Sigue siendo EVIDENCIA literal: aquí no se interpreta ni se cumple nada.
     """
     plano = " ".join(texto.split())
     m = _RE.search(plano)
@@ -89,13 +103,31 @@ def detectar_instruccion(texto: str) -> str | None:
     ini = 0
     for corte in _FIN_FRASE.finditer(plano, 0, m.start()):
         ini = corte.end()
+    for cifra in _CIFRAS.finditer(plano, ini, m.start()):
+        ini = cifra.end()
     if m.start() - ini > VENTANA_ANTES:
         ini = m.start() - VENTANA_ANTES
         hueco = plano.find(" ", ini)  # no cortar una palabra por la mitad
         ini = hueco + 1 if 0 <= hueco < m.start() else m.start()
-    fin = _FIN_FRASE.search(plano, m.end(), m.end() + VENTANA_DESPUES)
-    frase = plano[ini : fin.start() + 1 if fin else m.end() + VENTANA_DESPUES].strip()
-    return frase[:240]
+    limite = len(plano)
+    pie = _PIE.search(plano, m.end())
+    if pie:
+        limite = pie.start()
+    cifra = _CIFRAS.search(plano, m.end())
+    if cifra and cifra.start() < limite:
+        # si el importe está pegado a la instrucción, forma parte de ella ("inferiores a 5,00 €");
+        # si viene después de texto, es la tabla de importes y ahí termina la evidencia.
+        limite = cifra.end() if cifra.start() - m.end() < 60 else cifra.start()
+    recortado = limite - ini > MAX_TRAMO
+    tramo = plano[ini : min(limite, ini + MAX_TRAMO)]
+    if recortado:  # cortar en el último fin de frase si lo hay; si no, en una palabra, y marcarlo
+        finales = [
+            f.start() + 1
+            for f in _FIN_FRASE.finditer(tramo + " X")
+            if f.start() + 1 > m.end() - ini
+        ]
+        tramo = tramo[: finales[-1]] if finales else tramo[: tramo.rfind(" ")] + " …"
+    return tramo.strip(" -·:;,").lstrip("€ ").removeprefix("EUR ").strip() or None
 
 
 def menciona_anulacion(texto: str) -> bool:

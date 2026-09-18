@@ -129,10 +129,37 @@ def _precios_por_modelo() -> dict[str, tuple[Decimal, Decimal]]:
     return tabla
 
 
+# Timeout de lectura por petición. B2 midió colas de 94 s con p50 de 2,9 s: mejor cortar y reintentar
+# (el reintento cambia el texto y suele entrar) que esperar tres minutos a una petición colgada.
+TIMEOUT_S = float(os.environ.get("ALBERTITOS_LLM_TIMEOUT_S", "60"))
+# Visión aparte (medido 18/09): qwen3.6 a 150 dpi tarda p50 11-13 s, p95 25-36 s y como máximo ~41 s por
+# lectura; con 60 s se cortaban lecturas legítimas de imágenes más grandes. 90 s = 2,2× el máximo observado
+# y sigue por debajo de la cola de 94 s que queremos cortar.
+TIMEOUT_VISION_S = float(os.environ.get("ALBERTITOS_LLM_TIMEOUT_VISION_S", "90"))
+
+
+def timeout_para(png: bytes | None) -> float:
+    return TIMEOUT_VISION_S if png is not None else TIMEOUT_S
+
+
+# Caos `llm_timeout`: cuánto "cuelga" la petición simulada antes de fallar (segundos).
+CAOS_TIMEOUT_ESPERA_S = float(os.environ.get("ALBERTITOS_CAOS_TIMEOUT_ESPERA_S", "1"))
 MAX_TOKENS_TEXTO = int(os.environ.get("ALBERTITOS_MAX_TOKENS_TEXTO", "2000"))
 MAX_TOKENS_VISION = int(
     os.environ.get("ALBERTITOS_MAX_TOKENS_VISION", "8000")
 )  # qwen3.6 razona ~3000 tokens antes de la tool call
+
+
+# Algunos modelos rellenan el campo con la palabra "None"/"null" en vez de dejarlo nulo. Tomarlo por
+# una instrucción real escala facturas limpias con un motivo falso (pasó con scan_025.pdf, 18/09).
+_NO_ES_FRAGMENTO = {"none", "null", "nulo", "n/a", "na", "-", "ninguno", "ninguna", "nada", "false"}
+
+
+def _fragmento_valido(crudo: object) -> str | None:
+    if not isinstance(crudo, str):
+        return None
+    limpio = crudo.strip()
+    return limpio if limpio and limpio.lower().strip(".") not in _NO_ES_FRAGMENTO else None
 
 
 def _peticion_usuario(texto: str | None, intento: int, marca: str = "") -> str:
@@ -209,6 +236,7 @@ class ErrorLLM(Exception):
         super().__init__(f"{codigo}: {detalle}")
         self.codigo = codigo
         self.espera = espera  # segundos pedidos por el proveedor (cabecera Retry-After), si los dio
+        self.intentos = 1  # intentos consumidos antes de rendirse (lo fija _llamar): va al evento
 
 
 class ClienteLLM:
@@ -251,7 +279,7 @@ class ClienteLLM:
                 import anthropic
 
                 # los reintentos los llevamos nosotros (eventos por intento)
-                self.estado.api = anthropic.Anthropic(timeout=60.0, max_retries=0)
+                self.estado.api = anthropic.Anthropic(timeout=TIMEOUT_S, max_retries=0)
             return self.estado.api
 
     def _http(self) -> httpx.Client:
@@ -263,7 +291,7 @@ class ClienteLLM:
                 self.estado.http = httpx.Client(
                     base_url=self.base_url,
                     headers={"Authorization": f"Bearer {key}"},
-                    timeout=httpx.Timeout(180.0, connect=15.0),
+                    timeout=httpx.Timeout(TIMEOUT_S, connect=15.0),
                 )
             return self.estado.http
 
@@ -438,6 +466,12 @@ class ClienteLLM:
             try:
                 if chaos.modo() == "llm_429" and intento == 1:
                     raise ErrorLLM("LLM-429", "caos: rate limit")
+                if chaos.modo() == "llm_timeout":
+                    time.sleep(CAOS_TIMEOUT_ESPERA_S)  # el proveedor "no contesta"
+                    raise ErrorLLM(
+                        "LLM-TIMEOUT",
+                        f"caos: sin respuesta en {timeout_para(png):.0f} s (simulado)",
+                    )
                 if self.proveedor == "anthropic":
                     datos, tin, tout = self._llamar_anthropic(modelo, texto, png, intento, marca)
                 else:
@@ -468,7 +502,9 @@ class ClienteLLM:
             pedida = getattr(ultimo, "espera", None)
             time.sleep(pedida if pedida is not None else min(8, 0.5 * 2**intento))
         codigo = getattr(ultimo, "codigo", None) or f"LLM-{type(ultimo).__name__}"
-        raise ErrorLLM(codigo, str(ultimo)[:200])
+        error = ErrorLLM(codigo, str(ultimo)[:200])
+        error.intentos = intento  # para la traza: "3 intentos y PENDIENTE", no "1"
+        raise error
 
     def _llamar_anthropic(
         self, modelo: str, texto: str | None, png: bytes | None, intento: int = 1, marca: str = ""
@@ -495,6 +531,7 @@ class ClienteLLM:
         )
         try:
             r = self._api().messages.create(
+                timeout=timeout_para(png),
                 model=modelo,
                 max_tokens=MAX_TOKENS_VISION if png is not None else MAX_TOKENS_TEXTO,
                 system=PROMPT_SISTEMA,
@@ -545,7 +582,15 @@ class ClienteLLM:
             "tool_choice": {"type": "function", "function": {"name": TOOL["name"]}},
         }
         try:
-            r = self._http().post("/chat/completions", json=cuerpo)
+            r = self._http().post(
+                "/chat/completions",
+                json=cuerpo,
+                timeout=httpx.Timeout(timeout_para(png), connect=15.0),
+            )
+        except httpx.TimeoutException as e:
+            raise ErrorLLM(
+                "LLM-TIMEOUT", f"sin respuesta en {timeout_para(png):.0f} s ({type(e).__name__})"
+            ) from e
         except httpx.HTTPError as e:
             raise ErrorLLM("LLM-RED", f"{type(e).__name__}: {e}"[:120]) from e
         if r.status_code in (401, 403):
@@ -585,7 +630,7 @@ class ClienteLLM:
         metodo: MetodoExtraccion,
     ) -> InvoiceFacts:
         avisos: list[Aviso] = []
-        fragmento = datos.get("texto_sospechoso") or None
+        fragmento = _fragmento_valido(datos.get("texto_sospechoso"))
         if texto:
             detectado = instrucciones.detectar_instruccion(texto)
             if detectado:
