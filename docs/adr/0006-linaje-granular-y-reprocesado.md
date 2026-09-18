@@ -70,6 +70,10 @@ Cómo se implementa:
   no los duplica.
 - Hoy no ganamos tiempo: recalcular las 500 tarda 0,43 s. Ganamos traza: cada recálculo dice por qué, y cada no
   recálculo también.
+- El historial no se borra, así que cada reprocesado agranda `decisiones`. Sin índice sobre `sha256`, cada
+  decisión recorría la tabla: `reprocess --todo` pasaba de 0,35 s a 2,34 s en 8 pasadas (1.000 → 4.500
+  decisiones en el historial). Con `ix_decisiones_sha_vigente` (esquema v2, 19/09) se queda en 0,11-0,19 s.
+  A 10.000 facturas: 297,6 s → 4,0 s con 10.000 decisiones previas (`docs/benchmark.md`).
 
 ## Evidencia
 Ensayo sobre `dist/ensayo.db`, copia de `albertitos.db`: 500 facturas, v3, corte 2026-09-18. Portátil de Miguel
