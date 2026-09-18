@@ -229,3 +229,9 @@ Plantilla (cópiala tal cual):
 - para los demás: **Alfonso** → los resúmenes de 5 líneas están al final de cada ADR, listos para pegar en el plan (yo no toco `docs/plan/`); si sólo caben 3, el orden por valor defendible es 0002 → 0005 → 0003. **Mónica** → el 0003 no pasa a *aceptado* hasta que ratifiques la reconciliación con el maestro. **Miguel** → `tests/test_lote2_sim.py` protege el flujo del sábado (ingest + extract por plantillas + diff del ERP + inventario) y corre en `make check` sin bridge: si tocas `pipeline/etapas.py` o `cli.py` y se pone rojo, es señal.
 - dato menor: el inventario **no** lee el maestro de la BD (lo carga del Excel, `scripts/inventario_trampas.py:518`); sólo el snapshot del ERP viene de la BD. El paso 4 de mi encargo pedía guardar los dos; guardar el maestro habría sido inútil.
 - toco ahora (ficheros): nada más. Commit de mis 6 ficheros con rutas explícitas.
+
+### 00:12 · plataforma · ciclo 3 cerrado / ciclo 4 abierto (2 agentes)
+- hice: merge de C2 (51de98d, conflicto sólo en esta bitácora, resuelto por unión); test de CI arreglado (2fbe27c); repo de entrega `javiersaguar/HS-Maisa-Entrega` configurado (e6a4f55); ADR-0002 con 468/468; parte del ciclo 3 archivado en `partes/PARTE-03.md`; `PLAN-04.md` + `plan.json`.
+- toco ahora (ficheros): nada más; escriben D1 y D2.
+- necesito / bloqueo: nada.
+- para los demás: D1 = escala medida a 10.000 facturas (BD aparte en dist/escala, sin tocar src/). D2 = frase completa de las instrucciones + reextracción + caos por BD + trampas.md al día. PIDO A Mónica: R6 de norma_v3 corta `texto_sospechoso[:120]`; la frase completa de F26-2201 tiene 127 → subir a 300. PIDO A Miguel: `merge=union` para docs/agentes/BITACORA.md y PARTE.md en .gitattributes (evita el único conflicto que hemos tenido).

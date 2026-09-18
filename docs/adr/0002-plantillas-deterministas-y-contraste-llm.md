@@ -58,7 +58,7 @@ reales. Es barato (coste 0) y es la única forma de saber si un ancla casa donde
 - **10 facturas revisadas a mano** contra el PDF (semilla 20260918), 3 de ellas contra el PDF **renderizado**:
   0 campos incorrectos. La revisión encontró 1 defecto real (en `simplificada` el primer concepto se tragaba la
   cabecera de la tabla), corregido **antes** de medir la cobertura.
-- **Contraste plantilla↔LLM: 18/18** sobre la muestra y **40/40** sobre 40 al azar (66.492 tokens), 0 discrepancias
+- **Contraste plantilla↔LLM: 468/468** — las 468 facturas de plantilla de la Caja, 0 discrepancias en los 8 campos clave, 0 fallos (717.188 tokens a coste 0, 472 s con 4 hilos; `docs/agentes/CONTRASTE-TOTAL.md` §1). Antes: 18/18 sobre la muestra y 40/40 sobre 40 al azar (66.492 tokens)
   en los 8 campos clave (`PARTE-01.md`, A1). El contraste de las **468** lo está midiendo C1 en este mismo ciclo:
   cuando publique la cifra en la bitácora, esta línea se sustituye por ella.
 - Tests que lo blindan (`tests/test_plantillas.py`): `test_las_seis_familias_estan_cubiertas`,
@@ -71,5 +71,5 @@ reales. Es barato (coste 0) y es la única forma de saber si un ancla casa donde
 Medimos la Caja antes de elegir: sus 471 facturas con texto caen en **6 familias de maquetación**, no en treinta, y seis parsers deterministas extraen **468 (93,6 % de la Caja) en 5 ms cada una y sin tocar el LLM**.
 El LLM queda para lo que los parsers no reconocen —29 escaneadas y 3 sin familia—, de modo que la ingesta no depende del proveedor para el 93,6 % del trabajo.
 Los parsers son conservadores: si falta un campo obligatorio devuelven `None` y la factura se va al LLM, porque un campo inventado lo consume la norma sin que nadie lo vea.
-El riesgo propio de esta decisión es equivocarse en bloque, así que el LLM vuelve como **control**: relee las mismas facturas y se comparan con tolerancia de formato (40/40 coincidieron en la muestra al azar).
+El riesgo propio de esta decisión es equivocarse en bloque, así que el LLM vuelve como **control**: relee las mismas facturas y se comparan con tolerancia de formato (468/468 coincidieron: el 100 % de las facturas de plantilla).
 Cobertura y coincidencia están clavadas en tests: si un parser deja de cubrir o empieza a mentir, `make check` se pone rojo ese día y no el domingo.
