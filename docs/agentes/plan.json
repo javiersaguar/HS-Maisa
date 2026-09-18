@@ -1,10 +1,15 @@
 {
   "ciclo": 3,
   "rama": "javier/ingesta",
-  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md", "docs/agentes/plan.json"],
+  "compartidos": [
+    "docs/agentes/BITACORA.md",
+    "docs/agentes/PARTE.md",
+    "docs/agentes/plan.json"
+  ],
   "agentes": {
     "C1": [
       "src/albertitos/extract/*",
+      "src/albertitos/sources/chaos.py",
       "tests/test_llm.py",
       "tests/test_extract.py",
       "tests/test_plantillas.py",
