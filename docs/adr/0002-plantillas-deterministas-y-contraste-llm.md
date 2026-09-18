@@ -58,9 +58,9 @@ reales. Es barato (coste 0) y es la única forma de saber si un ancla casa donde
 - **10 facturas revisadas a mano** contra el PDF (semilla 20260918), 3 de ellas contra el PDF **renderizado**:
   0 campos incorrectos. La revisión encontró 1 defecto real (en `simplificada` el primer concepto se tragaba la
   cabecera de la tabla), corregido **antes** de medir la cobertura.
-- **Contraste plantilla↔LLM: 468/468** — las 468 facturas de plantilla de la Caja, 0 discrepancias en los 8 campos clave, 0 fallos (717.188 tokens a coste 0, 472 s con 4 hilos; `docs/agentes/CONTRASTE-TOTAL.md` §1). Antes: 18/18 sobre la muestra y 40/40 sobre 40 al azar (66.492 tokens)
-  en los 8 campos clave (`PARTE-01.md`, A1). El contraste de las **468** lo está midiendo C1 en este mismo ciclo:
-  cuando publique la cifra en la bitácora, esta línea se sustituye por ella.
+- **Contraste plantilla↔LLM: 468/468.** Las 468 facturas de plantilla releídas por el modelo, 0 discrepancias
+  en los 8 campos clave y 0 fallos (717.188 tokens a coste 0, 472 s con 4 hilos; `CONTRASTE-TOTAL.md` §1).
+  Antes se había medido sobre muestras: 18/18 en la muestra y 40/40 al azar (66.492 tokens, `PARTE-01.md`, A1).
 - Tests que lo blindan (`tests/test_plantillas.py`): `test_las_seis_familias_estan_cubiertas`,
   `test_cobertura_medida` (falla si la cobertura baja), `test_las_lineas_suman_la_base`,
   `test_dos_paginas_toma_el_total_de_la_segunda`, `test_fecha_imposible_no_se_completa_ni_se_inventa`,

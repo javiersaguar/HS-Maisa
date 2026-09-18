@@ -47,7 +47,8 @@ afectados**.
 ## Consecuencias aceptadas
 - **El snapshot puede quedar viejo.** Es el precio de no consultar en vivo. Se mitiga con la versión en la decisión:
   una decisión tomada con `v1` se distingue de una tomada con `v2` y el linaje la recalcula sola.
-- **`linaje.impactados` recalcula las 510 decisiones cuando cambia la versión del ERP**, aunque sólo cambien 2. Se
+- **`linaje.impactados` recalculaba todas las decisiones cuando cambiaba la versión del ERP**, aunque sólo cambiaran 2.
+  Corregido por Miguel en el ADR-0006: ahora el diff decide qué se recalcula (**2 de 500, 0,04 s**; antes, 510 de 510 en 0,5 s). Se
   acepta porque cuesta **0,5 s** y porque la alternativa (deducir qué facturas dependen de qué asiento) es
   complejidad que hoy no compra nada. En la demo se cuenta tal cual: *"recalculadas 510, cambian 2, y son
   exactamente las que referencian los asientos modificados"*.
@@ -62,7 +63,8 @@ afectados**.
   PAGADA** y **17 `ProveedorID` distintos** entre los 20 pedidos sin NIF en el Excel.
 - **Ensayo completo del cambio del sábado** (`ENSAYO-LOTE2.md` §1 y §3), con el ERP simulado de A3
   (3 altas + 2 cambios): `erp pull --tag v2-sim` ~4 s · `erp diff v1 v2-sim` **0,17 s** → 3 nuevos, 2 cambiados,
-  5 pedidos afectados · `reprocess --impacted --erp v2-sim` **0,5 s** → **510 recalculadas, cambian exactamente 2**:
+  5 pedidos afectados · `reprocess --impacted --erp v2-sim` → **2 de 500 recalculadas en 0,04 s, cambian las 2**
+  (ADR-0006; en el ensayo original, antes del diff, eran 510 de 510 en 0,5 s):
   `F26-9865_ofimática.pdf` PAGAR→NO_PAGAR (R5: el pedido ya figura PAGADA) y `2026-06-27_P001.pdf` PAGAR→ESCALAR
   (R5: el ERP espera otro importe, aunque con el Excel cuadre). Volver a `--erp v1` las devuelve a PAGAR, con el
   historial conservado en `decisiones` (`vigente=0`).
@@ -81,5 +83,5 @@ afectados**.
 El ERP del cliente es un bridge de 2009 que devuelve XML en ISO-8859-1, caduca el token a los 300 usos y **falla con `ORA-00600` cada diez consultas** —su propio manual dice que se reintente—, así que tratamos sus averías como datos: reintento, renovación proactiva, límite de ritmo y un evento por consulta.
 Se descarga **entero una vez** (26 páginas, ~4 s, 2-3 reintentos) a un snapshot versionado en SQLite, y la norma consulta en local: ninguna regla toca la red, y así 500 decisiones no son 500 consultas a un sistema que se cae una de cada diez.
 La versión del ERP viaja **dentro de la decisión**, de modo que siempre se puede responder con qué estado del sistema se decidió cada factura.
-Cuando el ERP se actualiza, `erp diff v1 v2` dice qué asientos cambiaron y qué pedidos tocan, y `reprocess --impacted` recalcula sólo lo afectado: en el ensayo, **510 decisiones recalculadas en 0,5 s de las que cambian exactamente 2**, cada una con su regla y su motivo.
+Cuando el ERP se actualiza, `erp diff v1 v2` dice qué asientos cambiaron y qué pedidos tocan, y `reprocess --impacted` recalcula sólo lo afectado: en el ensayo, **2 decisiones de 500 en 0,04 s**, las dos que referencian los asientos modificados, cada una con su regla y su motivo.
 El historial no se borra: la decisión anterior queda marcada como no vigente, así que el cambio del sábado —y el dato que el tribunal cambie el domingo— se pueden enseñar como un antes y un después.

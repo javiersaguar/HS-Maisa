@@ -197,6 +197,12 @@ Detalles de diseño, por si preguntan:
 
 **Qué dice esto:**
 
+> **Corrección (E1, 19/09 02:10).** Las cifras de visión de esta sección miden **una sola lectura** por
+> escaneada. El pipeline hace **dos** (la segunda sobre el recorte superior, para reconciliar identificadores):
+> la visión real va a **0,065 f/s con 4 hilos y 0,106 con 8**, medido por D1 sobre 24 escaneadas
+> (`ESCALA-10K.md` §4). Con eso, «10.000 facturas en ~45 min» es optimista entre 2 y 3 veces: la estimación
+> buena es **1,5–2,5 h con una clave**. El resto de la sección (latencias, 429, saturación) sigue valiendo.
+
 - **Visión satura en 4 hilos.** De 4 a 8 no gana nada (0,22 → 0,22 f/s). Encaja con el límite
   publicado: **5 peticiones concurrentes por modelo** para `qwen3.6`. Poner 8 hilos en visión no
   acelera; sólo llena la cola.
