@@ -3,7 +3,8 @@
   "rama": "javier/ingesta",
   "compartidos": [
     "docs/agentes/BITACORA.md",
-    "docs/agentes/PARTE.md"
+    "docs/agentes/PARTE.md",
+    "docs/agentes/plan.json"
   ],
   "agentes": {
     "A1": [
