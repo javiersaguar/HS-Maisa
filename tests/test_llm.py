@@ -87,6 +87,10 @@ def bd(conn, caja, tmp_path, monkeypatch):
     monkeypatch.setattr(llm.time, "sleep", lambda s: None)
     # Los tests offline simulan el SDK de Anthropic (`_api`); el proveedor real de .env no debe entrar.
     monkeypatch.setenv("ALBERTITOS_LLM_PROVEEDOR", "anthropic")
+    # Y los modelos se fijan aquí: sin fichero de entorno (la CI no lo tiene) el modelo por defecto es
+    # claude-sonnet-5, que tiene precio, y los asertos de coste 0 dependerían de la máquina.
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.setenv("ALBERTITOS_MODELO_VISION", "qwen3.6")
     monkeypatch.setattr(etapa, "VISION_DOBLE", False)
     # Las plantillas de A2 ya resuelven facturas reales sin LLM; aquí probamos el camino LLM, así que
     # se anulan por defecto (el test de plantilla las vuelve a activar con una falsa).
