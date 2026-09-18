@@ -136,3 +136,21 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): nada más; escriben B1 y B2.
 - necesito / bloqueo: Javier hace `git push` + merge a main antes de lanzar (main ya tiene hasta 3e217c0; faltan ef4d441, 0779512 y este).
 - para los demás: B1 = ensayo del lote 2 en frío (sources/, inventario, skill lote2); B2 = resiliencia demostrable y coste real (extract/llm+etapa, bench). Miguel: `hechos import data/fixtures/hechos_caja.jsonl` → `decide` → `package` (repliegue 1, 02:00).
+
+### 22:50 · B2 · arranco resiliencia y coste
+- hice: leídos CLAUDE.md, extract/CLAUDE.md, texto-es-dato.md, skills/benchmark, PLAN-02 y PARTE-01 (sección A1: visión, caché del gateway, bloqueo SQLite, reconciliación).
+- toco ahora (ficheros): ninguno todavía. Empiezo por el paso 1 (precios reales de Helmcode) y por releer `eventos` para el coste por camino. Después: sondeo de modelos de respaldo, guion de caos, `scripts/bench_llm.py`.
+- necesito / bloqueo: nada. No borro nada de `cache_llm`: para medir usaré `variante="bench-wN"` / `"demo"`.
+- para los demás: B1 → no toco `sources/` ni tu lote simulado. Si lo publicas aquí te lo pido antes de usarlo para medir; mientras, mido con variantes de caché sobre la Caja, que no gastan tu trabajo.
+
+### 22:06 · B1 · arranco lote 2 en frío
+- hice: leído PLAN-02, skill lote2, sources/CLAUDE.md, trampas.md y PARTE-01 (A1/A3). Rama al día con main; bridges v1 (:8009, 516) y v2-sim (:8011, 519) vivos; snapshots v1/v2-sim/maestro en BD; 0 ficheros de lote 2.
+- toco ahora (ficheros): data/fixtures/lote2_sim/** (10 PDFs derivados con sha distinto + README), después scripts/inventario_trampas.py (--facturas/--erp-tag/--salida), .claude/skills/lote2/SKILL.md y docs/agentes/ENSAYO-LOTE2.md.
+- necesito / bloqueo: nada. No escribo en data/lote2/ ni en data/caja/.
+- para los demás: B2, el lote simulado estará en data/fixtures/lote2_sim/facturas (nombres `L2-*`); si lo usas para medir, dilo aquí y no lo modifiques. Miguel, el ensayo dejará 10 ficheros con lote=2 en la BD de Javier (no en la tuya).
+
+### 22:45 · B1 · ensayo del lote 2 terminado
+- hice: lote simulado `data/fixtures/lote2_sim/` (10 PDFs, README); ensayo completo cronometrado (ingest 0,3 s · extract 10/10 en 68 s · diff 0,2 s · inventario 0,07 s); cruce ERP v2-sim↔Excel↔Caja verificado con `reprocess` (510 recalculadas, cambian exactamente 2: `F26-9865_ofimática.pdf`→NO_PAGAR, `2026-06-27_P001.pdf`→ESCALAR) y BD restaurada a v1; `scripts/inventario_trampas.py` con `--facturas/--erp-tag/--salida/--sin-docs`; skill `lote2` reescrita con tiempos y paso 0 de limpieza; `docs/agentes/ENSAYO-LOTE2.md` con huecos y checklist.
+- toco ahora (ficheros): nada más este ciclo.
+- necesito / bloqueo: PIDO A Miguel: `caja verify --dir <ruta>` y `caja manifest --lote 2` (cli.py). PIDO A B2: poder limitar `contrastar` a un lote o lista de file_id, para recoger `texto_sospechoso` por LLM también en las facturas de plantilla del lote 2 (las plantillas no pasan por el LLM; una instrucción con redacción nueva sólo la ven las regex).
+- para los demás: la BD de Javier tiene 10 ficheros `L2-*` con lote=2 (hechos y decisiones): antes del lote real, paso 0 de la skill (`delete … where file_id like 'L2-%'`). `package` hoy los ignora porque no existe `data/lote2/facturas`.
