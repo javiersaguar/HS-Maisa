@@ -4,7 +4,7 @@ ERP_URL ?= http://127.0.0.1:8009
 LOTE ?= 1
 
 .DEFAULT_GOAL := help
-.PHONY: help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench worktree clean
+.PHONY: agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench worktree clean
 
 help: ## Lista estos comandos
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  make %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -73,6 +73,9 @@ worktree: ## Segundo agente en paralelo en tu máquina: make worktree NAME=javie
 	@test -n "$(NAME)" || (echo 'uso: make worktree NAME=<nombre>-<tema>'; exit 1)
 	git worktree add ../HS-Maisa-$(NAME) -b $(NAME) 2>/dev/null || git worktree add ../HS-Maisa-$(NAME) $(NAME)
 	@echo 'cd ../HS-Maisa-$(NAME) && ./bootstrap.sh'
+
+agentes-check: ## Cada fichero cambiado en la rama pertenece a un único agente (docs/agentes/plan.json)
+	$(UV) run python scripts/agentes_check.py
 
 clean: ## Borra BD y outcomes generados (la caché LLM también: cuesta dinero regenerarla)
 	rm -rf dist/albertitos.db dist/albertitos.db-wal dist/albertitos.db-shm dist/entrega

@@ -82,14 +82,16 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
 
 
 def extract(
-    conn: sqlite3.Connection, *, solo_pendientes: bool = True, fixture: Path | None = None
+    conn: sqlite3.Connection,
+    *,
+    solo_pendientes: bool = True,
+    fixture: Path | None = None,
+    workers: int = 1,
 ) -> int:
-    """PDF → InvoiceFacts. Pendiente: Alfonso (src/albertitos/extract/CLAUDE.md)."""
-    raise NotImplementedError(
-        "extract pendiente: Alfonso. Plan: extract/plantillas.py primero, si no reconoce → extract/llm.py "
-        "(texto o visión), validadores.py para los avisos, db.guardar_hechos + evento por fichero. "
-        "Si el LLM falla: evento PENDIENTE y seguir con el siguiente."
-    )
+    """PDF → InvoiceFacts. La implementación vive en extract/etapa.py (Javier); aquí sólo se delega."""
+    from albertitos.extract.etapa import extraer
+
+    return extraer(conn, solo_pendientes=solo_pendientes, fixture=fixture, workers=workers).ok
 
 
 def marcar_duplicados(conn: sqlite3.Connection) -> int:

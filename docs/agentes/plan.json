@@ -1,0 +1,31 @@
+{
+  "ciclo": 1,
+  "rama": "javier/ingesta",
+  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md"],
+  "agentes": {
+    "A1": [
+      "src/albertitos/extract/etapa.py",
+      "src/albertitos/extract/llm.py",
+      "tests/test_llm.py",
+      "data/fixtures/hechos_muestra.jsonl"
+    ],
+    "A2": [
+      "src/albertitos/extract/plantillas.py",
+      "src/albertitos/extract/validadores.py",
+      "src/albertitos/extract/instrucciones.py",
+      "src/albertitos/extract/pdf.py",
+      "tests/test_extract.py",
+      "tests/test_plantillas.py"
+    ],
+    "A3": [
+      "src/albertitos/sources/*",
+      "tests/test_erp.py",
+      "tests/test_excel.py",
+      "tests/test_snapshot.py",
+      "scripts/inventario_trampas.py",
+      "docs/trampas.md",
+      "data/fixtures/anomalias.csv",
+      "data/fixtures/erp_lote2_simulado.csv"
+    ]
+  }
+}

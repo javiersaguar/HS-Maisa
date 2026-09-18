@@ -62,6 +62,7 @@ por ruta están en `.claude/rules/`.
 - Operaciones: `/sync` `/handoff` `/check` `/trace <file_id>`. Runbooks: `/entrega` `/lote2` `/demo` `/benchmark` `/adr`.
 - Subagentes: `revisor-diff` antes del merge · `auditor-outcomes` antes de entregar · `cazador-trampas` para inventariar anomalías.
 - Modelo por defecto Sonnet (settings); `/model` para diseño o ADRs. Cuatro licencias Pro para 36 h.
+- Varios agentes en el mismo árbol: `docs/agentes/PLAN-<n>.md` reparte ficheros; `BITACORA.md` (append-only) es el canal; `PARTE.md` el cierre. Reparto de personas: `docs/reparto-backend.md`.
 - Si un hook te bloquea, su mensaje dice qué hacer en su lugar. No busques rodeos; si crees que el hook está mal, díselo a Javier.
 
 ## Fechas (hora Madrid)

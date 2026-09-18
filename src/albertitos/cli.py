@@ -142,16 +142,88 @@ def ingest(directorio: Path = typer.Option(CAJA / "facturas", "--dir"), lote: in
 def extract(
     solo_pendientes: bool = True,
     fixture: Path | None = typer.Option(None, help="lista de file_id (uno por línea)"),
+    workers: int = typer.Option(1, help="hilos en paralelo para el LLM (ALBERTITOS_WORKERS)"),
 ) -> None:
-    """PDF → hechos (plantilla o LLM). Pendiente: Alfonso."""
-    from albertitos.pipeline import etapas
+    """PDF → hechos (plantilla o LLM). Implementación: extract/etapa.py (Javier)."""
+    from albertitos.extract.etapa import extraer
 
     try:
-        n = etapas.extract(_conn(), solo_pendientes=solo_pendientes, fixture=fixture)
+        r = extraer(_conn(), solo_pendientes=solo_pendientes, fixture=fixture, workers=workers)
     except NotImplementedError as e:
         rprint(f"[yellow]{e}[/yellow]")
         raise typer.Exit(3) from None
-    rprint(f"[green]{n} ficheros[/green] extraídos")
+    rprint(r.texto())
+
+
+hechos_app = typer.Typer(
+    help="Hechos extraídos: exportar/importar fixtures (para trabajar sin LLM)"
+)
+app.add_typer(hechos_app, name="hechos")
+
+
+@hechos_app.command("export")
+def hechos_export(
+    salida: Path = Path("data/fixtures/hechos_muestra.jsonl"),
+    fixture: Path | None = typer.Option(None, help="sólo estos file_id (uno por línea)"),
+) -> None:
+    """BD → JSONL de InvoiceFacts (una línea por fichero) para que rules/ y pipeline/ trabajen sin LLM."""
+    from albertitos.core.versions import EXTRACTOR_VERSION
+
+    conn = _conn(solo_lectura=True)
+    quiero = None
+    if fixture:
+        quiero = {
+            unicodedata.normalize("NFC", x.strip())
+            for x in fixture.read_text(encoding="utf-8").splitlines()
+            if x.strip()
+        }
+    filas = conn.execute(
+        "SELECT f.file_id, h.hechos_json FROM hechos h JOIN ficheros f ON f.sha256=h.sha256 WHERE h.extractor_version=? ORDER BY f.file_id",
+        (EXTRACTOR_VERSION,),
+    ).fetchall()
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    n = 0
+    with open(salida, "w", encoding="utf-8", newline="\n") as f:
+        for fila in filas:
+            if quiero is not None and fila["file_id"] not in quiero:
+                continue
+            f.write(fila["hechos_json"] + "\n")
+            n += 1
+    rprint(f"[green]{n} hechos[/green] → {salida}")
+
+
+@hechos_app.command("import")
+def hechos_import(ruta: Path) -> None:
+    """JSONL de InvoiceFacts → BD (requiere que los ficheros estén ingeridos). Idempotente."""
+    from albertitos.core import db
+    from albertitos.core.contracts import EstadoEvento, Etapa, Event, InvoiceFacts
+
+    conn = _conn()
+    n = 0
+    for linea in ruta.read_text(encoding="utf-8").splitlines():
+        if not linea.strip():
+            continue
+        h = InvoiceFacts.model_validate_json(linea)
+        if conn.execute("SELECT 1 FROM ficheros WHERE sha256=?", (h.sha256,)).fetchone() is None:
+            rprint(
+                f"  [yellow]![/yellow] {h.file_id}: no está ingerido (sha256 desconocido); `albertitos ingest` primero"
+            )
+            continue
+        db.guardar_hechos(conn, h)
+        db.registrar_evento(
+            conn,
+            Event(
+                file_id=h.file_id,
+                sha256=h.sha256,
+                etapa=Etapa.EXTRACT,
+                estado=EstadoEvento.OK,
+                version=h.extractor_version,
+                detalle=f"import:{h.metodo.value}",
+            ),
+        )
+        n += 1
+    conn.commit()
+    rprint(f"[green]{n} hechos[/green] importados de {ruta}")
 
 
 @app.command()
@@ -267,7 +339,7 @@ def run(norma: str = "v3", fecha_corte: str | None = None) -> None:
         e = erp_mod.ClienteERP(conn=conn).descargar_todo("v1")
         snapshot.guardar_erp(conn, e)
     try:
-        etapas.extract(conn)
+        etapas.extract(conn, workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")))
     except NotImplementedError as ex:
         rprint(f"[yellow]{ex}[/yellow]")
         raise typer.Exit(3) from None

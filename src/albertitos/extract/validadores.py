@@ -37,3 +37,16 @@ def validar(h: InvoiceFacts) -> list[Aviso]:
         if a not in vistos:
             vistos.append(a)
     return vistos
+
+
+CAMPOS_CLAVE = ("num_factura", "fecha", "nif_emisor", "iban", "pedido", "base", "iva", "total")
+
+
+def discrepancias(a: InvoiceFacts, b: InvoiceFacts) -> dict[str, tuple[object, object]]:
+    """Campos clave en los que dos extractores (p. ej. plantilla y LLM) no coinciden. Vacío = de acuerdo."""
+    out: dict[str, tuple[object, object]] = {}
+    for campo in CAMPOS_CLAVE:
+        x, y = getattr(a, campo), getattr(b, campo)
+        if x != y:
+            out[campo] = (x, y)
+    return out
