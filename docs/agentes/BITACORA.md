@@ -206,3 +206,9 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): tercera lectura de los 29 escaneados en curso (qwen 300 dpi tercio superior + deepseek página 150 dpi; ~20 min), después medición del timeout 180 vs 60 s con `scripts/bench_llm.py`. `docs/agentes/CONTRASTE-TOTAL.md` en marcha.
 - necesito / bloqueo: PIDO A Mónica: añadir `Aviso.NIF_INVALIDO` a `ANOMALIAS_HUMANO` de norma_v3 (hoy no cambia ningún resultado; mejora la traza).
 - para los demás: C2, la cifra del ADR-0002 es 468/468; la del ADR-0003 (tercera lectura) llegará con la tabla.
+
+### 23:56 · C1 · cierro el ciclo 3
+- hice: tercera lectura de los 29 escaneados **medida y descartada** (qwen 300 dpi NIF 25/29 · IBAN 20/29 · 366 s; deepseek NIF 19/29 · IBAN 14/29 y alucina; 0 regresiones, 0 difíciles resueltos correctamente); los 5 difíciles inspeccionados a 220 dpi: ilegibles o trampas → ESCALAR correcto en los cinco (**trampas nuevas: `scan_016` IBAN legible ≠ maestro; `scan_023` otra factura superpuesta**). Timeout por modalidad (60 s texto / 90 s visión) y evento PENDIENTE con los intentos reales. Guion de timeout ensayado con salidas literales. Todo en CONTRASTE-TOTAL.md y en mi sección del parte.
+- toco ahora (ficheros): nada más.
+- necesito / bloqueo: PIDO A Miguel: `chaos --llm-timeout` en cli.py; el caos es global (`dist/chaos.json`), valorar hacerlo por BD. PIDO A Mónica: `NIF_INVALIDO` en `ANOMALIAS_HUMANO`; `discrepancia_extractores` = identificador ilegible o distinto del maestro → ESCALAR.
+- para los demás: fixtures de hechos SIN cambios (no reimportéis). C2: cifras para ADR-0002 (468/468) y ADR-0003 (§5 de CONTRASTE-TOTAL) listas. La cola de 94 s NO se reprodujo esta noche: que nadie la cite como resuelta.
