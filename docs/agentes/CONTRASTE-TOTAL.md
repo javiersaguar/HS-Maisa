@@ -80,8 +80,8 @@ Para trampas.md (quien lo lleve en el ciclo 4): `scan_016` (cambio de IBAN) y `s
 Complementa el guion de caos de B2 (caída, 429, respuesta inválida, circuit breaker). Ensayado en una BD **aislada** con
 las 3 facturas de texto que no tienen plantilla (las únicas de la Caja que obligan a llamar al LLM de texto).
 
-> ⚠ El interruptor de caos es un fichero (`dist/chaos.json` por defecto). Activarlo afecta a TODO proceso que extraiga
-> con esa ruta. Para ensayar sin romper nada: `ALBERTITOS_CHAOS=<otro fichero>` y `ALBERTITOS_DB=<otra BD>`.
+> ⚠ (Corregido por D2, ciclo 4) El interruptor de caos ya **no es global**: vive junto a su BD (`<db>.chaos.json`), así
+> que ensayar con `ALBERTITOS_DB=<otra BD>` no toca la extracción real. `ALBERTITOS_CHAOS=<fichero>` sigue mandando si se indica.
 > `chaos --llm-timeout` en la CLI está pedido a Miguel; mientras: `uv run python -c "from albertitos.sources import chaos; chaos.activar('llm_timeout')"`.
 
 ```

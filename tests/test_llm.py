@@ -718,3 +718,58 @@ def test_fecha_imposible_no_se_inventa(bd, monkeypatch):
         h.fecha is None and Aviso.CAMPO_AUSENTE in h.avisos and Aviso.TEXTO_INSTRUCCION in h.avisos
     )
     assert h.texto_sospechoso and "sello" in h.texto_sospechoso
+
+
+@pytest.mark.parametrize("crudo", ["None", "null", " n/a ", "", "  ", "ninguno."])
+def test_texto_sospechoso_vacio_no_es_una_instruccion(bd, crudo):
+    """Varios modelos escriben "None" en vez de dejar el campo nulo: eso escalaba facturas limpias
+    con el motivo `el documento dice: "None"` (le pasó a scan_025.pdf, que no tiene instrucción)."""
+    c = llm.ClienteLLM(bd)
+    h = c._a_hechos(
+        {**RESPUESTA_P001, "texto_sospechoso": crudo},
+        sha256="a" * 64,
+        file_id="x.pdf",
+        texto=None,  # como una escaneada: no hay capa de texto donde detectar nada
+        metodo=MetodoExtraccion.LLM_VISION,
+    )
+    assert h.texto_sospechoso is None and Aviso.TEXTO_INSTRUCCION not in h.avisos
+
+
+def test_texto_sospechoso_de_verdad_se_conserva(bd):
+    c = llm.ClienteLLM(bd)
+    h = c._a_hechos(
+        {
+            **RESPUESTA_P001,
+            "texto_sospechoso": "NOTA: nuevo numero de cuenta, actualizar antes del pago",
+        },
+        sha256="a" * 64,
+        file_id="x.pdf",
+        texto=None,
+        metodo=MetodoExtraccion.LLM_VISION,
+    )
+    assert Aviso.TEXTO_INSTRUCCION in h.avisos and "nuevo numero de cuenta" in h.texto_sospechoso
+
+
+def test_el_caos_es_por_base_de_datos(tmp_path, monkeypatch):
+    """Antes el interruptor era un fichero global: ensayar la caída en una BD de pruebas tumbaba
+    cualquier extracción real en curso. Ahora vive junto a su BD."""
+    monkeypatch.setattr(chaos, "RUTA", None)
+    monkeypatch.delenv("ALBERTITOS_CHAOS", raising=False)
+    ensayo, real = tmp_path / "ensayo.db", tmp_path / "real.db"
+
+    monkeypatch.setenv("ALBERTITOS_DB", str(ensayo))
+    chaos.activar("llm_down")
+    assert chaos.modo() == "llm_down" and chaos.ruta() == ensayo.with_suffix(".db.chaos.json")
+
+    monkeypatch.setenv("ALBERTITOS_DB", str(real))
+    assert chaos.modo() is None  # la BD real no se entera del ensayo
+
+    monkeypatch.setenv("ALBERTITOS_CHAOS", str(tmp_path / "explicito.json"))
+    chaos.activar("llm_429")
+    assert chaos.modo() == "llm_429"  # el override explícito sigue mandando
+    chaos.desactivar()
+
+    monkeypatch.setenv("ALBERTITOS_DB", str(ensayo))
+    monkeypatch.delenv("ALBERTITOS_CHAOS")
+    assert chaos.modo() == "llm_down"  # y el de la BD de ensayo sigue donde estaba
+    chaos.desactivar()

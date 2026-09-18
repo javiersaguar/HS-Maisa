@@ -235,3 +235,18 @@ Plantilla (cópiala tal cual):
 - toco ahora (ficheros): nada más; escriben D1 y D2.
 - necesito / bloqueo: nada.
 - para los demás: D1 = escala medida a 10.000 facturas (BD aparte en dist/escala, sin tocar src/). D2 = frase completa de las instrucciones + reextracción + caos por BD + trampas.md al día. PIDO A Mónica: R6 de norma_v3 corta `texto_sospechoso[:120]`; la frase completa de F26-2201 tiene 127 → subir a 300. PIDO A Miguel: `merge=union` para docs/agentes/BITACORA.md y PARTE.md en .gitattributes (evita el único conflicto que hemos tenido).
+
+### 00:14 · D2 · arranco evidencia completa, caos por BD y trampas
+- hice: leídos PLAN-04, extract/CLAUDE.md, texto-es-dato.md, trampas.md, CONTRASTE-TOTAL.md y la sección C2 de PARTE-03. Rama al día, caos global inactivo.
+- toco ahora (ficheros): `extract/instrucciones.py` (tramo instructivo completo) + tests; después reextracción de las facturas con instrucción y reexporte de fixtures; `sources/chaos.py` (por BD); `docs/trampas.md`.
+- necesito / bloqueo: nada.
+- para los demás: D1, no toco dist/escala/. Cuando reexporte `hechos_caja.jsonl` lo anuncio aquí (tú no lo usas: generas tus propios hechos).
+
+### 01:05 · D2 · tramo completo, caos por BD y un falso positivo destapado
+- hice: `instrucciones.detectar_instruccion` devuelve el TRAMO instructivo completo (empieza en la frase de la instrucción saltando importes, termina en el pie legal o a los 300 caracteres). **En 11 de las 27 facturas de plantilla se perdía la orden**; ahora las 29 la incluyen, con test por fichero (`tests/test_extract.py::ORDENES`) y 0 falsos positivos en 60 limpias. Reextraídas las 29 (0 tokens, 0,2 s), **0 avisos cambian → ningún hecho cambia de huella**; `hechos_caja.jsonl` (500, sólo lote 1) y `hechos_muestra.jsonl` reexportados. Caos **por BD** (`<db>.chaos.json`, `ALBERTITOS_CHAOS` sigue mandando) con test de aislamiento. `docs/trampas.md` actualizado.
+- **Falso positivo destapado: las instrucciones inyectadas son 31, no 32.** `scan_025.pdf` no tiene ninguna: el modelo devolvió la cadena `"None"` en `texto_sospechoso` y el código la tomó por instrucción; hoy se escala con el motivo `el documento dice: "None"`. Arreglado en `llm.py` (`_fragmento_valido`, con tests). **NO he reextraído `scan_025`**: quitarle el aviso podría pasarla de ESCALAR a PAGAR y la factura tiene otra factura transparentándose por detrás. Decisión de norma, no mía.
+- necesito / bloqueo:
+  - **PIDO A Javier (o a quien tenga `tests/test_lote2_sim.py`, de C2, que yo no toco):** ese test exige que la evidencia sea subcadena literal del texto crudo del PDF y ahora el tramo cruza un salto de línea. Parche de una línea: `assert trampa.texto_sospechoso in " ".join(pdf.texto_de(LOTE2_SIM / CON_INSTRUCCION).split())`. Sin eso, `make check` queda rojo.
+  - **PIDO A Miguel:** `Aviso.DOCUMENTO_SUPERPUESTO` en core (para `scan_023` y `scan_025`); y tras reimportar `hechos_caja.jsonl`, ejecutar **`albertitos decide` completo** (no `reprocess --impacted`): el texto de la evidencia no entra en la huella de los hechos, así que el linaje no redecide esas 15 facturas y la traza seguiría citando el fragmento viejo.
+  - **PIDO A Mónica:** R6 corta `texto_sospechoso[:120]` y el tramo de F26-2201 mide 127 → subir a 300; `NIF_INVALIDO` en `ANOMALIAS_HUMANO`; y qué hace la norma con un escaneado que trae otro documento superpuesto.
+- para los demás: D1, no he tocado `dist/escala/`. Los fixtures reexportados llevan 500 hechos (sólo lote 1): la exportación anterior incluía por error los 10 del lote 2 simulado de B1.

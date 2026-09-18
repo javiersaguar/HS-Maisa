@@ -150,6 +150,18 @@ MAX_TOKENS_VISION = int(
 )  # qwen3.6 razona ~3000 tokens antes de la tool call
 
 
+# Algunos modelos rellenan el campo con la palabra "None"/"null" en vez de dejarlo nulo. Tomarlo por
+# una instrucción real escala facturas limpias con un motivo falso (pasó con scan_025.pdf, 18/09).
+_NO_ES_FRAGMENTO = {"none", "null", "nulo", "n/a", "na", "-", "ninguno", "ninguna", "nada", "false"}
+
+
+def _fragmento_valido(crudo: object) -> str | None:
+    if not isinstance(crudo, str):
+        return None
+    limpio = crudo.strip()
+    return limpio if limpio and limpio.lower().strip(".") not in _NO_ES_FRAGMENTO else None
+
+
 def _peticion_usuario(texto: str | None, intento: int, marca: str = "") -> str:
     """El texto del usuario. En reintentos cambia ligeramente: el gateway cachea por cuerpo de petición y,
     si no, tres reintentos idénticos devuelven la misma respuesta vacía al instante.
@@ -618,7 +630,7 @@ class ClienteLLM:
         metodo: MetodoExtraccion,
     ) -> InvoiceFacts:
         avisos: list[Aviso] = []
-        fragmento = datos.get("texto_sospechoso") or None
+        fragmento = _fragmento_valido(datos.get("texto_sospechoso"))
         if texto:
             detectado = instrucciones.detectar_instruccion(texto)
             if detectado:
