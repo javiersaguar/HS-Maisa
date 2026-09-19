@@ -10,7 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 from urllib.parse import quote
 
-from albertitos.console import api, lecturas
+from albertitos.console import api, bandeja, lecturas
 from albertitos.core import db
 from albertitos.core.contracts import (
     Aviso,
@@ -463,3 +463,124 @@ def test_console_no_usa_fecha_de_hoy():
     for path in raiz.rglob("*.py"):
         texto = path.read_text(encoding="utf-8")
         assert "date.today" not in texto, path
+
+
+# ------------------------------------------------------------------------ bandeja (POST /inbox)
+# El runner de la CLI se sustituye: ni LLM ni subproceso en `make check`. Lo que se vigila es lo que
+# rompería la entrega: que la bandeja escriba en la BD de la entrega o fuera del lote 99.
+
+PDF = b"%PDF-1.4\n%fake\n"
+
+
+def _multipart(*ficheros: tuple[str, bytes]) -> tuple[bytes, str]:
+    frontera = "----albertitos"
+    partes = b""
+    for nombre, datos in ficheros:
+        partes += (
+            (
+                f"--{frontera}\r\n"
+                f'Content-Disposition: form-data; name="ficheros"; filename="{nombre}"\r\n'
+                "Content-Type: application/pdf\r\n\r\n"
+            ).encode()
+            + datos
+            + b"\r\n"
+        )
+    return partes + f"--{frontera}--\r\n".encode(), f"multipart/form-data; boundary={frontera}"
+
+
+class _RunnerFalso:
+    def __init__(self, codigos: dict[str, int] | None = None):
+        self.llamadas: list[list[str]] = []
+        self.codigos = codigos or {}
+
+    def __call__(self, args: list[str], ruta: Path) -> tuple[int, str]:
+        self.llamadas.append(args)
+        return self.codigos.get(args[0], 0), f"{args[0]} ok"
+
+
+def _post(b: bandeja.Bandeja, cuerpo: bytes, tipo: str | None):
+    return api.despachar("POST", "/inbox", {}, None, b.ruta, bandeja=b, cuerpo=cuerpo, tipo=tipo)
+
+
+def test_inbox_se_niega_con_la_bd_de_la_entrega():
+    b = bandeja.Bandeja(bandeja.BD_ENTREGA, runner=_RunnerFalso())
+    status, body = _post(b, *_multipart(("a.pdf", PDF)))
+    assert status == 409 and "--bandeja" in body["error"]
+    assert b.runner.llamadas == []
+
+
+def test_inbox_400_sin_pdf(conn, tmp_path):
+    b = bandeja.Bandeja(tmp_path / "test.db", runner=_RunnerFalso())
+    assert _post(b, b"{}", "application/json")[0] == 400
+    assert _post(b, *_multipart(("notas.txt", b"hola")))[0] == 400
+    assert _post(b, *_multipart(("falso.pdf", b"no soy un pdf")))[0] == 400
+    assert b.runner.llamadas == []
+    assert api.despachar("POST", "/panel", {}, conn)[0] == 405
+
+
+def test_inbox_202_lote_99_nfc_y_ciclo_completo(conn, maestro, erp, tmp_path):
+    _semilla(conn, maestro, erp)
+    runner = _RunnerFalso()
+    b = bandeja.Bandeja(tmp_path / "test.db", runner=runner)
+    nfd = unicodedata.normalize("NFD", "nueva_ofimática.pdf")
+    status, body = _post(b, *_multipart((nfd, PDF), ("../carpeta/otra.pdf", PDF)))
+    assert status == 202 and body["lote"] == 99
+    assert body["file_ids"] == ["nueva_ofimática.pdf", "otra.pdf"]  # NFC y sin carpeta
+    assert (tmp_path / "inbox" / "nueva_ofimática.pdf").read_bytes() == PDF
+    b.esperar(5)
+    assert [a[0] for a in runner.llamadas] == ["ingest", "extract", "decide"]
+    assert runner.llamadas[0][-2:] == ["--lote", "99"]
+    assert runner.llamadas[1][1] == runner.llamadas[2][1] == "--fixture"
+
+    # Lo que la CLI habría dejado en la BD: una decidida, la otra PENDIENTE (el LLM no la leyó).
+    _alta(conn, "nueva_ofimática.pdf", lote=99, resultado=Resultado.ESCALAR)
+    _alta(conn, "otra.pdf", lote=99, resultado=None)
+    conn.commit()
+    status, body = api.despachar("GET", "/inbox", {}, conn, b.ruta, bandeja=b)
+    assert status == 200 and body["estado"] == "listo" and body["disponible"]
+    assert {f["file_id"]: f["estado"] for f in body["ficheros"]} == {
+        "nueva_ofimática.pdf": "ESCALAR",
+        "otra.pdf": "PENDIENTE",
+    }
+    assert lecturas.listar_ficheros(conn, lote=99)["total"] == 2
+
+
+def test_inbox_un_trabajo_cada_vez_y_error_visible(conn, tmp_path):
+    import threading
+
+    suelta = threading.Event()
+
+    class Lento(_RunnerFalso):
+        def __call__(self, args, ruta):
+            if args[0] == "extract":
+                suelta.wait(5)
+            return super().__call__(args, ruta)
+
+    b = bandeja.Bandeja(tmp_path / "test.db", runner=Lento({"decide": 1}))
+    assert _post(b, *_multipart(("a.pdf", PDF)))[0] == 202
+    assert _post(b, *_multipart(("b.pdf", PDF)))[0] == 409
+    suelta.set()
+    b.esperar(5)
+    estado = b.estado()
+    assert estado["estado"] == "error" and "decide" in estado["error"]
+    assert any(linea.startswith("$ albertitos decide") for linea in estado["log"])
+
+
+def test_traza_motivos_una_vez_aunque_se_decida_varias_veces(conn, maestro, erp):
+    """Un fichero decidido en dos pasadas: los motivos de la vigente salen una vez, con ids únicos
+    (React los usa como key; repetidos, la traza del detalle se descuadra)."""
+    _semilla(conn, maestro, erp)
+    h = _hechos("2026-01-08_P001.pdf")
+    db.registrar_evento(
+        conn,
+        Event(file_id=h.file_id, sha256=h.sha256, etapa=Etapa.DECIDE, estado=EstadoEvento.OK),
+    )
+    conn.commit()
+    pasos = lecturas.traza_pasos(conn, file_id=h.file_id)
+    ids = [p["id"] for p in pasos]
+    assert len(ids) == len(set(ids))
+    assert sum(p["tipo"] == "motivo" for p in pasos) == 1
+    decides = [
+        i for i, p in enumerate(pasos) if p["tipo"] == "evento" and p["evento"]["etapa"] == "decide"
+    ]
+    assert pasos[decides[-1] + 1]["tipo"] == "motivo"
