@@ -8,9 +8,9 @@ renombrada pasan tres cosas, y las tres nos dejan sin premio o pagan dos veces:
   (c) aunque se guardaran los dos nombres, hay UN hecho para dos facturas: marcar_duplicados no ve grupo
       y las dos salen PAGAR → se paga dos veces.
 
-Los tests de los requisitos R1-R4 fallan hoy y llevan xfail ESTRICTO: cuando entre el parche
-(dist/ensayo/h1/identicos.patch) pasarán a XPASS, que falla, y habrá que quitar la marca. Así nadie se
-olvida. Los que pasan hoy (renombrar y control) fijan lo que el parche no puede romper.
+Los tests de R1-R4 los escribió H1 antes del arreglo, con xfail estricto; pasaron a XPASS con la
+implementación de Miguel (`e3b3764`, tabla `identidades`) y se les quitó la marca. Los de control
+(renombrar y sin copias) fijan lo que el arreglo no puede romper. Los de Miguel: `tests/test_copias.py`.
 
 Sin red, sin bridge levantado y sin LLM: ERP v1 real leído del bridge, maestro real, hechos por plantilla.
 """
@@ -43,10 +43,6 @@ ORIGINAL = "2026-01-08_P001.pdf"  # lote 1
 REENVIO = "L2I-reenvio_2026-01-08_P001.pdf"  # lote 2, copia exacta del ORIGINAL
 PAREJA = ("L2I-2026-01-14_P002.pdf", "L2I-2026-01-14_P002_copia.pdf")  # lote 2, idénticos entre sí
 CONTROL = "L2I-2026-01-15_P003.pdf"  # lote 2, sin copias
-
-P0_1 = pytest.mark.xfail(
-    strict=True, reason="P0-1: espera el parche de Miguel (dist/ensayo/h1/identicos.patch)"
-)
 
 pytestmark = pytest.mark.skipif(
     not ((CAJA / "facturas").is_dir() and IDENTICOS.is_dir() and BRIDGE.exists()),
@@ -167,10 +163,9 @@ def test_sin_copias_nada_cambia(bd):
     assert [(o["file_id"], o["result"]) for o in lineas] == [(ORIGINAL, "PAGAR")]
 
 
-# --------------------------------------------------------------------------- R1-R4: fallan hoy
+# --------------------------------------------------------------------------- R1-R4
 
 
-@P0_1
 def test_r1_la_copia_del_lote_2_no_toca_al_original_del_lote_1(bd):
     """(a) ON CONFLICT(sha256) reescribe file_id y lote del original."""
     ingerir(bd)
@@ -178,7 +173,6 @@ def test_r1_la_copia_del_lote_2_no_toca_al_original_del_lote_1(bd):
     assert lote1 == [ORIGINAL]
 
 
-@P0_1
 def test_r2_cada_pdf_tiene_su_linea_y_los_dos_lotes_son_aptos(bd):
     """(a) y (b): cada nombre recibido, en el JSONL de SU lote, y validate da APTO en los dos."""
     procesar(bd)
@@ -190,7 +184,6 @@ def test_r2_cada_pdf_tiene_su_linea_y_los_dos_lotes_son_aptos(bd):
         assert informe.ok, informe.texto()
 
 
-@P0_1
 def test_r3_nunca_se_pagan_las_dos_y_el_motivo_nombra_a_la_otra(bd):
     """(c) Todas las identidades de una sha256 con más de un nombre, ESCALAR, diciendo con cuál."""
     procesar(bd)
@@ -206,7 +199,6 @@ def test_r3_nunca_se_pagan_las_dos_y_el_motivo_nombra_a_la_otra(bd):
     assert entrega[2][CONTROL]["result"] == Resultado.PAGAR.value  # el control no se contagia
 
 
-@P0_1
 def test_r4_repetir_no_duplica_ni_pierde_identidades(bd):
     procesar(bd)
     primera = empaquetar(bd, "primera")
@@ -218,31 +210,9 @@ def test_r4_repetir_no_duplica_ni_pierde_identidades(bd):
     assert segunda == primera
 
 
-@P0_1
 def test_r4_la_traza_de_una_copia_encuentra_su_fichero(bd):
     """Las dos identidades se trazan. (Hoy la copia "se encuentra" sólo porque ha robado el nombre al
     original, que es justo el fallo: por eso se comprueban las dos.)"""
     ingerir(bd)
     for nombre in (ORIGINAL, REENVIO, *PAREJA):
         assert db.traza(bd["conn"], nombre)["fichero"] is not None, f"trace {nombre}: sin fichero"
-
-
-# --------------------------------------------------------------------------- hoy: lo que pasa de verdad
-
-
-def test_hoy_el_lote_1_pierde_su_linea(bd):
-    """Documenta el fallo actual (cara a). Cuando entre el parche, este test FALLA y hay que borrarlo:
-    es la otra mitad del xfail estricto de R1."""
-    if hasattr(db, "guardar_identidad"):
-        pytest.skip("el parche P0-1 ya está aplicado: este test documentaba el fallo de antes")
-    ingerir(bd)
-    assert [f["file_id"] for f in db.ficheros(bd["conn"], lote=1)] == []
-    assert REENVIO in [f["file_id"] for f in db.ficheros(bd["conn"], lote=2)]
-
-
-def test_hoy_package_del_lote_1_se_niega(bd):
-    if hasattr(db, "guardar_identidad"):
-        pytest.skip("el parche P0-1 ya está aplicado: este test documentaba el fallo de antes")
-    procesar(bd)
-    with pytest.raises(package.EntregaInvalida):
-        empaquetar(bd)

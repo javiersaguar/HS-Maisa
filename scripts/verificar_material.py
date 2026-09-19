@@ -56,6 +56,17 @@ def pipeline_admite_copias() -> bool:
     return hasattr(db, "guardar_identidad")
 
 
+def pipeline_admite_nombre_repetido() -> bool:
+    """P0-5: ¿el lote 2 puede traer un PDF con el nombre exacto de uno del lote 1 y otro contenido?
+
+    Lo añade la rama de Miguel `miguel/p0-5-nombre-repetido` (`db.PREFIJO_INTERNO`: el que choca se guarda
+    con un nombre interno y el de entrega va a `identidades`). Sin ella, `ficheros.file_id` es UNIQUE: la
+    ingesta falla y ese PDF se queda sin línea (NO APTO), así que se para. Con ella, cada lote tiene su
+    línea: basta con avisar. Sólo el nombre EXACTO: si coincide ignorando mayúsculas o tildes, se para igual.
+    """
+    return hasattr(db, "PREFIJO_INTERNO")
+
+
 @dataclass
 class InformeMaterial:
     origen: str
@@ -342,7 +353,17 @@ def verificar(
                 )
             nombres[clave] = nombre
             if clave in originales:
-                inf.errores.append(f"nombre coincide con lote 1: {nombre} / {originales[clave]}")
+                if originales[clave] == p.name and pipeline_admite_nombre_repetido():
+                    inf.avisos.append(
+                        f"nombre coincide con lote 1 y el contenido es otro: {nombre}. Tendrá su línea "
+                        "en cada lote, con su propia decisión (P0-5)."
+                    )
+                else:
+                    inf.errores.append(
+                        f"nombre coincide con lote 1: {nombre} / {originales[clave]}. "
+                        "Sin P0-5 (rama miguel/p0-5-nombre-repetido) la ingesta falla y el lote 2 "
+                        "queda sin línea: avisar a Miguel. No renombrar nunca un PDF oficial."
+                    )
             try:
                 _pdf(datos)
             except Exception as exc:
