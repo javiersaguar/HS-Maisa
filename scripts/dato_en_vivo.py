@@ -248,6 +248,12 @@ def parsear_argumentos(argv: list[str] | None) -> argparse.Namespace:
     ap.add_argument("--fecha-corte", default=None, help="decide con otra fecha de corte")
     ap.add_argument("--norma", default="v3", help="norma con la que redecidir")
     ap.add_argument(
+        "--lote",
+        type=int,
+        default=1,
+        help="lote que se redecide (ADR-0021: cada lote en su contexto; el 2 va con --norma v4)",
+    )
+    ap.add_argument(
         "--con-traza",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -357,7 +363,17 @@ def main(argv: list[str] | None = None) -> int:
         conn.commit()
         desde = linaje.ultima_decision(conn)
 
-    orden = ["reprocess", "--impacted", "--norma", a.norma, "--fecha-corte", corte]
+    # ADR-0021: con --norma o --erp y sin --lote, reprocess se niega (cambiaría el contexto del lote 1).
+    orden = [
+        "reprocess",
+        "--impacted",
+        "--lote",
+        str(a.lote),
+        "--norma",
+        a.norma,
+        "--fecha-corte",
+        corte,
+    ]
     if erp_destino:
         orden += ["--erp", erp_destino]
     codigo, _, segundos = albertitos(*orden, bd=a.copia, corte=corte)

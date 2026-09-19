@@ -204,3 +204,30 @@ def test_parsear_asignacion(texto, esperado):
 def test_parsear_asignacion_mal_escrita(texto):
     with pytest.raises(ValueError, match="CLAVE=VALOR"):
         vivo.parsear_asignacion(texto, "--importe")
+
+
+BD_REAL = Path("dist/albertitos.db")
+
+
+@pytest.mark.skipif(
+    not BD_REAL.exists(), reason="sin la BD real (sólo en el portátil de la entrega)"
+)
+def test_la_demo_entera_contra_una_copia_de_la_bd_real(tmp_path, capsys):
+    """El script entero, con la CLI de verdad: el 19/09 el ADR-0021 hizo que `reprocess` sin `--lote` se
+    negara, y la demo del domingo se rompió sin que los tests de arriba (que llaman a `reprocesar`) lo vieran."""
+    huella = BD_REAL.read_bytes()[:4096]
+    codigo = vivo.main(
+        [
+            "--origen",
+            str(BD_REAL),
+            "--copia",
+            str(tmp_path / "vivo.db"),
+            "--pagada",
+            "PO-2026-0003",
+            "--no-con-traza",
+        ]
+    )
+    salida = capsys.readouterr().out
+    assert codigo == 0, salida
+    assert "factura_8764.pdf: PAGAR → NO_PAGAR" in salida
+    assert BD_REAL.read_bytes()[:4096] == huella
