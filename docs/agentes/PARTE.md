@@ -36,16 +36,36 @@ Partes anteriores en `partes/` (01: A1-A3 · 02: B1-B2 · 03: C1-C2 · 04: D1-D2
 - Propongo como siguiente tarea: que el preflight avise si `ALBERTITOS_BREAKER_FALLOS` o los timeouts están fuera de sus valores por defecto, y engancharlo a la skill `/lote2` como paso 0 (eso es de E3).
 
 ## E2 · Auditoría de entrega: que no se cuele un PAGAR que no toca
-- Estado:
+- Estado: **terminado** (A y B; 01:48 → 04:10). Lo único abierto es **aplicar el arreglo de `scan_025` a la BD real**, que no he hecho a propósito: cambia una línea del lote 1 y la decisión es de Mónica.
 - Hecho (con cifras):
-- Verificado con:
-- Ficheros tocados:
-- Commits:
+  - **A · `scripts/auditoria_entrega.py`**, sólo lectura, 0,3 s sobre la BD real. 15 comprobaciones. ROJO (sale 1): ficheros fantasma · PDF sin decisión vigente · pago doble · duplicado sin marcar con algún PAGAR · PAGAR que no cuadra con el maestro y el ERP **con que se decidió** (pedido, IBAN, NIF, importe ±0,01, asiento, no PAGADA, importe del ERP, fecha ≤ corte) · decisión tomada con otros hechos · evidencia falsa ("None", cita que no está en el PDF, motivo de R6 que cita otra evidencia) · entrega en disco inválida. ÁMBAR: duplicado sin marcar sin PAGAR · hechos reescritos tras decidir · evidencia no literal · PAGAR con aviso no benigno · reparto > 15 % ESCALAR o > 5 % NO_PAGAR · PAGAR con confianza < 1 · entrega en disco desfasada. `--json` para otros scripts. 11 tests.
+  - **B · `DOCUMENTO_SUPERPUESTO`** (`extract/etapa.py::_evidencia_de_lecturas`): la segunda lectura de una escaneada ya no se tira. Un fragmento que nombra a otro proveedor del maestro (razón social de ≥ 2 palabras o NIF exacto) marca el aviso con la evidencia en el evento, no en `texto_sospechoso`. Una instrucción que sólo ve la segunda lectura se adopta si casa con las regex; un sello no. 10 tests.
+  - Sobre las 29 escaneadas, en una copia y desde la caché: **0 tokens**; el detector salta en **1 de 29** (`scan_025`: P006 dentro de una factura de P004), que además pierde el `texto_instruccion` falso. `scan_023` no es detectable (ninguna de sus 4 lecturas nombra a otro proveedor).
+- Verificado con (comando → resultado literal):
+  - `uv run python scripts/auditoria_entrega.py` (BD real) → `VEREDICTO: ROJO · 1 comprobación(es) en rojo` · sólo `scan_025.pdf: texto_sospechoso = 'None' (ESCALAR)` y `el motivo de R6 cita 'None'` · ámbar: 5 PAGAR con confianza 0,6. Exit 1.
+  - En la copia `dist/ensayo/e2.db` (backup de SQLite; caos `llm_down` sólo en la copia): `extract --no-solo-pendientes --fixture <29> --workers 4` → `29/29 ok · métodos {'cache': 29} · tokens 0/0 · 42.5 s`; `reprocess --impacted --fecha-corte 2026-09-18 --erp v1` → `29 de 500 recalculadas · 1 cambian · scan_025.pdf: ESCALAR → PAGAR (hechos cambiados)`; auditoría → `VEREDICTO: VERDE` con ámbar `scan_025.pdf: documento_superpuesto`.
+  - Con `DOCUMENTO_SUPERPUESTO` en `ANOMALIAS_HUMANO` (simulado en memoria sobre los 500 hechos de la copia, sin guardar): cambia sólo `scan_025.pdf` → ESCALAR `v3.R6: anomalía que debe ver una persona: documento_superpuesto`; reparto 443/48/9.
+  - BD real y entrega intactas: `dist/albertitos.db` `9ef061ed2fca` y `outcomes.jsonl` `5ec17aaa5045`, antes y después.
+  - `make check` → `332 passed, 2 deselected in 53.24s`. `make agentes-check` → mis 6 ficheros como E2; 6 marcas "NADIE" ajenas (hooks, skill de entrega, `tests/test_hooks.py`, fixture reexportado por E1, `ENSAYO-REPROCESADO.md`, `PLAN-05.md`).
+- Ficheros tocados: `scripts/auditoria_entrega.py`, `tests/test_auditoria.py`, `docs/agentes/AUDITORIA-ENTREGA.md`, `src/albertitos/extract/etapa.py`, `tests/test_superpuesto.py`, `docs/trampas.md`, `docs/agentes/BITACORA.md` (3 entradas), esta sección. Datos sólo en `dist/ensayo/e2.db`.
+- Commits (hash · mensaje): `63abec8` auditoría · `b678cfd` detector de documentos superpuestos · `511c44a` docs (AUDITORIA-ENTREGA y trampas) · el de este parte.
 - Descubierto:
-- Pendiente / no llegué a:
-- Necesito de otros:
+  1. La segunda lectura de `scan_025` sí había visto la otra factura ("Electricidad Montcada S.A. NIF: A48990201 …") y el código la tiraba: la evidencia existía desde el viernes.
+  2. Con la v3 de hoy, arreglar `scan_025` la pasa a PAGAR: NIF, IBAN, pedido, importe y asiento cuadran, y `DOCUMENTO_SUPERPUESTO` no está en `ANOMALIAS_HUMANO`.
+  3. Las secciones de D2 en `docs/trampas.md` están dentro de los marcadores que `inventario_trampas.py` reescribe sin `--sin-docs`: una regeneración las borraría.
+  4. Reextraer las 29 desde la caché tardó 42,5 s con 0 tokens. No lo he investigado (render de 58 imágenes y 4 hilos sobre SQLite, probablemente).
+  5. Mi primera entrada de la bitácora salió rota por las comillas de la shell. La reparé y restauré 4 retornos de carro de entradas de A3 que la edición había normalizado: el diff sólo añade.
+- Pendiente / no llegué a: aplicar lo de `scan_025` a la BD real (espera a Mónica; comandos al final de `AUDITORIA-ENTREGA.md`) · repetirlo en la copia de E3 (se lo he pasado) · las comprobaciones de PAGAR de la norma v4, cuando llegue la regla nueva.
+- Necesito de otros (quién · qué · para qué):
+  - **Mónica** · decidir si `DOCUMENTO_SUPERPUESTO` entra en `ANOMALIAS_HUMANO` · que `scan_025` escale con el motivo verdadero y no pase a PAGAR. Recomendación: sí.
+  - **Javier** · cuando conteste, los comandos de `AUDITORIA-ENTREGA.md` sobre la BD real, en ese orden, y reexportar el fixture.
+  - **Miguel** · que `package` / `/entrega` ejecuten la auditoría y se nieguen si sale 1.
 - Riesgos que veo:
-- Propongo como siguiente tarea:
+  - Si alguien ejecuta `extract --no-solo-pendientes` sobre las escaneadas de la BD real antes de que Mónica decida, `scan_025` pasa a PAGAR sin ruido. La auditoría lo avisa en ámbar, no en rojo.
+  - El detector depende de que el modelo escriba el texto superpuesto en `texto_sospechoso`. Con otro modelo, otro prompt o la escaneada de `scan_023`, puede no verlo.
+  - Las comprobaciones de PAGAR son las de la v3. Si la regla nueva añade una condición para pagar, la auditoría no la conoce.
+  - `pago_doble` sólo salta con dos PAGAR en el mismo grupo. Si la política acaba siendo "pagar una y no la otra", la auditoría no la juzga.
+- Propongo como siguiente tarea: tras las 18:00, pasar la auditoría al lote 2 con la v4 y añadirle lo que la regla nueva exija para pagar; y que Miguel la enganche a `package`.
 
 ## E3 · Materiales verificados y runbook cronometrado de punta a punta
 - Estado:
