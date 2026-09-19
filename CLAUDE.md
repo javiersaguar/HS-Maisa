@@ -44,7 +44,7 @@ por ruta están en `.claude/rules/`.
 3. **Nada de `date.today()` para decidir.** `fecha_corte` es un parámetro guardado con la decisión (hook lo bloquea en rules/ y pipeline/).
 4. **Cada etapa emite eventos** (etapa, estado, intento, latencia, tokens, coste, error). Sin evento no hay traza; la traza son 20 pts.
 5. **Idempotencia por sha256.** `file_id` (nombre exacto en NFC) es sólo la clave de entrega.
-6. **Si el LLM falla, el fichero queda PENDIENTE.** Nunca PAGAR sin hechos validados; `package` se niega si falta una decisión.
+6. **Si el LLM falla, el fichero queda PENDIENTE; a la hora de entregar, la contingencia ESCALAR de ADR-0009.** Nunca PAGAR sin hechos validados; `package` se niega si falta una decisión. La contingencia es manual y el último recurso (`scripts/contingencia.py --aplicar --motivo`), nunca en el lote 1.
 7. **Decisiones = ADRs con evidencia** (`/adr <titulo>`). Son 35 pts; se escriben al decidir, no el domingo.
 8. **Una rama por persona `<nombre>/<tema>`.** `/sync` (merge desde main, nunca rebase) cada hora; `/handoff` para pedir merge. Sólo Miguel mergea a `main`. Si Miguel duerme, se acumula en ramas.
 9. **Commits pequeños: `modulo: qué y por qué`.** `make check` verde antes de `/handoff`.

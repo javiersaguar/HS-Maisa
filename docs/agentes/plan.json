@@ -36,7 +36,8 @@
       "docs/agentes/PLAN-07.md",
       "docs/agentes/partes/PARTE-06.md",
       "scripts/agentes_check.py",
-      "docs/PLAN-MONICA.md"
+      "docs/PLAN-MONICA.md",
+      "CLAUDE.md"
     ]
   }
 }
