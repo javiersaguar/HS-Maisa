@@ -91,7 +91,9 @@ export function ErrorState({
         ? 'No se puede contactar con el puente'
         : error.isUnavailable
           ? 'El puente no tiene base de datos'
-          : error.isNotFound
+          : error.isConflict
+            ? 'Todavía no hay decisiones con las que calcular esto'
+            : error.isNotFound
             ? 'No encontrado'
             : 'Algo ha fallado')
 

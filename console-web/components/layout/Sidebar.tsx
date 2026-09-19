@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
+import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
 import { BRAND, USE_MOCK } from '@/lib/config'
 import { ORIGEN_DATOS } from '@/lib/api/salud'
 import type { Etapa } from '@/lib/types'
@@ -13,6 +13,7 @@ import { etapaConIncidencia, saludEtapa } from '@/components/workers/EtapaIcon'
 
 const ITEMS = [
   { label: 'Panel', href: '/', icon: LayoutDashboard },
+  { label: 'Pagos', href: '/pagos', icon: CalendarDays },
   { label: 'Ficheros', href: '/invoices', icon: FileText },
   { label: 'Etapas', href: '/workers', icon: Workflow },
   { label: 'Traza', href: '/audit', icon: Activity },
