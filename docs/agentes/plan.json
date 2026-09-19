@@ -1,7 +1,7 @@
 {
-  "ciclo": 9,
+  "ciclo": 10,
   "rama": "javier/ingesta",
-  "base": "59ca8a7",
+  "base": "990a75d",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -9,30 +9,38 @@
     "docs/entregas.log"
   ],
   "agentes": {
-    "I1": [
+    "J1": [
       ".claude/skills/lote2/SKILL.md",
-      "docs/agentes/ENSAYO-LOTE2.md",
       "docs/agentes/CHULETA-LOTE2.md",
-      "data/fixtures/lote2_nombre_repetido/*",
-      "tests/test_nombre_repetido.py",
-      "scripts/verificar_material.py",
-      "tests/test_material.py",
-      "scripts/preflight_lote2.py",
-      "tests/test_preflight.py",
-      "docs/CIFRAS.md"
+      "docs/agentes/ENSAYO-LOTE2.md"
     ],
-    "I2": [
-      "scripts/mapa_politicas.py",
-      "tests/test_mapa_politicas.py",
-      "docs/agentes/MAPA-POLITICAS.md"
+    "J2": [
+      "src/albertitos/sources/excel.py",
+      "tests/test_excel.py",
+      "data/fixtures/maestro_cambiado/*",
+      "docs/agentes/ENSAYO-FUENTES.md"
+    ],
+    "J3": [
+      "scripts/bench_vision_respaldo.py",
+      "docs/agentes/RESPALDO-VISION.md",
+      "src/albertitos/extract/llm.py",
+      "tests/test_llm.py"
+    ],
+    "J4": [
+      "scripts/dato_en_vivo.py",
+      "tests/test_dato_en_vivo.py",
+      "docs/agentes/KIT-DEFENSA.md",
+      "docs/demo/*"
+    ],
+    "J5": [
+      "src/albertitos/bonus/*",
+      "tests/test_bonus.py",
+      "docs/adr/0012-*",
+      "docs/BONUS.md"
     ],
     "Javier": [
-      "docs/agentes/PLAN-09.md",
-      "docs/ESTADO-BACKEND.md",
-      "tests/test_identicos.py",
-      ".claude/skills/entrega/SKILL.md",
-      "docs/agentes/KIT-DEFENSA.md",
-      "docs/demo/trazas/README.md"
+      "docs/agentes/PLAN-10.md",
+      "docs/agentes/partes/PARTE-09.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
