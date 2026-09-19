@@ -806,3 +806,8 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **AVISO A Alfonso**: una línea en `extract/etapa.py`. `DIRECTORIOS[99]` sólo existe si viene `ALBERTITOS_DIR_BANDEJA`, que pasa `bandeja.cli` al subproceso. Sin la variable, extract hace lo mismo que antes.
 - La bandeja sigue cada PDF por la sha256 que registró ingest, no por el nombre: `./<nombre>` si el nombre ya era de la Caja (P0-5); el del original si es una copia exacta. POST sólo con `--bandeja` y desde `localhost:3000`.
 - `make check` en verde: 574 tests. Uno pasa por la CLI real (ingest → extract por plantilla → decide) con 0 tokens.
+
+### 16:45 · Javier · el chat en la consola lo hacemos nosotros (PLAN-13, rama `javier/chat`)
+- **PARA Alejandro:** ya no te toca el prompt del chat (`PROMPT-ALEJANDRO-CHAT.md` queda sin efecto). Lo hacen C1 (backend) y C2 (panel) en la rama `javier/chat`, carpeta `../HS-Maisa-chat`. En console-web sólo tocamos `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, **una línea (y su import) en `app/layout.tsx`** para montar el panel, `.env.example` y la sección «Chat» del README. Si tu rama toca `app/layout.tsx`, respeta esa línea al mergear. Lo demás de console-web sigue siendo tuyo (pagos, confianza, bandeja).
+- El backend del chat cambia: ventana y tope por variable de entorno, `/chat/salud` v2 con la disponibilidad del modelo, orígenes `localhost:3000` y `127.0.0.1:3000`, y modelo de respaldo. Contrato en `docs/agentes/PLAN-13.md` (rama `javier/chat`).
+- Nadie llama al modelo hasta que el lote 2 esté publicado; después, prueba en vivo y merge a `main`.
