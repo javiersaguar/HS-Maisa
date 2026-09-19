@@ -21,7 +21,7 @@ export function FichaResolucion({ fileId }: { fileId: string }) {
         <ResultadoBadge estado={resultado} withIcon={false} />
       </div>
       <p className="break-all text-xs font-medium">{fileId}</p>
-      <p className="text-xs">{data.hechos?.razon_social ?? 'Proveedor no disponible'} · <strong>{formatAmount(data.hechos?.total ?? null)}</strong></p>
+      <p className="text-xs">{data.hechos?.razon_social ?? 'Proveedor no disponible'} · <strong>{formatAmount(data.hechos?.total ?? null, data.hechos?.moneda)}</strong></p>
       <p className="text-xs leading-relaxed">{motivoPrincipal(data)}</p>
       {data.decision && resumenReglas(data.decision) ? (
         <p className="text-[11px] text-[#68736d]">{resumenReglas(data.decision)}</p>

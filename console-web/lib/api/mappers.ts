@@ -192,6 +192,7 @@ export function toHechos(input: unknown, fallbackFileId = ''): InvoiceFacts | nu
     iva_pct: numOrNull(pick(raw, 'iva_pct')),
     iva: numOrNull(pick(raw, 'iva')),
     total: numOrNull(pick(raw, 'total', 'amount')),
+    moneda: strOrNull(pick(raw, 'moneda', 'currency')),
     lineas: array(pick(raw, 'lineas')).map(toLinea),
     metodo: oneOf<MetodoExtraccion>(pick(raw, 'metodo'), METODOS, 'plantilla'),
     extractor_version: str(pick(raw, 'extractor_version'), ''),

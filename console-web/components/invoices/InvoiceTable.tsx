@@ -98,7 +98,7 @@ export function InvoiceTable({
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-4 font-semibold whitespace-nowrap text-ink">{formatAmount(h?.total ?? null)}</td>
+                <td className="px-3 py-4 font-semibold whitespace-nowrap text-ink">{formatAmount(h?.total ?? null, h?.moneda)}</td>
                 <td className="px-3 py-4">
                   <ResultadoBadge estado={fichero.estado} withIcon={false} />
                 </td>

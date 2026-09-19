@@ -20,8 +20,31 @@ const currency = new Intl.NumberFormat('es-ES', {
 
 const number = new Intl.NumberFormat('es-ES')
 
-export function formatAmount(amount: number | null): string {
-  return amount === null ? '—' : currency.format(amount)
+/** Un formateador por divisa. Sin divisa (los 500 del lote 1, anteriores al campo) se pinta en euros. */
+const porDivisa = new Map<string, Intl.NumberFormat>([['EUR', currency]])
+
+function formateador(moneda: string): Intl.NumberFormat | null {
+  const codigo = moneda.trim().toUpperCase()
+  const guardado = porDivisa.get(codigo)
+  if (guardado) return guardado
+  try {
+    const f = new Intl.NumberFormat('es-ES', { style: 'currency', currency: codigo })
+    porDivisa.set(codigo, f)
+    return f
+  } catch {
+    return null // no es un ISO-4217: el número con el código detrás, nunca un € que no es verdad
+  }
+}
+
+/**
+ * Importe en SU divisa. Los importes del maestro y del ERP no llevan divisa nunca (el Excel y el ERP de 2009
+ * sólo tienen euros: no hay columna de moneda), así que ésos se llaman con un argumento.
+ */
+export function formatAmount(amount: number | null, moneda?: string | null): string {
+  if (amount === null) return '—'
+  if (!moneda) return currency.format(amount)
+  const f = formateador(moneda)
+  return f ? f.format(amount) : `${number.format(amount)} ${moneda.trim().toUpperCase()}`
 }
 
 /**

@@ -122,6 +122,8 @@ interface Semilla {
   trampas?: Trampa[]
   texto?: string
   metodo?: MetodoExtraccion
+  /** ISO-4217 si la factura no va en euros (lote 2). */
+  moneda?: string
   /** file_id del original, para `duplicado`. */
   duplicaDe?: string
 }
@@ -232,6 +234,7 @@ const LOTE_2: Semilla[] = [
   { file_id: 'L2-2026-01-24_P009.pdf', lote: 2, proveedor: 'P009', fecha: '2026-01-24' },
   { file_id: 'L2-2026-01-25_P001.pdf', lote: 2, proveedor: 'P001', fecha: '2026-01-25' },
   { file_id: 'L2-2026-01-26_P007.pdf', lote: 2, proveedor: 'P007', fecha: '2026-01-26' },
+  { file_id: 'L2-e10_P006.pdf', lote: 2, proveedor: 'P006', fecha: '2026-05-05', moneda: 'USD' },
   {
     file_id: 'L2-F26-2201_transportes.pdf',
     lote: 2,
@@ -391,6 +394,7 @@ function buildHechos(semilla: Semilla, originales: Map<string, InvoiceFacts>, si
   const vision = metodo === 'llm_vision'
 
   const hechos: InvoiceFacts = {
+    moneda: semilla.moneda ?? null,
     file_id: semilla.file_id.normalize('NFC'),
     sha256: fakeSha(semilla.file_id),
     num_factura: original?.num_factura ?? semilla.num_factura ?? `2026/${int(10000, 19999)}`,

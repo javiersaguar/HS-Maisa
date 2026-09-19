@@ -161,9 +161,9 @@ function Contenido({ fichero }: { fichero: Fichero }) {
               <Dato label="Emisor">{hechos.razon_social ?? hechos.nif_emisor}</Dato>
               <Dato label="NIF">{hechos.nif_emisor}</Dato>
               <Dato label="IBAN">{hechos.iban}</Dato>
-              <Dato label="Base">{formatAmount(hechos.base)}</Dato>
-              <Dato label="IVA">{formatAmount(hechos.iva)}</Dato>
-              <Dato label="Total">{formatAmount(hechos.total)}</Dato>
+              <Dato label="Base">{formatAmount(hechos.base, hechos.moneda)}</Dato>
+              <Dato label="IVA">{formatAmount(hechos.iva, hechos.moneda)}</Dato>
+              <Dato label="Total">{formatAmount(hechos.total, hechos.moneda)}</Dato>
             </dl>
           </Seccion>
         )}
