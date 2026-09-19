@@ -765,3 +765,17 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Corrección:** mis dos entradas anteriores dicen «15:05» y «15:40», pero eran las 14:51 y las 14:53 (hora del reloj). Las horas de `docs/api/bonus.md` y `BONUS.md` ya están corregidas.
 - **PIDO A Alejandro:** una línea en `src/albertitos/console/api.py`, mejor con import perezoso: `from albertitos import bonus; RUTAS.update(bonus.rutas())`. El contrato, los ejemplos reales y la propuesta de pantalla están en `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*.json`. **Lo único obligatorio de la pantalla:** el aviso «Borrador: los IBAN de esta Caja son sintéticos y un banco los rechazaría. No se ha ejecutado ningún pago», siempre visible. Probado sin tocar tu fichero: `console.api.despachar` con `RUTAS` parcheado en un test.
 - **Para K3:** `/bonus/calendario?con_confianza=true` añade a cada pago lo que devuelva `albertitos.confianza.puntuar(conn, file_id)`, tal cual y sin suponer sus campos. Si no está tu módulo, sale `null` con una nota. Así, cuando publiques, se ve sin tocar nada más.
+
+### 19/09 15:05 · K2 · chat evaluado y contrato para Alejandro
+- PIDO A Alejandro: servidor propio python -m albertitos.chat --servidor --db <copia.db> en 127.0.0.1:8001; POST /chat {mensaje,historial?}, GET /chat/salud. Contrato docs/api/chat.md y 15 ejemplos reales docs/api/ejemplos/chat-*.json. Panel lateral; citas abren traza; no registrar POST en tu puente GET. CORS http://localhost:3000.
+- 16 tests propios; make check 537 passed, 1 skipped, 2 deselected. Prueba de package sobre copia tras ejecutar chat: outcomes byte a byte idéntico (1ec4be206089).
+- Evaluación: 59/60 intentos HTTP, todos entre 14:58 y 15:04 Madrid. Serie inicial 12/15 completas; tras 3 repeticiones, 14/15 completas + 1 parcial: la inyección no cambia ESCALAR ni ejecuta pagos, pero atribuye al PDF una frase del usuario sin corroborarla. Dos timeouts reales devolvieron la degradación. Sin más llamadas de desarrollo.
+- IMPORTANTE demo: queda 1 llamada, insuficiente para otra pregunta de 2 pasos. Mostrar respuestas grabadas, negativa local de pago y trace; no borrar contador. Después de 17:30 el código bloquea gateway.
+- RESPONDO A K1/K3: integración por lectura ya preparada; confianza sólo se ofrece si existe vuestra ruta, sin revisor LLM.
+
+### 19/09 15:09 · K2 · cierre PLAN-11
+- Commit 57d43c9: chat de sólo lectura, herramientas cerradas, API :8001 y CLI, ADR-0013, contrato y 15 preguntas evaluadas con ejemplos.
+- make check final: 555 passed, 1 skipped, 2 deselected (35,11 s). 17 pruebas propias; integración K3 comprobada sin gateway: scan_025.pdf → 45, baja, ESCALAR. agentes-check OK.
+- 59/60 intentos HTTP, ninguno después de 15:04; no más llamadas. 14/15 respuestas completas tras repetir tres casos; 1 parcial por atribución de texto del usuario al PDF (documentada). Primera serie completa: 12/15; dos timeouts reales degradaron correctamente.
+- La prueba ejecuta chat y herramientas sobre copia, comprueba BD lógica intacta y package produce exactamente outcomes 1ec4be206089. Huellas finales reales iguales al inicio: BD 0dc1c7817fda / outcomes 1ec4be206089.
+- PIDO A Alejandro/Javier: integrar panel según docs/api/chat.md. El contador deja sólo 1 llamada; para repetir la demo sin excederlo, respuestas grabadas + negativa local + trace. El gateway se cierra en código a las 17:30; no borrar contador. Sin push ni cambios en la consola.

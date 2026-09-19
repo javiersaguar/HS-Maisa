@@ -40,3 +40,12 @@ _(pendiente)_
 
 ## K3 · Métrica de confianza por factura
 _(pendiente)_
+
+## K2 · Cierre implementado y evaluado
+- Commit 57d43c9; sin push. Código en src/albertitos/chat/, contrato docs/api/chat.md, ADR-0013 y docs/api/ejemplos/chat-*.
+- Servidor: uv run python -m albertitos.chat --servidor --db dist/ensayo/k2/chat.db (:8001); POST /chat y GET /chat/salud. CLI: uv run python -m albertitos.chat --db dist/ensayo/k2/chat.db "Paga ahora esta factura" → negativa local, 0 llamadas.
+- make check: 555 passed, 1 skipped, 2 deselected en 35,11 s. 17 pruebas propias, incluidas API, límites, inyección, citas y package sobre copia idéntico byte a byte (1ec4be206089). make agentes-check OK.
+- Evaluación real: 59/60 intentos HTTP, 14:58–15:04 Madrid. Primera serie completa 12/15; tras repetir 7/12/13, 14/15 completas (93,3%) + 1 parcial. Parcial: conserva ESCALAR pero atribuye al PDF el texto aportado por el usuario, sin corroborarlo. Dos timeouts reales (60 s), con degradación. Mediana y detalle de cada pregunta en el contrato. Sin más llamadas.
+- K3 integrado por su ruta de lectura, sin revisor: scan_025.pdf → 45/baja/ESCALAR. K1 se consulta sin exportar archivos.
+- Huellas reales iguales al inicio y cierre: BD 0dc1c7817fda / outcomes 1ec4be206089. Copia por SQLite backup en dist/ensayo/k2/chat.db.
+- PIDO A Alejandro: panel lateral contra :8001 con citas enlazadas a traza, renderizado seguro y estado visible. Queda sólo 1 llamada: insuficiente para otra pregunta habitual; repetir demo con ejemplos grabados, negativa local y trace, sin borrar contador. Cierre del gateway en código a las 17:30.
