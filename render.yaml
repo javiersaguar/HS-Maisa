@@ -1,0 +1,39 @@
+# Demo pública de Albertitos en Render (ADR-0023). Blueprint: New → Blueprint → este repo.
+# La consola sigue en Vercel; aquí sólo el puente (lectura) y el chat, sobre deploy/demo.db.
+services:
+  - type: web
+    name: albertitos-puente
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    healthCheckPath: /salud
+    autoDeploy: true
+
+  - type: web
+    name: albertitos-chat
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    dockerCommand: uv run --no-sync python -m albertitos.chat --servidor --db /app/deploy/demo.db
+    healthCheckPath: /chat/salud
+    autoDeploy: true
+    envVars:
+      - key: ALBERTITOS_CHAT_ORIGENES
+        value: https://albertitos.vercel.app
+      - key: ALBERTITOS_LLM_BASE_URL
+        value: https://api.helmcode.com/v1
+      - key: ALBERTITOS_MODELO_TEXTO
+        value: deepseek-v4-flash
+      - key: ALBERTITOS_MODELO_CHAT_FALLBACK
+        value: glm5.3-flash
+      - key: ALBERTITOS_CHAT_MAX_LLAMADAS
+        value: "60"
+      - key: ALBERTITOS_CHAT_HASTA
+        value: "2026-09-20T14:00"
+      # El secreto: se pega a mano en el panel de Render (sync: false = nunca viene del repo)
+      - key: ALBERTITOS_LLM_API_KEY
+        sync: false

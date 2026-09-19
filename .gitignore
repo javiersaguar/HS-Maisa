@@ -37,3 +37,6 @@ docs/informe/*.log
 docs/informe/*.out
 docs/informe/*.toc
 docs/informe/*.pdf
+
+# La BD de la demo pública (ADR-0023): copia de sólo lectura de la publicada, sin caché del LLM
+!deploy/demo.db
