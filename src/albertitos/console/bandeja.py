@@ -319,7 +319,9 @@ class Bandeja:
             if not self._paso("extract", ["extract", "--fixture", str(lista)]):
                 return
             self._poner(estado="decidiendo")
-            if not self._paso("decide", ["decide", "--fixture", str(lista)]):
+            # La norma de la bandeja: la de siempre, o la del lote 2 (v4) si se enseñan facturas del lote 2.
+            norma = os.environ.get("ALBERTITOS_BANDEJA_NORMA", "v3")
+            if not self._paso("decide", ["decide", "--fixture", str(lista), "--norma", norma]):
                 return
             self._poner(estado="listo")
         except Exception as exc:  # noqa: BLE001 — el hilo no puede morir callado: el panel hace poll

@@ -760,3 +760,14 @@ def test_puerto_ocupado_da_una_linea_y_no_un_traceback(tmp_path, monkeypatch):
     mensaje = str(e.value)
     assert "El puerto 8000 ya lo usa otro proceso" in mensaje and "Ctrl+C" in mensaje
     assert "--puerto 8003" in mensaje and "NEXT_PUBLIC_API_URL=http://127.0.0.1:8003" in mensaje
+
+
+def test_origenes_de_la_bandeja_configurables(monkeypatch):
+    """Con el 3000 ocupado (19/09: un Grafana de otro proyecto), la consola va en otro puerto y la bandeja tiene
+    que aceptarlo sin tocar el código. Sin la variable, los de siempre."""
+    monkeypatch.delenv("ALBERTITOS_CONSOLA_ORIGENES", raising=False)
+    assert api.origenes_bandeja() == ("http://localhost:3000", "http://127.0.0.1:3000")
+    monkeypatch.setenv(
+        "ALBERTITOS_CONSOLA_ORIGENES", "http://localhost:3002/, http://127.0.0.1:3002"
+    )
+    assert api.origenes_bandeja() == ("http://localhost:3002", "http://127.0.0.1:3002")

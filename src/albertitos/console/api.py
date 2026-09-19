@@ -60,6 +60,15 @@ _CORS = {
 # PDF a la bandeja y gastar LLM. Como el chat, sólo la consola Next (o curl, que no manda Origin).
 ORIGENES_BANDEJA = ("http://localhost:3000", "http://127.0.0.1:3000")
 
+
+def origenes_bandeja() -> tuple[str, ...]:
+    """Los de `ALBERTITOS_CONSOLA_ORIGENES` (separados por comas) o, sin ella, los de la consola en :3000.
+    Para una consola en otro puerto (p. ej. :3002 si el 3000 está ocupado) sin tocar el código."""
+    crudo = os.environ.get("ALBERTITOS_CONSOLA_ORIGENES", "")
+    propios = tuple(o.strip().rstrip("/") for o in crudo.split(",") if o.strip())
+    return propios or ORIGENES_BANDEJA
+
+
 Query = dict[str, list[str]]
 Respuesta = tuple[int, Any]
 
@@ -273,7 +282,7 @@ def hacer_handler(ruta: Path, *, bandeja_activa: bool = False) -> type[BaseHTTPR
                 self._no_escritura()
                 return
             origen = self.headers.get("Origin")
-            if origen is not None and origen not in ORIGENES_BANDEJA:
+            if origen is not None and origen not in origenes_bandeja():
                 self.close_connection = True
                 _enviar(self, 403, {"error": f"origen {origen} no autorizado para subir facturas"})
                 return
