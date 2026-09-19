@@ -149,3 +149,16 @@ contenedor**: la consola va en el **3002** y el chat en el **8101**.
 | `e18_P001.pdf` | ESCALAR | R6: total corregido a mano (anotación a mano) |
 
 La pregunta al chat de la prueba: «¿Por qué no se paga F26-2201_transportes.pdf?» → ESCALAR, 5,7 s, ficha de la BD debajo.
+
+### La consola desde Vercel (`https://albertitos.vercel.app`, 19/09 22:15, probado 13/13 en Chromium)
+Vercel sólo sirve la consola; el puente y el chat siguen en **el portátil de quien la abre**. Funciona así:
+- En Vercel, sólo tres variables, sin secretos: `NEXT_PUBLIC_USE_MOCK=false`, `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000`,
+  `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101`, y *Redeploy* (se fijan al compilar). Las claves del LLM no pintan nada allí.
+- En el portátil, el puente y el chat con el origen de Vercel:
+  `ALBERTITOS_CONSOLA_ORIGENES=https://albertitos.vercel.app,http://localhost:3002` y
+  `ALBERTITOS_CHAT_ORIGENES=https://albertitos.vercel.app,http://localhost:3002`. Los dos responden además con
+  `Access-Control-Allow-Private-Network: true`, sólo a esos orígenes.
+- **En Chrome, permitir el «acceso a la red local»** a `albertitos.vercel.app` (el aviso al abrirla, o el icono a la
+  izquierda de la URL → Configuración del sitio → *Acceso a la red local* → Permitir) y recargar. Sin ese permiso,
+  Chrome bloquea las llamadas a `127.0.0.1` y la consola dice «Sin conexión · Failed to fetch»: medido, es exactamente
+  el error de la captura del 19/09.
