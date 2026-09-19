@@ -7,12 +7,15 @@ import { describirEvento, frase, loteNombre, motivoPrincipal, resumenReglas, tit
 import { COLORS } from '@/lib/theme'
 import { useFichero } from '@/hooks/useFicheros'
 import { useTraza } from '@/hooks/useTraza'
+import { useConfianzaFichero } from '@/hooks/useConfianza'
 import { ChainOfWork } from '@/components/audit/ChainOfWork'
 import { AvisoChip, ResultadoBadge } from '@/components/invoices/badges'
 import { ErpMatchPanel } from '@/components/invoices/ErpMatchPanel'
 import { ExtractedFields, type CampoHecho } from '@/components/invoices/ExtractedFields'
 import { InvoiceDocument } from '@/components/invoices/InvoiceDocument'
 import { Linaje } from '@/components/invoices/Linaje'
+import { ConfianzaChip } from '@/components/confianza/ConfianzaChip'
+import { ConfianzaTarjeta } from '@/components/confianza/ConfianzaTarjeta'
 import { BackLink } from '@/components/ui/BackLink'
 import { Card } from '@/components/ui/Card'
 import { EmptyState, ErrorCard, ErrorState, LoadingCard, LoadingState, Skeleton } from '@/components/ui/states'
@@ -35,6 +38,8 @@ function FicheroDetail() {
 
   const { data: fichero, error, loading, initialLoading, refresh } = useFichero(fileId)
   const traza = useTraza({ file_id: fileId }, { enabled: Boolean(fileId) })
+  // K3: null si no responde o si no hay decisión vigente (404); entonces ni chip ni tarjeta.
+  const { data: confianza } = useConfianzaFichero(fileId || null)
 
   const [zoom, setZoom] = useState(100)
   const [highlight, setHighlight] = useState(true)
@@ -60,6 +65,9 @@ function FicheroDetail() {
           <p className="mt-1.5 flex items-center gap-2 text-[13px] text-[#8a958e] animate-in fade-in duration-200">
             Factura de {loteNombre(fichero.lote)}
             <ResultadoBadge estado={fichero.estado} />
+            {confianza && fichero.decision && (
+              <ConfianzaChip puntuacion={confianza.puntuacion} banda={confianza.banda} razon={confianza.razones[0]} />
+            )}
           </p>
         )}
       </div>
@@ -236,6 +244,8 @@ function FicheroDetail() {
                         </p>
                       )}
                     </div>
+
+                    {decision && confianza && <ConfianzaTarjeta ficha={confianza} />}
 
                     {pendiente && pasosRecientes}
 

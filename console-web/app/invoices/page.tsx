@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { EstadoFichero, Fichero } from '@/lib/types'
 import { DEFAULT_PAGE_SIZE, fetchFicheros } from '@/lib/api/ficheros'
@@ -11,6 +11,8 @@ import { downloadCsv } from '@/lib/csv'
 import { ESTADOS_FICHERO, formatNumber, motivoPrincipal } from '@/lib/format'
 import { useFicheros } from '@/hooks/useFicheros'
 import { usePanel } from '@/hooks/usePanel'
+import { useAsync } from '@/hooks/useAsync'
+import { useConfianzaDisponible, useConfianzaFicheros, useConfianzaMap } from '@/hooks/useConfianza'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { EMPTY_FILTERS, FilterBar, REGLAS, type FicheroFilters } from '@/components/invoices/FilterBar'
 import { InvoiceTable } from '@/components/invoices/InvoiceTable'
@@ -39,7 +41,7 @@ function exportRows(fileName: string, ficheros: Fichero[]) {
 }
 
 /** Los filtros viven en la URL: al volver de un fichero se recupera la misma cola. */
-function readUrl(params: URLSearchParams): { filters: FicheroFilters; page: number } {
+function readUrl(params: URLSearchParams): { filters: FicheroFilters; page: number; revisar: boolean } {
   const estado = params.get('estado')
   const regla = params.get('regla')
   const lote = Number(params.get('lote'))
@@ -52,11 +54,13 @@ function readUrl(params: URLSearchParams): { filters: FicheroFilters; page: numb
       lote: lote === 1 || lote === 2 || lote === LOTE_BANDEJA ? lote : 'all',
     },
     page: Number.isInteger(page) && page > 1 ? page : 1,
+    revisar: params.get('revisar') === '1',
   }
 }
 
-function writeUrl(filters: FicheroFilters, page: number): string {
+function writeUrl(filters: FicheroFilters, page: number, revisar: boolean): string {
   const params = new URLSearchParams()
+  if (revisar) params.set('revisar', '1')
   if (filters.q) params.set('q', filters.q)
   if (filters.estado !== 'all') params.set('estado', filters.estado)
   if (filters.regla !== 'all') params.set('regla', filters.regla)
@@ -73,6 +77,8 @@ function FicherosScreen() {
   const [initial] = useState(() => readUrl(searchParams))
   const [filters, setFilters] = useState<FicheroFilters>(initial.filters)
   const [page, setPage] = useState(initial.page)
+  /** «Revisar primero»: las de banda baja de K3, de menor a mayor confianza, sin paginar. */
+  const [revisar, setRevisar] = useState(initial.revisar)
   const [selected, setSelected] = useState<Record<string, Fichero>>({})
   const [exporting, setExporting] = useState(false)
   const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null)
@@ -90,19 +96,41 @@ function FicherosScreen() {
   }
   const { data, error, loading, refresh } = useFicheros(query)
   const { data: summary, error: summaryError } = usePanel()
+  const { data: confianza } = useConfianzaMap()
+  const { data: resumenConfianza, disponible } = useConfianzaDisponible()
+  const porRevisar = resumenConfianza?.bandas.baja ?? 0
+  const revisando = revisar && disponible !== false
+
+  // Las de banda baja vienen ya ordenadas; se cruzan con todos los ficheros para tener proveedor y total.
+  // No se usa la paginación normal: las 13 no caben en la página 1 de la cola completa.
+  const baja = useConfianzaFicheros({ banda: 'baja', limite: 1000 }, revisando)
+  const todos = useAsync(useCallback(() => fetchFicheros({ page: 1, pageSize: 1000 }), []), [], { enabled: revisando })
+  const revisarItems = useMemo(() => {
+    if (!baja.data || !todos.data) return null
+    const porId = new Map(todos.data.items.map((fichero) => [fichero.file_id, fichero]))
+    return baja.data.items.flatMap((item) => porId.get(item.file_id.normalize('NFC')) ?? [])
+  }, [baja.data, todos.data])
+
   const searching = loading || q !== filters.q
 
   useEffect(() => {
-    router.replace(`${pathname}${writeUrl({ ...filters, q }, page)}`, { scroll: false })
+    router.replace(`${pathname}${writeUrl({ ...filters, q }, page, revisando)}`, { scroll: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, filters.estado, filters.regla, filters.lote, page])
+  }, [q, filters.estado, filters.regla, filters.lote, page, revisando])
 
-  const ficheros = data?.items ?? []
+  const ficheros = (revisando ? revisarItems : data?.items) ?? []
   const pageCount = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1
   const selectedIds = Object.keys(selected)
 
   const changeFilters = (next: FicheroFilters) => {
     setFilters(next)
+    setPage(1)
+    setRevisar(false)
+  }
+
+  const toggleRevisar = () => {
+    setRevisar((current) => !current)
+    setFilters(EMPTY_FILTERS)
     setPage(1)
   }
 
@@ -140,6 +168,11 @@ function FicherosScreen() {
       setToast({ message: `${selectedIds.length} ficheros exportados a CSV`, tone: 'success' })
       return
     }
+    if (revisando) {
+      exportRows('albertitos-revisar-primero.csv', ficheros)
+      setToast({ message: `${ficheros.length} ficheros exportados a CSV`, tone: 'success' })
+      return
+    }
     if (!data) return
     setExporting(true)
     try {
@@ -175,6 +208,16 @@ function FicherosScreen() {
                 >
                   {formatNumber(summary.porEstado.ESCALAR)} escalados
                 </button>
+                {disponible && porRevisar > 0 && (
+                  <button
+                    onClick={toggleRevisar}
+                    aria-pressed={revisando}
+                    title="Se escalan sólo porque no se leyeron con seguridad: si el original está limpio, lo correcto sería PAGAR."
+                    className={`rounded-full border px-3 py-1 text-[#bd3434] transition hover:bg-[#ffe3e3] ${revisando ? 'border-[#e6a9a9] bg-[#ffe3e3]' : 'border-[#f1dada] bg-[#fff0f0]'}`}
+                  >
+                    Revisar primero · {formatNumber(porRevisar)}
+                  </button>
+                )}
                 {summary.porEstado.PENDIENTE > 0 && (
                   <button
                     onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'PENDIENTE' })}
@@ -205,14 +248,39 @@ function FicherosScreen() {
           filters={filters}
           onChange={changeFilters}
           onReset={() => changeFilters(EMPTY_FILTERS)}
-          matching={data ? data.total : null}
+          matching={revisando ? (revisarItems?.length ?? null) : data ? data.total : null}
           total={summary ? summary.ficheros : null}
           searching={searching}
         />
 
         <div ref={tableRef} className="scroll-mt-4">
           <Card className="mt-7 overflow-hidden rounded-2xl border-[#e1e7e2] shadow-[0_8px_28px_rgba(20,55,45,0.045)]">
-            {error ? (
+            {revisando && (
+              <p className="border-b border-[#f1dada] bg-[#fff8f8] px-5 py-3 text-[13px] text-[#8c3b3b]">
+                <strong>Revisar primero:</strong> se escalan sólo porque no se leyeron con seguridad. De menor a mayor
+                confianza en la clasificación (no es probabilidad de pago).{' '}
+                <button onClick={toggleRevisar} className="font-semibold underline">
+                  Volver a la cola
+                </button>
+              </p>
+            )}
+            {revisando ? (
+              todos.error ? (
+                <ErrorState error={todos.error} onRetry={todos.refresh} retrying={todos.loading} />
+              ) : !revisarItems ? (
+                <LoadingState label="Cargando las de confianza baja" rows={6} />
+              ) : ficheros.length === 0 ? (
+                <EmptyState title="Nada que revisar primero" description="Ninguna factura tiene confianza baja." />
+              ) : (
+                <InvoiceTable
+                  ficheros={ficheros}
+                  selected={selectedIds}
+                  onToggle={toggle}
+                  onToggleAll={toggleAll}
+                  confianza={confianza}
+                />
+              )
+            ) : error ? (
               <ErrorState error={error} onRetry={refresh} retrying={loading} />
             ) : !data ? (
               <LoadingState label="Cargando ficheros" rows={6} />
@@ -231,10 +299,16 @@ function FicherosScreen() {
               />
             ) : (
               <div aria-busy={loading} className={`transition-opacity duration-200 ${loading ? 'opacity-60' : ''}`}>
-                <InvoiceTable ficheros={ficheros} selected={selectedIds} onToggle={toggle} onToggleAll={toggleAll} />
+                <InvoiceTable
+                  ficheros={ficheros}
+                  selected={selectedIds}
+                  onToggle={toggle}
+                  onToggleAll={toggleAll}
+                  confianza={confianza}
+                />
               </div>
             )}
-            {data && data.total > 0 && (
+            {!revisando && data && data.total > 0 && (
               <div className="flex items-center justify-between border-t border-[#edf0ec] px-5 py-3 text-[13px] text-[#819088]">
                 <span className="flex items-center gap-2">
                   {loading && <Spinner className="size-3 text-[#315d53]" />}
