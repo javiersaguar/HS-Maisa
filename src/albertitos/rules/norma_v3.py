@@ -38,6 +38,7 @@ ANOMALIAS_HUMANO = {
     Aviso.DISCREPANCIA_EXTRACTORES,
     Aviso.EXTRACCION_PARCIAL,
     Aviso.NIF_INVALIDO,  # NIF con forma imposible: hoy 0 facturas, pero el lote 2 puede traerlos
+    Aviso.DOCUMENTO_SUPERPUESTO,  # otro proveedor asomando en el documento: lo mira una persona
     Aviso.IMPORTE_AMBIGUO,
 }
 
