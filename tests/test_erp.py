@@ -10,6 +10,7 @@ import pytest
 from albertitos.core import db
 from albertitos.sources import erp
 from albertitos.sources.erp import ClienteERP, ErrorERP
+from albertitos.sources.snapshot import guardar_erp, resumen_erp
 
 pytestmark = pytest.mark.erp
 
@@ -28,6 +29,12 @@ def test_descarga_completa_con_reintentos(erp_vivo, conn):
     ).fetchone()["n"]
     assert n_ora >= 2
     assert n_ora <= s.reintentos  # otro cliente puede provocar además ERP-429
+    guardar_erp(conn, s)
+    resumen = resumen_erp(conn, s.version)
+    assert resumen["atribucion"] == "explicita"
+    assert len(resumen["eventos"]) == s.consultas
+    assert resumen["errores_por_codigo"]["ORA-00600"] == n_ora
+    assert resumen["latencia_total_ms"] >= 0
 
 
 def test_token_caducado_se_renueva_solo(erp_vivo, conn):
@@ -131,6 +138,11 @@ def test_dos_clientes_concurrentes_completan_snapshot(erp_vivo, tmp_path):
             with ClienteERP(erp_vivo, conn=conn, rps=9) as cliente:
                 snapshot = cliente.descargar_todo(f"concurrente-{indice}")
                 total = int(cliente.estado()["asientos"])
+            guardar_erp(conn, snapshot)
+            resumen = resumen_erp(conn, snapshot.version)
+            assert resumen["atribucion"] == "explicita"
+            assert len(resumen["eventos"]) == snapshot.consultas
+            assert sum(resumen["errores_por_codigo"].values()) == snapshot.reintentos
             errores = [
                 fila["error_codigo"]
                 for fila in conn.execute("SELECT error_codigo FROM eventos WHERE estado='retry'")
@@ -154,10 +166,24 @@ def test_conexion_rechazada_se_registra_y_agota(conn):
     with socket.socket() as reserva:
         reserva.bind(("127.0.0.1", 0))
         puerto = reserva.getsockname()[1]
-        with ClienteERP(f"http://127.0.0.1:{puerto}", conn=conn, max_intentos=2) as c:
+        url = f"http://127.0.0.1:{puerto}"
+        inicio = time.monotonic()
+        with ClienteERP(url, conn=conn, max_intentos=2) as c:
             with pytest.raises(ErrorERP, match="ERP-RED") as e:
                 c.estado()
-            assert e.value.codigo == "ERP-AGOTADO"
+            assert e.value.codigo == "ERP-NO-RESPONDE"
+            mensaje = str(e.value)
+            assert all(
+                x in mensaje
+                for x in (
+                    url,
+                    "make erp",
+                    "make erp-fast",
+                    "ALBERTITOS_ERP_URL",
+                    "snapshot anterior",
+                )
+            )
+            assert "\n" not in mensaje and time.monotonic() - inicio < 2
             assert c.consultas == 2 and c.reintentos == 1
     eventos = list(conn.execute("SELECT estado, error_codigo FROM eventos ORDER BY id"))
     assert [(fila["estado"], fila["error_codigo"]) for fila in eventos] == [

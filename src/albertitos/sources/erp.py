@@ -6,6 +6,7 @@ reintentos reales son parte de la demo de trazabilidad.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sqlite3
@@ -58,6 +59,7 @@ class ClienteERP:
         self.consultas = 0
         self.reintentos = 0
         self._ultima = 0.0
+        self._eventos_descarga: list[int] | None = None
 
     def close(self) -> None:
         self.http.close()
@@ -72,7 +74,9 @@ class ClienteERP:
 
     def _evento(self, **kw) -> None:
         if self.conn is not None:
-            db.registrar_evento(self.conn, Event(etapa=Etapa.ENRICH, **kw))
+            evento_id = db.registrar_evento(self.conn, Event(etapa=Etapa.ENRICH, **kw))
+            if self._eventos_descarga is not None:
+                self._eventos_descarga.append(evento_id)
             # La traza sobrevive también a un pull fallido y no retiene el bloqueo
             # de escritura de SQLite mientras esperamos al bridge o al Retry-After.
             self.conn.commit()
@@ -103,6 +107,7 @@ class ClienteERP:
     ) -> ET.Element:
         """Una petición con la política completa: ritmo, token, ORA-00600, 429, SES-401, eventos."""
         ultimo = "?"
+        sin_conexion = False
         for intento in range(1, self.max_intentos + 1):
             if auth and (
                 not self.token
@@ -126,6 +131,7 @@ class ClienteERP:
                     metodo, f"{self.url}{ruta}", params=params, data=data, headers=cab
                 )
             except httpx.RequestError as exc:
+                sin_conexion = isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout))
                 ultimo = "ERP-TIMEOUT" if isinstance(exc, httpx.TimeoutException) else "ERP-RED"
                 repetir = intento < self.max_intentos
                 self.reintentos += int(repetir)
@@ -141,6 +147,7 @@ class ClienteERP:
                 if repetir:
                     time.sleep(0.2 * intento)
                 continue
+            sin_conexion = False
             if r.status_code == 200:
                 try:
                     raiz = ET.fromstring(r.content)
@@ -190,6 +197,13 @@ class ClienteERP:
                 time.sleep(0.05 * intento)  # "Reintente la misma consulta. Funciona."
             else:
                 time.sleep(0.2 * intento)
+        if sin_conexion:
+            raise ErrorERP(
+                "ERP-NO-RESPONDE",
+                f"{self.url}{ruta} tras {self.max_intentos} intentos (último: {ultimo}); "
+                "arranca make erp / make erp-fast en otra terminal o revisa ALBERTITOS_ERP_URL. "
+                "El snapshot anterior sigue sirviendo para decidir, si existe.",
+            )
         raise ErrorERP(
             "ERP-AGOTADO", f"{ruta} tras {self.max_intentos} intentos (último: {ultimo})"
         )
@@ -238,6 +252,29 @@ class ClienteERP:
 
     def descargar_todo(self, tag: str) -> ErpSnapshot:
         """Baja todas las páginas una vez. El snapshot es la referencia contable para conciliar."""
+        self._eventos_descarga = []
+        try:
+            s = self._descargar_todo(tag)
+            ids = self._eventos_descarga
+        finally:
+            self._eventos_descarga = None
+        # Vínculo exacto sin cambiar ErpSnapshot ni asumir que no hay pulls concurrentes.
+        self._evento(
+            estado=EstadoEvento.OK,
+            version="erp-2009",
+            detalle=json.dumps(
+                {
+                    "tipo": "erp_descarga",
+                    "version": tag,
+                    "descargado_en": s.descargado_en.isoformat(),
+                    "eventos": ids,
+                },
+                ensure_ascii=False,
+            ),
+        )
+        return s
+
+    def _descargar_todo(self, tag: str) -> ErpSnapshot:
         consultas0, reintentos0 = self.consultas, self.reintentos
         asientos: dict[str, ErpEntry] = {}
         primera, paginas, total = self.pagina(1)
