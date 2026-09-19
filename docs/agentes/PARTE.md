@@ -39,7 +39,25 @@ Partes anteriores en `partes/` (… · 09: I1-I2 · 10: J1-J5).
 _(pendiente)_
 
 ## K3 · Métrica de confianza por factura
-_(pendiente)_
+- **Estado: hecho.** Commits: `f246788` (módulo y tests) · `251b0d0` (calibración, contrato, ejemplos, ADR-0014) · `afb7175` (revisor LLM opcional) y el de cierre (documentos con el ensayo del revisor, este parte y la bitácora). Sin push.
+- **Qué hay:** `albertitos.confianza`: `puntuar(conn, file_id)`, `puntuar_todas(conn, lote)`, `resumen()` y `rutas()` (`/confianza/{resumen,ficheros,fichero}`, con la firma del puente). Puntuación ordinal 0-100 + banda (alta ≥ 80 · media ≥ 50 · baja < 50) + 3 razones + desglose por fuente (pdf, coherencia, maestro, erp, decisión, política, revisor). Pesos en `modelo.PESOS`, cada uno con su porqué, y copiados en el ADR-0014. Sólo lee y no importa `rules/` ni `extract/`.
+- **Rendimiento:** las 500 en 0,04-0,06 s y una factura en 0,33 ms. Al principio eran 9,5 ms por factura (≈ 4 s para los 438 pagos del calendario de K1); arreglado con filtros por sha256 y una caché de snapshots por versión.
+- **BD real (lote 1), `uv run python scripts/calibrar_confianza.py`:** alta 447 (438 PAGAR, 9 NO_PAGAR) · media 40 · baja 13 (todas ESCALAR). **Ninguna ESCALAR en alta:** las 53 tienen una duda de lectura o una pregunta abierta del mentor (Q1 6 · Q2 2 · Q3 35 · Q5 2).
+- **Calibración, dicha como es:** sin la muestra cerrada (acordado 0 de 21) no hay verdad etiquetada y no se llama «probabilidad». Lo que cuadra:
+  - contraste plantilla↔LLM, factura a factura: 468 de 468;
+  - mapa de I2: 45 de 45 ficheros con la misma pregunta abierta, calculados por otro camino;
+  - las 6 que I2 comprobó limpias a mano salen en media;
+  - las 10 de menor confianza y las 13 bajas ya se sabían dudosas. No es independiente: usa los mismos avisos.
+  - **Tercera lectura de H2** (21 de la muestra, fuera del repo, sólo recuentos): alta 5 de 5 coinciden · media 5 de 13 · baja 0 de 3. No se publica en `docs/` hasta que Mónica cierre.
+- **Revisor LLM (opcional, apagado por defecto), en vivo a las 15:13 sobre la copia de la BD:** **53 llamadas de un tope de 60**, todas antes de las 17:30. Resultado: 52 «de acuerdo», 0 en desacuerdo, 1 `LLM-TIMEOUT` degradado bien. p50 1,5 s, `deepseek-v4-flash`. Confirma que ninguna clasificación contradice la norma escrita, pero no resuelve las preguntas abiertas porque juzga con la misma norma. Un «de acuerdo» no suma puntos.
+- **Verificado:** `make check` → 565 passed; `make agentes-check` OK; `tests/test_confianza.py`, 27 tests en 0,9 s, con la regla 5 (sobre una copia de la BD real, `package` antes y después da el mismo `outcomes.jsonl`, y la copia no cambia ni un byte). **Huellas:** BD real `0dc1c7817fda` y `outcomes.jsonl` `1ec4be206089`, iguales al empezar (14:52) y al terminar.
+- **Hallazgos:**
+  1. **Se contradice un ejemplo del PLAN-11.** Decía que un ESCALAR por una orden inyectada evidente tiene confianza alta, pero 6 de las 31 sólo se frenan por la orden (I2 las comprobó limpias). Salen en media: si el mentor dice que manda la norma, serían PAGAR (ADR-0014).
+  2. En 5 escaneadas, el fallo de R1 viene de que sus lecturas no coinciden justo en el NIF o el IBAN. La métrica lo trata como duda de lectura, no como causa clara (banda baja).
+- **Necesito de otros:**
+  - **Alejandro:** una línea en `console/api.py` (`RUTAS.update(confianza.rutas())`, con import perezoso) y las pantallas de `docs/api/confianza.md`.
+  - **Javier o Alfonso:** la fila del ADR-0014 en `docs/adr/README.md`.
+  - **Mónica:** cuando cierre la muestra, `scripts/calibrar_confianza.py` da los aciertos por banda sin tocar nada más.
 
 ## K2 · Cierre implementado y evaluado
 - Commit 57d43c9; sin push. Código en src/albertitos/chat/, contrato docs/api/chat.md, ADR-0013 y docs/api/ejemplos/chat-*.

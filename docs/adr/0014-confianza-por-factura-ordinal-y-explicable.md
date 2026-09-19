@@ -91,11 +91,16 @@ primero»: si el original está limpio, la referencia esperaría PAGAR.
   objetivo de < 2 s. Queda para una versión 2, con caché.
 - **Depende de lo que dejó el pipeline:** si se vacía `cache_llm`, las plantillas pierden su «confirmada por el LLM» y
   pasan a `pdf.plantilla_sin_contraste` (−2,5). Baja un poco, y lo dice.
-- **El revisor LLM no está construido:** tiene un peso reservado (`revisor.desacuerdo`), pero no se ha hecho ninguna
-  llamada (0 de 60). Queda para Jev o para después del lote 2.
+- **El revisor LLM (opcional, apagado por defecto) no discrimina.** Se ensayó en vivo el 19/09 a las 15:13, sobre las 53
+  facturas de banda media o baja: **53 llamadas** (tope 60), **52 «de acuerdo», 0 en desacuerdo y 1 `LLM-TIMEOUT`**, que
+  se degradó bien (esa factura se quedó sin opinión). Latencia p50 1,5 s y máxima 8,4 s, con `deepseek-v4-flash`.
+  Razona con los datos (cita importes, la confianza de 0,6, la superposición y el duplicado), pero juzga con la misma
+  norma escrita que aplica el sistema. Así que confirma que ninguna clasificación contradice la norma; no resuelve las
+  preguntas abiertas, porque para eso hace falta la referencia. Por eso un «de acuerdo» no suma puntos (sólo añade una
+  frase a favor) y sólo un desacuerdo resta. Si el equipo aprueba Jev, entraría aquí con un Score calibrado.
 
 ## Evidencia
-- **Tests:** `tests/test_confianza.py`, 17 tests en 0,8 s. Cubren la tabla de pesos, los casos por tipo, las rutas a
+- **Tests:** `tests/test_confianza.py`, 27 tests en 0,9 s. Cubren la tabla de pesos, los casos por tipo, las rutas a
   través de `console.api.despachar`, que la BD no cambia ni un byte, y la **regla 5 del PLAN-11**: sobre una copia de
   la BD real, `package` antes y después de puntuar las 500 (y de llamar a las tres rutas) da el mismo `outcomes.jsonl`.
 - **Rendimiento:** las 500 en 0,04-0,06 s; una factura, 0,33 ms. El calendario de K1 pide la de cada pago: 438 × 0,33 ms ≈ 0,15 s.
@@ -106,6 +111,7 @@ primero»: si el original está limpio, la referencia esperaría PAGAR.
 - **Lo ya sabido dudoso:** las 10 de menor confianza y las 13 de banda baja lo estaban por los hechos o por el mapa de I2.
   Las 6 que I2 revisó limpias a mano salen en media.
 - **Comando:** `uv run python scripts/calibrar_confianza.py [--markdown] [--salida dist/ensayo/k3]`.
+- **Revisor:** `uv run python -m albertitos.confianza.revisor --maximo 60 --salida dist/ensayo/k3/revisor.json`; 10 tests sin red (esquema cerrado, texto delimitado como dato, tope, hora límite, caída, timeout, 429, respuesta inválida, sin key y opinión caducada).
 
 ## Resumen para el plan (5 líneas)
 Confianza por factura: una puntuación ordinal 0-100 (no una probabilidad) con banda y tres razones, calculada con lo

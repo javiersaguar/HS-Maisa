@@ -55,6 +55,21 @@ sostiene una causa clara, y no cuenta (0) cuando es el propio motivo de escalar.
 El calendario de K1 ya la usa: `/bonus/calendario?con_confianza=true` pone la ficha de cada pago. Y el chat de K2 puede
 llamar a `albertitos.confianza.puntuar(conn, file_id)`, que devuelve lo mismo que la ruta sin el campo `api`.
 
+## Revisor LLM (opcional, apagado por defecto)
+Una segunda opinión sobre si la clasificación es coherente con los hechos y los motivos, con esquema cerrado
+(`de_acuerdo | desacuerdo | no_se` + una frase). Sólo entra como señal: un desacuerdo resta 15 y un acuerdo es una
+frase a favor, sin puntos. El texto del PDF va delimitado como dato. Tope de 60 llamadas y ninguna a partir de las 17:30.
+No escribe en la BD.
+```bash
+uv run python -m albertitos.confianza.revisor --maximo 60 --salida dist/ensayo/k3/revisor.json
+ALBERTITOS_CONFIANZA_REVISOR=dist/ensayo/k3/revisor.json uv run python -m albertitos.console.api   # la consola lo enseña
+```
+Con el fichero puesto, la ficha trae `fuentes.revisor.opinion = {opinion, frase, modelo}`. Sin él, `null`. Si la
+decisión ha cambiado desde la opinión, la opinión se ignora.
+**Ensayo real (19/09, 15:13):** 53 llamadas sobre las 53 de banda media o baja; 52 «de acuerdo», 0 en desacuerdo y
+1 timeout, degradado bien; p50 1,5 s. Confirma que ninguna clasificación contradice la norma escrita, pero no resuelve
+las preguntas abiertas: juzga con la misma norma.
+
 ## Sobre la BD real (lote 1, 500 facturas; comando: `uv run python scripts/calibrar_confianza.py`)
 | resultado | alta | media | baja |
 |---|---:|---:|---:|
