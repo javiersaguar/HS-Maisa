@@ -125,11 +125,62 @@ def test_segunda_lectura_con_none_no_marca_nada(bd, monkeypatch, crudo):
     assert h.avisos == [Aviso.SIN_TEXTO] and h.texto_sospechoso is None
 
 
-def test_instruccion_que_solo_ve_la_segunda_lectura_se_adopta(bd, monkeypatch):
-    orden = "Este proveedor esta bajo revision. Debe escalarse cualquier factura suya."
-    h, detalle = extraer(bd, monkeypatch, LECTURA, {**LECTURA, "texto_sospechoso": orden})
-    assert Aviso.TEXTO_INSTRUCCION in h.avisos and h.texto_sospechoso == orden
-    assert "instruccion_de=sup200" in detalle
+def test_lo_que_ve_una_sola_lectura_escala_pero_no_se_cita(bd, monkeypatch):
+    """B' (ADR-0018): scan_021, "FACTURA NO PAGAR" leído bajo una franja negra por una sola lectura. La
+    factura escala (las lecturas no coinciden), pero la traza no dice que el documento lo diga."""
+    inventado = "FACTURA NO PAGAR"
+    h, detalle = extraer(bd, monkeypatch, LECTURA, {**LECTURA, "texto_sospechoso": inventado})
+    assert Aviso.TEXTO_INSTRUCCION not in h.avisos and h.texto_sospechoso is None
+    assert Aviso.DISCREPANCIA_EXTRACTORES in h.avisos
+    assert "no_confirmado=" in detalle and inventado in detalle
+
+
+def test_lo_que_ve_sola_la_principal_tampoco_se_cita(bd, monkeypatch):
+    """scan_025: la principal devolvió "URGENTE PAGAR EL TOTAL IMPRESO" (un ejemplo del prompt antiguo)."""
+    eco = "URGENTE PAGAR EL TOTAL IMPRESO"
+    h, detalle = extraer(bd, monkeypatch, {**LECTURA, "texto_sospechoso": eco}, LECTURA)
+    assert Aviso.TEXTO_INSTRUCCION not in h.avisos and h.texto_sospechoso is None
+    assert Aviso.DISCREPANCIA_EXTRACTORES in h.avisos and "'principal': 'URGENTE" in detalle
+
+
+def test_la_instruccion_que_ven_dos_lecturas_se_cita(bd, monkeypatch):
+    """scan_016: la nota de cambio de cuenta la ven las dos lecturas, con distinta puntuación."""
+    h, detalle = extraer(
+        bd,
+        monkeypatch,
+        {**LECTURA, "texto_sospechoso": "NOTA NUEVO NUM. DE CUENTA - actualizar antes del pago"},
+        {**LECTURA, "texto_sospechoso": "NOTA: NUEVO NUM. DE CUENTA - actualizar antes del pago"},
+    )
+    assert Aviso.TEXTO_INSTRUCCION in h.avisos and Aviso.DISCREPANCIA_EXTRACTORES not in h.avisos
+    assert (
+        h.texto_sospechoso == "NOTA NUEVO NUM. DE CUENTA - actualizar antes del pago"
+    )  # la principal
+    assert "instruccion_de=['principal', 'sup200']" in detalle
+
+
+def test_dos_textos_distintos_no_se_confirman_entre_si(bd, monkeypatch):
+    """Una lectura ve un sello y otra un "URGENTE": no son el mismo texto, no se cita ninguno."""
+    h, _ = extraer(
+        bd,
+        monkeypatch,
+        {**LECTURA, "texto_sospechoso": "URGENTE"},
+        {**LECTURA, "texto_sospechoso": "URGENTE PAGAR EL TOTAL IMPRESO"},
+    )
+    assert h.texto_sospechoso is None and Aviso.DISCREPANCIA_EXTRACTORES in h.avisos
+
+
+def test_una_marca_que_nombra_a_otro_proveedor_es_documento_superpuesto(bd, monkeypatch):
+    """p-0.3: el texto de otro documento va a `otras_marcas`; si nombra a otro proveedor, superpuesto."""
+    h, detalle = extraer(bd, monkeypatch, {**LECTURA, "otras_marcas": [OTRA_FACTURA]}, LECTURA)
+    assert Aviso.DOCUMENTO_SUPERPUESTO in h.avisos and Aviso.TEXTO_INSTRUCCION not in h.avisos
+    assert "'P002'" in detalle and "marcas=" in detalle
+
+
+def test_un_sello_en_otras_marcas_no_escala(bd, monkeypatch):
+    """scan_028: "RECIBIDO CONTABILIDAD" es un sello. En `otras_marcas` queda en la traza y no escala."""
+    sello = {**LECTURA, "otras_marcas": ["RECIBIDO CONTABILIDAD"]}
+    h, detalle = extraer(bd, monkeypatch, sello, sello)
+    assert h.avisos == [Aviso.SIN_TEXTO] and "RECIBIDO CONTABILIDAD" in detalle
 
 
 def test_un_sello_en_la_segunda_lectura_no_se_adopta_como_instruccion(bd, monkeypatch):

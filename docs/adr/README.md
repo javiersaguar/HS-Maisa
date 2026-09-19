@@ -13,6 +13,8 @@
 | 0009 | Si a la hora de entregar no hay hechos, ESCALAR explícito y reversible | aceptado (Miguel con cuatro condiciones y Mónica, 19/09 09:00) | Javier |
 | 0010 | Un documento superpuesto lo mira una persona (`scan_025`) | aceptado | Mónica |
 | 0011 | Una lectura reconciliada con el maestro no se paga sola (5 escaneadas pasan a ESCALAR) | aceptado | Mónica |
+| 0017 | Cuando las lecturas de una escaneada no coinciden, decide una prueba independiente (tercera lectura o cuentas de la factura), no el maestro | aceptado por Miguel; falta Javier y Mónica | Miguel |
+| 0018 | En una escaneada, una instrucción sólo se cita si la ven dos lecturas (B'); el prompt nuevo (D) se midió y se descartó | aceptado (B') / descartado (D) | Miguel |
 
 Cada ADR termina con un **Resumen para el plan (5 líneas)** listo para pegar en
 `docs/plan/albertitos_plan.md` § ADRs (lo hace Alfonso; los dueños no tocan el plan).
