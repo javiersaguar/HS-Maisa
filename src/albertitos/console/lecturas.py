@@ -79,7 +79,8 @@ def _identidad(conn: sqlite3.Connection, file_id: str) -> dict[str, Any] | None:
         return None
     try:
         fila = conn.execute(
-            "SELECT sha256, lote FROM identidades WHERE file_id = ?", (file_id,)
+            "SELECT sha256, lote FROM identidades WHERE file_id = ? ORDER BY lote DESC LIMIT 1",
+            (file_id,),
         ).fetchone()
     except sqlite3.OperationalError:
         return None

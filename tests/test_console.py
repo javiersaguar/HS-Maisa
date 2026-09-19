@@ -318,8 +318,8 @@ def test_detalle_sin_snapshot_devuelve_fuentes_vacias(conn):
 
 
 def test_identidades_es_opcional_y_no_pisa_el_original(conn, maestro, erp):
-    """P0-1 de Miguel: un PDF idéntico con dos nombres. Si existe `identidades`, el segundo nombre
-    responde 200 con la decisión del sha256; el original sigue igual. Sin la tabla, 404 como antes."""
+    """P0-1 de Miguel: un PDF idéntico con dos nombres. Con fila en `identidades`, el segundo nombre
+    responde 200 con la decisión del sha256; el original sigue igual. Sin fila (o sin tabla), 404."""
     _semilla(conn, maestro, erp)
     original = "F26-2201_transportes.pdf"
     copia = "F26-2201_transportes (copia).pdf"
@@ -327,10 +327,7 @@ def test_identidades_es_opcional_y_no_pisa_el_original(conn, maestro, erp):
     assert lecturas.traza_pasos(conn, file_id=copia) is None
 
     sha = _sha(original)
-    conn.execute(
-        "CREATE TABLE identidades (file_id TEXT PRIMARY KEY, sha256 TEXT NOT NULL, lote INTEGER)"
-    )
-    conn.execute("INSERT INTO identidades VALUES (?, ?, 2)", (copia, sha))
+    db.guardar_identidad(conn, file_id=copia, lote=2, sha256=sha)
     conn.commit()
 
     fila = lecturas.fichero(conn, copia)
@@ -349,6 +346,13 @@ def test_identidades_es_opcional_y_no_pisa_el_original(conn, maestro, erp):
     status, body = api.despachar("GET", "/ficheros/" + quote(copia), {}, conn)
     assert status == 200 and body["file_id"] == copia
     assert lecturas.salud(conn)["bd"]["identidades"] is True
+
+    conn.execute("DROP TABLE identidades")
+    conn.commit()
+    assert lecturas.salud(conn)["bd"]["identidades"] is False
+    assert lecturas.fichero(conn, copia) is None
+    status, _body = api.despachar("GET", "/ficheros/" + quote(copia), {}, conn)
+    assert status == 404
 
 
 def test_coste_del_panel_es_el_de_la_extraccion_vigente(conn, maestro, erp):
