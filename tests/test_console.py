@@ -560,6 +560,44 @@ def test_inbox_se_niega_con_la_bd_de_la_entrega():
     assert b.runner.llamadas == []
 
 
+@pytest.mark.parametrize(
+    ("variable", "esperado"),
+    [
+        (None, 403),
+        ("http://localhost:3001", 400),
+        ("http://localhost:3000, http://localhost:3001/", 400),
+    ],
+)
+def test_inbox_origen_de_la_consola_configurable(conn, tmp_path, monkeypatch, variable, esperado):
+    """Consola en el 3001 (el 3000 ocupado): 403 salvo que el puente lo autorice con
+    ALBERTITOS_CONSOLA_ORIGENES. El 400 es que pasó el filtro y llegó a leer el cuerpo."""
+    import http.client
+    import threading
+
+    if variable is None:
+        monkeypatch.delenv("ALBERTITOS_CONSOLA_ORIGENES", raising=False)
+    else:
+        monkeypatch.setenv("ALBERTITOS_CONSOLA_ORIGENES", variable)
+    httpd = api.ThreadingHTTPServer(
+        ("127.0.0.1", 0), api.hacer_handler(tmp_path / "test.db", bandeja_activa=True)
+    )
+    hilo = threading.Thread(target=httpd.serve_forever, daemon=True)
+    hilo.start()
+    try:
+        c = http.client.HTTPConnection("127.0.0.1", httpd.server_address[1], timeout=5)
+        cabeceras = {"Origin": "http://localhost:3001", "Content-Type": "text/plain"}
+        c.request("POST", "/inbox", body=b"x", headers=cabeceras)
+        r = c.getresponse()
+        cuerpo = r.read().decode()
+        assert r.status == esperado
+        if esperado == 403:
+            assert "ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3001" in cuerpo
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+    assert not (tmp_path / "inbox").exists()
+
+
 def test_inbox_cerrado_sin_el_flag_aunque_la_bd_no_sea_la_de_la_entrega(conn, tmp_path):
     """Puente arrancado con --db <otra ruta a la BD real> y sin --bandeja: POST 409, nada escrito."""
     b = bandeja.Bandeja(tmp_path / "test.db", runner=_RunnerFalso())

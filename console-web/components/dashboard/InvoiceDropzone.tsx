@@ -50,7 +50,10 @@ function guardarHistorial(filas: Fila[]) {
   }
 }
 
-/** El comando exacto, con el puerto del puente al que habla esta consola (sin --db: usa dist/bandeja.db). */
+/**
+ * El comando exacto, con el puerto del puente al que habla esta consola (sin --db: usa dist/bandeja.db). Si la consola
+ * no corre en el 3000, el puente tiene que autorizar su origen o cada subida da 403.
+ */
 function comandoArranque(): string {
   let puerto = '8000'
   try {
@@ -58,7 +61,9 @@ function comandoArranque(): string {
   } catch {
     /* URL rara: el puerto por defecto */
   }
-  return `uv run python -m albertitos.console.api --bandeja${puerto === '8000' ? '' : ` --puerto ${puerto}`}`
+  const origen = typeof window === 'undefined' ? null : window.location.origin
+  const origenes = origen && !/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(origen) ? `ALBERTITOS_CONSOLA_ORIGENES=${origen} ` : ''
+  return `${origenes}uv run python -m albertitos.console.api --bandeja${puerto === '8000' ? '' : ` --puerto ${puerto}`}`
 }
 
 const PASOS: Array<{ estado: EstadoBandeja; label: string; detalle: string }> = [

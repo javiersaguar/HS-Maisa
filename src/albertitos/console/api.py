@@ -9,6 +9,8 @@ Arranque:
     uv run python -m albertitos.console.api                    # http://127.0.0.1:8000
     uv run python -m albertitos.console.api --puerto 8000 --db dist/albertitos.db
     uv run python -m albertitos.console.api --bandeja          # dist/bandeja.db, con POST /inbox
+    ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3001 uv run python -m albertitos.console.api --bandeja
+                                                               # consola en otro puerto que el 3000
 
 Rutas:
     GET /salud                                   ¿vive el puente? ¿hay BD? contadores y versiones
@@ -58,7 +60,18 @@ _CORS = {
 }
 # Un POST multipart no pide preflight: sin esto, cualquier web abierta en el navegador podría subir
 # PDF a la bandeja y gastar LLM. Como el chat, sólo la consola Next (o curl, que no manda Origin).
-ORIGENES_BANDEJA = ("http://localhost:3000", "http://127.0.0.1:3000")
+ORIGENES_BANDEJA_DEFECTO = "http://localhost:3000,http://127.0.0.1:3000"
+
+
+def origenes_bandeja() -> set[str]:
+    """ALBERTITOS_CONSOLA_ORIGENES (coma), como ALBERTITOS_CHAT_ORIGENES en el chat: si la consola no corre
+    en el 3000 (`pnpm dev -p 3001` con el 3000 ocupado), sin esto cada subida da 403."""
+    return {
+        o.strip().rstrip("/")
+        for o in (os.getenv("ALBERTITOS_CONSOLA_ORIGENES") or ORIGENES_BANDEJA_DEFECTO).split(",")
+        if o.strip()
+    }
+
 
 Query = dict[str, list[str]]
 Respuesta = tuple[int, Any]
@@ -273,9 +286,16 @@ def hacer_handler(ruta: Path, *, bandeja_activa: bool = False) -> type[BaseHTTPR
                 self._no_escritura()
                 return
             origen = self.headers.get("Origin")
-            if origen is not None and origen not in ORIGENES_BANDEJA:
+            if origen is not None and origen not in origenes_bandeja():
                 self.close_connection = True
-                _enviar(self, 403, {"error": f"origen {origen} no autorizado para subir facturas"})
+                _enviar(
+                    self,
+                    403,
+                    {
+                        "error": f"origen {origen} no autorizado para subir facturas: arranca el "
+                        f"puente con ALBERTITOS_CONSOLA_ORIGENES={origen}"
+                    },
+                )
                 return
             try:
                 largo = int(self.headers.get("Content-Length") or 0)
