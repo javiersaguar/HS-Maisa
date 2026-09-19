@@ -60,3 +60,12 @@ def test_arbol_sin_rotos_sale_cero(tmp_path, capsys):
     (tmp_path / "docs" / "b.md").write_text("ok\n", encoding="utf-8")
     assert enlaces.main(["--raiz", str(tmp_path)]) == 0
     assert "OK: ningún enlace relativo roto." in capsys.readouterr().out
+
+
+def test_codigo_en_linea_no_es_un_enlace(tmp_path):
+    """Un resumen que CITA un enlace roto entre comillas invertidas no es un enlace roto."""
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "a.md").write_text(
+        "El fallo era `[x](no-existe.md)`, ya corregido.\n", encoding="utf-8"
+    )
+    assert enlaces.comprobar(tmp_path) == []

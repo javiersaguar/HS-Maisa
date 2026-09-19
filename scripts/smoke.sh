@@ -34,12 +34,14 @@ medir bonus 0 uv run python -m albertitos.bonus --salida dist/smoke
 
 t0=$(date +%s.%N)
 salida=$(uv run python - <<'PY'
+import os
+
 from albertitos.confianza import rutas
 from albertitos.console import api
 from albertitos.core import db
 
 api.RUTAS.update(rutas())
-conn = db.conectar("dist/albertitos.db", solo_lectura=True)
+conn = db.conectar(os.environ.get("ALBERTITOS_DB", "dist/albertitos.db"), solo_lectura=True)
 try:
     st, body = api.despachar("GET", "/confianza/resumen", {}, conn)
 finally:

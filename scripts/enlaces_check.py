@@ -13,6 +13,7 @@ from pathlib import Path
 
 ENLACE = re.compile(r"(?<!!)\[([^\]]*)\]\(([^)]+)\)")
 IGNORAR = ("http://", "https://", "mailto:")
+CODIGO_EN_LINEA = re.compile(r"`[^`]*`")
 
 
 def ficheros_md(raiz: Path) -> list[Path]:
@@ -26,8 +27,11 @@ def ficheros_md(raiz: Path) -> list[Path]:
 
 
 def destinos(linea: str) -> list[str]:
-    """Destinos de `[texto](ruta)` en una línea fuera de un bloque de código."""
+    """Destinos de `[texto](ruta)` en una línea fuera de un bloque de código.
+
+    Lo que va entre comillas invertidas (código en línea) es texto, no un enlace: se quita antes."""
     encontrados = []
+    linea = CODIGO_EN_LINEA.sub("", linea)
     for m in ENLACE.finditer(linea):
         dest = m.group(2).strip().split()[0]  # descarta el "título" markdown
         dest = dest.strip("<>")
