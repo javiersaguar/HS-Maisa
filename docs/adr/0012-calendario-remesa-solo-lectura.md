@@ -18,13 +18,13 @@ Implementar `python -m albertitos.bonus` sin modificar la CLI principal. Abre SQ
 
 Suma con Decimal. Calcula vencimientos en días naturales y grupos de semana ISO; el corte es explícito o el de las decisiones, nunca el reloj. El CSV propone ejecutar en el vencimiento o en el corte si ya venció. Genera calendario HTML/CSV, remesa CSV, avisos por fichero y resumen con controles de número y suma.
 
-IBAN inválido, discrepancia con los hechos, ausencia de plazo, datos incompletos o duplicados impiden entrar en remesa. No se corrigen cuentas ni se cambian decisiones para conseguir 438 filas. Las rutas de entrega y Caja quedan excluidas como destino.
+Un IBAN sin forma de IBAN, una discrepancia con los hechos, la ausencia de plazo, los datos incompletos o los duplicados impiden entrar en remesa. Un IBAN con forma válida que no pasa el mod-97 (los once de la Caja son sintéticos) entra **marcado** (`iban_control_ok=false`), con un aviso por proveedor; `--estricto` lo excluye, como haría un banco (revisado por Javier a las 13:20: excluirlos dejaba la remesa en 0 pagos). No se corrigen cuentas ni se cambian decisiones para conseguir 438 filas. Las rutas de entrega y Caja quedan excluidas como destino.
 
 ## Consecuencias aceptadas
 
 El resultado es un borrador financiero en EUR, no una transferencia. No hay envío bancario, pain.001, gestión de festivos, conciliación, pagos parciales ni persistencia de pagos ejecutados. Volver a exportar no acredita que una factura esté aún impagada: se deben actualizar ERP/maestro y reprocesar por el flujo normal antes de usar datos nuevos. Leer el maestro histórico conserva trazabilidad, pero no certifica una cuenta actual.
 
-La Caja contiene once IBAN que no pasan mod-97: el calendario tiene 438 filas, la remesa ninguna. Es un resultado defendible y explícito, no se debilita la validación para aparentar pagos preparados. Los casos positivos se prueban con datos sintéticos en tests.
+La Caja contiene once IBAN que no pasan mod-97: por defecto la remesa tiene 438 filas, todas marcadas; con `--estricto`, ninguna. Es un resultado defendible y explícito, no se debilita la validación para aparentar pagos preparados. Los casos positivos se prueban con datos sintéticos en tests.
 
 ## Evidencia
 

@@ -12,9 +12,9 @@ uv run python -m albertitos.bonus --db dist/ensayo/j5/bonus.db --salida dist/ens
 
 Abrir `dist/ensayo/j5/bonus/calendario.html`. El comando tardó **0,184 s** en este portátil con WSL/Ubuntu, Python 3.12, 438 PAGAR y sin red (19/09/2026). La apertura y la explicación no están cronometradas.
 
-Frase para la defensa: «Hay 438 facturas PAGAR por 2.428.159,06 euros. Al corte del 18 de septiembre, 431 están vencidas y 2 vencen esa semana. El calendario aplica los plazos del maestro. La remesa excluye las 438 porque los IBAN de esta Caja no pasan el control: cada exclusión está explicada y no hemos cambiado ninguna decisión».
+Frase para la defensa: «Hay 438 facturas PAGAR por 2.428.159,06 euros. Al corte del 18 de septiembre, 431 están vencidas y 2 vencen esa semana. El calendario aplica los plazos del maestro. La remesa lleva las 438, pero marcadas: los once IBAN de esta Caja son sintéticos y no pasan el dígito de control, así que un banco las rechazaría. En modo estricto la remesa sale vacía, y lo decimos. No hemos cambiado ninguna decisión ni ninguna cuenta».
 
-Enseñar el calendario, abrir `avisos.csv` y señalar `remesa_numero: 0` en `resumen.json`. **No decir “438 transferencias listas”**. La generación con IBAN válido se demuestra con `uv run pytest -q tests/test_bonus.py`, sin sustituir los IBAN reales de la Caja.
+Enseñar el calendario, abrir `avisos.csv` (11 avisos `IBAN_SIN_CONTROL`, uno por proveedor) y señalar en `resumen.json` `remesa_numero: 438` junto a `remesa_iban_sin_control: 438`. **No decir “438 transferencias listas”**: es un borrador con las cuentas marcadas. `--estricto` da lo que aceptaría un banco: 0. La generación con IBAN válido se demuestra con `uv run pytest -q tests/test_bonus.py`, sin sustituir los IBAN reales de la Caja.
 
 El comando general solicitado también está disponible:
 
@@ -57,9 +57,9 @@ Corte 2026-09-18, maestro del linaje, 438 PAGAR vigentes:
 | Vencidos | 431 |
 | Vencen en semana 2026-W38 | 2 · 14.518,10 EUR |
 | Sin vencimiento calculable | 0 |
-| Remesa | 0 pagos · 0,00 EUR |
-| Diferencia calendario/remesa | 438 IBAN_INVALIDO |
+| Remesa (por defecto) | 438 pagos · 2.428.159,06 EUR, **todos marcados `iban_control_ok=false`** · 11 avisos `IBAN_SIN_CONTROL` |
+| Remesa `--estricto` | 0 pagos · 438 `IBAN_INVALIDO` (lo que aceptaría un banco) |
 
-Los once proveedores tienen IBAN que falla formato/mod-97 con `formatos.iban_valido`. `avisos.csv` contiene exactamente los 438 `file_id` distintos excluidos, sin excepciones ni cuentas corregidas artificialmente. La comprobación individual y el tiempo están en `dist/ensayo/j5/medicion.json`; los totales por semana, en `resumen.json`.
+**Cambio de las 13:20 (Javier):** los once IBAN del maestro tienen forma de IBAN, pero son sintéticos y ninguno pasa el mod-97. El propio `formatos.iban_valido` lo avisa: «es un Aviso, no una regla». Excluirlos dejaba el bonus en «0 pagos» con 438 PAGAR, así que ahora entran marcados y `--estricto` conserva el criterio original de J5. Un IBAN sin forma de IBAN, o distinto del de la factura, se sigue excluyendo siempre. `avisos.csv` contiene exactamente los 438 `file_id` distintos excluidos, sin excepciones ni cuentas corregidas artificialmente. La comprobación individual y el tiempo están en `dist/ensayo/j5/medicion.json`; los totales por semana, en `resumen.json`.
 
 Los tests cubren inclusión y suma con IBAN válido, las exclusiones, decisiones no PAGAR, corte y frontera semanal, linaje, duplicados, exportación segura y CLI repetible. ADR: [0012](adr/0012-calendario-remesa-solo-lectura.md).

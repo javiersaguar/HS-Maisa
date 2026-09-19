@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import html
 import json
+import re
 from collections import Counter
 from datetime import date, timedelta
 from decimal import Decimal
@@ -32,6 +33,7 @@ class Pago(BaseModel):
     vencido: bool
     maestro_version: str
     apto_remesa: bool
+    iban_control_ok: bool = True  # mod-97; los IBAN sintéticos de la Caja no lo pasan
 
 
 class Incidencia(BaseModel):
@@ -67,6 +69,7 @@ class Informe(BaseModel):
             "remesa_numero": len(self.remesa),
             "remesa_total_eur": str(sum((p.importe_eur for p in self.remesa), Decimal("0.00"))),
             "excluidos_remesa": self.decisiones_pagar - len(self.remesa),
+            "remesa_iban_sin_control": sum(not p.iban_control_ok for p in self.remesa),
             "sin_vencimiento_calculable": self.decisiones_pagar - len(self.calendario),
             "vencidos": sum(p.vencido for p in self.calendario),
             "vencen_semana_corte": sum(
@@ -84,8 +87,21 @@ def semana_iso(fecha: date) -> str:
     return f"{anio}-W{semana:02d}"
 
 
-def calcular(ruta_bd: Path, fecha_corte: date | None = None) -> Informe:
-    """Usa hechos y maestro del linaje guardado, nunca el reloj ni una decisión nueva."""
+def _forma_iban_ok(iban: str) -> bool:
+    """Forma de IBAN (país, dígitos, longitud española), sin el dígito de control."""
+    if not re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}", iban):
+        return False
+    return not iban.startswith("ES") or len(iban) == 24
+
+
+def calcular(ruta_bd: Path, fecha_corte: date | None = None, estricto: bool = False) -> Informe:
+    """Usa hechos y maestro del linaje guardado, nunca el reloj ni una decisión nueva.
+
+    Los 11 IBAN del maestro de la Caja son sintéticos: tienen forma de IBAN, pero ninguno pasa el
+    mod-97 (formatos.iban_valido lo avisa: "es un Aviso, no una regla"). Por defecto, un IBAN con
+    forma válida y control fallido entra en la remesa MARCADO (`iban_control_ok=False`) y se avisa
+    una vez por proveedor. Con `estricto=True` se excluye, como haría el banco. Un IBAN sin forma de
+    IBAN, o distinto del de la factura, se excluye siempre."""
     conn = db.conectar(ruta_bd, solo_lectura=True)
     try:
         conn.execute("BEGIN")  # Vista consistente también con otros lectores/escritores.
@@ -99,6 +115,7 @@ def calcular(ruta_bd: Path, fecha_corte: date | None = None) -> Informe:
         informe = Informe(fecha_corte=fecha_corte, decisiones_pagar=len(seleccion))
         copias = db.nombres_por_sha(conn)
         maestros = {}
+        sin_control: set[str] = set()
         for d in seleccion:
 
             def aviso(codigo: str, detalle: str, file_id: str = d["file_id"]) -> None:
@@ -159,12 +176,21 @@ def calcular(ruta_bd: Path, fecha_corte: date | None = None) -> Informe:
                 continue
             apto = True
             iban = normalizar_iban(proveedor.iban)
-            if not iban_valido(iban):
+            control_ok = iban_valido(iban)
+            if not _forma_iban_ok(iban) or (estricto and not control_ok):
                 aviso(
                     "IBAN_INVALIDO",
-                    f"El IBAN del proveedor {proveedor.id} no supera formato/mod-97.",
+                    f"El IBAN del proveedor {proveedor.id} no supera "
+                    + ("el formato." if not _forma_iban_ok(iban) else "el mod-97 (modo estricto)."),
                 )
                 apto = False
+            elif not control_ok and proveedor.id not in sin_control:
+                sin_control.add(proveedor.id)
+                aviso(
+                    "IBAN_SIN_CONTROL",
+                    f"El IBAN de {proveedor.id} no pasa el mod-97 (IBAN sintético de la Caja): "
+                    "entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo).",
+                )
             if iban != normalizar_iban(h.iban or ""):
                 aviso(
                     "IBAN_DISCREPANTE",
@@ -193,6 +219,7 @@ def calcular(ruta_bd: Path, fecha_corte: date | None = None) -> Informe:
                     vencido=vencimiento < fecha_corte,
                     maestro_version=version,
                     apto_remesa=apto,
+                    iban_control_ok=control_ok,
                 )
             )
         referencias = Counter(
@@ -267,7 +294,9 @@ def exportar(informe: Informe, salida: Path, *, ruta_bd: Path) -> None:
                 p.beneficiario,
                 p.importe_eur,
                 "Vencido" if p.vencido else "En plazo",
-                "Preparado" if p.apto_remesa else "Excluido: ver avisos",
+                ("Preparado" if p.iban_control_ok else "Preparado · IBAN sin control")
+                if p.apto_remesa
+                else "Excluido: ver avisos",
             )
         )
         + "</tr>"

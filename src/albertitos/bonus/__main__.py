@@ -24,9 +24,14 @@ def main() -> int:
         type=date.fromisoformat,
         help="Por defecto, el corte guardado en las decisiones.",
     )
+    parser.add_argument(
+        "--estricto",
+        action="store_true",
+        help="excluye de la remesa los IBAN que no pasan el mod-97 (los de la Caja son sintéticos)",
+    )
     args = parser.parse_args()
     try:
-        informe = calcular(args.db, args.fecha_corte)
+        informe = calcular(args.db, args.fecha_corte, estricto=args.estricto)
         exportar(informe, args.salida, ruta_bd=args.db)
     except (ValueError, OSError, sqlite3.Error) as exc:
         sys.stderr.write(f"Bonus: {exc}\n")

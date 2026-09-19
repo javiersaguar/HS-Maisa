@@ -199,3 +199,33 @@ def test_no_sobrescribe_bd_ni_entrega(escenario, tmp_path):
         exportar(informe, salida, ruta_bd=ruta)
     with pytest.raises(ValueError, match="oficial"):
         exportar(informe, Path("dist/entrega/bonus"), ruta_bd=ruta)
+
+
+SINTETICO = "ES2100491500051234567890"  # el IBAN de P001 en la Caja: forma de IBAN, mod-97 falla
+
+
+def _con_iban_sintetico(conn, maestro, agregar):
+    maestro.proveedores["P001"].iban = SINTETICO
+    db.guardar_snapshot(conn, "maestro", maestro.version, maestro.model_dump_json())
+    agregar("a.pdf", iban=SINTETICO)
+    agregar("b.pdf", iban=SINTETICO)
+
+
+def test_iban_sintetico_de_la_caja_entra_marcado_y_avisa_una_vez(escenario, conn, maestro):
+    """Los 11 IBAN del maestro de la Caja no pasan el mod-97. Excluirlos dejaba la remesa en 0 pagos
+    con 438 PAGAR: el bonus no enseñaba nada. Entran marcados, con un aviso por proveedor."""
+    ruta, agregar = escenario
+    _con_iban_sintetico(conn, maestro, agregar)
+    informe = calcular(ruta)
+    assert [p.file_id for p in informe.remesa] == ["a.pdf", "b.pdf"]
+    assert not any(p.iban_control_ok for p in informe.remesa)
+    assert [a.codigo for a in informe.avisos] == ["IBAN_SIN_CONTROL"]
+    assert informe.resumen()["remesa_iban_sin_control"] == 2
+
+
+def test_modo_estricto_excluye_lo_que_un_banco_rechazaria(escenario, conn, maestro):
+    ruta, agregar = escenario
+    _con_iban_sintetico(conn, maestro, agregar)
+    informe = calcular(ruta, estricto=True)
+    assert not informe.remesa
+    assert {a.codigo for a in informe.avisos} == {"IBAN_INVALIDO"}
