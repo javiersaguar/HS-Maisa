@@ -58,6 +58,9 @@ UMBRAL_NO_PAGAR = 0.05
 ENTREGAS = {1: "outcomes.jsonl", 2: "outcomes_lote2.jsonl"}
 # Avisos que no dicen nada malo de la factura: cómo se leyó (escaneada) o cómo se escribió la fecha.
 AVISOS_BENIGNOS = {Aviso.SIN_TEXTO, Aviso.FECHA_EN_LETRA}
+# La decisión de contingencia de `scripts/contingencia.py` (ADR-0009): su regla y su hash de hechos.
+REGLA_CONTINGENCIA = "contingencia.C1"
+SIN_HECHOS = "sin-hechos"
 # Lo mismo que descarta `extract/llm.py::_fragmento_valido`: hay modelos que rellenan el campo con la palabra
 # "None" en vez de dejarlo nulo. Un hecho guardado antes de ese filtro sigue llevándola (scan_025, 18/09).
 NO_ES_FRAGMENTO = {
@@ -384,7 +387,11 @@ def comprobar_desfase(filas: list[Fila], lotes: list[int]) -> list[Comprobacion]
     for f in filas:
         if f.lote not in lotes or f.decision is None or f.hechos is None:
             continue
-        if f.decision["hechos_hash"] != f.hechos_hash:
+        if f.decision["hechos_hash"] == SIN_HECHOS:
+            viejas.append(
+                f"{f.file_id}: contingencia (ADR-0009) y ya hay hechos: se deshace con reprocess"
+            )
+        elif f.decision["hechos_hash"] != f.hechos_hash:
             viejas.append(f"{f.file_id}: decidida con otros hechos ({f.resultado})")
         elif f.hechos_en and datetime.fromisoformat(f.hechos_en) > datetime.fromisoformat(
             str(f.decision["decidido_en"])
@@ -484,6 +491,31 @@ def comprobar_evidencia(
             "Suele ser el LLM normalizando tildes. Mira `albertitos trace <file_id>`; no bloquea la entrega.",
         ),
     ]
+
+
+def comprobar_contingencia(filas: list[Fila], lotes: list[int]) -> Comprobacion:
+    """ESCALAR de contingencia (ADR-0009, `scripts/contingencia.py`): salida prevista, no un error, pero quien
+    entrega tiene que verla. Si después llegan los hechos, `decision_vieja` la marca en rojo."""
+    hallazgos = []
+    for f in filas:
+        if f.lote not in lotes or f.decision is None:
+            continue
+        for m in json.loads(f.decision["motivos_json"]):
+            if m["regla_id"] == REGLA_CONTINGENCIA and not m["ok"]:
+                ev = m.get("evidencia") or {}
+                hallazgos.append(
+                    f"{f.file_id}: {f.resultado} · último error {ev.get('ultimo_error')} · "
+                    f"motivo: {ev.get('motivo')!r}"
+                )
+    return _comprobacion(
+        "contingencia",
+        "Decisiones de contingencia (ESCALAR sin hechos, ADR-0009)",
+        hallazgos,
+        AMBAR,
+        'Se entregan como ESCALAR con `"regla":"contingencia.C1"`: nadie pudo leer esas facturas a '
+        "tiempo. No bloquea. Si el proveedor vuelve antes de entregar: `albertitos extract --workers 4` y "
+        "`albertitos reprocess --impacted` las sustituyen por la decisión de la norma.",
+    )
 
 
 def comprobar_avisos_en_pagar(filas: list[Fila], lotes: list[int]) -> Comprobacion:
@@ -621,6 +653,7 @@ def auditar(
     comps.append(comprobar_pagar(filas, lotes, snaps))
     comps.extend(comprobar_desfase(filas, lotes))
     comps.extend(comprobar_evidencia(filas, lotes, dirs))
+    comps.append(comprobar_contingencia(filas, lotes))
     comps.append(comprobar_avisos_en_pagar(filas, lotes))
     comps.append(comprobar_distribucion(informe, filas, lotes))
     comps.append(comprobar_confianza(filas, lotes))

@@ -22,6 +22,7 @@ from albertitos.core.contracts import (
     Decision,
     InvoiceFacts,
     MetodoExtraccion,
+    Motivo,
     Resultado,
 )
 from albertitos.pipeline import etapas
@@ -180,6 +181,64 @@ def test_pagar_con_documento_superpuesto_es_ambar_no_rojo(bd):
     c = rojo(inf, "pagar_con_avisos")
     assert inf.ok and c.nivel == aud.AMBAR
     assert c.ejemplos == ["scan_025.pdf: documento_superpuesto"]
+
+
+def test_contingencia_es_ambar_y_con_hechos_sin_reprocesar_pasa_a_rojo(bd):
+    """ADR-0009 (C4): la auditoría enseña la contingencia sin bloquear; si luego llegan los hechos y nadie
+    reprocesa, lo entregado ya no sale de lo que hay: rojo."""
+    alta(bd, "factura_ok.pdf")
+    conn = bd["conn"]
+    (bd["lote1"] / "L2-scan_002.pdf").write_bytes(b"%PDF-1.4 vacio")
+    db.guardar_fichero(
+        conn,
+        sha256="sha-scan",
+        file_id="L2-scan_002.pdf",
+        lote=1,
+        bytes_=1,
+        paginas=1,
+        tiene_texto=False,
+    )
+    motivo = Motivo(
+        regla_id="contingencia.C1",
+        ok=False,
+        detalle="sin hechos validados a la hora de entregar (LLM-TIMEOUT): lo revisa una persona",
+        evidencia={"ultimo_error": "LLM-TIMEOUT", "motivo": "LLM caído desde las 06:40"},
+    )
+    db.guardar_decision(
+        conn,
+        Decision(
+            file_id="L2-scan_002.pdf",
+            sha256="sha-scan",
+            resultado=Resultado.ESCALAR,
+            motivos=[motivo],
+            norma_version="v3",
+            fecha_corte=CORTE,
+            hechos_hash="sin-hechos",
+            maestro_version=bd["maestro"].version,
+            erp_version=bd["erp"].version,
+        ),
+    )
+    conn.commit()
+    inf = auditar(bd)
+    c = rojo(inf, "contingencia")
+    assert inf.ok, aud.texto(inf)
+    assert c.nivel == aud.AMBAR and c.ejemplos == [
+        "L2-scan_002.pdf: ESCALAR · último error LLM-TIMEOUT · motivo: 'LLM caído desde las 06:40'"
+    ]
+    # llegan los hechos, pero nadie reprocesa: la línea entregada ya no sale de lo que hay
+    db.guardar_hechos(
+        conn,
+        InvoiceFacts(
+            file_id="L2-scan_002.pdf",
+            sha256="sha-scan",
+            metodo=MetodoExtraccion.LLM_VISION,
+            extractor_version=etapas.EXTRACTOR_VERSION,
+            **PERFECTA,
+        ),
+    )
+    conn.commit()
+    c = rojo(auditar(bd), "decision_vieja")
+    assert c.nivel == aud.ROJO and "contingencia (ADR-0009) y ya hay hechos" in c.ejemplos[0]
 
 
 def test_texto_sospechoso_none_es_rojo(bd):
