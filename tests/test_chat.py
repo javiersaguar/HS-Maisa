@@ -1,6 +1,5 @@
 """Gateway grabado/simulado, BD temporal y prueba de no alterar la entrega real."""
 
-import hashlib
 import json
 import threading
 from datetime import date
@@ -494,8 +493,9 @@ def test_chat_no_cambia_package_real(tmp_path):
         empaquetar(conn, salida, Path("data/caja"), con_traza=True, auditar=auditor_de_entrega())
         conn.close()
         generado = (salida / "outcomes.jsonl").read_bytes()
+        # El invariante: el chat no cambia lo que se entrega. Aquí se fijaba además el hash de una entrega
+        # concreta (1ec4be…, la 438/53/9 de un portátil), que falla en cuanto la entrega cambia (ADR-0017).
         assert generado == referencia.read_bytes()
-        assert hashlib.sha256(generado).hexdigest().startswith("1ec4be206089")
 
 
 def test_puerto_ocupado_da_un_mensaje_claro(datos, monkeypatch):

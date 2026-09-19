@@ -135,6 +135,60 @@ def validar(h: InvoiceFacts) -> list[Aviso]:
     return vistos
 
 
+# Los avisos que `validar` deduce de los campos. Si un campo cambia después de validarlo (desempate de una
+# escaneada, reconciliación, importes de otra lectura), hay que recalcularlos: si no, un `importe_ambiguo`
+# del valor mal leído sobrevive al valor bueno y la factura escala por un error que ya no está.
+DEDUCIDOS = frozenset(
+    {
+        Aviso.CAMPO_AUSENTE,
+        Aviso.EXTRACCION_PARCIAL,
+        Aviso.TOTAL_NO_CUADRA,
+        Aviso.IMPORTE_AMBIGUO,
+        Aviso.IVA_NO_ESTANDAR,
+        Aviso.IBAN_INVALIDO,
+        Aviso.NIF_INVALIDO,
+    }
+)
+
+
+def revalidar(h: InvoiceFacts) -> list[Aviso]:
+    """`validar` sobre los campos actuales, descartando los avisos deducidos de valores anteriores.
+
+    Conserva el orden de los que siguen y añade al final los nuevos: el orden entra en `hechos.hash()`, y
+    reordenar sin cambiar nada obligaría al linaje a recalcular decisiones que no cambian."""
+    nuevos = validar(h.model_copy(update={"avisos": [a for a in h.avisos if a not in DEDUCIDOS]}))
+    return [a for a in h.avisos if a in nuevos] + [a for a in nuevos if a not in h.avisos]
+
+
+def cuentas_fallan(h: InvoiceFacts) -> bool:
+    """Alguna cuenta que se PUEDE hacer con lo leído no sale: líneas ≠ base, base + IVA ≠ total, o la cuota
+    no sale del porcentaje. Que falte un dato (p. ej. sin líneas) no es un fallo: es otra cosa."""
+    suma = suma_lineas(h)
+    return (
+        (suma is not None and h.base is not None and abs(suma - h.base) > CENT)
+        or (None not in (h.base, h.iva, h.total) and abs(h.base + h.iva - h.total) > CENT)
+        or (
+            None not in (h.base, h.iva, h.iva_pct)
+            and abs(h.iva - (h.base * h.iva_pct / 100).quantize(CENT)) > CENT
+        )
+    )
+
+
+def cuentas_cuadran(h: InvoiceFacts) -> bool:
+    """Las cuentas de la propia factura, sin maestro ni pedido: hay líneas y suman la base, base + IVA =
+    total y la cuota sale del porcentaje impreso (tolerancia 0,01). Exige líneas a propósito: una lectura
+    sin detalle no demuestra que el detalle de la otra estuviera mal leído."""
+    if None in (h.base, h.iva_pct, h.iva, h.total):
+        return False
+    suma = suma_lineas(h)
+    return (
+        suma is not None
+        and abs(suma - h.base) <= CENT
+        and abs(h.base + h.iva - h.total) <= CENT
+        and abs(h.iva - (h.base * h.iva_pct / 100).quantize(CENT)) <= CENT
+    )
+
+
 CAMPOS_CLAVE = ("num_factura", "fecha", "nif_emisor", "iban", "pedido", "base", "iva", "total")
 _IMPORTES = {"base", "iva", "total"}
 _NORMALIZADORES = {

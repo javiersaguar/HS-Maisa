@@ -147,7 +147,9 @@ def servir(ruta: Path, puerto: int | None = None):
     try:
         servidor = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta))
     except OSError as exc:
-        if exc.errno in (48, 98, 10048):  # dirección en uso: macOS, Linux, Windows
+        # dirección en uso: macOS, Linux, Windows. En Windows, un puerto ocupado (o reservado por el sistema)
+        # también puede dar WinError 10013 "acceso denegado"; el remedio es el mismo: otro puerto.
+        if exc.errno in (48, 98, 10048) or getattr(exc, "winerror", None) in (10048, 10013):
             otro = puerto_libre(puerto) or puerto + 100  # uno libre de verdad, nunca el ocupado
             raise PuertoOcupado(
                 f"el puerto {puerto} ya lo usa otro proceso (¿otro chat abierto en otra terminal?). "

@@ -162,6 +162,17 @@ def _fragmento_valido(crudo: object) -> str | None:
     return limpio if limpio and limpio.lower().strip(".") not in _NO_ES_FRAGMENTO else None
 
 
+def otras_marcas(datos: dict[str, Any]) -> list[str]:
+    """Sellos, anotaciones y texto de otro documento que la lectura vio, si el prompt los pide. El prompt
+    vigente (p-0.2) no los pide: el p-0.3 que los pedía leyó peor (ADR-0018) y se revirtió; esto queda para
+    una versión que se mida mejor. No son hechos: van al `uso`, y etapa.py los usa para detectar documentos
+    superpuestos y los deja en la traza."""
+    crudo = datos.get("otras_marcas")
+    if not isinstance(crudo, list):
+        return []
+    return [m for m in (_fragmento_valido(x) for x in crudo) if m]
+
+
 def _peticion_usuario(texto: str | None, intento: int, marca: str = "") -> str:
     """El texto del usuario. En reintentos cambia ligeramente: el gateway cachea por cuerpo de petición y,
     si no, tres reintentos idénticos devuelven la misma respuesta vacía al instante.
@@ -431,6 +442,7 @@ class ClienteLLM:
                 "coste_eur": Decimal("0"),
                 "cache": True,
                 "modelo": modelo,
+                "otras_marcas": otras_marcas(cacheada),
             }
         self._comprobar_disponible()
         try:
@@ -463,6 +475,7 @@ class ClienteLLM:
                     "cache": True,
                     "modelo": respaldo,
                     "respaldo": True,
+                    "otras_marcas": otras_marcas(cacheada),
                 }
             try:
                 respuesta = self._llamar(
@@ -484,6 +497,7 @@ class ClienteLLM:
         self._a_cache(
             clave, respuesta["input"], uso["tokens_in"], uso["tokens_out"], uso["coste_eur"]
         )
+        uso["otras_marcas"] = otras_marcas(respuesta["input"])
         return hechos, uso
 
     def _modelo_respaldo(self, es_vision: bool) -> str | None:

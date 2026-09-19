@@ -17,6 +17,8 @@
 | 0013 | Un chat de consulta con herramientas cerradas, sin SQL generado y sin escritura (bonus) | implementado y evaluado (14/15 + 1 parcial) | Javier (K2) |
 | 0014 | Confianza en la clasificación por factura: ordinal, por fuente y con razones, no una probabilidad (bonus) | propuesto (lo aceptan Javier y Mónica) | Javier (K3) |
 | 0016 | La consola es Next sobre un puente HTTP de sólo lectura, no Streamlit | aceptado (implementado en #5 y #7) | Alejandro |
+| 0017 | Cuando las lecturas de una escaneada no coinciden, decide una prueba independiente (tercera lectura o cuentas de la factura), no el maestro | aceptado por Miguel; falta Javier y Mónica | Miguel |
+| 0018 | En una escaneada, una instrucción sólo se cita si la ven dos lecturas (B'); el prompt nuevo (D) se midió y se descartó | aceptado (B') / descartado (D) | Miguel |
 
 Cada ADR termina con un **Resumen para el plan (5 líneas)** listo para pegar en
 `docs/plan/albertitos_plan.md` § ADRs (lo hace Alfonso; los dueños no tocan el plan).
