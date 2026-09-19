@@ -864,7 +864,18 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 
 - **18:42 · Javier (sesión principal)** · rediseño de AlbertitosAI commiteado desde la sesión principal (backend, consola, docs), merge de `main` con el PR #7 de Alejandro sin conflictos. 601 tests, tsc y `next build` en verde. Pendiente: probar el tono con el modelo cuando el gateway quede libre.
 
+### 19:33 · Javier · PLAN-14: el lote 2 con cinco agentes coordinados (petición de Miguel)
+- Plan en `docs/agentes/PLAN-14.md`; lectura previa de los 40 en `docs/agentes/lote2/HIPOTESIS.md` (L5 no la lee hasta etiquetar a ciegas).
+- **PARA Miguel (M0):** el contrato primero, `moneda` en `InvoiceFacts` y los avisos `DIVISA_NO_EUR` y `ANOTACION_MANUSCRITA`, sin cambiar ningún hash del lote 1. **PARA Miguel (L4):** el lote 1 a 445/46/9 ya, como entrega de seguro nueva.
+- **PARA todos:** la regla nueva aún no está publicada (ni en la web ni en el repo, 19:30). Quien la vea en el canal, literal y con hora en `docs/hitos.md`. Y hay que preguntar P0-2 al mentor: ERP v2 pasa PO-2026-0071 a PAGADA y afecta a `factura_4635` del lote 1.
+- Arreglado `tests/test_llm.py` (`9dfe5a4`): fijaba el conteo de llamadas con el respaldo de visión de la máquina.
 ### 19:26 · Miguel · lote 2, mi parte (M1-M5), rama `miguel/lote2`
 - **Reparto con Javier.** Javier: material en `data/lote2/`, maestro v2 con `proveedores_nuevos.csv` y `pedidos_nuevos.csv`, ERP v2, validadores de IBAN/NIF extranjeros, ingesta y extracción. Miguel: moneda en `InvoiceFacts` (M1), señal de anotación a mano (M2), norma v4 (M3), P0-2 y duplicados entre lotes (M4), decidir y entregar el lote 2 (M5).
 - **Ficheros que toco** (avisad antes de tocarlos): `core/contracts.py`, `core/versions.py`, `docs/contratos.md`, `tests/test_contracts.py`, `extract/llm.py` (sólo el campo `moneda` del esquema y `_a_hechos`), `extract/plantillas.py` (sólo `moneda="EUR"`), `extract/pdf.py` (función nueva de marcas gráficas), `extract/etapa.py` (sólo el aviso de anotación), `rules/` (v4 nueva; en v3, sólo añadir el aviso nuevo a `ANOMALIAS_HUMANO`), `pipeline/` (duplicados entre lotes).
 - **PARA Javier:** la extracción de las `e*` tiene que ir **después** de M1: si no, se quedan sin moneda. Te aviso aquí cuando esté en `main`.
+
+### 19:55 · Javier · PLAN-14 rehecho sobre tu reparto (M1-M5); sustituye a mi entrada de las 19:33
+- Mi entrada de las 19:33 (M0/L3/L4) queda **sin efecto**: no había visto tu reparto de las 19:26 ni M1 en `main`. El plan ya lo respeta, a ti y a tus ficheros.
+- Lo de Javier en tres agentes: **J1** fuentes (material, maestro v2, ERP v2, validadores extranjeros, impacto en el lote 1), **J2** ingesta y extracción de los 40 (ya sobre M1), **J3** lote 1 a 445/46/9 como entrega de seguro y ensayo del dato cambiado el domingo. **L5** (Alfonso o Alejandro) etiqueta a ciegas. **Mónica** acompaña la v4: políticas, mentores y regla nueva.
+- **PARA Miguel:** ¿visto bueno a que J3 publique ya el lote 1 en 445/46/9 (ADR-0017)? Y para M2: la trampa es `e18`, que la capa de texto da por limpia (total impreso 1.815 = ERP; a mano, 18.150).
+- **PARA todos:** la regla nueva no está publicada (ni en la web ni en el repo). Quien la vea en el canal, literal y con hora en `docs/hitos.md`. P0-2 al mentor ya.

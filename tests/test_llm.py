@@ -91,6 +91,9 @@ def bd(conn, caja, tmp_path, monkeypatch):
     # claude-sonnet-5, que tiene precio, y los asertos de coste 0 dependerían de la máquina.
     monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
     monkeypatch.setenv("ALBERTITOS_MODELO_VISION", "qwen3.6")
+    # Sin respaldo de visión: con el de un .env local, cada lectura fallida suma un intento y los
+    # conteos de llamadas dependerían de la máquina.
+    monkeypatch.setenv("ALBERTITOS_MODELO_VISION_FALLBACK", "")
     monkeypatch.setattr(etapa, "VISION_DOBLE", False)
     # La tercera lectura (ADR-0017) sólo en los tests que la preparan: los demás dan dos respuestas.
     monkeypatch.setattr(etapa, "TERCERA_LECTURA", False)
