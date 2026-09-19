@@ -59,7 +59,7 @@ La validación es binaria contra una referencia privada. Tenemos 438/53/9 **sin 
 ### 🟢 E · Deseable
 - `make console` lanza el Streamlit viejo: que apunte a lo que se enseñe (Alejandro).
 - La presentación de 13,5 MB está en git y cada versión suma otro tanto: mejor fuera del repo, o sólo la final.
-- Jev: ADR-0013, lo integremos o no.
+- Jev: su ADR (el 0015), lo integremos o no. El 0013 y el 0014 son del chat y la confianza (PLAN-11).
 
 ## 3 · Calendario que queda
 | Hora | Qué | Quién |

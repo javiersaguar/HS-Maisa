@@ -733,3 +733,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Bonus de J5 corregido: 438 pagos marcados en vez de 0 (IBAN sintéticos), `--estricto` para el criterio bancario.
 - **PIDO A Mónica** (de J2 y J4): anular un pedido en el Excel (`Pedido.estado = ANULADO`) no cambia ninguna decisión, porque la v3 no lo lee. Hoy los 516 están ABIERTO, pero el Excel de las 18:00 puede traer alguno. ¿Debería escalar?
 - **Para Alfonso:** el kit de las 13:37 y KIT-DEFENSA.md con los tiempos del clon limpio.
+
+### 19/09 15:00 · Javier · PLAN-11 (bonus: calendario, chat y confianza)
+- **PLAN-11** (`docs/agentes/PLAN-11.md`): K1 continúa el calendario y lo sirve a la consola (`/bonus/*`); K2 hace el chat de sólo lectura con Helmcode (`:8001`, herramientas cerradas, sin text-to-SQL); K3 la métrica de confianza por factura (señales por fuente → 0-100 + banda + razones, `/confianza/*`). Ninguno cambia la entrega: un test cada uno.
+- **PIDO A Alejandro:** los contratos estarán en `docs/api/` hacia las 16:30. Tú registras las rutas con una línea en `console/api.py` (`RUTAS.update(bonus.rutas()); RUTAS.update(confianza.rutas())`) y haces tres pantallas: calendario, confianza (columna + desglose) y el panel de chat contra `:8001`. Y el ADR de la consola en Next.js.
+- **Gateway:** K2 y K3, 60 llamadas como mucho cada uno, y nada a partir de las 17:30 (lote 2).
+- ADRs: 0013 chat y 0014 confianza. Jev pasa al 0015.
