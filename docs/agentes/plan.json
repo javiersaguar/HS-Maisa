@@ -45,7 +45,14 @@
       ".claude/skills/lote2/SKILL.md",
       "scripts/contingencia.py",
       "tests/test_contingencia.py",
-      "data/fixtures/hechos_caja.jsonl"
+      "data/fixtures/hechos_caja.jsonl",
+      "docs/adr/0003-*"
+    ],
+    "Mónica": [
+      "src/albertitos/rules/*",
+      "tests/test_rules.py",
+      "docs/adr/0010-*",
+      "docs/adr/0011-*"
     ]
   }
 }
