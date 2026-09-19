@@ -57,6 +57,17 @@ def _conn(solo_lectura: bool = False):
 
 
 AYUDA_SIN_AUDITORIA = "entrega sin la auditoría de entrega (queda 'no ejecutada' en el evento emit)"
+AYUDA_ACEPTAR_ROJO = (
+    "MOTIVO: entrega aunque la auditoría salga ROJA (nunca si falla o si el JSONL es inválido); "
+    "el motivo queda en el evento emit AUDITORIA-ROJA-ACEPTADA"
+)
+
+
+def _aceptar_rojo(motivo: str | None) -> str | None:
+    if motivo is not None and not motivo.strip():
+        rprint('[red]--aceptar-rojo exige un motivo[/red]: --aceptar-rojo "<por qué>"')
+        raise typer.Exit(2)
+    return motivo
 
 
 def _auditor(sin_auditoria: bool):
@@ -378,11 +389,13 @@ def run(
     ),
     salida: Path = typer.Option(ENTREGA, help="carpeta de la entrega (ensayos y demo: otra)"),
     sin_auditoria: bool = typer.Option(False, "--sin-auditoria", help=AYUDA_SIN_AUDITORIA),
+    aceptar_rojo: str | None = typer.Option(None, "--aceptar-rojo", help=AYUDA_ACEPTAR_ROJO),
 ) -> None:
     """ingest → maestro → erp pull (si no hay) → extract → duplicados → decide → package."""
     from albertitos.pipeline.run import correr
 
     corte = _fecha_corte(fecha_corte)  # antes de trabajar: sin fecha de corte no se decide
+    aceptar_rojo = _aceptar_rojo(aceptar_rojo)
     r = correr(
         _conn(),
         caja=CAJA,
@@ -394,6 +407,7 @@ def run(
         workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")),
         con_traza=con_traza,
         auditar=_auditor(sin_auditoria),
+        aceptar_rojo=aceptar_rojo,
     )
     rprint(r.texto())
     if not r.ok:
@@ -460,15 +474,24 @@ def package(
     ),
     salida: Path = ENTREGA,
     sin_auditoria: bool = typer.Option(False, "--sin-auditoria", help=AYUDA_SIN_AUDITORIA),
+    aceptar_rojo: str | None = typer.Option(None, "--aceptar-rojo", help=AYUDA_ACEPTAR_ROJO),
 ) -> None:
     """BD → dist/entrega/outcomes*.jsonl, validados y auditados. Se niega si falta alguna decisión o
-    si la auditoría de entrega sale roja. Sólo escribe en la BD eventos de emit (la traza de lo entregado)."""
+    si la auditoría de entrega sale roja (salvo --aceptar-rojo "<motivo>"). Sólo escribe en la BD
+    eventos de emit (la traza de lo entregado)."""
     from albertitos.pipeline import package as pk
 
+    aceptar_rojo = _aceptar_rojo(aceptar_rojo)
     auditar = _auditor(sin_auditoria)
     try:
         for ruta, inf in pk.empaquetar(
-            _conn(), salida, CAJA, LOTE2, con_traza=con_traza, auditar=auditar
+            _conn(),
+            salida,
+            CAJA,
+            LOTE2,
+            con_traza=con_traza,
+            auditar=auditar,
+            aceptar_rojo=aceptar_rojo,
         ):
             rprint(inf.texto(), "→", ruta)
     except pk.EntregaInvalida as e:

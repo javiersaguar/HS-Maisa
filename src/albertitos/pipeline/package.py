@@ -80,7 +80,13 @@ def empaquetar(
     lote2_dir: Path | None = None,
     con_traza: bool = False,
     auditar: Auditor | None = None,
+    aceptar_rojo: str | None = None,
 ) -> list[tuple[Path, InformeValidacion]]:
+    """`aceptar_rojo` = motivo para entregar aunque la auditoría salga ROJA (como `make publicar
+    --aceptar-rojo`): queda en un evento emit AUDITORIA-ROJA-ACEPTADA. Una auditoría que falla no se
+    acepta nunca, ni un JSONL inválido."""
+    if aceptar_rojo is not None and not aceptar_rojo.strip():
+        raise ValueError("aceptar_rojo exige un motivo no vacío")
     salida = Path(salida)
     salida.mkdir(parents=True, exist_ok=True)
     lotes = [(1, "outcomes.jsonl", Path(caja_dir) / "facturas")]
@@ -134,27 +140,64 @@ def empaquetar(
                 raise EntregaInvalida(informe)
             generados.append((destino, informe))
             entregados.append((lote, nombre, filas))
+        auditoria = "no ejecutada"
         if auditar is not None:
-            _auditar(conn, auditar, {lote: d for lote, _, d in lotes}, [n for _, n, _ in lotes])
+            auditoria = _auditar(
+                conn,
+                auditar,
+                {lote: d for lote, _, d in lotes},
+                [n for _, n, _ in lotes],
+                aceptar_rojo,
+            )
         for tmp, destino in temporales:
             tmp.replace(destino)
     finally:
         for tmp, _ in temporales:
             tmp.unlink(missing_ok=True)
-    _eventos_entrega(conn, entregados, auditada=auditar is not None)
+    _eventos_entrega(conn, entregados, auditoria)
     return generados
 
 
-def _auditar(conn, auditar: Auditor, dirs: dict[int, Path], nombres: list[str]) -> None:
-    """Todos los lotes ya son válidos; si la auditoría sale roja (o falla), EntregaInvalida."""
+def _auditar(
+    conn,
+    auditar: Auditor,
+    dirs: dict[int, Path],
+    nombres: list[str],
+    aceptar_rojo: str | None = None,
+) -> str:
+    """Todos los lotes ya son válidos; si la auditoría sale roja (o falla), EntregaInvalida. Un rojo
+    con `aceptar_rojo` se entrega y queda registrado. Devuelve lo que dice el evento emit."""
     try:
         informe = auditar(conn, dirs)
     except Exception as e:  # noqa: BLE001 — un fallo de la auditoría niega la entrega, no la salta
         log.exception("la auditoría de entrega falló")
         informe = _AuditoriaFallida(error=f"{type(e).__name__}: {e}")
     if informe.ok:
-        return
+        return "verde"
     rojos = {c: fids for c, fids in informe.rojos.items() if fids}
+    if aceptar_rojo and not isinstance(informe, _AuditoriaFallida):
+        try:
+            db.registrar_evento(
+                conn,
+                Event(
+                    etapa=Etapa.EMIT,
+                    estado=EstadoEvento.OK,
+                    error_codigo="AUDITORIA-ROJA-ACEPTADA",
+                    detalle=json.dumps(
+                        {
+                            "entrega": nombres,
+                            "motivo": aceptar_rojo,
+                            "rojos": {c: fids[:5] for c, fids in rojos.items()},
+                        },
+                        ensure_ascii=False,
+                    ),
+                ),
+            )
+            conn.commit()
+        except sqlite3.Error as e:
+            log.warning("no se pudo registrar el rojo aceptado: %s", e)
+        log.warning("auditoría ROJA aceptada (%s):\n%s", aceptar_rojo, informe.texto())
+        return f"roja aceptada: {aceptar_rojo}"
     _eventos_rechazo(
         conn,
         "AUDITORIA-ERROR" if isinstance(informe, _AuditoriaFallida) else "AUDITORIA-ROJA",
@@ -203,7 +246,7 @@ def _eventos_rechazo(conn, codigo: str, detalle: dict, pendientes: dict[str, str
 
 
 def _eventos_entrega(
-    conn, entregados: list[tuple[int, str, list[sqlite3.Row]]], auditada: bool
+    conn, entregados: list[tuple[int, str, list[sqlite3.Row]]], auditoria: str
 ) -> None:
     try:
         for lote, nombre, filas in entregados:
@@ -217,7 +260,7 @@ def _eventos_entrega(
                             "lote": lote,
                             "entrega": nombre,
                             "lineas": len(filas),
-                            "auditoria": "verde" if auditada else "no ejecutada",
+                            "auditoria": auditoria,
                         },
                         ensure_ascii=False,
                     ),

@@ -96,6 +96,7 @@ def correr(
     con_traza: bool = True,
     maestro_xlsx: Path | None = None,
     auditar: package.Auditor | None = None,
+    aceptar_rojo: str | None = None,
 ) -> ResumenRun:
     from albertitos.sources import excel, snapshot
 
@@ -132,7 +133,13 @@ def correr(
     )
     try:
         r.entregas = package.empaquetar(
-            conn, entrega, caja, lote2, con_traza=con_traza, auditar=auditar
+            conn,
+            entrega,
+            caja,
+            lote2,
+            con_traza=con_traza,
+            auditar=auditar,
+            aceptar_rojo=aceptar_rojo,
         )
     except package.EntregaInvalida as ex:
         r.rechazo = ex.informe

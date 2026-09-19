@@ -132,6 +132,11 @@ def test_rojo_para_y_excepcion_queda_en_commit_y_log(caso, capsys):
     assert llamar(caso, "--publicar", "--aceptar-rojo", motivo) == 0
     assert motivo in git(remoto, "log", "-1", "--format=%B", "main")
     assert motivo in (raiz / "docs/entregas.log").read_text()
+    # package también audita: el motivo le llega, o su puerta pararía el rojo antes que publicar
+    llamadas = [json.loads(x) for x in (raiz / "llamadas.txt").read_text().splitlines()]
+    paquetes = [a for a in llamadas if a[0] == "package"]
+    assert "--aceptar-rojo" not in paquetes[0]
+    assert paquetes[-1][-2:] == ["--aceptar-rojo", motivo]
 
 
 @pytest.mark.parametrize("fallo", ["README.md", "lote2", "validacion-falla", "audit-crash"])
