@@ -28,11 +28,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from dotenv import load_dotenv  # noqa: E402
+from pydantic import ValidationError  # noqa: E402
 
 from albertitos.core import db  # noqa: E402
+from albertitos.core.contracts import InvoiceFacts  # noqa: E402
+from albertitos.core.versions import PROMPT_VERSION  # noqa: E402
 from albertitos.sources import chaos, estado_bd  # noqa: E402
 
 ROJO, AMBAR, VERDE = "ROJO", "ÁMBAR", "VERDE"
+
+# Variables que cambian el comportamiento del pipeline y que alguien puede dejarse puestas tras un
+# ensayo o una demo. La de abajo es la que más daño haría: con el umbral del breaker en 2, una pasada
+# real se cortaría a los dos fallos y dejaría cientos de ficheros PENDIENTE sin que nadie lo note.
+ENTORNO_VIGILADO = {
+    "ALBERTITOS_BREAKER_FALLOS": "5",
+    "ALBERTITOS_BREAKER_SEGUNDOS": "60",
+    "ALBERTITOS_LLM_TIMEOUT_S": "60",
+    "ALBERTITOS_LLM_TIMEOUT_VISION_S": "90",
+    "ALBERTITOS_VISION_DOBLE": "1",
+    "ALBERTITOS_RECONCILIAR_MAESTRO": "1",
+    "ALBERTITOS_DIR_CAJA": "data/caja/facturas",
+    "ALBERTITOS_DIR_LOTE2": "data/lote2/facturas",
+}
 MIN_LIBRE_GB = 0.5
 ANTIGUEDAD_COPIA_H = 3
 
@@ -238,6 +255,92 @@ def comprobar(args) -> list[Check]:
                 ""
                 if not (sobran or faltan)
                 else "uv run albertitos hechos export   (con la lista del lote 1)",
+            )
+        )
+
+    # 10. variables de entorno de un ensayo anterior que cambiarían una pasada real
+    torcidas = {
+        nombre: os.environ[nombre]
+        for nombre, defecto in ENTORNO_VIGILADO.items()
+        if os.environ.get(nombre) not in (None, defecto)
+    }
+    if torcidas:
+        checks.append(
+            Check(
+                "entorno",
+                ROJO,
+                "variables de un ensayo aún exportadas: "
+                + ", ".join(f"{k}={v}" for k, v in torcidas.items()),
+                "unset " + " ".join(torcidas) + "   (o abre una terminal nueva)",
+            )
+        )
+    else:
+        checks.append(Check("entorno", VERDE, "sin variables de ensayo exportadas"))
+
+    # 11. la caché del LLM tiene que ser de la versión de prompt en uso: si no, releer las
+    #     escaneadas son minutos de visión (pasó al subir PROMPT_VERSION a p-0.2)
+    with closing(db.conectar(ruta_db, solo_lectura=True)) as conn:
+        versiones = {
+            str(r[0]).split("|")[1]: int(r[1])
+            for r in conn.execute(
+                "SELECT clave, count(*) FROM cache_llm GROUP BY substr(clave, 66, 5)"
+            )
+        }
+    viejas = {v: n for v, n in versiones.items() if v != PROMPT_VERSION}
+    if viejas:
+        checks.append(
+            Check(
+                "caché del LLM",
+                AMBAR,
+                f"{sum(viejas.values())} lecturas de otra versión de prompt ({viejas}); la actual es {PROMPT_VERSION}",
+                "si el prompt no cambió, re-etiqueta: UPDATE cache_llm SET clave = replace(clave, '|<vieja>|', '|"
+                + PROMPT_VERSION
+                + "|')",
+            )
+        )
+    elif versiones:
+        checks.append(
+            Check(
+                "caché del LLM",
+                VERDE,
+                f"{sum(versiones.values())} lecturas, todas de {PROMPT_VERSION}",
+            )
+        )
+
+    # 12. los hechos del fixture tienen que ser los de la BD: Miguel y Mónica importan ese fichero
+    if fixture.exists():
+        with closing(db.conectar(ruta_db, solo_lectura=True)) as conn:
+            en_bd = {
+                str(r["file_id"]): str(r["hechos_hash"])
+                for r in conn.execute(
+                    """SELECT f.file_id, h.hechos_hash FROM hechos h
+                       JOIN ficheros f ON f.sha256 = h.sha256 WHERE f.lote = 1"""
+                )
+            }
+        distintos: list[str] = []
+        ilegibles = 0
+        for linea in fixture.read_text(encoding="utf-8").splitlines():
+            if not linea.strip():
+                continue
+            try:
+                hechos = InvoiceFacts.model_validate_json(linea)
+            except ValidationError:
+                ilegibles += 1  # un fixture a medias se avisa, no revienta el preflight
+                continue
+            if en_bd.get(hechos.file_id) not in (None, hechos.hash()):
+                distintos.append(hechos.file_id)
+        if ilegibles:
+            distintos.append(f"(+{ilegibles} líneas ilegibles)")
+        checks.append(
+            Check(
+                "fixture vs BD",
+                VERDE if not distintos else AMBAR,
+                "los hechos del fixture son los de la BD"
+                if not distintos
+                else f"{len(distintos)} hechos distintos de los de la BD ({distintos[:3]}): el fixture está sin reexportar",
+                ""
+                if not distintos
+                else "uv run albertitos hechos export --salida data/fixtures/hechos_caja.jsonl",
             )
         )
 

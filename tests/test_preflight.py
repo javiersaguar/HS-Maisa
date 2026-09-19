@@ -16,7 +16,14 @@ from pathlib import Path
 import pytest
 
 from albertitos.core import db
-from albertitos.core.contracts import Decision, InvoiceFacts, MetodoExtraccion, Motivo, Resultado
+from albertitos.core.contracts import (
+    Aviso,
+    Decision,
+    InvoiceFacts,
+    MetodoExtraccion,
+    Motivo,
+    Resultado,
+)
 from albertitos.sources import estado_bd
 
 RUTA_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "preflight_lote2.py"
@@ -163,3 +170,56 @@ def test_hechos_huerfanos_se_detectan(preflight, tmp_path, conn):
     assert len(estado_bd.hechos_huerfanos(conn)) == 1
     malos = rojos(preflight.comprobar(args))
     assert "hechos huérfanos" in malos
+
+
+def test_variable_de_ensayo_exportada_es_roja(preflight, tmp_path, conn, monkeypatch):
+    """Bajar el umbral del breaker para una demo y olvidarlo puesto cortaría una pasada real a los
+    dos fallos, dejando cientos de ficheros PENDIENTE sin que nadie lo note."""
+    args = montar(tmp_path, conn)
+    monkeypatch.setenv("ALBERTITOS_BREAKER_FALLOS", "2")
+    malos = rojos(preflight.comprobar(args))
+    assert "entorno" in malos and "ALBERTITOS_BREAKER_FALLOS=2" in malos["entorno"].detalle
+    assert "unset" in malos["entorno"].arreglo
+    monkeypatch.setenv("ALBERTITOS_BREAKER_FALLOS", "5")  # el valor por defecto no molesta
+    assert "entorno" not in rojos(preflight.comprobar(args))
+
+
+def test_cache_de_otra_version_de_prompt_avisa(preflight, tmp_path, conn):
+    """Subir PROMPT_VERSION sin re-etiquetar deja huérfanas las lecturas: releer las 29 escaneadas
+    son minutos de visión (pasó al pasar a p-0.2)."""
+    args = montar(tmp_path, conn)
+    conn.execute(
+        "INSERT INTO cache_llm (clave, respuesta_json, creado_en) VALUES (?, '{}', 'x')",
+        ("a" * 64 + "|p-0.1|qwen3.6",),
+    )
+    conn.commit()
+    avisos = {c.nombre: c for c in preflight.comprobar(args) if c.nivel == "ÁMBAR"}
+    assert "caché del LLM" in avisos and "p-0.1" in avisos["caché del LLM"].detalle
+
+
+def test_fixture_desfasado_respecto_a_la_bd_avisa(preflight, tmp_path, conn):
+    """El caso real del 19/09: `marcar_duplicados` añadió avisos en la BD y el fixture se quedó sin
+    reexportar; quien lo importara perdería la detección de duplicados."""
+    args = montar(tmp_path, conn)
+    sha = conn.execute("SELECT sha256 FROM ficheros WHERE file_id='a.pdf'").fetchone()[0]
+    viejo = InvoiceFacts(
+        file_id="a.pdf", sha256=sha, metodo=MetodoExtraccion.PLANTILLA, extractor_version="ext-0.1"
+    )
+    nuevo = viejo.model_copy(update={"avisos": [Aviso.DUPLICADO_SOSPECHOSO]})
+    db.guardar_hechos(conn, nuevo)  # la BD avanza...
+    conn.commit()
+    Path(args.fixture).write_text(
+        viejo.model_dump_json() + "\n", encoding="utf-8"
+    )  # ...el fixture no
+    avisos = {c.nombre: c for c in preflight.comprobar(args) if c.nivel == "ÁMBAR"}
+    assert "fixture vs BD" in avisos and "a.pdf" in avisos["fixture vs BD"].detalle
+    assert "hechos export" in avisos["fixture vs BD"].arreglo
+
+
+def test_fixture_ilegible_no_revienta_el_preflight(preflight, tmp_path, conn):
+    args = montar(tmp_path, conn)
+    Path(args.fixture).write_text(
+        '{"file_id": "a.pdf"}\n', encoding="utf-8"
+    )  # sin sha256 ni método
+    avisos = {c.nombre: c for c in preflight.comprobar(args) if c.nivel != "VERDE"}
+    assert "fixture vs BD" in avisos and "ilegibles" in avisos["fixture vs BD"].detalle
