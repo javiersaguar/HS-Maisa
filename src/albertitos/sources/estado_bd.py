@@ -19,6 +19,7 @@ import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from albertitos.core import db
 from albertitos.core.versions import EXTRACTOR_VERSION
 from albertitos.pipeline.validar import listar_pdfs
 
@@ -43,7 +44,8 @@ def ficheros_fantasma(
     fuera = []
     for fila in conn.execute("SELECT file_id, lote FROM ficheros ORDER BY file_id"):
         lote = int(fila["lote"] or 1)
-        if fila["file_id"] not in reales.get(lote, set()):
+        # un nombre interno de P0-5 (`./X.pdf`) es el PDF X.pdf de su lote: no es un fantasma
+        if db.nombre_entrega(fila["file_id"]) not in reales.get(lote, set()):
             fuera.append((str(fila["file_id"]), lote))
     return fuera
 

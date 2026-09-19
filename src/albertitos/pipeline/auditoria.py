@@ -195,7 +195,8 @@ def cargar_filas(conn: sqlite3.Connection) -> list[Fila]:
             base = por_sha.get(i["sha256"])
             if base is not None:
                 filas.append(replace(base, file_id=str(i["file_id"]), lote=int(i["lote"])))
-        filas.sort(key=lambda f: f.file_id)
+        # P0-5: el nombre interno (`./X.pdf`) no es una línea: la suya es la de su nombre de entrega
+        filas = sorted((f for f in filas if not db.es_interno(f.file_id)), key=lambda f: f.file_id)
     return filas
 
 
