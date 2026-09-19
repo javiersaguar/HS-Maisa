@@ -30,3 +30,20 @@ Render redespliega solo los dos servicios (unos 3 minutos).
 - **La consola dice «Sin conexión»:** el plan gratuito duerme tras 15 minutos. El primer acceso lo despierta; la consola reintenta sola.
 - **Render caído del todo:** en Vercel, `NEXT_PUBLIC_USE_MOCK=true` y *Redeploy*: datos de ejemplo, etiquetados como tales.
 - **Demo en la defensa:** la consola local (`docs/agentes/KIT-DEFENSA.md`, «Grabar la demo en local») no depende de nada de esto.
+
+## Levantarlo todo (local) y mantener despierta la pública
+```bash
+bash scripts/demo.sh arrancar    # puente con bandeja + chat + consola compilada; deja los PID y los logs en dist/demo/
+bash scripts/demo.sh estado      # qué responde cada uno, local y público, y cuántas facturas sirve cada BD
+bash scripts/demo.sh parar       # para los tres (también lo que quedara de un arranque anterior)
+bash scripts/demo.sh despertar   # pings a Render cada 10 min para que no se duerma (Ctrl+C para salir)
+```
+Puertos por defecto: consola 3002, puente 8000, chat 8101 (el 3000 y el 8001 suelen estar ocupados por contenedores
+de otros proyectos). Se cambian con `PUERTO_CONSOLA=… PUERTO_PUENTE=… PUERTO_CHAT=… bash scripts/demo.sh arrancar`.
+La ventana del chat es de 12 h desde el arranque; con `CHAT_HASTA=2026-09-20T14:00` se fija a mano.
+**La consola se abre por `http://localhost:3002`**, no por `127.0.0.1`.
+
+Sin portátil encendido, la demo pública se mantiene despierta sola con el workflow
+`.github/workflows/despertar-demo.yml`: cada 10 minutos el domingo de 07:00 a 15:00 (Madrid). Fuera de esa ventana
+no corre, porque el plan gratuito de Render tiene 750 horas de instancia al mes en total. Para despertarla en otro
+momento: pestaña **Actions** del repo → *despertar la demo pública* → **Run workflow**.
