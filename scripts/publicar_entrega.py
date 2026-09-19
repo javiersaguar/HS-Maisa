@@ -41,7 +41,16 @@ class Comandos:
 
 def ejecutar(args, *, raiz, env, permite_fallo=False):
     print("+ " + shlex.join(map(str, args)), flush=True)
-    p = subprocess.run(args, cwd=raiz, env=env, capture_output=True, text=True, timeout=180)
+    p = subprocess.run(
+        args,
+        cwd=raiz,
+        env=env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=180,
+    )
     if p.stdout:
         print(p.stdout.rstrip())
     if p.stderr:

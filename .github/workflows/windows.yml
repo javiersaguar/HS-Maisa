@@ -1,0 +1,29 @@
+name: check-windows
+# Los portátiles de Miguel (y quizá el de la defensa) son Windows; el CI normal sólo corre en Ubuntu.
+# No se lanza en cada push: a mano, o subiendo a una rama windows-check/**.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["windows-check/**"]
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - name: ERP 2009 sin latencia (para los tests marcados erp)
+        run: |
+          (uv run python data/caja/alberto_erp.py --rapido > erp.log 2>&1 &)
+          for i in $(seq 20); do curl -sf http://127.0.0.1:8009/erp/estado && break; sleep 1; done
+      - name: ruff
+        run: uv run ruff format --check src tests scripts && uv run ruff check src tests scripts
+      # SIN PYTHONUTF8: así se prueba que los tests no dependen de la codificación de la consola.
+      - name: pytest (cp1252, como un Windows sin configurar)
+        run: uv run pytest -q

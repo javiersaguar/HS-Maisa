@@ -194,9 +194,13 @@ def test_no_sobrescribe_bd_ni_entrega(escenario, tmp_path):
     informe = calcular(ruta)
     salida = tmp_path / "salida"
     salida.mkdir()
-    (salida / "remesa.csv").symlink_to(ruta)
-    with pytest.raises(ValueError, match="enlace"):
-        exportar(informe, salida, ruta_bd=ruta)
+    try:
+        (salida / "remesa.csv").symlink_to(ruta)
+    except OSError:  # Windows sin modo desarrollador: crear un symlink pide privilegios
+        pass
+    else:
+        with pytest.raises(ValueError, match="enlace"):
+            exportar(informe, salida, ruta_bd=ruta)
     with pytest.raises(ValueError, match="oficial"):
         exportar(informe, Path("dist/entrega/bonus"), ruta_bd=ruta)
 

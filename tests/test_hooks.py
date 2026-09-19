@@ -9,6 +9,7 @@ la regla "a main sólo Miguel" —que habla de ESTE repo— lo bloqueaba en el p
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -19,6 +20,19 @@ import pytest
 HOOK = Path(__file__).resolve().parents[1] / ".claude" / "hooks" / "guard_bash.py"
 
 
+def entorno(raiz: Path, **extra: str) -> dict[str, str]:
+    """El entorno del sistema (PATH con git, SYSTEMROOT en Windows) sin nada que cambie la decisión del hook:
+    ni el marcador de dueño por variable ni el proyecto real. Antes se pasaba un PATH de Unix fijo y en
+    Windows el hook no encontraba git: 5 tests fallaban en el portátil de Miguel."""
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not k.startswith(("ALBERTITOS_", "CLAUDE_")) and k != "PYTHONPATH"
+    }
+    env.update(CLAUDE_PROJECT_DIR=str(raiz), PYTHONUTF8="1", **extra)
+    return env
+
+
 def decidir(comando: str, raiz: Path) -> str:
     """Lanza el hook como lo lanza Claude Code y devuelve deny/ask/allow, o 'pasa' si no dice nada."""
     entrada = json.dumps({"cwd": str(raiz), "tool_input": {"command": comando}})
@@ -27,8 +41,9 @@ def decidir(comando: str, raiz: Path) -> str:
         input=entrada,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=20,
-        env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CLAUDE_PROJECT_DIR": str(raiz)},
+        env=entorno(raiz),
     )
     assert proc.returncode == 0, proc.stderr
     salida = proc.stdout.strip()
@@ -171,11 +186,8 @@ def test_inicio_cuenta_ficheros_sin_decision_no_eventos_antiguos(portatil, sin_d
         input=json.dumps({"cwd": str(portatil)}),
         capture_output=True,
         text=True,
-        env={
-            "PATH": "/usr/bin:/bin",
-            "CLAUDE_PROJECT_DIR": str(portatil),
-            "ALBERTITOS_ERP_URL": "http://127.0.0.1:1",
-        },
+        encoding="utf-8",
+        env=entorno(portatil, ALBERTITOS_ERP_URL="http://127.0.0.1:1"),
         timeout=10,
     )
     assert p.returncode == 0
@@ -196,11 +208,8 @@ def test_inicio_bd_ilegible_no_rompe_sesion(portatil):
         input=json.dumps({"cwd": str(portatil)}),
         capture_output=True,
         text=True,
-        env={
-            "PATH": "/usr/bin:/bin",
-            "CLAUDE_PROJECT_DIR": str(portatil),
-            "ALBERTITOS_ERP_URL": "http://127.0.0.1:1",
-        },
+        encoding="utf-8",
+        env=entorno(portatil, ALBERTITOS_ERP_URL="http://127.0.0.1:1"),
         timeout=10,
     )
     assert p.returncode == 0 and "existe pero no se lee" in p.stdout

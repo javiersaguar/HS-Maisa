@@ -30,7 +30,11 @@ AHORA = datetime(2026, 9, 19, 17, 30, tzinfo=pub.MADRID)
 
 def git(ruta, *args):
     return subprocess.run(
-        ["git", "-C", str(ruta), *args], check=True, capture_output=True, text=True
+        ["git", "-C", str(ruta), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
     ).stdout.strip()
 
 
