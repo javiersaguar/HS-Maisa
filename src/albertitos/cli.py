@@ -295,11 +295,19 @@ def hechos_import(ruta: Path) -> None:
 
 
 @app.command()
-def maestro(ruta: Path = CAJA / "FINAL_v7_DEFINITIVO_ahorasi.xlsx") -> None:
+def maestro(
+    ruta: Path = CAJA / "FINAL_v7_DEFINITIVO_ahorasi.xlsx",
+    lote2: Path | None = typer.Option(
+        None,
+        "--lote2",
+        help="carpeta con proveedores_nuevos.csv y pedidos_nuevos.csv (data/lote2): se suman al Excel",
+    ),
+) -> None:
     """Carga el Excel limpio como snapshot 'maestro' versionado por contenido."""
     from albertitos.sources import excel, snapshot
+    from albertitos.sources import lote2 as lote2_mod
 
-    m = excel.cargar_maestro(ruta)
+    m = lote2_mod.cargar_maestro_lote2(ruta, lote2) if lote2 else excel.cargar_maestro(ruta)
     snapshot.guardar_maestro(_conn(), m)
     rprint(
         f"[green]maestro {m.version}[/green]: {len(m.proveedores)} proveedores · {len(m.pedidos)} pedidos"
