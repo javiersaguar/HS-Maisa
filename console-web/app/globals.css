@@ -153,16 +153,67 @@
   }
 }
 
+
+/* ---------------------------------------------------------------- Albertitos
+ * Un solo sitio para los valores de diseño. La dirección es herramienta de trabajo
+ * densa y sobria: neutros, un acento, bordes de 1px y nada de sombras.
+ */
+@theme {
+  --color-ink: #16191c;
+  --color-ink-soft: #3d4449;
+  --color-muted: #6b7378;
+  --color-faint: #9aa1a6;
+  --color-line: #e3e6e8;
+  --color-line-soft: #eef0f1;
+  --color-surface: #ffffff;
+  --color-canvas: #fafafa;
+  --color-raised: #f5f6f7;
+
+  /* Un único acento. Los colores de estado viven sólo en el punto y el texto del resultado. */
+  --color-accent: #1f6f5c;
+  --color-accent-soft: #e8f0ee;
+
+  --color-ok: #2f7d55;
+  --color-warn: #9a6b0f;
+  --color-bad: #a83f3a;
+
+  --radius-ui: 4px;
+  --radius-card: 6px;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 16px;
-    line-height: 1.55;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Identificadores y cifras: monoespaciada y cifras tabulares, para que columnen. */
+  .ident {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .cifra {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Casillas: check fino del sistema con el acento, nunca un cuadrado negro relleno. */
+  input[type='checkbox'] {
+    accent-color: var(--color-accent);
+    width: 14px;
+    height: 14px;
   }
 
   button,
@@ -187,13 +238,13 @@
   textarea:focus-visible,
   a:focus-visible,
   [tabindex]:focus-visible {
-    outline: 3px solid rgba(103, 212, 173, 0.45);
-    outline-offset: 2px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
   }
 
   ::selection {
-    background: #d6f52a;
-    color: #164f45;
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
   }
 }
 

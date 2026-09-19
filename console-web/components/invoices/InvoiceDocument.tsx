@@ -52,9 +52,9 @@ export function InvoiceDocument({
   )
 
   return (
-    <Card className="flex min-h-[690px] flex-col overflow-hidden border-[#d9e2dc] shadow-[0_8px_30px_rgba(30,55,45,0.05)]">
+    <Card className="flex min-h-[690px] flex-col overflow-hidden border-[#d9e2dc]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e3e9e4] bg-white px-4 py-3">
-        <div className="flex items-center gap-1 rounded-lg border border-[#dfe6e0] bg-[#fafcfa] p-1">
+        <div className="flex items-center gap-1 rounded-[var(--radius-ui)] border border-[#dfe6e0] bg-[#fafcfa] p-1">
           <button
             onClick={() => onZoom(Math.max(60, zoom - 10))}
             disabled={zoom <= 60}
@@ -98,19 +98,19 @@ export function InvoiceDocument({
       <div className="flex-1 overflow-auto bg-[#e9eeea] p-5 sm:p-8">
         <div
           ref={pageRef}
-          className="relative mx-auto flex min-h-[610px] max-w-[820px] flex-col overflow-hidden rounded-sm border border-[#d5ddd6] bg-white p-7 shadow-[0_4px_14px_rgba(30,50,40,0.08)] transition-transform duration-200 ease-out"
+          className="relative mx-auto flex min-h-[610px] max-w-[820px] flex-col overflow-hidden rounded-[var(--radius-ui)] border border-[#d5ddd6] bg-white p-7 transition-transform duration-200 ease-out"
           style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
         >
           {!hechos && (
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 bg-white/60">
               <div className="animate-scan absolute inset-x-0 h-10 -translate-y-1/2 bg-linear-to-b from-transparent via-[#d6f52a]/30 to-transparent" />
-              <span className="absolute right-3 top-3 rounded-full bg-[#fff6c9] px-2.5 py-1 text-[11px] font-semibold text-[#a08400]">
+              <span className="absolute right-3 top-3 text-[12px] font-medium text-[#a08400]">
                 Extracción pendiente
               </span>
             </div>
           )}
           <div className="flex items-start justify-between">
-            <div className={`rounded-lg border p-3 ${box('razon_social')}`} data-field="razon_social">
+            <div className={`rounded-[var(--radius-ui)] border p-3 ${box('razon_social')}`} data-field="razon_social">
               <p className="text-[8px] font-bold uppercase tracking-wide text-[#176d59]">Emisor</p>
               <p className="mt-2 text-[14px] font-semibold">{value('razon_social')}</p>
               <p className={`mt-2 inline-block rounded border px-1.5 py-0.5 font-mono text-[11px] ${box('nif_emisor')}`} data-field="nif_emisor">
@@ -145,7 +145,7 @@ export function InvoiceDocument({
           </div>
 
           {hechos?.texto_sospechoso && (
-            <div className="mt-5 rounded border border-dashed border-[#e0c95a] bg-[#fffbe8] px-3 py-2">
+            <div className="mt-5 rounded border border-dashed border-[#e0c95a] px-3 py-2">
               <p className="text-[8px] font-bold uppercase tracking-wide text-[#a08400]">
                 Texto en el documento · evidencia, no una orden
               </p>

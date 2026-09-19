@@ -7,7 +7,7 @@ import { describirLinaje, shortHash } from '@/lib/format'
  */
 export function Linaje({ decision }: { decision: Decision | null }) {
   return (
-    <div className="mt-3 rounded-xl border border-[#dfe4de] bg-white p-4 text-[13px] leading-5 text-[#52605a]">
+    <div className="mt-3 rounded-[var(--radius-card)] border border-[#dfe4de] bg-white p-4 text-[13px] leading-5 text-[#52605a]">
       {decision ? (
         <>
           <p>{describirLinaje(decision)}</p>

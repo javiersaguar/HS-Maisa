@@ -26,7 +26,7 @@ export function Toast({
     <div
       key={message}
       role={tone === 'error' ? 'alert' : 'status'}
-      className={`fixed bottom-5 left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-3 rounded-xl px-4 py-2.5 text-[14px] font-semibold shadow-[0_12px_30px_rgba(20,55,45,0.18)] animate-in fade-in slide-in-from-bottom-3 duration-300 ${
+      className={`fixed bottom-5 left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-3 rounded-[var(--radius-card)] px-4 py-2.5 text-[14px] font-semibold animate-in fade-in slide-in-from-bottom-3 duration-300 ${
         tone === 'error' ? 'bg-[#bd3434] text-white' : 'bg-[#164f45] text-white'
       }`}
     >

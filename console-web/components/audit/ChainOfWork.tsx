@@ -23,10 +23,10 @@ type Nivel = 'pass' | 'warning' | 'fail' | 'info'
 
 /** El color del nodo sigue al paso, para que un fallo destaque en una cadena larga. */
 const NODE_CLASSES: Record<Nivel, string> = {
-  pass: 'border-[#b8dfcf] bg-[#eff8f3] text-[#176d59]',
-  info: 'border-[#dfe4de] bg-[#f5f7f3] text-[#68736d]',
-  warning: 'border-[#eee8bd] bg-[#fff9e6] text-[#a87000]',
-  fail: 'border-[#f1dada] bg-[#fff0f0] text-[#bd3434]',
+  pass: 'border-[#b8dfcf] text-[#176d59]',
+  info: 'border-[#dfe4de] text-[#68736d]',
+  warning: 'border-[#eee8bd] text-[#a87000]',
+  fail: 'border-[#f1dada] text-[#bd3434]',
 }
 
 function nivel(paso: PasoTraza): Nivel {
@@ -92,7 +92,7 @@ export function ChainOfWork({
         {header ? <div className="min-w-0 flex-1">{header}</div> : null}
         <button
           onClick={() => setExpanded(allOpen ? new Set() : new Set(shown.map((paso) => paso.id)))}
-          className="shrink-0 rounded-lg px-2 py-1 text-[13px] font-semibold text-[#315d53] transition hover:bg-[#eff8f3]"
+          className="shrink-0 rounded-[var(--radius-ui)] px-2 py-1 text-[13px] font-semibold text-[#315d53] transition"
         >
           {allOpen ? 'Plegar todo' : 'Desplegar evidencia'}
         </button>
@@ -130,11 +130,11 @@ export function ChainOfWork({
           return (
             <li key={paso.id} className="relative pl-10 animate-in fade-in slide-in-from-bottom-1 duration-300">
               <span
-                className={`absolute left-0 top-4 flex size-8 items-center justify-center rounded-full border ${NODE_CLASSES[nivel(paso)]}`}
+                className={`absolute left-0 top-4 flex size-7 items-center justify-center rounded-[var(--radius-ui)] border ${NODE_CLASSES[nivel(paso)]}`}
               >
                 <Icon className="size-3.5" />
               </span>
-              <div className="rounded-xl border border-[#e1e8e2] bg-white shadow-[0_1px_2px_rgba(20,55,45,0.03)] transition hover:-translate-y-0.5 hover:border-[#b8dcca] hover:shadow-[0_7px_18px_rgba(20,75,60,0.08)]">
+              <div className="rounded-[var(--radius-card)] border border-[#e1e8e2] bg-white transition hover:-translate-y-0.5 hover:border-[#b8dcca] hover:">
                 <button onClick={() => toggle(paso.id)} aria-expanded={isOpen} className="w-full p-4 text-left">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -188,7 +188,7 @@ export function ChainOfWork({
         <div className="mt-4 flex justify-center">
           <button
             onClick={() => setVisible((value) => value + PAGE_SIZE)}
-            className="rounded-lg border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45] hover:bg-[#eff8f3]"
+            className="rounded-[var(--radius-ui)] border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45]"
           >
             Ver {Math.min(PAGE_SIZE, pasos.length - visible)} más de {pasos.length - visible} restantes
           </button>

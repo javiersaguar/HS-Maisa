@@ -1,12 +1,8 @@
 import type { ReactNode } from 'react'
 
-/** The surface used by every screen. Extracted from the original prototype. */
+/** Superficie base: borde de 1px, radio corto y ninguna sombra. */
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <section
-      className={`rounded-xl border border-[#e1e5df] bg-white shadow-[0_1px_2px_rgba(20,45,35,0.02)] ${className}`}
-    >
-      {children}
-    </section>
+    <section className={`rounded-[var(--radius-card)] border border-line bg-surface ${className}`}>{children}</section>
   )
 }

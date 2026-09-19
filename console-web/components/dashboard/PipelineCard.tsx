@@ -37,8 +37,8 @@ export function PipelineCard({ etapas, ficheros, actions }: { etapas: EtapaResum
             >
               <div className="flex min-w-0 items-center gap-4">
                 <div
-                  className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-500 ${
-                    ok ? 'bg-[#effaf6] text-[#176d59]' : salud.tone === 'gray' ? 'bg-[#f1f5f3] text-[#63756d]' : 'bg-[#fff9e6] text-[#a87000]'
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-ui)] transition-colors duration-500 ${
+                    ok ? 'bg-[#effaf6] text-[#176d59]' : salud.tone === 'gray' ? 'bg-[#f1f5f3] text-[#63756d]' : ' text-[#a87000]'
                   }`}
                 >
                   <EtapaIcon etapa={etapa.etapa} className="size-4" />

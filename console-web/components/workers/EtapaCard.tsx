@@ -17,10 +17,10 @@ export function EtapaCard({ etapa, ficheros }: { etapa: EtapaResumen; ficheros: 
   const valorMetrica =
     grano === 'lote' ? formatNumber(etapa.eventos) : `${formatNumber(ficherosOk)} / ${formatNumber(ficheros)}`
   return (
-    <Card className="group w-[min(390px,calc(100vw-64px))] shrink-0 p-5 transition hover:-translate-y-0.5 hover:border-[#b6d8c9] hover:shadow-[0_8px_24px_rgba(20,75,60,0.08)]">
+    <Card className="group w-[min(390px,calc(100vw-64px))] shrink-0 p-5 transition hover:-translate-y-0.5 hover:border-[#b6d8c9] hover:">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-[#eff8f4] text-[#176d59] transition-transform duration-300 group-hover:scale-105">
+          <div className="flex size-10 items-center justify-center rounded-[var(--radius-card)] bg-[#eff8f4] text-[#176d59] transition-transform duration-300 group-hover:scale-105">
             <EtapaIcon etapa={etapa.etapa} />
           </div>
           <div>
@@ -55,7 +55,7 @@ export function EtapaCard({ etapa, ficheros }: { etapa: EtapaResumen; ficheros: 
       </div>
       <Link
         href={`/workers/${etapa.etapa}`}
-        className="mt-5 flex w-full items-center justify-center gap-1 rounded-lg border border-[#dfe4de] py-2 text-[14px] font-semibold text-[#315d53] transition hover:bg-[#eff8f3]"
+        className="mt-5 flex w-full items-center justify-center gap-1 rounded-[var(--radius-ui)] border border-[#dfe4de] py-2 text-[14px] font-semibold text-[#315d53] transition"
       >
         Ver eventos <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
       </Link>

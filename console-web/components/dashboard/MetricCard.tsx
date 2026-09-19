@@ -14,9 +14,9 @@ const GLOW: Record<MetricGlow, string> = {
 
 const PILL: Record<MetricTone, string> = {
   up: 'border-[#b7e8d2] bg-[#eefbf5] text-[#176d59]',
-  down: 'border-[#f1c4c4] bg-[#fff0f0] text-[#bd3434]',
-  warn: 'border-[#e8d36a] bg-[#fffbe8] text-[#8a7400]',
-  neutral: 'border-[#e1e7e2] bg-[#f7f8f5] text-[#5a655f]',
+  down: 'border-[#f1c4c4] text-[#bd3434]',
+  warn: 'border-[#e8d36a] text-[#8a7400]',
+  neutral: 'border-[#e1e7e2] bg-[var(--color-raised)] text-[#5a655f]',
 }
 
 function ToneIcon({ tone }: { tone: MetricTone }) {
@@ -39,7 +39,7 @@ export function PercentPill({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-[3px] text-[12px] font-semibold tabular-nums ${PILL[tone]}`}
+        className={`inline-flex items-center gap-1 text-[12px] font-medium tabular-nums ${PILL[tone]}`}
       >
         <ToneIcon tone={tone} />
         {formatPercent(value)}
@@ -92,7 +92,7 @@ export function MetricCard({
   )
 
   const shell =
-    'relative block overflow-hidden rounded-2xl border border-[#e6ebe6] bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(20,45,35,0.03)] transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[#d5e2da] group-hover:shadow-[0_14px_32px_rgba(22,79,69,0.08)]'
+    'relative block overflow-hidden rounded-[var(--radius-card)] border border-[#e6ebe6] bg-white px-4 py-3.5 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[#d5e2da] group-hover:'
 
   return (
     <div className="group relative z-0 hover:z-20 focus-within:z-20">
@@ -106,7 +106,7 @@ export function MetricCard({
       {tooltip ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[240px] -translate-x-1/2 rounded-lg bg-[#17211e] px-3 py-1.5 text-center text-[12px] font-medium leading-snug text-white opacity-0 shadow-[0_8px_24px_rgba(23,33,30,0.28)] transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[240px] -translate-x-1/2 rounded-[var(--radius-ui)] bg-[#17211e] px-3 py-1.5 text-center text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
         >
           {tooltip}
           <i

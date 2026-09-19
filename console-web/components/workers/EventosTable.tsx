@@ -38,7 +38,7 @@ export function EventosTable({ eventos, showEtapa = false }: { eventos: Event[];
             <tr
               key={`${evento.file_id}-${evento.etapa}-${evento.intento}-${index}`}
               {...rowLink(evento.file_id ? ficheroHref(evento.file_id) : null)}
-              className={`border-b border-[#edf0ec] text-[14px] transition-colors last:border-0 hover:bg-[#fbfcfa] ${evento.file_id ? 'cursor-pointer' : ''}`}
+              className={`border-b border-[#edf0ec] text-[14px] transition-colors last:border-0 hover:bg-[var(--color-raised)] ${evento.file_id ? 'cursor-pointer' : ''}`}
             >
               <td className="max-w-[220px] truncate px-5 py-3 font-mono text-[13px]" title={evento.file_id ?? undefined}>
                 {evento.file_id ?? '—'}

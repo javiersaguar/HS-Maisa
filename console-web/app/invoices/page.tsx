@@ -154,51 +154,52 @@ function FicherosScreen() {
   }
 
   const pagerButton =
-    'inline-flex items-center gap-1.5 rounded-lg border border-[#d5e2da] bg-white px-3 py-1.5 font-semibold text-[#315d53] transition hover:bg-[#edf8f3] disabled:border-[#e5eae6] disabled:bg-transparent disabled:font-normal disabled:text-[#b2bbb5]'
+    'inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-ui)] border border-line bg-surface px-2.5 text-ink transition hover:border-faint disabled:text-faint disabled:hover:border-line'
 
   return (
-    <div className="px-5 py-6 sm:px-8">
+    <div className="px-6 py-6">
       <title>{`Ficheros · ${BRAND}`}</title>
       <div className="mx-auto max-w-[1380px]">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-            <h1 className="text-[32px] font-semibold tracking-[-0.04em]">Ficheros</h1>
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[22px] font-semibold tracking-[-0.02em]">Ficheros</h1>
             {summary ? (
-              <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold tabular-nums animate-in fade-in duration-300">
-                <span className="rounded-full border border-[#e1e7e2] bg-white px-3 py-1 text-[#65736b]">
-                  {formatNumber(summary.ficheros)} ficheros
-                </span>
+              <p className="mt-1 text-[13px] text-muted cifra">
+                {formatNumber(summary.ficheros)} ficheros
+                {' · '}
                 <button
                   onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'ESCALAR' })}
                   aria-pressed={filters.estado === 'ESCALAR'}
-                  className={`rounded-full border px-3 py-1 text-[#a08400] transition hover:bg-[#fff6c9] ${filters.estado === 'ESCALAR' ? 'border-[#e0c95a] bg-[#fff6c9]' : 'border-[#eee8bd] bg-[#fffbe8]'}`}
+                  className={`min-h-0 underline-offset-2 hover:underline ${summary.porEstado.ESCALAR > 0 ? 'text-warn' : ''}`}
                 >
                   {formatNumber(summary.porEstado.ESCALAR)} escalados
                 </button>
                 {summary.porEstado.PENDIENTE > 0 && (
-                  <button
-                    onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'PENDIENTE' })}
-                    aria-pressed={filters.estado === 'PENDIENTE'}
-                    className={`rounded-full border px-3 py-1 text-[#65736b] transition hover:bg-[#eef3f1] ${filters.estado === 'PENDIENTE' ? 'border-[#c9d6cf] bg-[#eef3f1]' : 'border-[#e1e7e2] bg-[#f7f8f5]'}`}
-                  >
-                    {formatNumber(summary.porEstado.PENDIENTE)} pendiente{summary.porEstado.PENDIENTE === 1 ? '' : 's'}
-                  </button>
+                  <>
+                    {' · '}
+                    <button
+                      onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'PENDIENTE' })}
+                      aria-pressed={filters.estado === 'PENDIENTE'}
+                      className="min-h-0 underline-offset-2 hover:underline"
+                    >
+                      {formatNumber(summary.porEstado.PENDIENTE)} pendiente
+                      {summary.porEstado.PENDIENTE === 1 ? '' : 's'}
+                    </button>
+                  </>
                 )}
-              </div>
+              </p>
             ) : summaryError ? null : (
-              <Skeleton className="h-6 w-64" />
+              <Skeleton className="mt-1 h-4 w-56" />
             )}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={exportFicheros}
-              disabled={exporting || (!data?.total && !selectedIds.length)}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#dfe4de] bg-white px-4 py-2 text-[14px] font-semibold transition hover:bg-[#eff8f3] disabled:opacity-50"
-            >
-              {exporting && <Spinner />}
-              {exporting ? 'Exportando…' : selectedIds.length ? `Exportar ${selectedIds.length} seleccionados` : 'Exportar CSV'}
-            </button>
-          </div>
+          <button
+            onClick={exportFicheros}
+            disabled={exporting || (!data?.total && !selectedIds.length)}
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-[13px] transition hover:border-faint disabled:opacity-50"
+          >
+            {exporting && <Spinner />}
+            {exporting ? 'Exportando…' : selectedIds.length ? `Exportar ${selectedIds.length} seleccionados` : 'Exportar CSV'}
+          </button>
         </header>
 
         <FilterBar
@@ -211,7 +212,7 @@ function FicherosScreen() {
         />
 
         <div ref={tableRef} className="scroll-mt-4">
-          <Card className="mt-7 overflow-hidden rounded-2xl border-[#e1e7e2] shadow-[0_8px_28px_rgba(20,55,45,0.045)]">
+          <Card className="mt-4 overflow-hidden">
             {error ? (
               <ErrorState error={error} onRetry={refresh} retrying={loading} />
             ) : !data ? (
@@ -223,7 +224,7 @@ function FicherosScreen() {
                 action={
                   <button
                     onClick={() => changeFilters(EMPTY_FILTERS)}
-                    className="rounded-lg border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:bg-[#eff8f3]"
+                    className="h-9 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-[13px] transition hover:border-faint"
                   >
                     Quitar filtros
                   </button>
@@ -235,9 +236,9 @@ function FicherosScreen() {
               </div>
             )}
             {data && data.total > 0 && (
-              <div className="flex items-center justify-between border-t border-[#edf0ec] px-5 py-3 text-[13px] text-[#819088]">
+              <div className="flex items-center justify-between border-t border-line px-3 py-2 text-[13px] text-muted">
                 <span className="flex items-center gap-2">
-                  {loading && <Spinner className="size-3 text-[#315d53]" />}
+                  {loading && <Spinner className="size-3" />}
                   Mostrando {(data.page - 1) * data.pageSize + 1}–{(data.page - 1) * data.pageSize + ficheros.length} de{' '}
                   {data.total} ficheros
                 </span>

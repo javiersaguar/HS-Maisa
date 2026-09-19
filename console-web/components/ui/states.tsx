@@ -8,7 +8,7 @@ import { Spinner } from './Spinner'
 
 /** Grey block used while data is in flight. */
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <span className={`block animate-pulse rounded-lg bg-[#eceeea] ${className}`} />
+  return <span className={`block animate-pulse rounded-[var(--radius-ui)] bg-[#eceeea] ${className}`} />
 }
 
 export function LoadingState({
@@ -52,7 +52,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center animate-in fade-in duration-300">
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-[#f1f5f1] text-[#6b8078]">
+      <span className="flex size-11 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-raised)] text-[#6b8078]">
         {icon ?? <Inbox className="size-5" />}
       </span>
       <h3 className="mt-4 text-[15px] font-semibold text-[#17211e]">{title}</h3>
@@ -104,7 +104,7 @@ export function ErrorState({
       className="flex flex-col items-center justify-center px-6 py-14 text-center animate-in fade-in duration-300"
       role="alert"
     >
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-[#fff0f0] text-[#bd3434]">
+      <span className="flex size-11 items-center justify-center rounded-[var(--radius-card)] text-[#bd3434]">
         {isUnauthorized ? (
           <Lock className="size-5" />
         ) : isNetwork ? (
@@ -119,7 +119,7 @@ export function ErrorState({
         <button
           onClick={onRetry}
           disabled={retrying}
-          className="mt-5 inline-flex items-center gap-2 rounded-lg border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45] hover:bg-[#eff8f3] disabled:opacity-60"
+          className="mt-5 inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45] disabled:opacity-60"
         >
           {retrying ? <Spinner /> : <RefreshCw className="size-3.5" />}
           {retrying ? 'Reintentando…' : 'Reintentar'}

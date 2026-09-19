@@ -160,22 +160,22 @@ export function InvoiceDropzone({
 
   return (
     <Card className="flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-[#e5e8e3] px-5 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <div>
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Bandeja de facturas</h2>
-          <p className="mt-0.5 text-[13px] text-[#8b9790]">
+          <h2 className="text-[14px] font-semibold">Bandeja de facturas</h2>
+          <p className="mt-0.5 text-[12px] text-muted">
             Se leen y se deciden con la misma norma, fuera de la entrega
           </p>
         </div>
         {fase === 'hecho' ? (
           <Link
             href={`/invoices?lote=${LOTE_BANDEJA}`}
-            className="shrink-0 whitespace-nowrap text-[13px] font-semibold text-[#176d59] hover:underline"
+            className="shrink-0 whitespace-nowrap text-[13px] text-accent hover:underline"
           >
             Ver la bandeja
           </Link>
         ) : (
-          <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa39e]">
+          <span className="shrink-0 whitespace-nowrap text-[12px] text-faint">
             Lote {LOTE_BANDEJA}
           </span>
         )}
@@ -192,23 +192,23 @@ export function InvoiceDropzone({
           onDragLeave={() => setArrastrando(false)}
           onDrop={onDrop}
           disabled={bloqueado}
-          className={`flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-9 text-center transition disabled:cursor-not-allowed ${
+          className={`flex w-full flex-col items-center gap-2 rounded-[var(--radius-card)] border border-dashed px-4 py-8 text-center transition disabled:cursor-not-allowed ${
             arrastrando
-              ? 'border-[#35b889] bg-[#eff8f3]'
+              ? 'border-accent'
               : bloqueado
-                ? 'border-[#e5e8e3] bg-[#fbfcfa] opacity-70'
-                : 'border-[#cfe3d8] bg-[#fbfdfb] hover:border-[#70bda1] hover:bg-[#f5faf7]'
+                ? 'border-line opacity-60'
+                : 'border-line hover:border-faint'
           }`}
         >
-          {ocupado ? <Spinner className="size-6" /> : <FileUp className="size-7 text-[#35b889]" />}
-          <span className="text-[15px] font-semibold text-[#233f35]">
+          {ocupado ? <Spinner className="size-6" /> : <FileUp className="size-5 text-faint" />}
+          <span className="text-[13px] font-medium text-ink">
             {fase === 'subiendo'
               ? 'Subiendo…'
               : fase === 'procesando'
                 ? 'Procesando las facturas…'
                 : 'Suelta aquí los PDF o haz clic para elegirlos'}
           </span>
-          <span className="text-[12px] text-[#8a9890]">Hasta {MAX_FICHEROS} facturas, 10 MB cada una</span>
+          <span className="text-[12px] text-faint">Hasta {MAX_FICHEROS} facturas, 10 MB cada una</span>
         </button>
         <input
           ref={inputRef}
@@ -223,7 +223,7 @@ export function InvoiceDropzone({
         />
 
         {noDisponible && (
-          <p className="rounded-lg bg-[#fff9e6] px-3 py-2 text-[13px] text-[#a87000]">
+          <p className="border-l-2 border-warn py-1 pl-3 text-[13px] text-muted">
             {USE_MOCK
               ? 'Con datos de ejemplo no se suben facturas: hace falta el puente real.'
               : 'El puente sirve la BD de la entrega y no escribe en ella.'}{' '}
@@ -240,12 +240,12 @@ export function InvoiceDropzone({
                 return (
                   <li
                     key={paso.estado}
-                    className={`flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold ${
+                    className={`flex flex-1 items-center gap-2 border-b-2 pb-1.5 text-[12px] ${
                       activo
-                        ? 'bg-[#eff8f3] text-[#176d59]'
+                        ? 'border-accent text-ink'
                         : hecho
-                          ? 'bg-[#f5f7f3] text-[#59635e]'
-                          : 'bg-[#fbfcfa] text-[#a1aaa5]'
+                          ? 'border-line text-muted'
+                          : 'border-line-soft text-faint'
                     }`}
                   >
                     {activo ? <Spinner className="size-3.5" /> : <span>{hecho ? '✓' : i + 1}</span>}
@@ -254,13 +254,13 @@ export function InvoiceDropzone({
                 )
               })}
             </ol>
-            <div className="shrink-0 border-t border-[#edf0ec] pt-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa39e]">
+            <div className="shrink-0 border-t border-line-soft pt-3">
+              <p className="mb-2 text-[12px] text-muted">
                 Este envío · {filas.length} {filas.length === 1 ? 'factura' : 'facturas'}
               </p>
               <RecuentoResultados porEstado={porEstado} sinLeer={sinLeer} />
             </div>
-            <ul className="min-h-0 flex-1 divide-y divide-[#edf0ec] overflow-y-auto border-t border-[#edf0ec]">
+            <ul className="min-h-0 flex-1 divide-y divide-line-soft overflow-y-auto border-t border-line-soft">
               {filas.map((f) => {
                 const activa = seleccionado === f.fileId
                 return (
@@ -271,10 +271,10 @@ export function InvoiceDropzone({
                       disabled={!f.estado}
                       aria-current={activa ? 'true' : undefined}
                       className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-[13px] transition ${
-                        activa ? 'bg-[#eff8f3]' : 'hover:bg-[#f7f9f6] disabled:hover:bg-transparent'
+                        activa ? 'bg-raised' : 'hover:bg-raised disabled:hover:bg-transparent'
                       } disabled:cursor-default`}
                     >
-                      <span className={`truncate font-medium ${activa ? 'text-[#12584a]' : 'text-[#2c3632]'}`}>
+                      <span className={`truncate ident text-[12px] ${activa ? 'text-ink' : 'text-ink-soft'}`}>
                         {f.nombre}
                       </span>
                       <ResultadoMarca estado={f.estado} />
@@ -287,16 +287,16 @@ export function InvoiceDropzone({
         )}
 
         {hayPendientes && (
-          <p className="rounded-lg bg-[#fff9e6] px-3 py-2 text-[13px] text-[#a87000]">
+          <p className="border-l-2 border-warn py-1 pl-3 text-[13px] text-muted">
             Alguna factura no se ha podido leer (el LLM no respondió o el PDF es ilegible). Queda PENDIENTE y sin
             decisión: no se inventa ninguna.
           </p>
         )}
         {bandeja?.estado === 'error' && bandeja.error && (
-          <p className="rounded-lg bg-[#fff0f0] px-3 py-2 text-[13px] text-[#bd3434]">{bandeja.error}</p>
+          <p className="border-l-2 border-bad py-1 pl-3 text-[13px] text-bad">{bandeja.error}</p>
         )}
         {error && (
-          <p role="alert" className="rounded-lg bg-[#fff0f0] px-3 py-2 text-[13px] text-[#bd3434]">
+          <p role="alert" className="border-l-2 border-bad py-1 pl-3 text-[13px] text-bad">
             {error}
           </p>
         )}

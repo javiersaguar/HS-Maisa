@@ -177,7 +177,7 @@ function FicheroDetail() {
             activeField={activeField}
           />
           <aside className="min-w-0">
-            <Card className="h-full overflow-hidden border-[#d9e2dc] shadow-[0_8px_30px_rgba(30,55,45,0.06)]">
+            <Card className="h-full overflow-hidden border-[#d9e2dc]">
               <div className="flex border-b border-[#e3e9e4] bg-white px-2" role="tablist" aria-label="Análisis del fichero">
                 {TABS.map((item, index) => (
                   <button
@@ -196,7 +196,7 @@ function FicheroDetail() {
                   >
                     {item}
                     {item === 'Traza' && traza.data && (
-                      <span className="rounded-full bg-[#eff8f3] px-1.5 text-[11px] text-[#176d59] tabular-nums">
+                      <span className="text-[12px] text-accent cifra">
                         {pasos.length}
                       </span>
                     )}
@@ -215,7 +215,7 @@ function FicheroDetail() {
               >
                 {tab === 'Decisión' && (
                   <>
-                    <div className="rounded-xl border border-[#e4e5df] bg-[#f1f1ef] p-4">
+                    <div className="rounded-[var(--radius-card)] border border-[#e4e5df] bg-[#f1f1ef] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
                         <span className="text-[13px] text-[#7d8580]">
@@ -242,8 +242,8 @@ function FicheroDetail() {
                     <Linaje decision={decision} />
 
                     {hechos?.texto_sospechoso && (
-                      <div className="mt-4 rounded-xl border border-dashed border-[#e0c95a] bg-[#fffbe8] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#a08400]">
+                      <div className="mt-4 rounded-[var(--radius-card)] border border-dashed border-[#e0c95a] p-4">
+                        <p className="text-[11px] font-bold text-[#a08400]">
                           El documento intenta instruir
                         </p>
                         <p className="mt-1.5 text-[13px] italic leading-5 text-[#5f5b2e]">“{hechos.texto_sospechoso}”</p>
@@ -255,7 +255,7 @@ function FicheroDetail() {
 
                     <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha comprobado la norma</h3>
                     {decision ? (
-                      <ul className="mt-2 overflow-hidden rounded-lg border border-[#dfe4de] text-[13px] leading-5 text-[#68736d]">
+                      <ul className="mt-2 overflow-hidden rounded-[var(--radius-ui)] border border-[#dfe4de] text-[13px] leading-5 text-[#68736d]">
                         {decision.motivos.map((motivo) => (
                           <li
                             key={motivo.regla_id}

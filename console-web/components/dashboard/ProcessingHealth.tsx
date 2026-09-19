@@ -103,7 +103,7 @@ export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
               {lotes.map((lote) => (
                 <span
                   key={lote.lote}
-                  className="rounded-full border border-[#e1e7e2] bg-[#fbfcfa] px-2 py-0.5 text-[12px] text-[#68736d] tabular-nums"
+                  className="text-[12px] text-muted cifra"
                 >
                   {lote.lote === 1 ? 'Caja' : `Lote ${lote.lote}`} · {formatNumber(lote.ficheros)}
                 </span>
@@ -155,7 +155,7 @@ export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
               </p>
               <span
                 role="tooltip"
-                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] rounded-lg bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white opacity-0 shadow-[0_8px_24px_rgba(23,33,30,0.28)] transition duration-150 group-hover:opacity-100"
+                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] rounded-[var(--radius-ui)] bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100"
               >
                 {stat.tooltip}
               </span>

@@ -27,17 +27,17 @@ export default function PortadaPage() {
   }, [])
 
   return (
-    <div className="mx-auto flex h-full max-w-[1460px] flex-col gap-7 px-6 pb-6 pt-10">
+    <div className="mx-auto flex h-full max-w-[1400px] flex-col gap-6 px-6 pb-6 pt-8">
       <title>{`${BRAND} · Cuentas a pagar`}</title>
 
       <header className="shrink-0 text-center">
-        <h1 className="text-[46px] font-semibold leading-none tracking-[-0.045em] text-[#17211e]">{BRAND}</h1>
-        <p className="mx-auto mt-3.5 max-w-[58ch] text-[15px] leading-relaxed text-[#68736d]">
+        <h1 className="text-[34px] font-semibold leading-none tracking-[-0.03em] text-ink">{BRAND}</h1>
+        <p className="mx-auto mt-3 max-w-[58ch] text-[14px] leading-relaxed text-muted">
           Suelta una factura y la norma dice qué hacer con ella y por qué.
         </p>
         <Link
           href="/invoices"
-          className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-[#8b9790] transition hover:text-[#176d59]"
+          className="mt-3 inline-flex items-center gap-1 text-[13px] text-muted transition hover:text-ink"
         >
           Ver todo lo procesado hasta ahora
           <ArrowUpRight className="size-3.5" />
