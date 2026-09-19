@@ -56,6 +56,25 @@ def _conn(solo_lectura: bool = False):
     return conn
 
 
+AYUDA_SIN_AUDITORIA = "entrega sin la auditoría de entrega (queda 'no ejecutada' en el evento emit)"
+
+
+def _auditor(sin_auditoria: bool):
+    """La auditoría de entrega si existe y no se ha saltado a mano; dice en voz alta si no corre."""
+    from albertitos.pipeline import package as pk
+
+    if sin_auditoria:
+        rprint("[yellow]auditoría de entrega SALTADA a mano (--sin-auditoria)[/yellow]")
+        return None
+    auditar = pk.auditor_de_entrega()
+    if auditar is None:
+        rprint(
+            "[yellow]auditoría de entrega no disponible todavía "
+            "(falta albertitos.pipeline.auditoria.auditar, E2): sólo se valida el JSONL[/yellow]"
+        )
+    return auditar
+
+
 def _fecha_corte(valor: str | None) -> date:
     crudo = valor or os.environ.get("ALBERTITOS_FECHA_CORTE")
     if not crudo:
@@ -358,6 +377,7 @@ def run(
         True, "--con-traza/--sin-traza", help="motivo, regla y norma_version en cada línea"
     ),
     salida: Path = typer.Option(ENTREGA, help="carpeta de la entrega (ensayos y demo: otra)"),
+    sin_auditoria: bool = typer.Option(False, "--sin-auditoria", help=AYUDA_SIN_AUDITORIA),
 ) -> None:
     """ingest → maestro → erp pull (si no hay) → extract → duplicados → decide → package."""
     from albertitos.pipeline.run import correr
@@ -373,6 +393,7 @@ def run(
         extraer=extraer,
         workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")),
         con_traza=con_traza,
+        auditar=_auditor(sin_auditoria),
     )
     rprint(r.texto())
     if not r.ok:
@@ -438,13 +459,17 @@ def package(
         True, "--con-traza/--sin-traza", help="motivo, regla y norma_version en cada línea"
     ),
     salida: Path = ENTREGA,
+    sin_auditoria: bool = typer.Option(False, "--sin-auditoria", help=AYUDA_SIN_AUDITORIA),
 ) -> None:
-    """BD → dist/entrega/outcomes*.jsonl, validados. Se niega si falta alguna decisión.
-    Sólo escribe en la BD eventos de emit (la traza de lo entregado)."""
+    """BD → dist/entrega/outcomes*.jsonl, validados y auditados. Se niega si falta alguna decisión o
+    si la auditoría de entrega sale roja. Sólo escribe en la BD eventos de emit (la traza de lo entregado)."""
     from albertitos.pipeline import package as pk
 
+    auditar = _auditor(sin_auditoria)
     try:
-        for ruta, inf in pk.empaquetar(_conn(), salida, CAJA, LOTE2, con_traza=con_traza):
+        for ruta, inf in pk.empaquetar(
+            _conn(), salida, CAJA, LOTE2, con_traza=con_traza, auditar=auditar
+        ):
             rprint(inf.texto(), "→", ruta)
     except pk.EntregaInvalida as e:
         rprint(f"[red]NO se escribe la entrega:[/red]\n{e}")

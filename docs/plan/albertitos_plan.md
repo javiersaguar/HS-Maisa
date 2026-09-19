@@ -53,13 +53,17 @@ Medido en un portátil i5-1235U con 7,7 GB y Windows 11, con 4 hilos (`docs/benc
 - **Con la caché del LLM llena:** 15 s (33 ficheros/s) y 0 tokens.
 - **Reprocesar un cambio de ERP:** 2 de 500 facturas en 0,04 s.
 
-468 de 500 salen por plantilla (3 ms). El LLM lee 32: 29 escaneadas (p50 17 s) y 3 de texto (3,3 s).
+468 de 500 salen por plantilla (3 ms). El LLM lee 32: 29 escaneadas (p50 17 s, que pudo salir en
+parte de la caché del gateway) y 3 de texto (3,3 s).
 **Coste marginal: 0 € por factura** (modelos abiertos en suscripción plana). El coste real es el fijo,
 399 €/mes (0,04 € por factura con 10.000 al mes).
 
-El cuello de botella es la visión, que satura con 4 hilos (0,22 ficheros/s). Escalar 10× no exige pagar
-más LLM, sino que menos facturas lleguen a él (más plantillas). Un formato nuevo (email, Excel) es un
-conector de `extract/` que produce el mismo `InvoiceFacts`; la norma no cambia.
+El cuello de botella es la visión con doble lectura: 0,065 ficheros/s con 4 hilos y 0,106 con 8, medido
+sin la caché del gateway en otro portátil (Ryzen 9, `docs/agentes/ESCALA-10K.md` §4). Allí, a 10.000
+facturas, el camino determinista tarda 57 s (medido) y las ~580 escaneadas, ~1,5 h con una key
+(extrapolado). Escalar 10× no exige más máquina ni pagar más LLM, sino que menos facturas lleguen a él
+(más plantillas) o más keys. Un formato nuevo (email, Excel) es un conector de `extract/` que produce el
+mismo `InvoiceFacts`; la norma no cambia.
 
 ## 2. ADRs / trade-offs
 

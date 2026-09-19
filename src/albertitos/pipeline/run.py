@@ -37,7 +37,7 @@ class ResumenRun:
     duplicados_quitados: int = 0
     decididas: int = 0
     entregas: list[tuple[Path, InformeValidacion]] = field(default_factory=list)
-    rechazo: InformeValidacion | None = None
+    rechazo: InformeValidacion | package.InformeAuditoria | None = None
 
     @property
     def ok(self) -> bool:
@@ -95,6 +95,7 @@ def correr(
     workers: int = 1,
     con_traza: bool = True,
     maestro_xlsx: Path | None = None,
+    auditar: package.Auditor | None = None,
 ) -> ResumenRun:
     from albertitos.sources import excel, snapshot
 
@@ -130,7 +131,9 @@ def correr(
         conn, norma_version=norma_version, fecha_corte=fecha_corte, maestro=m, erp=e
     )
     try:
-        r.entregas = package.empaquetar(conn, entrega, caja, lote2, con_traza=con_traza)
+        r.entregas = package.empaquetar(
+            conn, entrega, caja, lote2, con_traza=con_traza, auditar=auditar
+        )
     except package.EntregaInvalida as ex:
         r.rechazo = ex.informe
     r.ficheros = conn.execute("SELECT count(*) n FROM ficheros").fetchone()["n"]

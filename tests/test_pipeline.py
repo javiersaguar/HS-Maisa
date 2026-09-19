@@ -5,6 +5,7 @@ Tres PDFs reales de la Caja (uno con tilde) copiados a una Caja temporal; ERP de
 
 import json
 import shutil
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -12,10 +13,10 @@ from pathlib import Path
 import pytest
 
 from albertitos.core import db
-from albertitos.core.contracts import InvoiceFacts, MetodoExtraccion
+from albertitos.core.contracts import Decision, InvoiceFacts, MetodoExtraccion, Motivo, Resultado
 from albertitos.core.hashing import sha256_fichero
 from albertitos.core.versions import EXTRACTOR_VERSION
-from albertitos.pipeline import etapas
+from albertitos.pipeline import etapas, package
 from albertitos.pipeline.run import MAESTRO_XLSX, correr
 from albertitos.pipeline.validar import listar_pdfs, validar_jsonl
 from albertitos.sources import snapshot
@@ -180,3 +181,139 @@ def test_bench_mide_la_ventana_y_filtra_desde(conn):
     assert e["fps"] == pytest.approx(3 / 2)
     assert m["reintentos"] == {"LLM-429": 1}
     assert "1.5 ficheros/s" in bench.texto(m)
+
+
+# --------------------------------------------------------------------- auditoría de entrega (E2)
+
+
+@dataclass
+class _Informe:
+    rojos: dict[str, list[str]]
+
+    @property
+    def ok(self) -> bool:
+        return not any(self.rojos.values())
+
+    def texto(self) -> str:
+        return "ROJO · " + "; ".join(f"{c}: {f}" for c, f in self.rojos.items() if f)
+
+
+def _auditor_doble(llamadas: list[dict[int, Path]]):
+    """Doble de UNA comprobación de la auditoría de E2, para probar el enganche en `empaquetar`."""
+
+    def auditar(conn, lotes: dict[int, Path]) -> _Informe:
+        llamadas.append(lotes)
+        malas = [
+            f["file_id"]
+            for f in db.decisiones_vigentes(conn)
+            if f["resultado"] == "PAGAR" and any(not m["ok"] for m in json.loads(f["motivos_json"]))
+        ]
+        return _Informe({"PAGAR con una regla incumplida": malas})
+
+    return auditar
+
+
+def _forzar_pagar(conn, file_id: str, motivos: list[Motivo]) -> None:
+    """Una decisión que la norma nunca daría: PAGAR pese a lo que digan sus motivos."""
+    f = next(x for x in db.decisiones_vigentes(conn) if x["file_id"] == file_id)
+    db.guardar_decision(
+        conn,
+        Decision(
+            file_id=file_id,
+            sha256=f["sha256"],
+            resultado=Resultado.PAGAR,
+            motivos=motivos,
+            norma_version="v3",
+            fecha_corte=date(2026, 9, 18),
+            hechos_hash=f["hechos_hash"],
+            maestro_version=f["maestro_version"],
+            erp_version=f["erp_version"],
+        ),
+    )
+    conn.commit()
+
+
+def _emit(conn, estado: str) -> list[dict]:
+    filas = conn.execute(
+        "SELECT file_id, error_codigo, detalle FROM eventos WHERE etapa='emit' AND estado=? ORDER BY id",
+        (estado,),
+    ).fetchall()
+    return [dict(f) for f in filas]
+
+
+def test_package_no_entrega_un_pagar_incoherente_y_no_pisa_la_anterior(conn, caja, erp, tmp_path):
+    caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA)
+    entrega = tmp_path / "entrega"
+    salida = entrega / "outcomes.jsonl"
+    llamadas: list[dict[int, Path]] = []
+    auditar = _auditor_doble(llamadas)
+
+    r = _correr(conn, caja_tmp, caja, entrega, auditar=auditar)  # la norma decide: coherente
+    assert r.ok, r.texto()
+    assert llamadas == [{1: caja_tmp / "facturas"}]
+    assert json.loads(_emit(conn, "ok")[0]["detalle"])["auditoria"] == "verde"
+    anterior = salida.read_bytes()
+
+    fallo = Motivo(regla_id="v3.R5", ok=False, detalle="el asiento del ERP ya está PAGADA")
+    _forzar_pagar(conn, MUESTRA[2], [fallo])
+    with pytest.raises(package.EntregaInvalida) as exc:
+        package.empaquetar(conn, entrega, caja_tmp, None, con_traza=True, auditar=auditar)
+    assert MUESTRA[2] in str(exc.value)
+    assert salida.read_bytes() == anterior  # todo o nada: la entrega válida anterior sigue
+    assert not list(entrega.glob("*.tmp"))
+    (error,) = _emit(conn, "error")
+    assert error["error_codigo"] == "AUDITORIA-ROJA"
+    assert json.loads(error["detalle"])["rojos"] == {"PAGAR con una regla incumplida": [MUESTRA[2]]}
+    (pendiente,) = _emit(conn, "pendiente")
+    assert pendiente["file_id"] == MUESTRA[2]  # la traza del fichero dice por qué no salió
+
+    # sin la auditoría, el JSONL es válido y saldría: por eso va dentro de package
+    package.empaquetar(conn, entrega, caja_tmp, None, con_traza=True)
+    assert salida.read_bytes() != anterior
+
+
+def test_package_se_niega_si_la_auditoria_falla(conn, caja, erp, tmp_path):
+    caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA[:1])
+    assert _correr(conn, caja_tmp, caja, tmp_path / "entrega").ok
+
+    def rota(conn, lotes):
+        raise RuntimeError("sin maestro")
+
+    with pytest.raises(package.EntregaInvalida, match="sin maestro"):
+        package.empaquetar(conn, tmp_path / "otra", caja_tmp, None, auditar=rota)
+    assert not (tmp_path / "otra" / "outcomes.jsonl").exists()
+    assert [e["error_codigo"] for e in _emit(conn, "error")] == ["AUDITORIA-ERROR"]
+
+
+def test_auditoria_real_de_e2_caza_un_duplicado_pagado_dos_veces(conn, caja, erp, tmp_path):
+    """Contrato con `pipeline.auditoria.auditar` (E2). Se salta hasta que exista; entonces manda."""
+    pytest.importorskip("albertitos.pipeline.auditoria")
+    auditar = package.auditor_de_entrega()
+    caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA)
+    entrega = tmp_path / "entrega"
+    assert _correr(conn, caja_tmp, caja, entrega, auditar=auditar).ok  # coherente: pasa
+
+    # MUESTRA[0] y [1] comparten PO-2026-0001: como si marcar_duplicados no hubiera corrido
+    ok = Motivo(regla_id="v3.R1", ok=True, detalle="ok")
+    for fid in MUESTRA[:2]:
+        _forzar_pagar(conn, fid, [ok])
+    informe = auditar(conn, {1: caja_tmp / "facturas"})
+    assert not informe.ok
+    assert set(MUESTRA[:2]) <= {f for fids in informe.rojos.values() for f in fids}
+    with pytest.raises(package.EntregaInvalida):
+        package.empaquetar(conn, entrega, caja_tmp, None, con_traza=True, auditar=auditar)
+
+
+def test_auditor_de_entrega_se_engancha_solo_cuando_exista(monkeypatch):
+    import sys
+    import types
+
+    def auditar(conn, lotes):
+        return _Informe({})
+
+    monkeypatch.setitem(
+        sys.modules, "albertitos.pipeline.auditoria", types.SimpleNamespace(auditar=auditar)
+    )
+    assert package.auditor_de_entrega() is auditar
+    monkeypatch.setitem(sys.modules, "albertitos.pipeline.auditoria", None)  # no existe
+    assert package.auditor_de_entrega() is None

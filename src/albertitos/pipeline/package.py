@@ -1,8 +1,12 @@
 """Empaquetado de la entrega: BD → dist/entrega/*.jsonl, siempre pasando por el validador.
 
-Eventos (etapa emit): uno por intento y lote (sin file_id: OK con nº de líneas, o ERROR con los
-errores) y, por fichero, uno cuando cambia lo entregado o cuando no se puede entregar (PENDIENTE:
-sin decisión vigente, la entrega se niega).
+Después de validar todos los lotes y antes de sustituir nada, la auditoría de entrega (E2,
+docs/agentes/AUDITORIA-ENTREGA.md: ningún PAGAR que no toque, ningún duplicado sin marcar) mira la BD;
+si sale roja, la entrega se niega igual que con un JSONL inválido.
+
+Eventos (etapa emit): uno por intento y lote (sin file_id: OK con nº de líneas y si hubo auditoría, o
+ERROR con los errores) y, por fichero, uno cuando cambia lo entregado o cuando no se puede entregar
+(PENDIENTE: sin decisión vigente o señalado por la auditoría, la entrega se niega).
 """
 
 from __future__ import annotations
@@ -10,7 +14,10 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Protocol
 
 from albertitos.core import db
 from albertitos.core.contracts import EstadoEvento, Etapa, Event, Outcome, Resultado
@@ -20,8 +27,48 @@ from albertitos.pipeline.validar import InformeValidacion, listar_pdfs, validar_
 log = logging.getLogger(__name__)
 
 
+class InformeAuditoria(Protocol):
+    """Lo que `empaquetar` necesita de la auditoría. `ok` = ningún ROJO (el ÁMBAR informa, no bloquea)."""
+
+    @property
+    def ok(self) -> bool: ...
+
+    @property
+    def rojos(self) -> dict[str, list[str]]: ...  # comprobación → file_id señalados
+
+    def texto(self) -> str: ...
+
+
+# conn en la BD de la entrega, {lote: directorio de sus PDF}; sólo lee
+Auditor = Callable[[sqlite3.Connection, dict[int, Path]], InformeAuditoria]
+
+
+def auditor_de_entrega() -> Auditor | None:
+    """`pipeline.auditoria.auditar` (E2) si ya existe; None si todavía no. Quien empaqueta de verdad
+    (CLI `package` y `run`) lo pasa a `empaquetar`: en cuanto llegue, se aplica sin tocar nada más."""
+    try:
+        from albertitos.pipeline.auditoria import auditar
+    except ModuleNotFoundError as e:
+        if e.name != "albertitos.pipeline.auditoria":
+            raise  # existe pero le falta algo: que se vea, no que se salte
+        return None
+    return auditar
+
+
+@dataclass
+class _AuditoriaFallida:
+    """La auditoría lanzó una excepción: sin auditoría no hay entrega (se niega, no se salta)."""
+
+    error: str
+    rojos: dict[str, list[str]] = field(default_factory=dict)
+    ok: bool = False
+
+    def texto(self) -> str:
+        return f"NO APTO · la auditoría de entrega falló: {self.error}"
+
+
 class EntregaInvalida(Exception):
-    def __init__(self, informe: InformeValidacion) -> None:
+    def __init__(self, informe: InformeValidacion | InformeAuditoria) -> None:
         super().__init__(informe.texto())
         self.informe = informe
 
@@ -32,6 +79,7 @@ def empaquetar(
     caja_dir: Path,
     lote2_dir: Path | None = None,
     con_traza: bool = False,
+    auditar: Auditor | None = None,
 ) -> list[tuple[Path, InformeValidacion]]:
     salida = Path(salida)
     salida.mkdir(parents=True, exist_ok=True)
@@ -72,47 +120,71 @@ def empaquetar(
             informe.ruta = str(destino)
             if not informe.ok:
                 sin_decision = sorted(set(esperados) - {str(x["file_id"]) for x in filas})
-                _eventos_rechazo(conn, lote, nombre, informe, sin_decision)
-                raise EntregaInvalida(informe)
-            generados.append((destino, informe))
-            entregados.append((lote, nombre, filas))
-        for tmp, destino in temporales:
-            tmp.replace(destino)
-    finally:
-        for tmp, _ in temporales:
-            tmp.unlink(missing_ok=True)
-    _eventos_entrega(conn, entregados)
-    return generados
-
-
-def _eventos_rechazo(
-    conn, lote: int, nombre: str, informe: InformeValidacion, sin_decision: list[str]
-) -> None:
-    try:
-        db.registrar_evento(
-            conn,
-            Event(
-                etapa=Etapa.EMIT,
-                estado=EstadoEvento.ERROR,
-                error_codigo="ENTREGA-INVALIDA",
-                detalle=json.dumps(
+                _eventos_rechazo(
+                    conn,
+                    "ENTREGA-INVALIDA",
                     {
                         "lote": lote,
                         "entrega": nombre,
                         "n_errores": len(informe.errores),
                         "errores": informe.errores[:5],
                     },
-                    ensure_ascii=False,
-                ),
+                    {fid: "sin decisión vigente: package se niega" for fid in sin_decision},
+                )
+                raise EntregaInvalida(informe)
+            generados.append((destino, informe))
+            entregados.append((lote, nombre, filas))
+        if auditar is not None:
+            _auditar(conn, auditar, {lote: d for lote, _, d in lotes}, [n for _, n, _ in lotes])
+        for tmp, destino in temporales:
+            tmp.replace(destino)
+    finally:
+        for tmp, _ in temporales:
+            tmp.unlink(missing_ok=True)
+    _eventos_entrega(conn, entregados, auditada=auditar is not None)
+    return generados
+
+
+def _auditar(conn, auditar: Auditor, dirs: dict[int, Path], nombres: list[str]) -> None:
+    """Todos los lotes ya son válidos; si la auditoría sale roja (o falla), EntregaInvalida."""
+    try:
+        informe = auditar(conn, dirs)
+    except Exception as e:  # noqa: BLE001 — un fallo de la auditoría niega la entrega, no la salta
+        log.exception("la auditoría de entrega falló")
+        informe = _AuditoriaFallida(error=f"{type(e).__name__}: {e}")
+    if informe.ok:
+        return
+    rojos = {c: fids for c, fids in informe.rojos.items() if fids}
+    _eventos_rechazo(
+        conn,
+        "AUDITORIA-ERROR" if isinstance(informe, _AuditoriaFallida) else "AUDITORIA-ROJA",
+        {
+            "entrega": nombres,
+            "rojos": {c: fids[:5] for c, fids in rojos.items()},
+            "informe": informe.texto()[:1000],
+        },
+        {fid: f"auditoría de entrega: {c}" for c, fids in rojos.items() for fid in fids},
+    )
+    raise EntregaInvalida(informe)
+
+
+def _eventos_rechazo(conn, codigo: str, detalle: dict, pendientes: dict[str, str]) -> None:
+    """Un emit/error por intento y un emit/pendiente por fichero que impide la entrega."""
+    try:
+        db.registrar_evento(
+            conn,
+            Event(
+                etapa=Etapa.EMIT,
+                estado=EstadoEvento.ERROR,
+                error_codigo=codigo,
+                detalle=json.dumps(detalle, ensure_ascii=False),
             ),
         )
+        entrega = detalle.get("entrega")
         ids = {
-            r["file_id"]: r["sha256"]
-            for r in conn.execute(
-                "SELECT file_id, sha256 FROM ficheros WHERE lote=?", (lote,)
-            ).fetchall()
+            r["file_id"]: r["sha256"] for r in conn.execute("SELECT file_id, sha256 FROM ficheros")
         }
-        for fid in sin_decision:
+        for fid, porque in pendientes.items():
             registrar_transicion(
                 conn,
                 Event(
@@ -121,8 +193,7 @@ def _eventos_rechazo(
                     etapa=Etapa.EMIT,
                     estado=EstadoEvento.PENDIENTE,
                     detalle=json.dumps(
-                        {"entrega": nombre, "pendiente": "sin decisión vigente: package se niega"},
-                        ensure_ascii=False,
+                        {"entrega": entrega, "pendiente": porque}, ensure_ascii=False
                     ),
                 ),
             )
@@ -131,7 +202,9 @@ def _eventos_rechazo(
         log.warning("no se pudieron registrar los eventos de emit: %s", e)
 
 
-def _eventos_entrega(conn, entregados: list[tuple[int, str, list[sqlite3.Row]]]) -> None:
+def _eventos_entrega(
+    conn, entregados: list[tuple[int, str, list[sqlite3.Row]]], auditada: bool
+) -> None:
     try:
         for lote, nombre, filas in entregados:
             db.registrar_evento(
@@ -140,7 +213,13 @@ def _eventos_entrega(conn, entregados: list[tuple[int, str, list[sqlite3.Row]]])
                     etapa=Etapa.EMIT,
                     estado=EstadoEvento.OK,
                     detalle=json.dumps(
-                        {"lote": lote, "entrega": nombre, "lineas": len(filas)}, ensure_ascii=False
+                        {
+                            "lote": lote,
+                            "entrega": nombre,
+                            "lineas": len(filas),
+                            "auditoria": "verde" if auditada else "no ejecutada",
+                        },
+                        ensure_ascii=False,
                     ),
                 ),
             )

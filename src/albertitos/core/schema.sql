@@ -1,4 +1,4 @@
--- Esquema Albertitos v1. Idempotente: sólo CREATE IF NOT EXISTS. Sin migraciones destructivas.
+-- Esquema Albertitos v2 (core/versions.py: ESQUEMA_VERSION). Idempotente: sólo CREATE IF NOT EXISTS. Sin migraciones destructivas.
 -- Fuente de verdad única. La consola la lee tal cual; la CLI la escribe.
 
 CREATE TABLE IF NOT EXISTS ficheros (
@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS decisiones (
 );
 CREATE INDEX IF NOT EXISTS ix_decisiones_vigente ON decisiones(file_id, vigente);
 CREATE INDEX IF NOT EXISTS ix_decisiones_linaje ON decisiones(norma_version, maestro_version, erp_version, vigente);
+-- guardar_decision (UPDATE ... WHERE sha256=? AND vigente=1) y el JOIN de linaje: sin él, cada decisión
+-- recorre la tabla entera y el historial la hace crecer con cada reprocesado (ESCALA-10K §5)
+CREATE INDEX IF NOT EXISTS ix_decisiones_sha_vigente ON decisiones(sha256, vigente);
 
 CREATE TABLE IF NOT EXISTS eventos (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

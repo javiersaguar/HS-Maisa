@@ -35,6 +35,23 @@ def test_decision_nueva_desplaza_a_la_anterior(conn):
     assert [d["vigente"] for d in t["decisiones"]] == [0, 1]
 
 
+def test_indice_sha_vigente_idempotente_y_usado_por_guardar_decision(conn):
+    """Sin él, guardar_decision recorre la tabla por decisión (ESCALA-10K §5: 20 s → 1,7 s a 10.000)."""
+    antes = conn.execute("SELECT type, name, sql FROM sqlite_master ORDER BY name").fetchall()
+    db.init_schema(conn)  # una BD con el esquema anterior lo gana con `make db`, sin tocar datos
+    despues = conn.execute("SELECT type, name, sql FROM sqlite_master ORDER BY name").fetchall()
+    assert [tuple(f) for f in antes] == [tuple(f) for f in despues]
+    assert "ix_decisiones_sha_vigente" in {f["name"] for f in despues}
+    plan = " ".join(
+        f[3]
+        for f in conn.execute(
+            "EXPLAIN QUERY PLAN UPDATE decisiones SET vigente=0 WHERE sha256=? AND vigente=1",
+            ("x",),
+        )
+    )
+    assert "USING INDEX ix_decisiones_sha_vigente" in plan
+
+
 def test_guardar_decision_sella_decidido_en_si_no_viene(conn):
     db.guardar_fichero(
         conn, sha256="a" * 64, file_id="a.pdf", lote=1, bytes_=10, paginas=1, tiene_texto=True
