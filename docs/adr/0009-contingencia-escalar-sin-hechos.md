@@ -1,7 +1,7 @@
 # ADR-0009 · Si a la hora de entregar no hay hechos, ESCALAR explícito y reversible
 
-- **Estado:** propuesto. Miguel dijo sí con cuatro condiciones (PLAN-07, 19/09). Falta Mónica (pregunta C de
-  `docs/PLAN-MONICA.md`). Hasta tener los dos síes, nadie la aplica a la BD real.
+- **Estado:** aceptado (19/09 09:00). Miguel, dueño de `pipeline/`, dijo sí con cuatro condiciones (C1-C4, en
+  Decisión); Mónica, dueña de la norma, dijo sí después. Se aplica sólo al lote 2, a la hora de entregar y si hace falta.
 - **Fecha:** 2026-09-19 09:10 · **Dueño:** Javier (agente G1) · **Módulos:** `scripts/contingencia.py`,
   `scripts/auditoria_entrega.py`, skill `/lote2`
 

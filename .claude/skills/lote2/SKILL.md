@@ -139,7 +139,7 @@ Las cuatro condiciones de Miguel (19/09, 09:10), tal cual; el script las hace cu
 - **C3 · Reversión probada por los dos caminos**, `reprocess --impacted` y `run` entero: al llegar los hechos, la contingencia queda con `vigente=0` y la vigente es la de la norma.
 - **C4 · Que se vea** en tres sitios: `"regla":"contingencia.C1"` en la línea entregada, un evento `decide` con `"contingencia": true` y ÁMBAR en la auditoría.
 
-**Mientras ADR-0009 esté en *propuesto* (falta el sí de Mónica), nadie la aplica a la BD real.** Ensayo de punta a punta, medido: `docs/adr/0009-contingencia-escalar-sin-hechos.md` (Evidencia).
+**ADR-0009 está aceptado (Miguel con cuatro condiciones y Mónica, 19/09 09:00): se aplica sólo al lote 2, a la hora de entregar y cumpliendo C1-C4.** Ensayo de punta a punta, medido: `docs/adr/0009-contingencia-escalar-sin-hechos.md` (Evidencia).
 
 ## Ensayo aislado (receta completa en ENSAYO-LOTE2.md)
 
