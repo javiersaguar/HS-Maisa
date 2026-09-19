@@ -6,7 +6,7 @@ avisar en el canal** (un hook lo bloquea a quien no sea Miguel: marcador `.claud
 | Fichero | Qué es |
 |---|---|
 | `contracts.py` | Tipos pydantic: `InvoiceFacts`, `MasterSnapshot`, `ErpSnapshot`, `Decision`, `Motivo`, `Event`, `Outcome`, enums |
-| `schema.sql` | DDL idempotente: `ficheros`, `hechos`, `snapshots`, `decisiones` (con `vigente`), `eventos`, `cache_llm` |
+| `schema.sql` | DDL idempotente: `ficheros`, `identidades` (nombres extra de un PDF ya registrado: copias exactas, P0-1), `hechos`, `snapshots`, `decisiones` (con `vigente`), `eventos`, `cache_llm` |
 | `db.py` | `conectar`, `init_schema`, `guardar_*`, `registrar_evento`, `traza`, `resumen`. SQL a mano, sin ORM |
 | `hashing.py` | `sha256_fichero` (identidad del PDF), `hash_canonico` (linaje) |
 | `versions.py` | Versiones de extractor, prompt, norma por defecto. Súbelas cuando cambie el comportamiento |

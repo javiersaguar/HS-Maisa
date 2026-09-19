@@ -1,4 +1,4 @@
--- Esquema Albertitos v2 (core/versions.py: ESQUEMA_VERSION). Idempotente: sólo CREATE IF NOT EXISTS. Sin migraciones destructivas.
+-- Esquema Albertitos v3 (core/versions.py: ESQUEMA_VERSION). Idempotente: sólo CREATE IF NOT EXISTS. Sin migraciones destructivas.
 -- Fuente de verdad única. La consola la lee tal cual; la CLI la escribe.
 
 CREATE TABLE IF NOT EXISTS ficheros (
@@ -10,6 +10,18 @@ CREATE TABLE IF NOT EXISTS ficheros (
   tiene_texto  INTEGER,                        -- 0 → escaneada, hace falta visión
   ingerido_en  TEXT NOT NULL
 );
+
+-- Nombres extra de un PDF ya registrado en `ficheros` con otro nombre o en otro lote: copia exacta, misma
+-- sha256 (P0-1). `ficheros` guarda el primero y no se toca; cada nombre extra tiene su línea en la entrega
+-- de su lote, con la decisión de la sha256 (una sola: hechos y decisiones van por contenido).
+CREATE TABLE IF NOT EXISTS identidades (
+  file_id      TEXT NOT NULL,                  -- nombre exacto del PDF en NFC (clave de entrega)
+  lote         INTEGER NOT NULL,
+  sha256       TEXT NOT NULL REFERENCES ficheros(sha256),
+  ingerido_en  TEXT NOT NULL,
+  PRIMARY KEY (file_id, lote)
+);
+CREATE INDEX IF NOT EXISTS ix_identidades_sha ON identidades(sha256);
 
 CREATE TABLE IF NOT EXISTS hechos (
   sha256            TEXT NOT NULL REFERENCES ficheros(sha256),

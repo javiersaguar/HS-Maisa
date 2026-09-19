@@ -205,7 +205,10 @@ def test_duplicados_se_ponen_y_se_quitan(conn, base, maestro, erp):
     _factura(conn, "e.pdf", pedido="PO-2026-0001", total=Decimal("3012.89"), **P001)
     r = _reprocesar(conn, maestro, erp)
     assert r.duplicados == (2, 0)
-    assert r.impactados == {"a.pdf": "hechos cambiados", "e.pdf": "sin decisión"}
+    assert r.impactados == {
+        "a.pdf": "duplicado marcado: comparte pedido o factura con otro PDF",
+        "e.pdf": "sin decisión",
+    }
     ev = conn.execute("SELECT detalle FROM eventos WHERE etapa='validate' AND file_id='a.pdf'")
     assert '"accion": "puesto", "con": ["e.pdf"]' in ev.fetchone()["detalle"]
     assert _vigentes(conn)["a.pdf"] == "ESCALAR"
@@ -214,6 +217,7 @@ def test_duplicados_se_ponen_y_se_quitan(conn, base, maestro, erp):
         conn.execute(f"DELETE FROM {tabla} WHERE sha256=?", ("e" * 64,))
     r = _reprocesar(conn, maestro, erp)
     assert r.duplicados == (0, 1)
+    assert r.impactados["a.pdf"].startswith("duplicado quitado")
     assert [(c["file_id"], c["despues"]) for c in r.cambios] == [("a.pdf", "PAGAR")]
     h = conn.execute("SELECT hechos_json FROM hechos WHERE sha256=?", ("a" * 64,)).fetchone()[0]
     assert Aviso.DUPLICADO_SOSPECHOSO.value not in h

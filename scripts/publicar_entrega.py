@@ -140,7 +140,9 @@ def publicar(args, raiz, comandos, ahora):
             "ALBERTITOS_DIR_LOTE2": str(raiz / "data/lote2/facturas"),
         }
         kw = {"raiz": raiz, "env": env}
-        ejecutar([*comandos.cli, "package", "--salida", str(salida)], **kw)
+        # package ya audita: sin el motivo, su puerta pararía un rojo antes de llegar a esta excepción
+        rojo = [] if args.aceptar_rojo is None else ["--aceptar-rojo", args.aceptar_rojo]
+        ejecutar([*comandos.cli, "package", "--salida", str(salida), *rojo], **kw)
         nombres = ["outcomes.jsonl", "albertitos_plan.pdf"]
         lote2 = salida / "outcomes_lote2.jsonl"
         hay_lote2 = any((raiz / "data/lote2/facturas").glob("*.pdf"))
