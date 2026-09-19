@@ -28,7 +28,7 @@ export const REGLAS: Array<{ value: string; label: string }> = [
   { value: 'R6', label: 'R6 · Anomalías para humano' },
 ]
 
-const labelClass = 'text-[11px] font-bold uppercase tracking-[0.12em] text-[#7b8981]'
+const labelClass = 'text-[11px] font-bold uppercase tracking-[0.12em] text-muted'
 
 export function FilterBar({
   filters,
@@ -55,15 +55,15 @@ export function FilterBar({
     onChange({ ...filters, [key]: value })
 
   return (
-    <Card className="mt-4 overflow-hidden rounded-2xl border-[#e2e8e3] shadow-[0_8px_28px_rgba(20,55,45,0.05)]">
-      <div className="border-b border-[#edf0ec] bg-[#fbfcfa] px-5 py-4">
+    <Card className="mt-4 overflow-hidden rounded-2xl border-line shadow-[0_8px_28px_rgba(43,55,51,0.05)]">
+      <div className="border-b border-line-soft bg-surface px-5 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#718078]">Cola de ficheros</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Cola de ficheros</p>
             <h2 className="mt-1 text-[16px] font-semibold">Buscar y filtrar ficheros</h2>
           </div>
           {matching !== null && (
-            <span className="self-start rounded-full bg-[#eaf7f1] px-3 py-1.5 text-[13px] font-semibold text-[#176d59] tabular-nums transition-all">
+            <span className="self-start rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-dark tabular-nums transition-all">
               {matching} coinciden
             </span>
           )}
@@ -71,7 +71,7 @@ export function FilterBar({
       </div>
       <div className="p-5">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8a9890]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
           <input
             value={filters.q}
             onChange={(event) => set('q', event.target.value)}
@@ -80,15 +80,15 @@ export function FilterBar({
             onKeyDown={(event) => {
               if (event.key === 'Escape') set('q', '')
             }}
-            className="h-11 w-full rounded-xl border border-[#dfe7e1] bg-white pl-10 pr-20 text-[14px] outline-none transition placeholder:text-[#9aa59e] focus:border-[#70bda1] focus:ring-4 focus:ring-[#e4f6ee]"
+            className="h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-20 text-[14px] outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-line-soft"
           />
-          <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-[#8a9890]">
+          <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-muted">
             {searching && <Spinner className="size-4" />}
             {filters.q && (
               <button
                 onClick={() => set('q', '')}
                 aria-label="Borrar búsqueda"
-                className="flex size-6 min-h-0 items-center justify-center rounded-md transition hover:bg-[#edf8f3] hover:text-[#176d59] animate-in fade-in zoom-in-90 duration-150"
+                className="flex size-6 min-h-0 items-center justify-center rounded-md transition hover:bg-accent-soft hover:text-accent-dark animate-in fade-in zoom-in-90 duration-150"
               >
                 <X className="size-3.5" />
               </button>
@@ -138,11 +138,11 @@ export function FilterBar({
             />
           </div>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-[#edf0ec] pt-4 text-[13px]">
-          <span className="font-medium text-[#687970]">
+        <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-4 text-[13px]">
+          <span className="font-medium text-ink-soft">
             {matching !== null && total !== null ? (
               <>
-                Mostrando <strong className="text-[#233f35]">{matching}</strong> de {total} ficheros
+                Mostrando <strong className="text-ink">{matching}</strong> de {total} ficheros
               </>
             ) : (
               'Cargando ficheros…'
@@ -151,7 +151,7 @@ export function FilterBar({
           <button
             onClick={onReset}
             disabled={active === 0}
-            className="rounded-lg px-3 py-1.5 font-semibold text-[#315d53] transition hover:bg-[#edf8f3] disabled:opacity-40 disabled:hover:bg-transparent"
+            className="rounded-lg px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:opacity-40 disabled:hover:bg-transparent"
           >
             Quitar filtros{active > 0 ? ` (${active})` : ''}
           </button>

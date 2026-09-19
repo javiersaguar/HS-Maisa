@@ -8,7 +8,7 @@ import { Spinner } from './Spinner'
 
 /** Grey block used while data is in flight. */
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <span className={`block animate-pulse rounded-lg bg-[#eceeea] ${className}`} />
+  return <span className={`block animate-pulse rounded-lg bg-raised ${className}`} />
 }
 
 export function LoadingState({
@@ -52,12 +52,12 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center animate-in fade-in duration-300">
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-[#f1f5f1] text-[#6b8078]">
+      <span className="flex size-11 items-center justify-center rounded-2xl bg-raised text-muted">
         {icon ?? <Inbox className="size-5" />}
       </span>
-      <h3 className="mt-4 text-[15px] font-semibold text-[#17211e]">{title}</h3>
+      <h3 className="mt-4 text-[15px] font-semibold text-ink">{title}</h3>
       {description && (
-        <p className="mt-1.5 max-w-[420px] text-[14px] leading-5 text-[#8a958e]">{description}</p>
+        <p className="mt-1.5 max-w-[420px] text-[14px] leading-5 text-muted">{description}</p>
       )}
       {action && <div className="mt-5">{action}</div>}
     </div>
@@ -91,7 +91,9 @@ export function ErrorState({
         ? 'No se puede contactar con el puente'
         : error.isUnavailable
           ? 'El puente no tiene base de datos'
-          : error.isNotFound
+          : error.isConflict
+            ? 'Todavía no hay decisiones con las que calcular esto'
+            : error.isNotFound
             ? 'No encontrado'
             : 'Algo ha fallado')
 
@@ -104,7 +106,7 @@ export function ErrorState({
       className="flex flex-col items-center justify-center px-6 py-14 text-center animate-in fade-in duration-300"
       role="alert"
     >
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-[#fff0f0] text-[#bd3434]">
+      <span className="flex size-11 items-center justify-center rounded-2xl bg-bad-soft text-bad">
         {isUnauthorized ? (
           <Lock className="size-5" />
         ) : isNetwork ? (
@@ -113,13 +115,13 @@ export function ErrorState({
           <AlertTriangle className="size-5" />
         )}
       </span>
-      <h3 className="mt-4 text-[15px] font-semibold text-[#17211e]">{heading}</h3>
-      <p className="mt-1.5 max-w-[460px] text-[14px] leading-5 text-[#8a958e]">{description}</p>
+      <h3 className="mt-4 text-[15px] font-semibold text-ink">{heading}</h3>
+      <p className="mt-1.5 max-w-[460px] text-[14px] leading-5 text-muted">{description}</p>
       {onRetry && (
         <button
           onClick={onRetry}
           disabled={retrying}
-          className="mt-5 inline-flex items-center gap-2 rounded-lg border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45] hover:bg-[#eff8f3] disabled:opacity-60"
+          className="mt-5 inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:border-accent-dark hover:bg-accent-soft disabled:opacity-60"
         >
           {retrying ? <Spinner /> : <RefreshCw className="size-3.5" />}
           {retrying ? 'Reintentando…' : 'Reintentar'}

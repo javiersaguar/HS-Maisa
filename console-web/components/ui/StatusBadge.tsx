@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 import type { Tone } from '@/lib/theme'
 
 const TONES: Record<Tone, string> = {
-  green: 'bg-[#edf9f4] text-[#087b5b]',
-  yellow: 'bg-[#fff9e6] text-[#a87000]',
-  red: 'bg-[#fff0f0] text-[#bd3434]',
-  gray: 'bg-[#f3f4f1] text-[#8a918c]',
+  green: 'bg-accent-soft text-accent-dark',
+  yellow: 'bg-warn-soft text-warn',
+  red: 'bg-bad-soft text-bad',
+  gray: 'bg-raised text-muted',
 }
 
 export function StatusBadge({

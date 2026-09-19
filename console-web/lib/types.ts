@@ -11,6 +11,8 @@
 
 /* ------------------------------------------------------------- contrato --- */
 
+import type { ConfianzaFicha } from './types-confianza'
+
 export type Resultado = 'PAGAR' | 'NO_PAGAR' | 'ESCALAR'
 
 export type Etapa = 'ingest' | 'extract' | 'validate' | 'enrich' | 'decide' | 'emit'
@@ -306,4 +308,93 @@ export interface Salud {
     identidades: boolean
     versiones: Versiones
   } | null
+}
+
+/* ---------------------------------------------------------------- bonus --- */
+/*
+ * Calendario de pagos y tesorería (K1). Nombres de campo EXACTOS de docs/api/bonus.md: snake_case, sin
+ * mapper que los renombre. Importes como string de 2 decimales ("8107.54"): no se suman en cliente.
+ */
+
+/** Una factura PAGAR en el calendario. */
+export interface Pago {
+  file_id: string
+  lote: number
+  decision_id: number
+  proveedor_id: string
+  beneficiario: string
+  iban: string
+  referencia: string
+  importe_eur: string
+  fecha_factura: string
+  vencimiento: string
+  fecha_ejecucion: string
+  semana: string
+  vencido: boolean
+  maestro_version: string
+  apto_remesa: boolean
+  iban_control_ok: boolean
+  /** Sólo con `con_confianza=true`: la ficha de K3 o null si K3 no está. */
+  confianza?: ConfianzaFicha | null
+}
+
+export interface BonusResumen {
+  tipo: string
+  fecha_corte: string
+  decisiones_pagar: number
+  calendario_numero: number
+  calendario_total_eur: string
+  remesa_numero: number
+  remesa_total_eur: string
+  excluidos_remesa: number
+  remesa_iban_sin_control: number
+  sin_vencimiento_calculable: number
+  vencidos: number
+  vencen_semana_corte: number
+  avisos_por_codigo: Record<string, number>
+  semanas: Record<string, { numero: number; importe_eur: string }>
+  vencido_importe_eur: string
+  en_plazo_importe_eur: string
+  semana_corte: string
+  lotes: number[]
+  proveedores: number
+}
+
+export interface CalendarioFiltros {
+  semana: string | null
+  proveedor: string | null
+  lote: number | null
+  vencido: boolean | null
+}
+
+export interface Calendario {
+  filtros: CalendarioFiltros
+  total: number
+  mostrados: number
+  pagos: Pago[]
+  confianza_nota?: string
+}
+
+/* ------------------------------------------------------------ confianza --- */
+/* Confianza en la CLASIFICACIÓN por factura (K3): vive en `types-confianza.ts`. No es InvoiceFacts.confianza. */
+
+export * from './types-confianza'
+
+/* ----------------------------------------------------------------- chat --- */
+/* Chat de sólo lectura (K2, docs/api/chat.md): proceso aparte en :8001. */
+
+export interface ChatTurno {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export type ChatEstado = 'ok' | 'solo_lectura' | 'sin_datos' | 'sin_evidencia' | 'limite' | 'degradado'
+
+export interface ChatRespuesta {
+  respuesta: string
+  citas: string[]
+  herramientas_usadas: string[]
+  modelo: string
+  latencia_ms: number
+  estado: ChatEstado
 }

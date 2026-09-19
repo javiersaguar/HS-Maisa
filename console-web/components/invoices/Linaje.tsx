@@ -7,11 +7,11 @@ import { describirLinaje, shortHash } from '@/lib/format'
  */
 export function Linaje({ decision }: { decision: Decision | null }) {
   return (
-    <div className="mt-3 rounded-xl border border-[#dfe4de] bg-white p-4 text-[13px] leading-5 text-[#52605a]">
+    <div className="mt-3 rounded-xl border border-line bg-surface p-4 text-[13px] leading-5 text-ink-soft">
       {decision ? (
         <>
           <p>{describirLinaje(decision)}</p>
-          <p className="mt-2 font-mono text-[11px] text-[#8a958e]">
+          <p className="mt-2 font-mono text-[11px] text-muted">
             maestro {shortHash(decision.maestro_version, 12)} · hechos {shortHash(decision.hechos_hash, 12)}
           </p>
         </>

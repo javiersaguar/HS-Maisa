@@ -7,12 +7,15 @@ import { describirEvento, frase, loteNombre, motivoPrincipal, resumenReglas, tit
 import { COLORS } from '@/lib/theme'
 import { useFichero } from '@/hooks/useFicheros'
 import { useTraza } from '@/hooks/useTraza'
+import { useConfianzaFichero } from '@/hooks/useConfianza'
 import { ChainOfWork } from '@/components/audit/ChainOfWork'
 import { AvisoChip, ResultadoBadge } from '@/components/invoices/badges'
 import { ErpMatchPanel } from '@/components/invoices/ErpMatchPanel'
 import { ExtractedFields, type CampoHecho } from '@/components/invoices/ExtractedFields'
 import { InvoiceDocument } from '@/components/invoices/InvoiceDocument'
 import { Linaje } from '@/components/invoices/Linaje'
+import { ConfianzaChip } from '@/components/confianza/ConfianzaChip'
+import { ConfianzaTarjeta } from '@/components/confianza/ConfianzaTarjeta'
 import { BackLink } from '@/components/ui/BackLink'
 import { Card } from '@/components/ui/Card'
 import { EmptyState, ErrorCard, ErrorState, LoadingCard, LoadingState, Skeleton } from '@/components/ui/states'
@@ -35,6 +38,8 @@ function FicheroDetail() {
 
   const { data: fichero, error, loading, initialLoading, refresh } = useFichero(fileId)
   const traza = useTraza({ file_id: fileId }, { enabled: Boolean(fileId) })
+  // K3: null si no responde o si no hay decisión vigente (404); entonces ni chip ni tarjeta.
+  const { data: confianza } = useConfianzaFichero(fileId || null)
 
   const [zoom, setZoom] = useState(100)
   const [highlight, setHighlight] = useState(true)
@@ -57,9 +62,12 @@ function FicheroDetail() {
       <div className="min-w-0">
         <h1 className="break-all text-[26px] font-semibold tracking-[-0.03em]">{fileId}</h1>
         {fichero && (
-          <p className="mt-1.5 flex items-center gap-2 text-[13px] text-[#8a958e] animate-in fade-in duration-200">
+          <p className="mt-1.5 flex items-center gap-2 text-[13px] text-muted animate-in fade-in duration-200">
             Factura de {loteNombre(fichero.lote)}
             <ResultadoBadge estado={fichero.estado} />
+            {confianza && fichero.decision && (
+              <ConfianzaChip banda={confianza.banda} razon={confianza.razones[0]} />
+            )}
           </p>
         )}
       </div>
@@ -127,26 +135,26 @@ function FicheroDetail() {
     <>
       <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha pasado con este fichero</h3>
       {traza.error ? (
-        <p className="mt-2 text-[13px] text-[#bd3434]">
+        <p className="mt-2 text-[13px] text-bad">
           No se han podido cargar los pasos.{' '}
           <button onClick={traza.refresh} className="min-h-0 font-semibold underline">
             Reintentar
           </button>
         </p>
       ) : !traza.data ? (
-        <div className="mt-2 flex flex-col gap-3 border-l-2 border-[#e7e9e5] pl-3">
+        <div className="mt-2 flex flex-col gap-3 border-l-2 border-line pl-3">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-8 w-2/3" />
         </div>
       ) : recientes.length === 0 ? (
-        <p className="mt-2 text-[13px] text-[#9aa39e]">Todavía no hay pasos registrados.</p>
+        <p className="mt-2 text-[13px] text-muted">Todavía no hay pasos registrados.</p>
       ) : (
-        <div className="mt-2 flex flex-col gap-4 border-l-2 border-[#b9dfd0] pl-3 text-[14px]">
+        <div className="mt-2 flex flex-col gap-4 border-l-2 border-accent-line pl-3 text-[14px]">
           {recientes.map((paso) =>
             paso.tipo === 'evento' ? (
               <div key={paso.id} className="animate-in fade-in slide-in-from-left-1 duration-300">
-                <b className="font-semibold text-[#17211e]">{tituloEvento(paso.evento)}</b>
-                <p className="mt-0.5 text-[13px] leading-5 text-[#68736d]">{describirEvento(paso.evento)}</p>
+                <b className="font-semibold text-ink">{tituloEvento(paso.evento)}</b>
+                <p className="mt-0.5 text-[13px] leading-5 text-ink-soft">{describirEvento(paso.evento)}</p>
               </div>
             ) : null,
           )}
@@ -157,7 +165,7 @@ function FicheroDetail() {
   const chainHeading = (
     <div>
       <h2 className="text-[22px] font-semibold tracking-[-0.025em]">Traza</h2>
-      <p className="mt-1 text-[13px] text-[#8a958e]">
+      <p className="mt-1 text-[13px] text-muted">
         Cómo se ha leído, cruzado y decidido este fichero, paso a paso.
       </p>
     </div>
@@ -177,8 +185,8 @@ function FicheroDetail() {
             activeField={activeField}
           />
           <aside className="min-w-0">
-            <Card className="h-full overflow-hidden border-[#d9e2dc] shadow-[0_8px_30px_rgba(30,55,45,0.06)]">
-              <div className="flex border-b border-[#e3e9e4] bg-white px-2" role="tablist" aria-label="Análisis del fichero">
+            <Card className="h-full overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.06)]">
+              <div className="flex border-b border-line bg-surface px-2" role="tablist" aria-label="Análisis del fichero">
                 {TABS.map((item, index) => (
                   <button
                     key={item}
@@ -192,16 +200,16 @@ function FicheroDetail() {
                     tabIndex={tab === item ? 0 : -1}
                     onClick={() => setTab(item)}
                     onKeyDown={(event) => onTabKey(event, index)}
-                    className={`relative flex flex-1 items-center justify-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${tab === item ? 'text-[#164f45]' : 'text-[#9aa39e] hover:text-[#315d53]'}`}
+                    className={`relative flex flex-1 items-center justify-center gap-1.5 px-3 py-3 text-[13px] font-semibold transition-colors ${tab === item ? 'text-accent-dark' : 'text-muted hover:text-accent-dark'}`}
                   >
                     {item}
                     {item === 'Traza' && traza.data && (
-                      <span className="rounded-full bg-[#eff8f3] px-1.5 text-[11px] text-[#176d59] tabular-nums">
+                      <span className="rounded-full bg-accent-soft px-1.5 text-[11px] text-accent-dark tabular-nums">
                         {pasos.length}
                       </span>
                     )}
                     <span
-                      className={`absolute inset-x-3 bottom-0 h-0.5 rounded bg-[#164f45] transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
+                      className={`absolute inset-x-3 bottom-0 h-0.5 rounded bg-accent-dark transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
                     />
                   </button>
                 ))}
@@ -215,14 +223,14 @@ function FicheroDetail() {
               >
                 {tab === 'Decisión' && (
                   <>
-                    <div className="rounded-xl border border-[#e4e5df] bg-[#f1f1ef] p-4">
+                    <div className="rounded-xl border border-line bg-raised p-4">
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
-                        <span className="text-[13px] text-[#7d8580]">
+                        <span className="text-[13px] text-muted">
                           {decision ? resumenReglas(decision) : 'Todavía no hay decisión'}
                         </span>
                       </div>
-                      <p className="mt-3 text-[13px] leading-5 text-[#52605a]">
+                      <p className="mt-3 text-[13px] leading-5 text-ink-soft">
                         {decision
                           ? motivoPrincipal(fichero)
                           : incidencia?.tipo === 'evento'
@@ -230,24 +238,26 @@ function FicheroDetail() {
                             : 'Este fichero todavía no tiene una decisión.'}
                       </p>
                       {pendiente && (
-                        <p className="mt-2 text-[12px] leading-5 text-[#7d8580]">
+                        <p className="mt-2 text-[12px] leading-5 text-muted">
                           Está <b className="font-semibold">PENDIENTE</b>: no hay hechos validados, así que la norma no
                           se ha aplicado y nunca se paga. Abajo, lo que sí ha pasado.
                         </p>
                       )}
                     </div>
 
+                    {decision && confianza && <ConfianzaTarjeta ficha={confianza} />}
+
                     {pendiente && pasosRecientes}
 
                     <Linaje decision={decision} />
 
                     {hechos?.texto_sospechoso && (
-                      <div className="mt-4 rounded-xl border border-dashed border-[#e0c95a] bg-[#fffbe8] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#a08400]">
+                      <div className="mt-4 rounded-xl border border-dashed border-warn-line bg-warn-soft p-4">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-warn">
                           El documento intenta instruir
                         </p>
-                        <p className="mt-1.5 text-[13px] italic leading-5 text-[#5f5b2e]">“{hechos.texto_sospechoso}”</p>
-                        <p className="mt-2 text-[12px] text-[#8a7f45]">
+                        <p className="mt-1.5 text-[13px] italic leading-5 text-warn">“{hechos.texto_sospechoso}”</p>
+                        <p className="mt-2 text-[12px] text-warn">
                           Es evidencia, no una orden: la norma lo trata como anomalía (R6) y decide con las reglas.
                         </p>
                       </div>
@@ -255,31 +265,31 @@ function FicheroDetail() {
 
                     <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha comprobado la norma</h3>
                     {decision ? (
-                      <ul className="mt-2 overflow-hidden rounded-lg border border-[#dfe4de] text-[13px] leading-5 text-[#68736d]">
+                      <ul className="mt-2 overflow-hidden rounded-lg border border-line text-[13px] leading-5 text-ink-soft">
                         {decision.motivos.map((motivo) => (
                           <li
                             key={motivo.regla_id}
-                            className="grid grid-cols-[10px_minmax(0,1fr)] items-start gap-2 border-b border-[#edf0ec] bg-[#fafbf9] px-3 py-2 last:border-b-0"
+                            className="grid grid-cols-[10px_minmax(0,1fr)] items-start gap-2 border-b border-line-soft bg-surface px-3 py-2 last:border-b-0"
                           >
                             <span
                               aria-label={motivo.ok ? 'Cumple' : motivo.evidencia.no_pagar ? 'No pagar' : 'Escalar'}
                               className="mt-[6px] size-2 rounded-full"
                               style={{
-                                background: motivo.ok ? COLORS.mint : motivo.evidencia.no_pagar ? COLORS.dangerSoft : '#c9a800',
+                                background: motivo.ok ? COLORS.mint : motivo.evidencia.no_pagar ? COLORS.danger : COLORS.lime,
                               }}
                             />
                             <span>
-                              <b className="font-semibold text-[#17211e]">{tituloRegla(motivo.regla_id)}.</b>{' '}
+                              <b className="font-semibold text-ink">{tituloRegla(motivo.regla_id)}.</b>{' '}
                               {frase(motivo.detalle)}
                             </span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-2 text-[13px] text-[#9aa39e]">La norma todavía no se ha aplicado a este fichero.</p>
+                      <p className="mt-2 text-[13px] text-muted">La norma todavía no se ha aplicado a este fichero.</p>
                     )}
                     <p className="mt-2 text-[13px]">
-                      <button onClick={() => setTab('Traza')} className="min-h-0 text-[#315d53] underline">
+                      <button onClick={() => setTab('Traza')} className="min-h-0 text-accent-dark underline">
                         Ver evidencia en la traza
                       </button>
                     </p>
