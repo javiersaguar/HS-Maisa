@@ -466,10 +466,23 @@ def test_console_no_usa_fecha_de_hoy():
 
 
 # ------------------------------------------------------------------------ bandeja (POST /inbox)
-# El runner de la CLI se sustituye: ni LLM ni subproceso en `make check`. Lo que se vigila es lo que
-# rompería la entrega: que la bandeja escriba en la BD de la entrega o fuera del lote 99.
+# Lo que se vigila es lo que rompería la entrega o enseñaría una decisión ajena: que la bandeja escriba
+# en la BD de la entrega, fuera del lote 99, o que un PDF subido con el nombre de uno de la Caja
+# muestre la decisión del original. El runner falso hace la ingest de verdad (sin LLM) y finge el
+# resto; `test_inbox_cli_real_*` pasa por la CLI entera con un PDF de texto de la Caja.
 
-PDF = b"%PDF-1.4\n%fake\n"
+CAJA = Path("data/caja/facturas")
+
+
+def _pdf(texto: str) -> bytes:
+    import pymupdf
+
+    doc = pymupdf.open()
+    doc.new_page().insert_text((72, 72), texto)
+    try:
+        return doc.tobytes()
+    finally:
+        doc.close()
 
 
 def _multipart(*ficheros: tuple[str, bytes]) -> tuple[bytes, str]:
@@ -489,52 +502,86 @@ def _multipart(*ficheros: tuple[str, bytes]) -> tuple[bytes, str]:
 
 
 class _RunnerFalso:
+    """`ingest` de verdad sobre la carpeta de la bandeja; extract y decide, fingidos."""
+
     def __init__(self, codigos: dict[str, int] | None = None):
         self.llamadas: list[list[str]] = []
         self.codigos = codigos or {}
 
     def __call__(self, args: list[str], ruta: Path) -> tuple[int, str]:
+        from albertitos.pipeline import etapas
+
         self.llamadas.append(args)
+        if args[0] == "ingest":
+            c = db.conectar(ruta)
+            try:
+                etapas.ingest(c, Path(args[args.index("--dir") + 1]), lote=bandeja.LOTE)
+            finally:
+                c.close()
         return self.codigos.get(args[0], 0), f"{args[0]} ok"
+
+
+def _bandeja(tmp_path: Path, runner=None) -> bandeja.Bandeja:
+    return bandeja.Bandeja(tmp_path / "test.db", runner=runner or _RunnerFalso(), activa=True)
 
 
 def _post(b: bandeja.Bandeja, cuerpo: bytes, tipo: str | None):
     return api.despachar("POST", "/inbox", {}, None, b.ruta, bandeja=b, cuerpo=cuerpo, tipo=tipo)
 
 
+def _lista(b: bandeja.Bandeja) -> list[str]:
+    return (b.ruta.parent / "inbox.lista.txt").read_text(encoding="utf-8").split()
+
+
 def test_inbox_se_niega_con_la_bd_de_la_entrega():
-    b = bandeja.Bandeja(bandeja.BD_ENTREGA, runner=_RunnerFalso())
-    status, body = _post(b, *_multipart(("a.pdf", PDF)))
+    b = bandeja.Bandeja(bandeja.BD_ENTREGA, runner=_RunnerFalso(), activa=True)
+    status, body = _post(b, *_multipart(("a.pdf", _pdf("a"))))
     assert status == 409 and "--bandeja" in body["error"]
     assert b.runner.llamadas == []
 
 
-def test_inbox_400_sin_pdf(conn, tmp_path):
+def test_inbox_cerrado_sin_el_flag_aunque_la_bd_no_sea_la_de_la_entrega(conn, tmp_path):
+    """Puente arrancado con --db <otra ruta a la BD real> y sin --bandeja: POST 409, nada escrito."""
     b = bandeja.Bandeja(tmp_path / "test.db", runner=_RunnerFalso())
+    status, body = _post(b, *_multipart(("a.pdf", _pdf("a"))))
+    assert status == 409 and "--bandeja" in body["error"]
+    assert b.runner.llamadas == [] and not (tmp_path / "inbox").exists()
+    # y el despachar sin bandeja explícita tampoco la abre
+    assert api.despachar("POST", "/inbox", {}, None, tmp_path / "test.db", cuerpo=b"")[0] == 409
+
+
+def test_inbox_400_sin_pdf_o_con_nombre_que_windows_no_acepta(conn, tmp_path):
+    b = _bandeja(tmp_path)
     assert _post(b, b"{}", "application/json")[0] == 400
     assert _post(b, *_multipart(("notas.txt", b"hola")))[0] == 400
     assert _post(b, *_multipart(("falso.pdf", b"no soy un pdf")))[0] == 400
-    assert b.runner.llamadas == []
+    assert _post(b, *_multipart(('fa"ctura?.pdf', _pdf("a"))))[0] == 400
+    assert b.runner.llamadas == [] and b.estado()["estado"] == "idle"
     assert api.despachar("POST", "/panel", {}, conn)[0] == 405
 
 
 def test_inbox_202_lote_99_nfc_y_ciclo_completo(conn, maestro, erp, tmp_path):
     _semilla(conn, maestro, erp)
-    runner = _RunnerFalso()
-    b = bandeja.Bandeja(tmp_path / "test.db", runner=runner)
+    b = _bandeja(tmp_path)
+    nueva, otra = _pdf("nueva"), _pdf("otra")
     nfd = unicodedata.normalize("NFD", "nueva_ofimática.pdf")
-    status, body = _post(b, *_multipart((nfd, PDF), ("../carpeta/otra.pdf", PDF)))
+    status, body = _post(b, *_multipart((nfd, nueva), ("../carpeta/otra.pdf", otra)))
     assert status == 202 and body["lote"] == 99
     assert body["file_ids"] == ["nueva_ofimática.pdf", "otra.pdf"]  # NFC y sin carpeta
-    assert (tmp_path / "inbox" / "nueva_ofimática.pdf").read_bytes() == PDF
+    assert (tmp_path / "inbox" / "nueva_ofimática.pdf").read_bytes() == nueva
     b.esperar(5)
-    assert [a[0] for a in runner.llamadas] == ["ingest", "extract", "decide"]
-    assert runner.llamadas[0][-2:] == ["--lote", "99"]
-    assert runner.llamadas[1][1] == runner.llamadas[2][1] == "--fixture"
+    assert [a[0] for a in b.runner.llamadas] == ["ingest", "extract", "decide"]
+    assert b.runner.llamadas[0][-2:] == ["--lote", "99"]
+    assert b.runner.llamadas[1][1] == b.runner.llamadas[2][1] == "--fixture"
+    assert _lista(b) == ["nueva_ofimática.pdf", "otra.pdf"]
 
     # Lo que la CLI habría dejado en la BD: una decidida, la otra PENDIENTE (el LLM no la leyó).
-    _alta(conn, "nueva_ofimática.pdf", lote=99, resultado=Resultado.ESCALAR)
-    _alta(conn, "otra.pdf", lote=99, resultado=None)
+    for fid, datos, res in (
+        ("nueva_ofimática.pdf", nueva, Resultado.ESCALAR),
+        ("otra.pdf", otra, None),
+    ):
+        sha = hashlib.sha256(datos).hexdigest()
+        _alta(conn, fid, lote=99, resultado=res, hechos=_hechos(fid, sha256=sha))
     conn.commit()
     status, body = api.despachar("GET", "/inbox", {}, conn, b.ruta, bandeja=b)
     assert status == 200 and body["estado"] == "listo" and body["disponible"]
@@ -543,6 +590,56 @@ def test_inbox_202_lote_99_nfc_y_ciclo_completo(conn, maestro, erp, tmp_path):
         "otra.pdf": "PENDIENTE",
     }
     assert lecturas.listar_ficheros(conn, lote=99)["total"] == 2
+
+
+def test_inbox_nombre_de_la_caja_con_otro_contenido_no_hereda_su_decision(
+    conn, maestro, erp, tmp_path
+):
+    """El tribunal coge una factura de la Caja, le cambia un dato y la sube con el mismo nombre: el
+    panel no puede enseñar la decisión del original (PAGAR en la semilla)."""
+    _semilla(conn, maestro, erp)
+    b = _bandeja(tmp_path)
+    editada = _pdf("P001 con otro IBAN")
+    status, body = _post(b, *_multipart(("2026-01-08_P001.pdf", editada)))
+    assert status == 202
+    interno = db.PREFIJO_INTERNO + "2026-01-08_P001.pdf"  # P0-5: el nombre ya era del lote 1
+    assert body["file_ids"] == [interno]
+    b.esperar(5)
+    assert _lista(b) == [interno]  # extract y decide van a la subida, no al original
+
+    status, body = api.despachar("GET", "/inbox", {}, conn, b.ruta, bandeja=b)
+    assert body["ficheros"] == [
+        {"file_id": interno, "nombre": "2026-01-08_P001.pdf", "estado": "PENDIENTE"}
+    ]
+    assert (
+        lecturas.estados(conn, ["2026-01-08_P001.pdf"])[0]["estado"] == "PAGAR"
+    )  # el original, intacto
+
+
+def test_inbox_copia_exacta_no_se_vuelve_a_extraer_y_cuenta_como_el_original(conn, tmp_path):
+    b = _bandeja(tmp_path)
+    datos = _pdf("original")
+    assert _post(b, *_multipart(("original.pdf", datos)))[0] == 202
+    b.esperar(5)
+    _alta(
+        conn,
+        "original.pdf",
+        lote=99,
+        hechos=_hechos("original.pdf", sha256=hashlib.sha256(datos).hexdigest()),
+    )
+    conn.commit()
+    b.runner.llamadas.clear()
+    # la misma subida con otro nombre: identidad del original, sin extract ni decide
+    status, body = _post(b, *_multipart(("renombrada.pdf", datos)))
+    assert status == 202 and body["estado"] == "listo"
+    assert [a[0] for a in b.runner.llamadas] == ["ingest"]
+    _, body = api.despachar("GET", "/inbox", {}, conn, b.ruta, bandeja=b)
+    assert [(f["nombre"], f["estado"]) for f in body["ficheros"]] == [("renombrada.pdf", "PAGAR")]
+    # el mismo nombre con otro contenido: se pide renombrar, no se pisa nada
+    status, body = _post(b, *_multipart(("original.pdf", _pdf("otra versión"))))
+    assert status == 400 and "original.pdf" in body["error"]
+    assert (tmp_path / "inbox" / "original.pdf").read_bytes() == datos
+    assert b.estado()["estado"] == "idle"
 
 
 def test_inbox_un_trabajo_cada_vez_y_error_visible(conn, tmp_path):
@@ -556,14 +653,53 @@ def test_inbox_un_trabajo_cada_vez_y_error_visible(conn, tmp_path):
                 suelta.wait(5)
             return super().__call__(args, ruta)
 
-    b = bandeja.Bandeja(tmp_path / "test.db", runner=Lento({"decide": 1}))
-    assert _post(b, *_multipart(("a.pdf", PDF)))[0] == 202
-    assert _post(b, *_multipart(("b.pdf", PDF)))[0] == 409
+    b = _bandeja(tmp_path, Lento({"decide": 1}))
+    assert _post(b, *_multipart(("a.pdf", _pdf("a"))))[0] == 202
+    assert _post(b, *_multipart(("b.pdf", _pdf("b"))))[0] == 409
     suelta.set()
     b.esperar(5)
     estado = b.estado()
     assert estado["estado"] == "error" and "decide" in estado["error"]
     assert any(linea.startswith("$ albertitos decide") for linea in estado["log"])
+
+
+def test_inbox_si_no_se_puede_escribir_el_pdf_no_se_queda_ingiriendo(conn, tmp_path, monkeypatch):
+    b = _bandeja(tmp_path)
+
+    def falla(self, datos):
+        raise OSError("disco lleno")
+
+    monkeypatch.setattr(Path, "write_bytes", falla)
+    status, body = _post(b, *_multipart(("a.pdf", _pdf("a"))))
+    assert status == 500 and "disco lleno" in body["error"]
+    assert b.estado()["estado"] == "error"
+    monkeypatch.undo()
+    assert _post(b, *_multipart(("a.pdf", _pdf("a"))))[0] == 202  # no se queda en 409
+
+
+def test_inbox_cli_real_decide_un_pdf_de_la_caja_editado_sin_llm(
+    conn, maestro, erp, tmp_path, monkeypatch
+):
+    """Sin runner falso: ingest → extract (plantilla, sin LLM) → decide por subproceso, con el PDF en
+    la carpeta de la bandeja. Antes extract no lo encontraba y se quedaba PENDIENTE para siempre."""
+    _semilla(conn, maestro, erp)
+    monkeypatch.setenv("ALBERTITOS_FECHA_CORTE", CORTE.isoformat())
+    original = (CAJA / "2026-01-11_P007.pdf").read_bytes()
+    editada = original + b"\n%bandeja\n"  # otro sha256, mismo texto: sale por plantilla
+    b = bandeja.Bandeja(tmp_path / "test.db", activa=True)
+    status, body = _post(b, *_multipart(("2026-01-11_P007_editada.pdf", editada)))
+    assert status == 202, body
+    b.esperar(120)
+    estado = b.estado()
+    assert estado["estado"] == "listo", estado["log"]
+    log = "\n".join(estado["log"])
+    assert "extract: 1/1 ok" in log and "'plantilla': 1" in log and "tokens 0/0" in log, log
+    _, body = api.despachar("GET", "/inbox", {}, conn, b.ruta, bandeja=b)
+    (fila,) = body["ficheros"]
+    assert fila["file_id"] == "2026-01-11_P007_editada.pdf"
+    assert fila["estado"] in ("PAGAR", "NO_PAGAR", "ESCALAR"), estado["log"]
+    detalle = lecturas.fichero(conn, fila["file_id"])
+    assert detalle["lote"] == 99 and detalle["sha256"] == hashlib.sha256(editada).hexdigest()
 
 
 def test_traza_motivos_una_vez_aunque_se_decida_varias_veces(conn, maestro, erp):

@@ -2,8 +2,8 @@
 
 Sin dependencias nuevas (stdlib): ocho GET, JSON en snake_case, CORS abierto en localhost. No escribe:
 la CLI es quien decide. Si falta la BD responde 503 con el comando que la crea; `/salud` contesta siempre.
-El único POST es `/inbox` (la bandeja, `bandeja.py`): guarda PDF y lanza la CLI por subproceso, y sólo
-si el puente sirve una BD que no es la de la entrega (`--bandeja`).
+El único POST es `/inbox` (la bandeja, `bandeja.py`): guarda PDF y lanza la CLI por subproceso, sólo
+si el puente se arrancó con `--bandeja` (que nunca sirve la BD de la entrega) y sólo desde la consola.
 
 Arranque:
     uv run python -m albertitos.console.api                    # http://127.0.0.1:8000
@@ -53,6 +53,9 @@ _CORS = {
     "Access-Control-Allow-Headers": "Accept, Content-Type",
     "Access-Control-Expose-Headers": CABECERA_API,
 }
+# Un POST multipart no pide preflight: sin esto, cualquier web abierta en el navegador podría subir
+# PDF a la bandeja y gastar LLM. Como el chat, sólo la consola Next (o curl, que no manda Origin).
+ORIGENES_BANDEJA = ("http://localhost:3000", "http://127.0.0.1:3000")
 
 Query = dict[str, list[str]]
 Respuesta = tuple[int, Any]
@@ -152,7 +155,7 @@ def _r_inbox(
     if method == "POST":
         return bandeja.recibir(cuerpo or b"", tipo)
     estado = bandeja.estado()
-    estado["ficheros"] = lecturas.estados(conn, estado["file_ids"]) if conn is not None else []
+    estado["ficheros"] = bandeja.resultados(conn) if conn is not None else []
     return 200, estado
 
 
@@ -221,8 +224,10 @@ def _enviar(handler: BaseHTTPRequestHandler, status: int, body: Any) -> None:
         handler.wfile.write(payload)
 
 
-def hacer_handler(ruta: Path) -> type[BaseHTTPRequestHandler]:
-    bandeja = bandeja_mod.Bandeja(ruta)  # una por servidor: el estado del trabajo vive aquí
+def hacer_handler(ruta: Path, *, bandeja_activa: bool = False) -> type[BaseHTTPRequestHandler]:
+    """`bandeja_activa` sólo con `--bandeja`: sin el flag, POST /inbox da 409 sea cual sea la BD."""
+    # una por servidor: el estado del trabajo vive aquí
+    bandeja = bandeja_mod.Bandeja(ruta, activa=bandeja_activa)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt: str, *args: Any) -> None:
@@ -249,6 +254,11 @@ def hacer_handler(ruta: Path) -> type[BaseHTTPRequestHandler]:
             path, query = self._ruta()
             if path != "/inbox":
                 self._no_escritura()
+                return
+            origen = self.headers.get("Origin")
+            if origen is not None and origen not in ORIGENES_BANDEJA:
+                self.close_connection = True
+                _enviar(self, 403, {"error": f"origen {origen} no autorizado para subir facturas"})
                 return
             try:
                 largo = int(self.headers.get("Content-Length") or 0)
@@ -301,18 +311,20 @@ def hacer_handler(ruta: Path) -> type[BaseHTTPRequestHandler]:
     return Handler
 
 
-def servir(ruta: Path | None = None, puerto: int = PUERTO_DEFECTO) -> None:
+def servir(
+    ruta: Path | None = None, puerto: int = PUERTO_DEFECTO, *, bandeja: bool = False
+) -> None:
     ruta = Path(ruta or RUTA_BD)
     if not ruta.exists():
         print(
             f"Aviso: no existe {ruta}. Sólo /salud responderá hasta que corras "
             "`make db && uv run albertitos ingest` (o `make run`)."
         )
-    httpd = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta))
+    httpd = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta, bandeja_activa=bandeja))
     modo = (
-        "sólo lectura (POST /inbox desactivado: es la BD de la entrega)"
-        if bandeja_mod.es_bd_de_entrega(ruta)
-        else "bandeja activa (POST /inbox, lote 99)"
+        "bandeja activa (POST /inbox, lote 99)"
+        if bandeja
+        else "sólo lectura (POST /inbox desactivado: arranca con --bandeja)"
     )
     print(
         f"Albertitos consola API v{lecturas.API_VERSION} · {modo} · "
@@ -347,7 +359,7 @@ def main() -> None:
             ruta = bandeja_mod.preparar(destino=args.db or bandeja_mod.BD_BANDEJA)
         except FileNotFoundError as e:
             parser.error(str(e))
-    servir(ruta, args.puerto)
+    servir(ruta, args.puerto, bandeja=args.bandeja)
 
 
 if __name__ == "__main__":
