@@ -1,22 +1,24 @@
 # Plan del sábado 19/09 · de dormir a la entrega de seguro y al lote 2
 
-Estado al cerrar la noche (01:20): `main` = `5eeb562`, **261 tests verdes**, `make package` da **APTO** con 500 líneas
-(443 PAGAR · 48 ESCALAR · 9 NO_PAGAR). Si mañana saliera todo mal, ya hay una entrega defendible.
+**Estado a las 09:50** (actualiza el de la noche): `javier/ingesta` con **392 tests verdes** y 24 commits por delante de
+`main`. **La entrega de seguro ya está publicada** (`fdc76e8`, 500 líneas, 443/48/9). **Lo que queda, con dueño y hora
+límite, está en `docs/ESTADO-BACKEND.md`**. Resumen:
 
 ## Lo que está hecho y lo que no
 
 | Bloque | Estado |
 |---|---|
-| Ingesta (500/500 hechos, plantillas 468, visión 29, contraste 468/468) | **hecho** |
-| Norma v3 con evidencia completa, duplicados detectados | **hecho** (políticas abiertas en `docs/agentes/DECISIONES-NORMA.md`) |
-| Pipeline `run`, `package` todo o nada, reprocesado por linaje | **hecho** |
-| Resiliencia (caída, 429, respuesta inválida, timeout) con guion ensayado | **hecho** |
-| Escala y coste medidos (10.000 facturas, caminos LLM reales) | **hecho** |
-| ADRs 0001-0008 | **hecho**; falta elegir los 2-5 del PDF |
-| **Consola (3 vistas)** | **pendiente · Alejandro** — es el minuto 0-2 de la demo |
-| **PDF del plan (35 pts)** | **a medias · Alfonso** |
-| **Muestra etiquetada a mano** | **pendiente · Mónica + Alfonso** — única verdad antes del domingo |
-| **Ensayo de la demo en el portátil de Alfonso** | **pendiente** — nadie ha corrido nada en esa máquina |
+| Ingesta, norma v3, pipeline, linaje, resiliencia, escala y coste | **hecho y ensayado** |
+| Entrega de seguro | **hecho** a las 07:10 (`make publicar`), antes de la hora prevista |
+| Contingencia para PDFs del lote 2 sin hechos (ADR-0009) | **hecho y aceptado** |
+| Kit de la demo para el portátil de Alfonso | **hecho** (enviado a las 09:05) |
+| **PDF idéntico con otro nombre en el lote 2** (P0-1) | **pendiente · Miguel** — hoy no tiene salida: la ingesta lo sobrescribe o el verificador lo bloquea |
+| **¿La entrega final del lote 1 lleva la regla nueva y el ERP v2?** (P0-2) | **pendiente · Mónica con los mentores** |
+| **`scan_025` / auditoría en rojo** (P0-3) | **pendiente · Mónica** (respuesta A) |
+| **Auditoría dentro de `package`** (P0-4) | **parche listo** (G1) · falta `--aceptar-rojo` de Miguel o la auditoría en verde |
+| **Consola (3 vistas)** | **andamiaje del viernes** · Alejandro no ha subido cambios |
+| **PDF del plan (35 pts)** | **a medias · Alfonso** · la línea 98 tiene una cifra falsa |
+| **Muestra etiquetada a mano** | **0 de 21** · Mónica + Alfonso |
 | **Bonus (+10)** | **sin decidir** |
 
 ## Timeline
@@ -52,8 +54,10 @@ Estado al cerrar la noche (01:20): `main` = `5eeb562`, **261 tests verdes**, `ma
 2. **Ejecutar `run` entero**, no pasos sueltos: `marcar_duplicados` sólo corre dentro de `run` y por eso estuvimos pagando dos veces `PO-2026-0492`.
 3. Comprobar el hash del zip contra el canal.
 
-## Riesgos vivos
-- **La consola no existe todavía** y es el minuto 0-2. Si a las 20:00 no enseña una traza, la demo se hace con `trace` en terminal (repliegue ya previsto).
-- **Nadie ha ejecutado nada en el portátil de Alfonso.** La caché del LLM vive en la BD de Javier: sin copiarla, la demo intentaría llamar al proveedor y podría quedarse colgada sin red.
-- **El lote 2 puede traer muchas escaneadas**: la visión va a 0,065-0,106 facturas/s con doble lectura. 40 escaneadas serían ~7-10 minutos. Lanzar `extract` antes de ponerse con la norma v4.
-- **`scan_025`** sigue escalando por un motivo falso hasta la tarea de las 09:15.
+## Riesgos vivos (09:50)
+- **Un PDF idéntico renombrado en el lote 2** nos deja NO APTO en cualquiera de los dos caminos (P0-1). Es lo más grave
+  de lo que queda y lo tiene que resolver Miguel antes de las 17:00.
+- **No sabemos si el lote 1 final va con la regla nueva** (P0-2). Rehacerlo cuesta 7 s; no saberlo cuesta la entrega.
+- **La consola sigue siendo el andamiaje.** Funciona con datos, pero no enseña bien la traza. Repliegue a las 20:00.
+- **Mónica y Alfonso no han subido nada hoy**: la muestra etiquetada y el PDF (35 pts) son los dos que más esperan.
+- Sin cambios: el lote 2 puede traer muchas escaneadas (0,065-0,106 f/s): hay que lanzar `extract` antes que la norma v4.

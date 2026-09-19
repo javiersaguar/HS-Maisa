@@ -64,7 +64,12 @@ Llevas estas preguntas, por este orden (las tres primeras vienen del viernes):
    ESCALAR (lo de ahora) o una PAGAR y otra NO_PAGAR?
 3. Un escaneado con otro documento transparentándose, ¿se escala?
 4. Las diferencias de la muestra que no hayáis resuelto entre Alfonso y tú.
-5. **La regla nueva de las 18:00: ¿qué forma tiene?** Un umbral, una condición de proveedor, una fecha… Cualquier
+5. **(P0, añadida a las 09:50) ¿La entrega final del lote 1 tiene que llevar la regla nueva y el ERP actualizado, o se
+   queda con la v3 y el ERP v1?** Es la pregunta 3 de `docs/hitos.md` y lleva sin respuesta desde el viernes. Cambia lo
+   que hacemos a las 18:00: rehacer el lote 1 cuesta 7 s, pero hay que saber si toca.
+6. **(P0) ¿El lote 2 puede traer una factura idéntica byte a byte a otra, con otro nombre?** ¿Y qué esperan: las dos
+   ESCALAR? Miguel lo está resolviendo en el pipeline (P0-1 de `docs/ESTADO-BACKEND.md`) y necesita la política.
+7. **La regla nueva de las 18:00: ¿qué forma tiene?** Un umbral, una condición de proveedor, una fecha… Cualquier
    pista sirve para que la v4 esté medio escrita antes de que llegue.
 
 Apunta las respuestas **literales** en `DECISIONES-NORMA.md`, en una sección «Respuestas del mentor (hora)».

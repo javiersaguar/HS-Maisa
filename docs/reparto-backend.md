@@ -1,5 +1,8 @@
 # Reparto del backend (viernes 21:00 → domingo 02:00)
 
+> **Sábado 09:50:** lo que queda por hacer, con dueño y prioridad, está en `docs/ESTADO-BACKEND.md`. Este documento
+> es el reparto original de directorios, que sigue vigente.
+
 Tres personas, cada una con **directorios propios** (nadie edita los de otro; si hace falta, se pide en el canal)
 y con tareas escritas para que las ejecute un agente. Frontend (`console/`) y el PDF del plan siguen con
 Alejandro y Alfonso (ver `CLAUDE.md`). Miguel mergea.

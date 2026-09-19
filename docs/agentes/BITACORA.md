@@ -523,3 +523,12 @@ Plantilla (cópiala tal cual):
 - **Mi fallo:** ADR-0009 dice «propuesto». Lo escribí a las 09:08 sin ver `902ebfe` (09:02). Falta pasar a «aceptado» el estado, la fila del README y la última frase de `/lote2` §6. Lo intenté y el control de permisos lo denegó: espera la confirmación de Javier.
 - sigue en pie: **PIDO A Miguel** `--aceptar-rojo` (09:05) · **PIDO A Javier** el modelo y el respaldo en el evento de fallo de extract (09:05).
 - BD real `bb8128d2c656` y `outcomes.jsonl` `5ec17aaa5045`: sin cambios. La contingencia no se ha aplicado a la BD real.
+
+### 19/09 09:55 · Javier · cierre del ciclo 7 y lo que queda del backend
+- G1 y G2 cerrados (partes en `partes/PARTE-07.md`). Resueltos los dos pendientes de G1: ADR-0009 **aceptado** en sus tres sitios, y **el fallo del LLM dice qué modelo falló y si se probó el respaldo** (`024a051`), que la contingencia ya enseña. `make check`: 392 en verde.
+- **Qué queda, con dueño y prioridad: `docs/ESTADO-BACKEND.md`.** Cuatro P0 (lo que puede dejarnos NO APTO):
+  - **PIDO A Miguel (P0-1, antes de las 17:00):** un PDF idéntico byte a byte con otro nombre (en el lote 2, o repetido del lote 1). `ficheros` tiene la sha256 como clave: la ingesta sobrescribe `file_id` y `lote` del original (NO APTO en el lote 1), y si `verificar_material` lo para, el del lote 2 queda sin línea (NO APTO igual). Requisitos y un diseño barato en ESTADO-BACKEND §1. Cuando lo tengas, yo cambio el verificador para que avise en vez de parar.
+  - **PIDO A Mónica (P0-2):** a los mentores, si la entrega final del lote 1 lleva la regla nueva y el ERP v2 (pregunta 3 de hitos.md, sin respuesta desde el viernes). Y la política para el PDF idéntico (P0-1). Añadidas a su plan como preguntas 5 y 6.
+  - **P0-3:** la respuesta A de Mónica (scan_025). **P0-4 · PIDO A Miguel:** `--aceptar-rojo` en `package` (parche de G1, 09:05), para poder activar la puerta de auditoría.
+- **P1 (puntos):** los parches de trazabilidad para Miguel (erp pull, línea del ERP en trace, pareja del duplicado, trace legible, porqué del linaje, status sin histórico); consola de Alejandro (sigue el andamiaje); plan de Alfonso (línea 98 falsa, elegir ADRs); norma de Mónica (muestra 0/21, tests, v4).
+- `PLAN-SABADO.md`, `reparto-backend.md`, `hitos.md`, `PLAN-MONICA.md` y `CLAUDE.md` remiten a ESTADO-BACKEND.

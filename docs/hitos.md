@@ -21,9 +21,11 @@
 ## Preguntas para los mentores (hoy, antes de las 23:00)
 1. ¿Cuándo es NO_PAGAR frente a ESCALAR? (hipótesis: NO_PAGAR = violación objetiva comprobada en el ERP, p. ej. ya PAGADA)
 2. ¿Respecto a qué fecha se evalúa "fecha no futura"? (usamos `ALBERTITOS_FECHA_CORTE`)
-3. ¿`outcomes.jsonl` (lote 1) debe reflejar la norma v3 y el ERP v1, o la regla nueva y el ERP actualizado?
+3. ¿`outcomes.jsonl` (lote 1) debe reflejar la norma v3 y el ERP v1, o la regla nueva y el ERP actualizado? **← sin respuesta a las 09:50 y es P0-2 (`docs/ESTADO-BACKEND.md`): Mónica la lleva a los mentores hoy.**
 5. La regla nueva del sábado: ¿llega como fichero en el zip, como texto en el canal o dentro del Excel? ¿Se aplica también al lote 1?
 4. ¿Los PDFs que se declaran "documento de prueba del evaluador" se validan igual que el resto?
+
+6. **Nueva (09:50):** ¿el lote 2 puede traer una factura idéntica byte a byte a otra, con otro nombre? ¿Qué esperan en ese caso? (P0-1)
 
 Respuestas: *(anotar aquí con hora y quién respondió)*
 

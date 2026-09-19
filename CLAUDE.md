@@ -7,6 +7,7 @@ de proveedores/pedidos y el ERP local de 2009. **El LLM extrae; la norma, como c
 - Validación **binaria y sin puntos**: un outcome por fichero y los 540 aceptados por la referencia privada, o no hay premio.
 - 100 pts en la defensa: producto+arquitectura+ADRs 35 · trazabilidad 20 · escala+coste 25 · resiliencia ante caída del LLM 10 · ejecución 10 · bonus +10. Desempate: escala → resiliencia → bonus.
 - Detalle: `docs/hitos.md` (plazos y repliegues) · `docs/guion-defensa.md` · `docs/trampas.md` (anomalías de los datos).
+- **Qué queda por hacer, con dueño y prioridad: `docs/ESTADO-BACKEND.md`.** Cifras citables: `docs/CIFRAS.md`.
 
 ## Comandos
 | Qué | Cómo |

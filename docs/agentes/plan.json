@@ -10,15 +10,10 @@
   ],
   "agentes": {
     "G1": [
-      "scripts/contingencia.py",
-      "tests/test_contingencia.py",
       "src/albertitos/pipeline/auditoria.py",
       "scripts/auditoria_entrega.py",
       "tests/test_auditoria.py",
-      "docs/agentes/AUDITORIA-ENTREGA.md",
-      ".claude/skills/lote2/SKILL.md",
-      "docs/adr/0009-*",
-      "docs/adr/README.md"
+      "docs/agentes/AUDITORIA-ENTREGA.md"
     ],
     "G2": [
       "src/albertitos/sources/erp.py",
@@ -39,7 +34,17 @@
       "docs/PLAN-MONICA.md",
       "CLAUDE.md",
       "src/albertitos/extract/llm.py",
-      "tests/test_llm.py"
+      "tests/test_llm.py",
+      "docs/ESTADO-BACKEND.md",
+      "docs/PLAN-SABADO.md",
+      "docs/reparto-backend.md",
+      "docs/hitos.md",
+      "docs/agentes/partes/PARTE-07.md",
+      "docs/adr/0009-*",
+      "docs/adr/README.md",
+      ".claude/skills/lote2/SKILL.md",
+      "scripts/contingencia.py",
+      "tests/test_contingencia.py"
     ]
   }
 }
