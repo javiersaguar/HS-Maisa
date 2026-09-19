@@ -4,7 +4,32 @@ Cada agente rellena SU sección al terminar (o si lleva > 20 min bloqueado). Cif
 Partes anteriores en `partes/` (01: A1-A3 · 02: B1-B2 · 03: C1-C2 · 04: D1-D2 · 05: E1-E3).
 
 ## F1 · Entregar con un comando, con la auditoría como puerta
-_(pendiente)_
+- Estado: **terminado**. Commits **626556b** (publicación, tests y Makefile) y **4881df5** (hook y tests); skill y este cierre en el commit que contiene el parte. Sin push a GitHub.
+- Comando: `make publicar` en seco; `make publicar ARGS=--publicar` publica. Package y validate corren como subprocesos sobre backup SQLite y carpeta temporal; la BD real y dist/entrega nunca se escriben. La auditoría va después, antes de gh/destino. Un rojo sólo se acepta con `--aceptar-rojo "motivo"`, registrado en commit y docs/entregas.log. No permite saltar errores técnicos ni un JSONL inválido.
+- Repo PUBLIC verificado; origin y pushurl cotejados con ENTREGA_REPO; destino limpio y al día, lista exacta de entregables + .git, sin borrar extras. En seco, clon temporal y push --dry-run, sin modificar el destino. Sin diferencias no crea commit. Tras un push confirmado registra versiones reales de decisiones, incluyendo mezclas por linaje. Si falla el push, no lo registra como publicado.
+- Horario Madrid: ámbar desde domingo 02:00, rojo desde 10:30 salvo --despues-del-cierre explícito.
+- Hook: cuenta ficheros sin decisión vigente, muestra hasta tres; sólo stdlib y SQLite modo ro, conexión cerrada, BD ilegible no rompe sesión. Ya no lee .env: informa sólo si existe.
+- Skill /entrega: paso 3 con los dos comandos; excepción motivada; manual anterior conservado como recuperación, con auditoría obligatoria.
+- Makefile: publicar; kit-demo y kit-instalar solicitados por F2; corregido erp-status para propagar fallo de curl. ERP vivo exit 0; puerto muerto :1 → curl (7), make Error 7, salida no cero.
+- Verificado: **31 tests de publicación/hooks** (15 publicación y 16 hooks), offline, remoto bare local, sin BD real. Incluyen rojo/aceptación, visibilidad privada, faltante lote2, README, cambios locales, remoto de push distinto, fallo del push sin log, dos publicaciones sin cambios, destino nuevo con espacios y comandos Git aprobados por decidir() del hook.
+- `make check` → **359 passed, 2 deselected in 32.51s**, lint/formato verdes; `make agentes-check` → **OK: cada fichero tiene un único dueño**.
+- Ensayo real `make publicar`: **0,685 s**, package y validate APTO 500 (443/48/9), exit no cero esperado por scan_025. No se ejecutó gh ni Git contra el destino. Salida literal relevante:
+
+```text
+ROJO      2  Motivo o evidencia falsos ("None", cita que no está en el PDF, cita vieja)
+  - scan_025.pdf: texto_sospechoso = 'None' (ESCALAR)
+  - scan_025.pdf: el motivo de R6 cita 'None'
+VEREDICTO: ROJO · 1 comprobación(es) en rojo: NO entregar
+ROJO: Auditoría ROJA: NO se publica ni se accede al destino. Corrige los casos mostrados y repite make publicar; excepción explícita: --aceptar-rojo '<motivo>'.
+```
+
+- Hook real: `- BD: albertitos.db · ficheros=500 · decisiones vigentes=500 · ficheros sin decisión=0`.
+- Registro completo del ensayo: dist/ensayo/f1-publicar-seco.log; hook: f1-session-start.log; huellas: f1-integridad.json. Todos los hashes comparados (BD, dist/entrega y archivos raíz del clon real) son iguales antes/después:
+  - dist/albertitos.db: `9c812c30d51e7e834ddc7ec867631dadd2b062c25fc6240629448ccadcf9ee89` → `9c812c30d51e7e834ddc7ec867631dadd2b062c25fc6240629448ccadcf9ee89`.
+  - dist/entrega/outcomes.jsonl: `5ec17aaa50455f9459038520b14db8313cc1f1c8e2aeb787b9717023541d73a3` → `5ec17aaa50455f9459038520b14db8313cc1f1c8e2aeb787b9717023541d73a3`.
+  - dist/entrega/albertitos_plan.pdf: `a67e695b4e7990ba38fe09e9446eafb35af2482813334e0fb0543967cc4f5218` → `a67e695b4e7990ba38fe09e9446eafb35af2482813334e0fb0543967cc4f5218`.
+
+- Pendiente de otros: Mónica decide la política de scan_025; Javier ejecuta la publicación cuando corresponda. La excepción está implementada, no ejecutada sobre el repo real. Ningún pendiente de implementación F1.
 
 ## F2 · La defensa funciona en un portátil que no es el mío
 - Estado: **terminado** (07:20 → 07:58). La demo, el breaker, la traza y la consola funcionan en un clon limpio con el kit. Falta el ensayo de verdad en el portátil de Alfonso (15:00), que es el que da las cifras de la sala.

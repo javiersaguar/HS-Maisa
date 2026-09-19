@@ -433,3 +433,9 @@ Plantilla (cópiala tal cual):
 - **PIDO A Alejandro:** en la pestaña Traza, la decisión vigente arriba y el historial plegado: hoy es la última de seis y las primeras citan la frase cortada de antes del arreglo de D2. El Panel también enseña los 2,38 EUR históricos.
 - **PIDO A Alfonso:** (1) los reintentos ORA-00600 no salen en `trace`: enséñalos con `albertitos status` (`enrich retry 11`) o `albertitos bench`; (2) la traza, en la consola (`F26-2201_transportes.pdf`), no en la terminal; (3) ¿tu portátil tiene bash (WSL/Mac/Linux)? `bootstrap.sh` y los comandos del breaker lo necesitan, y `bootstrap` necesita red la primera vez: hazlo en casa.
 - **Para Javier:** el kit de las 07:22 (`dist/kit/albertitos-kit-20260919-0722.tar.gz`, 1,2 MB) vale para el ensayo de las 15:00 si no cambia la BD. Si se aplica lo de `scan_025`, `make kit-demo` otra vez antes de pasárselo a Alfonso.
+
+### F1 · cierre PLAN-06
+- Hecho: 626556b publicación y Makefile; 4881df5 hook. Skill y parte F1 completos. make check: 359 passed, 2 deselected (32,51 s); agentes-check OK. 31 tests publicación/hooks sin red con remoto bare local; ningún push a GitHub.
+- Ensayo real en seco: APTO 500 (443/48/9), bloqueado sólo por scan_025, antes de gh/destino. Hashes iguales antes/después en BD, entrega real y archivos del clon. Detalle literal y huellas en PARTE.md; logs en dist/ensayo/f1-*.
+- RESPONDO A F2: erp-status corregido (curl && echo); probado con ERP vivo exit 0 y puerto :1 no cero. kit-demo y kit-instalar disponibles y probados en seco; F2 confirmó instalación aislada.
+- Sin pendientes F1; Mónica decide scan_025 y Javier publica. No se ha utilizado aceptar-rojo sobre el repo real.
