@@ -63,6 +63,8 @@ Cómo se implementa:
   decisión** también cuentan como impactados (`hechos.creado_en` > `decidido_en`), y lo cubre
   `test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide`. Coste: reimportar todo recalcula todo,
   que es lo prudente.
+  - Desde ADR-0011, `confianza` también decide (R6 escala `< 1`) y tampoco está en el hash. La misma red la
+    cubre: `test_solo_cambia_la_confianza_y_tambien_se_redecide` (19/09).
 - **El linaje ve versiones, no código.** Si alguien corrige `norma_v3.py` sin cambiar `"v3"`, `reprocess --impacted`
   no recalcula nada. `run` sí, porque decide todo cada vez. Regla: una norma publicada no se edita (la v4 es un
   módulo nuevo). Mientras Mónica valida la v3, usar `run` o `reprocess --todo`.
