@@ -35,6 +35,10 @@ Si el último ERP es simulado, resolver el preflight y mantener destinos explíc
 
 ## 1. Material, manifiesto y verificación
 
+**Lo real (19/09):** el lote 2 llegó como commit `f831e34` del repo de participantes, no como ZIP, y ya está en
+`data/lote2/` con `data/lote2.sha256` (origen en `data/lote2/ORIGEN.txt`). Basta con `uv run albertitos caja verify
+--lote 2`. Lo de abajo es para un ZIP que se publique después: compararlo con lo que hay y, si difiere, parar.
+
 Establecer `ZIP` con la ruta descargada y `HASH_PUBLICADO` con el SHA-256 del canal. El verificador no extrae ni escribe: muestra adjuntos txt/md/xlsx/pdf, abre los PDF y compara el CSV contra v1 en sólo lectura.
 
 ```bash
@@ -62,7 +66,12 @@ El verificador comprueba NFC, colisiones por mayúsculas/tildes y con lote 1, ap
 
 ## 2. Ingesta y flujo completo contra v1
 
+Primero el maestro del lote 2 (los proveedores P012-P015 y los 39 pedidos nuevos vienen en CSV). `run` recarga sólo
+el Excel y lo pisa (`pipeline/run.py:142`, pendiente de Miguel): repetir `maestro --lote2` después de cada `run` y
+`reprocess --impacted`. Con `PROMPT_VERSION` p-0.4 el lote 1 no sale de la caché: nunca reextraerlo.
+
 ```bash
+uv run albertitos maestro --lote2 data/lote2
 uv run albertitos ingest --dir data/lote2/facturas --lote 2
 uv run albertitos run --erp v1 --norma v3 --fecha-corte 2026-09-18 --salida dist/lote2-preauditoria
 uv run albertitos status

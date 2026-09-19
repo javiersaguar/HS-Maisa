@@ -41,6 +41,15 @@ Lo encontró R1: sin `.env`, el modelo por defecto es `claude-*`, que el gateway
 lote 2 se quedarían PENDIENTE**. En la carpeta de revisión, sin `.env`, así le pasó a él.
 
 ## 1 · Material
+**Lo que llegó de verdad (19/09, 17:57): no un ZIP, sino un commit** del repo de participantes (`f831e34`), con los 40
+PDFs en `facturas_primin/` y los tres CSV en la raíz. **Ya está en `data/lote2/`**, con manifiesto (rama
+`javier/lote2-fuentes`, `48c4269`; origen en `data/lote2/ORIGEN.txt`). Sólo hay que comprobarlo:
+```bash
+uv run albertitos caja verify --lote 2                  # 40 PDFs · 2 con tildes · Lote 2 OK
+sha256sum -c data/lote2.sha256 | grep -vc ': OK$'       # 0
+```
+Si el canal publica después un ZIP con hash, se compara con lo que hay (`verificar_material.py "$ZIP" --hash …
+--esperados 40`) y, si difiere, **se para**. La receta de abajo es para ese caso:
 ```bash
 : "${ZIP:?ruta del ZIP}" "${HASH_PUBLICADO:?sha256 del canal}"
 uv run python scripts/verificar_material.py "$ZIP" --hash "$HASH_PUBLICADO" --esperados 40
@@ -60,7 +69,17 @@ Flags reales: `material` posicional · `--hash` · `--db` · `--lote1-dir` · `-
 | ROJO NFC · `.PDF` · subcarpeta | Corriges la estructura. **Nunca renombres un PDF oficial** |
 | «sin adjuntos con posible regla» | La regla nueva llega por otro sitio: mírala en el canal y pásasela a Mónica literal |
 
-## 2 · Ingesta y flujo con el ERP v1
+## 2 · Maestro del lote 2, ingesta y flujo con el ERP v1
+**Los proveedores P012-P015 y los 39 pedidos nuevos vienen en CSV, no en el Excel.** Sin este paso, las facturas
+`e*` salen con el NIF o el pedido «fuera del maestro»:
+```bash
+uv run albertitos maestro --lote2 data/lote2   # 15 proveedores · 555 pedidos · versión 4fa206ac8bb2
+```
+**Ojo:** hoy `albertitos run` recarga sólo el Excel y **pisa** este maestro (`pipeline/run.py:142`, pedido a Miguel
+en la bitácora). Hasta que lo cambie, después de cada `run` vuelve a ejecutar `maestro --lote2` y luego
+`reprocess --impacted`.
+**Gateway:** con `PROMPT_VERSION` p-0.4 (ADR-0019), el lote 1 ya no sale de la caché si se reextrae. `run` sólo extrae
+lo que no tiene hechos, que es el lote 2; nunca `extract --todo` ni borrar hechos del lote 1.
 ```bash
 uv run albertitos ingest --dir data/lote2/facturas --lote 2
 uv run albertitos run --erp v1 --norma v3 --fecha-corte 2026-09-18 --salida dist/lote2-preauditoria
@@ -74,8 +93,10 @@ uv run albertitos status
 python3 data/caja/alberto_erp.py --puerto 8011 --lote2 data/lote2/erp_export_lote2.csv   # otra terminal
 curl --fail --silent http://127.0.0.1:8011/erp/estado
 ALBERTITOS_ERP_URL=http://127.0.0.1:8011 uv run albertitos erp pull --tag v2
-uv run albertitos erp diff v1 v2
+uv run albertitos erp diff v1 v2        # real, 19/09: 556 asientos = 516 + 40 nuevos, 0 cambiados (4,3 s)
 uv run albertitos reprocess --impacted --erp v2 --norma v3 --fecha-corte 2026-09-18
+# real, 19/09, sólo lote 1: 1 de 500 cambia · factura_4635.pdf PAGAR → NO_PAGAR (R5: AS-90001 PAGADA). Es P0-2:
+# no se aplica al lote 1 sin la respuesta del mentor (si no la hay, --lote 2).
 uv run python scripts/inventario_trampas.py --con-hechos --facturas data/lote2/facturas --erp-tag v2 --salida dist/anomalias_lote2.csv --sin-docs --solo-resumen
 ```
 
