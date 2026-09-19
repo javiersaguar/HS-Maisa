@@ -4,6 +4,6 @@ REGISTRO: versión → módulo con `decidir(hechos, maestro, erp, ctx) -> Decisi
 La v4 del sábado se añade como módulo nuevo; la v3 no se toca.
 """
 
-from albertitos.rules import norma_v3
+from albertitos.rules import norma_v3, norma_v4
 
-REGISTRO = {"v3": norma_v3}
+REGISTRO = {"v3": norma_v3, "v4": norma_v4}

@@ -1,6 +1,6 @@
 # ADR-0020 · Lo escrito o tachado a mano en un PDF con texto lo mira una persona
 
-- **Estado:** aceptado (Miguel, 19/09). **Fecha:** 2026-09-19 20:10 · **Dueño:** Miguel · **Módulos:** core/, extract/, rules/
+- **Estado:** aceptado (Miguel, 19/09). **Fecha:** 2026-09-19 19:55 · **Dueño:** Miguel · **Módulos:** core/, extract/, rules/
 
 ## Contexto
 Tres facturas del lote 2 son "las del café", y las tres tienen capa de texto:
