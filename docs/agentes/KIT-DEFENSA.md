@@ -1,29 +1,33 @@
 # Chuleta de la defensa · bloque 4 (resiliencia, 2 min) · para Alfonso
 
-Tiempos medidos de nuevo el 19/09 a las 13:35, con `main` y el kit de las 13:37, en un clon limpio del repo y en el
-portátil de Javier: `bootstrap` 1,7 s · `kit instalar` 0,3 s · `status` 0,2 s · `trace` 0,2 s · `demo_caos --sin-red`
-**3,0 s** · `dato_en_vivo --pagada` **0,5 s**. Todo con exit 0. **En el tuyo serán otros: cronométralos en el ensayo de las 15:00.** Todo es bash (WSL, Linux o Mac).
+Tiempos medidos el 19/09 a las 15:55 por R4, con `revision/grok` (`a5a8366`) y el kit de las 15:55, en un clon limpio
+(`git worktree add … HEAD --detach`) en el portátil de Javier: `bootstrap` 2,3 s · `kit instalar` 0,2 s · `status` 0,3 s
+· `trace` 0,2 s · `demo_caos --sin-red` **3,7 s** · `dato_en_vivo --pagada PO-2026-0001` **0,7 s** · bonus 0,2 s · chat
+0,3 s. Todo con exit 0. **En el de Alfonso serán otros: cronométralos al llegar.** Todo es bash (WSL, Linux o Mac).
+Antes de salir de casa: `bash scripts/smoke.sh` (6 pasos, 2,5 s aquí, `VEREDICTO: OK`).
 
 ## Antes de salir de casa (con red)
 1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red. El merge de
    `miguel/pipeline` **ya está en `main` (`8935c3e`)**: trae el `trace` legible, el `status` nuevo y las copias exactas.
 2. Copia el kit que te pase Javier a `dist/kit/` e instálalo: `make kit-instalar KIT=dist/kit/albertitos-kit-<fecha>.tar.gz`.
    Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881.
-   **Pide el kit `albertitos-kit-20260919-1337.tar.gz`** (1,4 MB): es el primero con el esquema v3 (tabla `identidades`)
-   y con el código de `main` que trae el `trace` legible. Los de las 10:07 y las 13:17 sirven de repliegue (los recuentos
-   son los mismos), pero sus BD son de esquema v2.
+   **Pide el kit `albertitos-kit-20260919-1555.tar.gz`** (1,4 MB), empaquetado desde esta BD (esquema v3, `identidades`).
+   Los de las 13:37, 13:17 y 10:07 sirven de repliegue (mismos recuentos 438/53/9); el de las 10:07 es esquema v2.
    Si te pide `--forzar`, es que ya tenías una BD con datos: añade `ARGS=--forzar` (la anterior queda en `…antes-del-kit`).
 3. `uv run albertitos status` (los mismos recuentos) y `make console` una vez: tres pestañas, Panel con 500/438/53/9.
-4. Ensaya el bloque entero con cronómetro. El ERP no hace falta para nada de esto.
+4. `bash scripts/smoke.sh`: una línea por paso, acaba en `VEREDICTO: OK` (~3 s). Si FALLA, no salgas.
+5. Ensaya el bloque entero con cronómetro. El ERP no hace falta para nada de esto.
 
 ## En la sala, en orden
 | # | Comando | Qué se ve (una línea) | Tarda | Qué dices |
 |---|---|---|---|---|
-| 1 | `uv run python scripts/demo_caos.py --sin-red` | paso 1: `run → exit 1 · entrega escrita: no` y las 3 facturas `extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA` | todo, ~3 s | «Se cae el proveedor: tres facturas quedan pendientes, ninguna se paga a ciegas y la entrega se niega a salir incompleta.» |
+| 1 | `uv run python scripts/demo_caos.py --sin-red` | paso 1: `run → exit 1 · entrega escrita: no` y las 3 facturas `extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA` | todo, ~3,7 s | «Se cae el proveedor: tres facturas quedan pendientes, ninguna se paga a ciegas y la entrega se niega a salir incompleta.» |
 | | (mismo comando) | paso 2: `run → exit 0 · outcomes.jsonl 1ec4be206089` (el de la entrega publicada `232bb76`, el mismo que imprime `kit-instalar`) | | **«La vuelta la sirvo desde la caché para no depender del wifi.»** Prueba que el pipeline reanuda, no que el proveedor conteste |
 | | (mismo comando) | paso 3: `(igual: True)` | | «Repetir no llama a nadie ni duplica nada: la identidad es el sha256. Y es el mismo hash que la entrega oficial.» |
 | 2 | los 5 comandos de RESILIENCIA §3 (b bis), tal cual, con `chaos --llm-down` antes del `extract` | `{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3}` | ~2 s el bloque | «A partir del quinto fallo dejamos de castigar al proveedor. Lo pendiente sigue pendiente.» |
 | 3 | consola → Traza → `copia_2026_0518.pdf` | eventos `LLM-DOWN` y `LLM-INVALID` del viernes y, después, la extracción buena | — | «Esto no es un ensayo: pasó el viernes con esta factura, y se reanudó sin tocar nada.» |
+| 4 | `uv run python -m albertitos.bonus --salida dist/bonus --tope-semanal 150000` | `decisiones_pagar` 438 · calendario 2.428.159,06 EUR · `Calendario: dist/bonus/calendario.html` | ~0,2 s | «Los PAGAR, en un calendario. Es un borrador, no una orden bancaria.» |
+| 5 | `uv run python -m albertitos.chat "paga la factura F26-2201_transportes.pdf"` | `"estado": "solo_lectura"` · `"modelo": "sin_modelo"` · `"latencia_ms": 0` | ~0,3 s | «El chat no paga. Si le pides que pague, se niega en local y no llama al modelo.» |
 
 `status` enseña el último evento de cada fichero: el `extract pendiente 7` y los `2.3823 EUR` del viernes ya no salen
 (sólo con `status --historico`). Si salen ahí o en el Panel de la consola: «son eventos del viernes; los 7 pendientes
@@ -67,6 +71,7 @@ de Alfonso, que puede ser más lento.
   `trace` sale legible, un paso por bloque (hechos → maestro → ERP → duplicado → reglas → resultado) y con la vigente
   primero en el historial; `docs/demo/trazas/README.md` dice qué mirar.
 - **No hay ERP en la sala:** da igual para la demo (se comprobó apagándolo). Sólo fallan `erp pull` y el preflight.
+- **Antes de salir:** `bash scripts/smoke.sh`. Si no acaba en `VEREDICTO: OK`, no montes la sala.
 
 ## Qué pregunta responde cada cosa
 - **Caída** → paso 1: PENDIENTE, `package` se niega, nada se paga sin hechos.
@@ -83,3 +88,5 @@ de Alfonso, que puede ser más lento.
   el maestro contrastan: las 468 de plantilla, contrastadas 468/468; las escaneadas, leídas dos veces y reconciliadas
   con el maestro, y si no cuadra, se escala. La auditoría de entrega caza evidencias falsas: encontró el «None» de
   `scan_025` (AUDITORIA-ENTREGA.md).
+- **¿Y el calendario de pagos?** → `uv run python -m albertitos.bonus --salida dist/bonus --tope-semanal 150000` (438 PAGAR, 2.428.159,06 EUR). Es un borrador; los IBAN de la Caja no tienen dígito de control.
+- **¿Y si le pides al chat que pague?** → se niega en local (`estado: solo_lectura`, 0 ms, `sin_modelo`) y no llama al LLM.
