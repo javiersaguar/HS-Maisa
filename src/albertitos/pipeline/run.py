@@ -83,6 +83,36 @@ def sin_hechos(conn: sqlite3.Connection) -> list[str]:
     return [str(f["file_id"]) for f in filas]
 
 
+def porques(
+    conn: sqlite3.Connection,
+    *,
+    norma_version: str,
+    fecha_corte: date,
+    maestro: MasterSnapshot,
+    erp: ErpSnapshot,
+    origen: str,
+) -> tuple[dict[str, str], str]:
+    """Por qué `run`/`decide`, que redeciden todo, recalculan cada fichero: lo que diga el linaje si
+    alguna entrada cambió y, para los demás (segundo valor), que nada cambió. Así ninguna decisión
+    queda en la traza sin su porqué."""
+    lin = linaje.evaluar(
+        conn,
+        norma_version=norma_version,
+        fecha_corte=fecha_corte,
+        maestro=maestro,
+        erp=erp,
+        extractor_version=EXTRACTOR_VERSION,
+    )
+    por = {fid: f"{origen}: {motivo}" for fid, motivo in lin.impactados.items()}
+    for s in lin.sin_impacto:
+        tramos = ", ".join(f"{k} {s[k]}" for k in ("maestro", "erp") if k in s)
+        por[s["file_id"]] = f"{origen}: {tramos} sin cambios que le afecten"
+    return (
+        por,
+        f"{origen}: ninguna entrada cambió (redecide todo; el linaje no ve el código, ADR-0006)",
+    )
+
+
 def correr(
     conn: sqlite3.Connection,
     *,
@@ -97,7 +127,10 @@ def correr(
     maestro_xlsx: Path | None = None,
     auditar: package.Auditor | None = None,
     aceptar_rojo: str | None = None,
+    erp_version: str | None = None,
 ) -> ResumenRun:
+    """`erp_version` fija el snapshot del ERP (tiene que estar en la BD: `erp pull --tag`). Sin él,
+    el último descargado, y si no hay ninguno se baja el v1."""
     from albertitos.sources import excel, snapshot
 
     t0 = time.perf_counter()
@@ -109,11 +142,14 @@ def correr(
     m = excel.cargar_maestro(maestro_xlsx or caja / MAESTRO_XLSX)
     snapshot.guardar_maestro(conn, m)
     try:
-        e = snapshot.cargar_erp_bd(conn, None)
+        e = snapshot.cargar_erp_bd(conn, erp_version)
     except LookupError:
+        if erp_version is not None:
+            raise  # pedido explícito: no se sustituye por otro en silencio
         from albertitos.sources import erp as erp_mod
 
-        e = erp_mod.ClienteERP(conn=conn).descargar_todo("v1")
+        with erp_mod.ClienteERP(conn=conn) as cliente:
+            e = cliente.descargar_todo("v1")
         snapshot.guardar_erp(conn, e)
     r.maestro_version, r.erp_version = m.version, e.version
 
@@ -128,8 +164,17 @@ def correr(
     r.sin_hechos = sin_hechos(conn)
 
     r.duplicados, r.duplicados_quitados = etapas.marcar_duplicados(conn)
+    por, por_defecto = porques(
+        conn, norma_version=norma_version, fecha_corte=fecha_corte, maestro=m, erp=e, origen="run"
+    )
     r.decididas = etapas.decide(
-        conn, norma_version=norma_version, fecha_corte=fecha_corte, maestro=m, erp=e
+        conn,
+        norma_version=norma_version,
+        fecha_corte=fecha_corte,
+        maestro=m,
+        erp=e,
+        por=por,
+        por_defecto=por_defecto,
     )
     try:
         r.entregas = package.empaquetar(

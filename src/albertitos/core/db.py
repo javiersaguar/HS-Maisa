@@ -204,8 +204,34 @@ def traza(conn: sqlite3.Connection, file_id: str) -> dict[str, Any]:
     }
 
 
+def estado_actual(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Etapa × estado del ÚLTIMO evento de cada fichero que sigue en la BD: lo que pasa ahora, sin los
+    fallos ya resueltos (un extract PENDIENTE del viernes que luego salió bien no cuenta)."""
+    return [
+        dict(r)
+        for r in conn.execute(
+            """SELECT e.etapa, e.estado, count(*) n, round(avg(e.latencia_ms)) lat_media_ms
+               FROM eventos e
+               JOIN (SELECT file_id, etapa, max(id) id FROM eventos
+                     WHERE file_id IS NOT NULL GROUP BY file_id, etapa) u ON u.id = e.id
+               JOIN ficheros f ON f.file_id = e.file_id
+               GROUP BY e.etapa, e.estado ORDER BY e.etapa, e.estado"""
+        )
+    ]
+
+
+def historico(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Lo acumulado en el log de eventos desde el primero (incluye ensayos y fallos ya resueltos)."""
+    r = conn.execute(
+        """SELECT count(*) n, min(ts) desde, sum(intento>1) reintentos,
+                  round(coalesce(sum(coste_eur),0), 4) coste_eur FROM eventos"""
+    ).fetchone()
+    return dict(r)
+
+
 def resumen(conn: sqlite3.Connection) -> dict[str, Any]:
-    """Contadores para `status` y el Panel."""
+    """Contadores para `status` y el Panel. `eventos` es el histórico entero; `estado_actual`, sólo
+    el último evento de cada fichero y etapa."""
     out: dict[str, Any] = {}
     out["ficheros"] = {
         r["lote"]: r["n"]
@@ -234,4 +260,6 @@ def resumen(conn: sqlite3.Connection) -> dict[str, Any]:
         )
     ]
     out["cache_llm"] = conn.execute("SELECT count(*) n FROM cache_llm").fetchone()["n"]
+    out["estado_actual"] = estado_actual(conn)
+    out["historico"] = historico(conn)
     return out

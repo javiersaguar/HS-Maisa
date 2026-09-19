@@ -314,8 +314,12 @@ def erp_pull(tag: str = typer.Option("v1", help="v1 = viernes, v2 = tras el lote
     from albertitos.sources import erp, snapshot
 
     conn = _conn()
-    cliente = erp.ClienteERP(conn=conn)
-    s = cliente.descargar_todo(tag)
+    try:
+        with erp.ClienteERP(conn=conn) as cliente:
+            s = cliente.descargar_todo(tag)
+    except erp.ErrorERP as exc:  # una línea útil, no 92 de traceback; el snapshot anterior sigue
+        print(str(exc))
+        raise typer.Exit(1) from None
     snapshot.guardar_erp(conn, s)
     rprint(
         f"[green]erp {s.version}[/green]: {len(s.asientos)} asientos · {s.consultas} consultas · {s.reintentos} reintentos · lote2={s.lote2_cargado}"
@@ -336,13 +340,24 @@ def erp_diff(a: str, b: str) -> None:
 def decide(norma: str = "v3", fecha_corte: str | None = None, erp: str | None = None) -> None:
     """Aplica la norma a todos los ficheros con hechos (usa el último maestro y el ERP indicado o el último)."""
     from albertitos.pipeline import etapas
+    from albertitos.pipeline.run import porques
     from albertitos.sources import snapshot
 
+    corte = _fecha_corte(fecha_corte)
     conn = _conn()
     m = snapshot.cargar_maestro_bd(conn)
     e = snapshot.cargar_erp_bd(conn, erp)
+    por, por_defecto = porques(
+        conn, norma_version=norma, fecha_corte=corte, maestro=m, erp=e, origen="decide"
+    )
     n = etapas.decide(
-        conn, norma_version=norma, fecha_corte=_fecha_corte(fecha_corte), maestro=m, erp=e
+        conn,
+        norma_version=norma,
+        fecha_corte=corte,
+        maestro=m,
+        erp=e,
+        por=por,
+        por_defecto=por_defecto,
     )
     rprint(f"[green]{n} decisiones[/green] con norma {norma}, maestro {m.version}, erp {e.version}")
 
@@ -390,12 +405,24 @@ def run(
     salida: Path = typer.Option(ENTREGA, help="carpeta de la entrega (ensayos y demo: otra)"),
     sin_auditoria: bool = typer.Option(False, "--sin-auditoria", help=AYUDA_SIN_AUDITORIA),
     aceptar_rojo: str | None = typer.Option(None, "--aceptar-rojo", help=AYUDA_ACEPTAR_ROJO),
+    erp: str | None = typer.Option(
+        None,
+        help="snapshot del ERP (v1, v2…; tiene que estar en la BD). Sin él, el último descargado",
+    ),
 ) -> None:
     """ingest → maestro → erp pull (si no hay) → extract → duplicados → decide → package."""
     from albertitos.pipeline.run import correr
 
     corte = _fecha_corte(fecha_corte)  # antes de trabajar: sin fecha de corte no se decide
     aceptar_rojo = _aceptar_rojo(aceptar_rojo)
+    if erp is not None:
+        from albertitos.sources import snapshot
+
+        try:
+            snapshot.cargar_erp_bd(_conn(solo_lectura=True), erp)
+        except LookupError as e:
+            rprint(f"[red]{e}[/red]")
+            raise typer.Exit(1) from None
     r = correr(
         _conn(),
         caja=CAJA,
@@ -408,6 +435,7 @@ def run(
         con_traza=con_traza,
         auditar=_auditor(sin_auditoria),
         aceptar_rojo=aceptar_rojo,
+        erp_version=erp,
     )
     rprint(r.texto())
     if not r.ok:
@@ -418,25 +446,54 @@ def run(
 
 
 @app.command()
-def status() -> None:
-    """Estado por lote, resultado y etapa; pendientes."""
+def status(
+    historico: bool = typer.Option(
+        False,
+        "--historico",
+        help="el log entero (ensayos, fallos ya resueltos, EUR registrados) en vez del estado actual",
+    ),
+) -> None:
+    """Estado por lote, resultado y etapa (el último evento de cada fichero); ERP; pendientes."""
     from albertitos.core import db
+    from albertitos.pipeline import traza
+    from albertitos.sources import snapshot
 
-    r = db.resumen(_conn(solo_lectura=True))
+    conn = _conn(solo_lectura=True)
+    r = db.resumen(conn)
     rprint(
         f"ficheros por lote: {r['ficheros']} · decisiones vigentes: {r['decisiones']} · caché LLM: {r['cache_llm']}"
     )
-    t = Table("etapa", "estado", "n", "lat media ms", "EUR", "reintentos")
-    for e in r["eventos"]:
-        t.add_row(
-            e["etapa"],
-            e["estado"],
-            str(e["n"]),
-            str(e["lat_media_ms"]),
-            str(e["coste_eur"]),
-            str(e["reintentos"]),
+    if historico:
+        t = Table(
+            "etapa", "estado", "eventos", "lat media ms", "EUR", "reintentos", title="histórico"
         )
+        for e in r["eventos"]:
+            t.add_row(
+                e["etapa"],
+                e["estado"],
+                str(e["n"]),
+                str(e["lat_media_ms"]),
+                str(e["coste_eur"]),
+                str(e["reintentos"]),
+            )
+    else:
+        t = Table(
+            "etapa", "estado", "ficheros", "lat media ms", title="estado actual (último evento)"
+        )
+        for e in r["estado_actual"]:
+            t.add_row(e["etapa"], e["estado"], str(e["n"]), str(e["lat_media_ms"]))
     rprint(t)
+    try:
+        ultimo = snapshot.cargar_erp_bd(conn, None).version
+        print(traza.linea_erp(snapshot.resumen_erp(conn, ultimo)) + " (el que usa run sin --erp)")
+    except LookupError:
+        print("ERP: ningún snapshot en la BD (`albertitos erp pull --tag v1`)")
+    if not historico:
+        h = r["historico"]
+        print(
+            f"histórico: {h['n']} eventos desde {traza.hora(h['desde'])} · "
+            f"{h['reintentos'] or 0} reintentos (`status --historico`)"
+        )
     p = r["pendientes"]
     rprint(
         f"sin decisión vigente: {len(p)}"
@@ -445,15 +502,32 @@ def status() -> None:
 
 
 @app.command()
-def trace(file_id: str) -> None:
-    """Todo lo que sabemos de un fichero: hechos, decisión(es), eventos."""
+def trace(
+    file_id: str,
+    legible: bool = typer.Option(
+        True,
+        "--legible/--json",
+        help="--legible (por defecto): hechos → maestro → ERP → reglas → resultado, un paso por "
+        "bloque · --json: todo lo que hay en la BD, tal cual",
+    ),
+) -> None:
+    """Todo lo que sabemos de un fichero: hechos, maestro, ERP, duplicados, decisión(es), eventos."""
     from albertitos.core import db
+    from albertitos.pipeline import traza
 
-    t = db.traza(_conn(solo_lectura=True), unicodedata.normalize("NFC", file_id))
+    conn = _conn(solo_lectura=True)
+    fid = unicodedata.normalize("NFC", file_id)
+    t = db.traza(conn, fid)
     if not t["fichero"]:
         rprint(f"[red]{file_id} no está en la BD[/red] (¿ingest? ¿nombre exacto?)")
         raise typer.Exit(1)
-    rprint(json.dumps(t, ensure_ascii=False, indent=1, default=str))
+    if legible:
+        print(traza.legible(conn, fid))  # print: los corchetes de los avisos no son markup de rich
+        return
+    vigente = next((d for d in t["decisiones"] if d["vigente"]), None)
+    t["duplicado_con"] = traza.duplicado_con(conn, t["fichero"]["sha256"])
+    t["erp"] = traza.resumen_erp_o_nada(conn, vigente["erp_version"]) if vigente else None
+    print(json.dumps(t, ensure_ascii=False, indent=1, default=str))
 
 
 @app.command()
