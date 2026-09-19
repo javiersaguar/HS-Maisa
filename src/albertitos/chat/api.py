@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -129,16 +130,29 @@ class PuertoOcupado(RuntimeError):
     pass
 
 
+def puerto_libre(ocupado: int, intentos: int = 50) -> int | None:
+    """El primer puerto por encima de `ocupado` en el que se puede escuchar ahora mismo (para sugerirlo)."""
+    for candidato in range(ocupado + 1, ocupado + 1 + intentos):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("127.0.0.1", candidato))
+            except OSError:
+                continue
+            return candidato
+    return None
+
+
 def servir(ruta: Path, puerto: int | None = None):
     puerto = puerto or puerto_defecto()
     try:
         servidor = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta))
     except OSError as exc:
         if exc.errno in (48, 98, 10048):  # dirección en uso: macOS, Linux, Windows
+            otro = puerto_libre(puerto) or puerto + 100  # uno libre de verdad, nunca el ocupado
             raise PuertoOcupado(
-                f"el puerto {puerto} ya lo usa otro proceso. Arranca el chat en otro: "
-                f"ALBERTITOS_CHAT_PUERTO=8101 make chat, y en la consola "
-                f"NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101"
+                f"el puerto {puerto} ya lo usa otro proceso (¿otro chat abierto en otra terminal?). "
+                f"Páralo con Ctrl+C o arranca el chat en otro: ALBERTITOS_CHAT_PUERTO={otro} make chat, "
+                f"y en la consola NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:{otro}"
             ) from None
         raise
     try:

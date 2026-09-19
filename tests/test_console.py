@@ -720,3 +720,23 @@ def test_traza_motivos_una_vez_aunque_se_decida_varias_veces(conn, maestro, erp)
         i for i, p in enumerate(pasos) if p["tipo"] == "evento" and p["evento"]["etapa"] == "decide"
     ]
     assert pasos[decides[-1] + 1]["tipo"] == "motivo"
+
+
+def test_puerto_ocupado_da_una_linea_y_no_un_traceback(tmp_path, monkeypatch):
+    """Con otro puente ya abierto, el arranque dice qué hacer (y qué puerto usar) en una línea."""
+    import errno
+
+    import pytest
+
+    def ocupado(*a, **k):
+        raise OSError(errno.EADDRINUSE, "Address already in use")
+
+    monkeypatch.setattr(api, "ThreadingHTTPServer", ocupado)
+    monkeypatch.setattr(
+        api, "puerto_libre", lambda p: 8003
+    )  # el que esté libre de verdad en esta máquina
+    with pytest.raises(SystemExit) as e:
+        api.servir(tmp_path / "no.db", 8000)
+    mensaje = str(e.value)
+    assert "El puerto 8000 ya lo usa otro proceso" in mensaje and "Ctrl+C" in mensaje
+    assert "--puerto 8003" in mensaje and "NEXT_PUBLIC_API_URL=http://127.0.0.1:8003" in mensaje

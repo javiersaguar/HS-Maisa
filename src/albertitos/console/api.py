@@ -30,6 +30,7 @@ import argparse
 import json
 import logging
 import os
+import socket
 import sqlite3
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -311,6 +312,18 @@ def hacer_handler(ruta: Path, *, bandeja_activa: bool = False) -> type[BaseHTTPR
     return Handler
 
 
+def puerto_libre(ocupado: int, intentos: int = 50) -> int | None:
+    """El primer puerto por encima de `ocupado` en el que se puede escuchar ahora mismo (para sugerirlo)."""
+    for candidato in range(ocupado + 1, ocupado + 1 + intentos):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("127.0.0.1", candidato))
+            except OSError:
+                continue
+            return candidato
+    return None
+
+
 def servir(
     ruta: Path | None = None, puerto: int = PUERTO_DEFECTO, *, bandeja: bool = False
 ) -> None:
@@ -320,7 +333,19 @@ def servir(
             f"Aviso: no existe {ruta}. Sólo /salud responderá hasta que corras "
             "`make db && uv run albertitos ingest` (o `make run`)."
         )
-    httpd = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta, bandeja_activa=bandeja))
+    try:
+        httpd = ThreadingHTTPServer(
+            ("127.0.0.1", puerto), hacer_handler(ruta, bandeja_activa=bandeja)
+        )
+    except OSError as exc:
+        if exc.errno in (48, 98, 10048):  # dirección en uso: macOS, Linux, Windows
+            otro = puerto_libre(puerto) or puerto + 100
+            raise SystemExit(
+                f"El puerto {puerto} ya lo usa otro proceso (¿otro puente abierto en otra terminal?). "
+                f"Páralo con Ctrl+C en su terminal y vuelve a lanzar este comando, o usa otro puerto: "
+                f"--puerto {otro}, y en la consola NEXT_PUBLIC_API_URL=http://127.0.0.1:{otro}"
+            ) from None
+        raise
     modo = (
         "bandeja activa (POST /inbox, lote 99)"
         if bandeja

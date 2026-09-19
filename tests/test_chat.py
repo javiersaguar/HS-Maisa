@@ -511,3 +511,36 @@ def test_puerto_ocupado_da_un_mensaje_claro(datos, monkeypatch):
         puerto = ocupado.getsockname()[1]
         with pytest.raises(PuertoOcupado, match="ALBERTITOS_CHAT_PUERTO"):
             servir(datos, puerto)
+
+
+def test_puerto_ocupado_nunca_sugiere_el_mismo_puerto(tmp_path, monkeypatch):
+    import errno
+
+    import pytest
+
+    from albertitos.chat import api as chat_api
+
+    def ocupado(*a, **k):
+        raise OSError(errno.EADDRINUSE, "Address already in use")
+
+    monkeypatch.setattr(chat_api, "ThreadingHTTPServer", ocupado)
+    with pytest.raises(chat_api.PuertoOcupado) as e:
+        chat_api.servir(tmp_path / "x.db", 8001)
+    sugerido = int(str(e.value).split("ALBERTITOS_CHAT_PUERTO=")[1].split()[0])
+    assert sugerido != 8001
+    assert f"NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:{sugerido}" in str(e.value)
+
+
+def test_puerto_libre_se_salta_los_ocupados():
+    import socket
+
+    from albertitos.chat.api import puerto_libre
+
+    with socket.socket() as a:
+        a.bind(("127.0.0.1", 0))
+        a.listen()
+        base = a.getsockname()[1]
+        libre = puerto_libre(base - 1)
+        assert libre is not None and libre != base
+        with socket.socket() as b:
+            b.bind(("127.0.0.1", libre))  # de verdad se puede escuchar en él
