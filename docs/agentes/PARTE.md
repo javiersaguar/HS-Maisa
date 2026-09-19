@@ -4,16 +4,130 @@ Cada agente rellena SU sección al terminar (o si lleva > 20 min bloqueado). Cif
 Partes anteriores en `partes/` (… · 08: H1-H2 · 09: I1-I2).
 
 ## J1 · Ensayo general del lote 2 con `main`, cronometrado
-_(pendiente)_
+
+**Estado: BLOQUEADO, nada ejecutado.** El shell del agente no arranca (`powershell.exe ENOENT`; el
+host tampoco puede aplicar el sandbox `workspace_readwrite`). Es el mismo bloqueo del ciclo 9 con I1.
+**No hay ni un tiempo medido, y no he inventado ninguno.** BD real, `dist/entrega/`, `data/caja/` y el
+bridge de `:8009`: intactos, porque no he ejecutado nada. Tampoco he podido correr `make check`.
+
+**Hora:** las entradas van con la del reloj del entorno (UTC+2 = Madrid); `TZ=Europe/Madrid date` no
+se pudo ejecutar.
+
+### Lo que dejo hecho
+| Ruta | Qué es |
+|---|---|
+| `dist/ensayo/j1/ensayo.sh` | La receta entera en una orden, cronometrada paso a paso (`ensayo.log`, `tiempos.tsv`). Worktree desechable, copia de la BD con `Connection.backup`, ERP v2 en `:8011`, material `lote2_sim` + `lote2_identicos`. Cubre verificar_material (directorio y ZIP con `--hash`), ingest, `run --erp v1`, status, pull v2, diff, `reprocess --impacted`, `reprocess --todo` (el coste del camino de la v4), inventario, auditoría, package, validate ×2, tres trazas y `publicar_entrega.py` contra un bare local. Desvío 2 (rojo forzado + `--aceptar-rojo` + su evento) y desvío 3 (contingencia en seco con el caos en la copia) incluidos |
+| `dist/ensayo/j1/desvio-p05.sh` | Desvío 1 (P0-5): verificador en ROJO → `git merge origin/miguel/p0-5-nombre-repetido` → `make check` → ingest → `package` APTO, cronometrando la recuperación completa |
+| `docs/agentes/CHULETA-LOTE2.md` | Reescrita. Una página, comandos verificados **contra el código fuente** de `main`, con un aviso en negrita arriba: los tiempos están **sin medir** |
+| `.claude/skills/lote2/SKILL.md` | Tres correcciones (abajo) |
+| `docs/agentes/ENSAYO-LOTE2.md` | Sección nueva que avisa de que las únicas cifras del documento son las de E3 (01:52), con código viejo |
+
+### Hallazgos (revisión estática del código, no ejecución)
+1. **`run --erp <versión>` existe** (`cli.py`, opción `erp`): sobraba la rama `if uv run albertitos run --help | grep -q -- '--erp'` y toda la alternativa `extract` + `reprocess --todo` que la skill daba como obligatoria.
+2. **`package` ya audita** y se niega en rojo salvo `--aceptar-rojo "<motivo>"` (que exige motivo no vacío y nunca acepta un JSONL inválido). La skill seguía diciendo que la puerta no estaba puesta y que había que auditar a mano antes de `/entrega`.
+3. **P0-5: la receta decía «no hay salida hasta que Miguel decida».** Es falso desde su entrada de las 11:40: la salida es `git merge origin/miguel/p0-5-nombre-repetido` (`334845e`) y seguir. Esa frase, leída a las 18:00, habría parado el lote entero.
+4. **Trampa de los ensayos:** `cli.LOTE2` es la constante `Path("data/lote2")`. `run`, `package` y `validate --lote 2` **no** leen `ALBERTITOS_DIR_LOTE2` (sí lo leen el preflight y el inventario). Un ensayo que apunte esa variable a `lote2_sim` y llame a `run` no recorre el camino real; por eso los dos scripts copian el material a `data/lote2/facturas` dentro de un worktree.
+5. El estado de `main` que da PLAN-10 (`990a75d`) ya se ha quedado corto: en GitHub `main` y `javier/ingesta` van por `62a28d6`.
+
+### Lo que necesito
+- **De Javier (persona):** una terminal. Lanzar `bash dist/ensayo/j1/ensayo.sh` y `bash dist/ensayo/j1/desvio-p05.sh` y pasarme `dist/ensayo/j1/tiempos.tsv`; con eso relleno chuleta, skill y ENSAYO-LOTE2. **Hasta entonces la chuleta no está ensayada y no debe usarse como si lo estuviera.**
+- **De Miguel:** confirmar si el merge de P0-5 a las 18:00 lo hace él; si sí, el desvío sobra.
+
+### Commits
+Ninguno: sin shell no puedo commitear ni pasar `make check`. Los ficheros quedan editados en el árbol.
 
 ## J2 · Que un Excel o un ERP cambiados de forma no nos paren
-_(pendiente)_
+
+**Estado: terminado.** El loader ya no lee por posición, cada forma nueva tiene su test y el ensayo está medido sobre
+una copia de la BD real. `make check`: **497 passed, 2 deselected, 1 xfailed** (los 23 tests nuevos son míos;
+`tests/test_excel.py` pasa de 12 a 35). Detalle completo, con los comandos que dan cada cifra:
+[docs/agentes/ENSAYO-FUENTES.md](ENSAYO-FUENTES.md).
+
+### Lo que dejo hecho
+- `sources/excel.py` **tolerante a la forma y estricto con el contenido**: hojas y columnas por nombre normalizado
+  (sin tildes, mayúsculas ni separadores) con alias por campo; la cabecera se busca en las 6 primeras filas; las filas
+  vacías se saltan y la que tiene datos sin identificador se avisa con su número; lo que no se entiende va a
+  `avisos_calidad` con una frase legible. Sólo se niega a cargar si falta la columna clave (`id`, `pedido`) o el
+  importe de los pedidos, y entonces el error dice qué mirar: un maestro medio vacío escalaría 500 facturas sin
+  explicar por qué. `ErrorMaestro` hereda de `KeyError`, así que nada de lo que ya existía cambia de comportamiento.
+- **La regla de las 18:00, si llega dentro del Excel, se ve**: `hojas_norma(xlsx)` y un aviso
+  `REGLA NUEVA?: la hoja «X» parece una norma y nadie la lee`. Con el Excel de hoy: `['Norma_Pagos_v3']` y ningún aviso.
+- `data/fixtures/maestro_cambiado/generar.py`: **12 variantes** del Excel real (8 de forma, 4 de contenido), generadas
+  al vuelo con openpyxl; el original no se toca y los `.xlsx` no entran en git.
+- `tests/test_excel.py`: un test por variante más el invariante que importa (las 8 de forma dan un maestro **idéntico
+  dato a dato** y la misma versión) y los errores con nombre (columna clave ausente, hoja que no está).
+
+### Cifras (`bash dist/ensayo/j2/ensayo_maestro.sh`, copia fresca de la BD real por variante)
+- Excel real y las **8 formas**: maestro `80911e429c6c` · `0 de 500 recalculadas · 0 cambian` · maestro 0,46-0,72 s,
+  reprocess 0,22-0,36 s.
+- `iban_cambiado` (P001): `47 de 500 recalculadas · 43 cambian` PAGAR → ESCALAR, 453 sin impacto por diff · 0,33 s.
+- `importe_cambiado` (PO-2026-0002): 1 recalculada, 1 cambia · `proveedor_nuevo`: 0 de 500, 500 sin impacto.
+- ERP con otra forma, sin levantar bridges (`uv run python dist/ensayo/j2/ensayo_erp_forma.py`): el CSV del bridge
+  admite otro orden, columnas de más y BOM, y para con mensaje si falta un nombre; nuestro XML se parsea por etiqueta,
+  así que una etiqueta nueva no rompe y una que falta da `ERP-FORMATO` con el asiento dentro. **No hay que tocar nada.**
+- Huellas al empezar y al terminar: `c66d00e45be3` / `1ec4be206089`.
+
+### Lo que necesito
+- **PIDO A Mónica (decisión de norma, no de loader):** con PO-2026-0001 puesto a `ANULADO` en el Excel, el linaje
+  recalcula su factura (`F26-9865_ofimática.pdf`) y **se queda en PAGAR**. La v3 sólo mira el estado del asiento del
+  ERP (`norma_v3.py:183-198`); `Pedido.estado` del Excel no lo lee ninguna regla. Hoy es inocuo (las 516 filas dicen
+  `ABIERTO`), pero si el sábado llegan pedidos anulados los pagaríamos. Es la otra cara de tu Q2.
+- **Para Javier a las 18:00:** si el Excel trae una hoja nueva, sale en `albertitos maestro` como `REGLA NUEVA?` con su
+  nombre; y `make erp-lote2` espera el CSV en `data/lote2/erp_export_lote2.csv` (hoy sólo hay un `.gitkeep`), si llega
+  con otro nombre: `make -C data/caja erp-lote2 LOTE2_ERP=<ruta>`.
+
+### Lo que NO está cubierto
+Hojas de datos partidas en varias pestañas (se leería sólo la primera y el recuento lo delataría), `.xls` antiguo o CSV
+en vez de `.xlsx` (openpyxl no los abre), y un XML del ERP con etiquetas renombradas (se detecta, pero deja el snapshot
+sin bajar: eso es política de reintentos).
+
+### Commits
+`sources: el Excel tolera otra forma (cabeceras y hojas por nombre) y avisa de la hoja que parece la regla nueva`
 
 ## J3 · Las escaneadas del lote 2 no dependen de un solo modelo
 _(pendiente)_
 
 ## J4 · La defensa con el código de hoy, y el dato en vivo del domingo
-_(pendiente)_
+
+**Estado: PARCIAL. El dato en vivo está escrito; el kit y los cronómetros, no.** El shell del agente
+no arranca (mismo bloqueo que I1 en el ciclo 9 y que J1 hoy), así que **no he ejecutado nada**: ni un
+tiempo medido, ni `make check`, ni commit. BD real, `dist/entrega/`, `data/caja/` y el bridge `:8009`
+intactos, porque no los he tocado. Las horas van con el reloj del entorno (UTC+2 = Madrid);
+`TZ=Europe/Madrid date` no se pudo ejecutar.
+
+### Lo que dejo hecho
+| Ruta | Qué es |
+|---|---|
+| `scripts/dato_en_vivo.py` | El escenario del domingo en un comando, sobre una copia (`dist/vivo.db`, `Connection.backup`): `--pagada PEDIDO`, `--importe PEDIDO=1234,56`, `--iban P003=ES…`, `--estado-pedido PEDIDO=ANULADO`, `--fecha-corte`, `--listar` (pedidos que hoy se pagan y siguen PENDIENTE), `--json` para medir. El cambio entra como snapshot nuevo (ERP `vivo`, o maestro con su versión recalculada), nunca encima del que se usó para entregar; luego `reprocess --impacted` cronometrado y la traza legible del primero que cambia |
+| `tests/test_dato_en_vivo.py` | 14 tests sin red ni BD real. Los tres que importan van por el camino de verdad: un asiento a PAGADA deja esa factura en NO_PAGAR y **la otra ni se recalcula**; cambiar un IBAN sólo impacta a las facturas de ese proveedor (la otra cae en `sin_impacto`); cambiar el estado de un pedido impacta sólo a la suya. Los demás cubren que el snapshot original no se muta, que no se finge una descarga, el diff, los errores legibles y el parseo de `CLAVE=VALOR` |
+| `docs/agentes/KIT-DEFENSA.md` | Al día con `main` (`8935c3e` ya mergeado), sección nueva «Si el tribunal cambia un dato», y por qué conviene pedir kit nuevo en vez del de las 10:07 |
+
+### Decisiones de diseño (para que no se discutan el domingo)
+1. **Nunca se toca una decisión a mano**: se cambia el dato y vuelve a decidir la norma. El script no
+   sabe escribir en `decisiones`; sólo guarda snapshots y llama a `reprocess`.
+2. **El snapshot derivado lleva `consultas=0` y `reintentos=0`**. No es una descarga del ERP, y
+   `trace` no debe decir que lo fue: `resumen_erp` lo dará como «sin eventos atribuibles».
+3. **Copia siempre, y desde cero en cada ejecución**: por eso es idempotente y repetible delante del
+   tribunal, y por eso da igual la etiqueta fija `vivo`.
+4. `version_maestro()` **duplica** el cálculo de `sources/excel.py` (el maestro de este script no sale
+   de un Excel). Lo ata `test_la_version_del_maestro_es_la_que_calcula_excel`, que salta si J2 cambia
+   ese cálculo. Es deliberado.
+
+### Lo que necesito (todo requiere terminal)
+- **De Javier (persona):** (1) `make kit-demo` y pasarle el kit a Alfonso —es la mitad de mi encargo y
+  no lo he podido hacer—; (2) cronometrar a las 15:00 en el portátil de Alfonso `--listar`, el
+  `--pagada` entero y el bloque 4; (3) un `--listar` sobre la BD real para poner el pedido concreto en
+  la chuleta en lugar de `PO-2026-XXXX`.
+- **De J3:** `scripts/bench_vision_respaldo.py` no compila (lleva los números de línea del visor
+  dentro: `    30|import os`). Rompe `ruff format --check`, o sea el `make check` de todos.
+
+### Lo que NO está verificado
+- Que mis 14 tests pasen. El formato sí: el `check.log` de J5 señalaba mi `skipif` y ya está
+  corregido; en su `check-final.log`, posterior, mis ficheros ya no aparecen.
+- Ningún tiempo del dato en vivo. La chuleta lo dice en negrita en sus dos casillas.
+
+### Commits
+Ninguno: sin shell no puedo commitear ni pasar `make check`. Los tres ficheros quedan editados en el árbol.
 
 ## J5 · Bonus (+10): remesa y calendario de pagos
 _(pendiente)_

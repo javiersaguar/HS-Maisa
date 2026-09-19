@@ -652,11 +652,32 @@ Plantilla (cópiala tal cual):
 - Trabajo sólo en bonus, tests, ADR-0012 y BONUS.md. Copia SQLite backup en dist/ensayo/j5/bonus.db; sin red ni LLM.
 - Huellas iniciales BD / outcomes: c66d00e45be3 / 1ec4be206089. Calendario y CSV de remesa desde PAGAR, con validación IBAN y exclusiones explícitas.
 
+### 12:28 · J1 · sin terminal otra vez: el ensayo queda escrito para una sola orden
+- **Hora tomada del reloj del entorno (UTC+2 = Madrid), no calculada.** No pude ejecutar `TZ=Europe/Madrid date`: el shell de este agente no arranca (`powershell.exe ENOENT`; el sandbox del host tampoco puede aplicar `workspace_readwrite`). Es el mismo bloqueo que tumbó a I1 en el ciclo 9. **No hay tiempos medidos y no me los invento.**
+- **BD real, `dist/entrega/` y el bridge de `:8009`: sin tocar.** No he ejecutado nada.
+- Dejo el ensayo listo para lanzarlo de un tirón cuando haya shell: `bash dist/ensayo/j1/ensayo.sh` (receta entera cronometrada, copia de la BD por `Connection.backup`, ERP v2 en `:8011`, worktree desechable, desvíos de auditoría roja y contingencia, `publicar_entrega.py` contra un bare local) y `bash dist/ensayo/j1/desvio-p05.sh` (P0-5, cronometrando desde el ROJO del verificador hasta `package` APTO). Los dos dejan `tiempos.tsv`.
+- **Tres cosas que la receta decía mal**, encontradas leyendo el código de `main` y ya corregidas en la skill y en la chuleta: (1) `run --erp` existe, así que sobra la rama `if … grep -q -- '--erp'` y su alternativa; (2) `package` ya audita y se niega en rojo salvo `--aceptar-rojo`, pero la skill seguía pidiendo auditar a mano antes de entregar; (3) **P0-5 tenía escrito «no hay salida»**, y sí la tiene: mergear tu rama. Esa frase, a las 18:00, habría parado el lote entero sin necesidad.
+- **Trampa de los ensayos (no del lote real):** `cli.LOTE2` es la constante `Path("data/lote2")`; `run`, `package` y `validate --lote 2` no leen `ALBERTITOS_DIR_LOTE2`. Un ensayo que apunte esa variable a `lote2_sim` y llame a `run` no está ensayando el camino real. Por eso los scripts copian el material a `data/lote2/facturas` dentro de un worktree.
+- **PIDO A Javier (persona):** esto necesita una terminal de verdad. Lanza los dos scripts tú y pégame `dist/ensayo/j1/tiempos.tsv`; con eso relleno la chuleta, la skill y ENSAYO-LOTE2 en cinco minutos. La chuleta lleva arriba un aviso en negrita de que los tiempos están sin medir: **no la uses a las 18:00 creyendo que está ensayada**.
+- **PIDO A Miguel:** tu rama de P0-5 no se ha podido ensayar todavía. El guion de `desvio-p05.sh` sigue tu instrucción de las 11:40 tal cual; si el merge a las 18:00 lo haces tú, avísame y lo quito del ensayo.
+- toco: `.claude/skills/lote2/SKILL.md`, `docs/agentes/CHULETA-LOTE2.md`, `docs/agentes/ENSAYO-LOTE2.md`, `dist/ensayo/j1/*`.
+
 ### 19/09 · J5 · bonus medido sobre copia
 - Calendario: 438 PAGAR, 2.428.159,06 EUR, 431 vencidos y 2 vencen en semana del corte 2026-09-18. Remesa: 0 pagos, 438 exclusiones individuales por IBAN_INVALIDO (los 11 IBAN sintéticos del maestro fallan mod-97). No se corrigen ni se alteran decisiones.
 - 16 tests propios pasan; CLI medida en 0.184 s, copia intacta. Artefactos en dist/ensayo/j5/bonus/.
 - PIDO A Alejandro: leer resumen.json (remesa_numero/total_eur, calendario_numero/total_eur, semanas y avisos_por_codigo), calendario.csv y avisos.csv; enlace a calendario.html. Remesa.csv es borrador, nunca ejecutar pagos desde la consola.
 - PIDO A J4: make check se detiene por formato de scripts/dato_en_vivo.py; salida en dist/ensayo/j5/check.log. Mis ficheros pasan formato/lint. Repetiré al cierre si ya está formateado.
+
+### 12:36 · J2 · arranco: Excel y ERP con otra forma
+- hice: leído PLAN-10 (J2), sources/excel.py, sources/CLAUDE.md, linaje.diff_maestro, tests/test_excel.py, la cola desde 12:12. Inventario del Excel real hecho (14 hojas, cabeceras \ID|Razon Social|NIF|IBAN|Ciudad|Condiciones\ y \Pedido|ProveedorID|NIF|Importe_Total|Estado|Fecha_Pedido\, 0 filas vacías, Estado='ABIERTO' en las 516, importes 502 float + 14 int, fechas 516 str ISO). Maestro real: 80911e429c6c · 11 prov · 516 ped · 41 avisos.
+- hallazgo que justifica el ciclo: el loader lee **por posición** (\ila[0]..fila[5]\). Una columna reordenada o insertada no revienta: mete el IBAN en la ciudad **en silencio**. Eso a las 18:05 es peor que un fallo.
+- toco: src/albertitos/sources/excel.py · tests/test_excel.py · data/fixtures/maestro_cambiado/ · docs/agentes/ENSAYO-FUENTES.md · dist/ensayo/j2/
+- BD y entrega sólo lectura: c66d00e45be3 / 1ec4be206089. ERP :8009 no lo toco.
+
+### 12:35 · J3 · arranco: respaldo de visión medido
+- hice: leído llm.py (_modelo_respaldo, VISION_DOBLE, timeouts, breaker), etapa.py (doble lectura y reconciliación), RESILIENCIA §3 (e) y §5, ESCALA-10K §4, CIFRAS. `scripts/bench_vision_respaldo.py` escrito.
+- toco ahora: scripts/bench_vision_respaldo.py · docs/agentes/RESPALDO-VISION.md (nuevo) · dist/ensayo/j3/. Llamo al LLM: tope 30 llamadas, plan 3 modelos × 8 escaneadas = 24. Caché en dist/ensayo/j3/bench.db, nunca en la BD real (sólo lectura).
+- para los demás: soy el único que llama al LLM este ciclo (PLAN-10).
 
 ### 19/09 · J5 · cierre bonus PLAN-10
 - Implementado y commiteado: 8e8301d. Calendario HTML/CSV, remesa CSV, avisos y controles JSON; ADR-0012 y receta de defensa en docs/BONUS.md.
@@ -664,3 +685,27 @@ Plantilla (cópiala tal cual):
 - Tests propios 16 passed; batería completa ejecutada 459 passed, 2 deselected, 1 xfailed (39,33 s). Formato/lint propios verdes; agentes-check OK.
 - make check final todavía se detiene en formato ajeno: src/albertitos/sources/excel.py, en edición por J2 (antes J4). PIDO A J2/Javier: repetir al cerrar sus cambios; log dist/ensayo/j5/check-final.log. No declaro make check verde.
 - Huellas finales BD / outcomes: c66d00e45be3 / 1ec4be206089, idénticas al inicio. También intacta la copia del ensayo. Sin push.
+
+### ¿¿:?? · J4 · BLOQUEO shell — dato en vivo escrito; kit y cronómetros sin hacer
+- **hora:** sin shell no puedo ejecutar `TZ=Europe/Madrid date +%H:%M`; el reloj del entorno decía ~12:45. Mismo bloqueo que I1 (ciclo 9) y J1 hoy: el terminal no arranca. **No he ejecutado nada: ni un tiempo medido, ni `make check`, ni commit.** BD real, `dist/entrega/`, `data/caja/` y el bridge :8009 siguen intactos porque no los he tocado.
+- hice (sólo Write): `scripts/dato_en_vivo.py` + `tests/test_dato_en_vivo.py` (14 tests) · `docs/agentes/KIT-DEFENSA.md` al día con `main` y con el bloque del dato en vivo.
+- **`dato_en_vivo.py`**: el tribunal cambia un dato y se recalcula sólo lo que ese dato toca. Trabaja sobre una copia (`dist/vivo.db`, hecha con `Connection.backup`), nunca sobre la BD real ni la entrega, así que se puede repetir delante de ellos. `--pagada PEDIDO` (su asiento pasa a PAGADA), `--importe PEDIDO=1234,56`, `--iban P003=ES…`, `--estado-pedido PEDIDO=ANULADO`, `--fecha-corte`, y `--listar` para elegir en la sala un pedido que hoy se paga y sigue PENDIENTE. El cambio entra como snapshot **nuevo** (ERP con la etiqueta `vivo`; maestro con su versión recalculada), nunca encima del que se usó para entregar; después `reprocess --impacted` y la traza legible del primero que cambia. Ninguna decisión se toca a mano: se cambia el dato y vuelve a decidir la norma.
+- **dos decisiones que dejo anotadas:** (1) el snapshot derivado lleva `consultas=0` y `reintentos=0` a propósito, porque no es una descarga y la traza no debe decir que lo fue; (2) `version_maestro()` duplica el cálculo de `sources/excel.py` (el maestro de este script no sale de un Excel) y hay un test que la compara con la del Excel real. **J2: si cambias cómo se versiona el maestro, ese test salta, y salta a propósito.**
+- **RESPONDO A J5:** lo que te paraba `make check` en lo mío era `tests/test_dato_en_vivo.py:184`, un `@pytest.mark.skipif` partido en tres líneas que ruff quiere en una. **Corregido.** En tu `check-final.log`, que es posterior, mis dos ficheros ya no aparecen: sólo queda `sources/excel.py` (J2). Gracias por el log: sin shell era mi única forma de verlo.
+- **PIDO A J3 (urgente: rompe el `make check` de todos):** `scripts/bench_vision_respaldo.py` no compila. Lleva incrustados los números de línea del visor —la línea 34 es literalmente `    30|import os`— y ruff corta con `invalid-syntax: Unexpected indentation`. Sale en los dos logs de J5 (`dist/ensayo/j5/check.log` y `check-final.log`). Es tuyo; no lo toco.
+- **PIDO A Javier (persona), lo que necesita terminal y no he podido hacer:**
+  1. **El kit nuevo**, que es la mitad de mi encargo: `make kit-demo` y pasárselo a Alfonso. El de las 10:07 sirve de repliegue (mismos recuentos, y su commit es ancestro de `main`, así que no da ámbar), pero se hizo antes de la tabla `identidades`: su BD es esquema v2 y se lee como si no hubiera copias exactas, así que con él no se puede enseñar esa parte.
+  2. **Cronometrar** en el ensayo de las 15:00, en el portátil de Alfonso: `--listar`, el `--pagada` entero y los pasos del bloque 4. En la chuleta esas casillas dicen **«sin medir»** en negrita a propósito: que nadie la use como si estuviera ensayada.
+  3. Una pasada de `uv run python scripts/dato_en_vivo.py --listar` sobre la BD real (sólo lectura) para elegir el pedido de la demo y escribirlo en la chuleta en lugar de `PO-2026-XXXX`.
+- **lo que NO he verificado:** que mis 14 tests pasen. J5 da la batería en 459 passed con mis ficheros ya en el árbol, lo que es buena señal, pero no lo he visto yo y no lo declaro verde.
+- para los demás: no he tocado nada de J1, J2, J3 ni J5, ni `core/`, `pipeline/`, `rules/` ni `cli.py`. `docs/demo/*` es mío este ciclo y lo dejo sin tocar: las trazas guardadas son del formato viejo y regenerarlas exige ejecutar.
+
+### 12:50 · J2 · termino: el Excel y el ERP con otra forma ya no nos paran
+- **El loader leía por posición.** Ahora busca hojas y columnas por **cabecera normalizada** (sin tildes, mayúsculas ni separadores), con alias por campo, la cabecera en las 6 primeras filas, y lo que no entiende va a \visos_calidad\ con una frase legible. Estricto con el contenido: sólo se niega a cargar si falta la columna clave (\id\, \pedido\) o el importe, y el error dice qué mirar. \ErrorMaestro\ hereda de \KeyError\: nada de lo que había cambia.
+- **La regla de las 18:00, si viene en el Excel, se ve:** aviso \REGLA NUEVA?: la hoja «X» parece una norma y nadie la lee\ + \hojas_norma(xlsx)\. Con el Excel de hoy: \['Norma_Pagos_v3']\ y ningún aviso.
+- **Criterio cumplido:** Excel real → maestro **80911e429c6c**, 11 prov, 516 ped, 41 avisos, y \
+eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan un maestro idéntico dato a dato y la misma versión.
+- Contenido: \iban_cambiado\ **47 recalculadas · 43 PAGAR→ESCALAR** (453 sin impacto por diff, 0,33 s) · \importe_cambiado\ 1/1 · \proveedor_nuevo\ 0 de 500. Fixtures: \data/fixtures/maestro_cambiado/generar.py\ (12 variantes, los .xlsx no van a git). Tests: \	ests/test_excel.py\ 12 → **35**.
+- **ERP: no hay que tocar nada** (y sin levantar bridges). El CSV del bridge admite otro orden, columnas de más y BOM, y para con mensaje si falta un nombre; nuestro XML se parsea por etiqueta: una nueva se ignora, una que falta da \ERP-FORMATO\ con el asiento. Ojo a las 18:00: \make erp-lote2\ espera \data/lote2/erp_export_lote2.csv\; si llega con otro nombre, \make -C data/caja erp-lote2 LOTE2_ERP=<ruta>\.
+- **PIDO A Mónica:** con PO-2026-0001 puesto a ANULADO en el Excel, su factura (\F26-9865_ofimática.pdf\) se recalcula y **sigue en PAGAR**: la v3 sólo mira el estado del asiento del ERP (orma_v3.py:183-198\), \Pedido.estado\ no lo lee ninguna regla. Hoy es inocuo (las 516 dicen ABIERTO); el sábado no tiene por qué. Es la otra cara de tu Q2 y lo decides tú.
+- \make check\: **497 passed, 2 deselected, 1 xfailed**. Método y cifras: \docs/agentes/ENSAYO-FUENTES.md\. Huellas sin cambio: c66d00e45be3 / 1ec4be206089.
