@@ -326,7 +326,7 @@ export function tituloRegla(reglaId: string): string {
 export function resumenReglas(decision: Decision): string {
   const fallos = decision.motivos.filter((motivo) => !motivo.ok)
   if (decision.motivos.length === 0) return 'La norma aún no ha dejado reglas para este fichero.'
-  if (fallos.length === 0) return 'Ninguna regla impide el pago.'
+  if (fallos.length === 0) return ''
   return `Hay que revisar ${listarReglas(fallos.map((motivo) => motivo.regla_id))}.`
 }
 

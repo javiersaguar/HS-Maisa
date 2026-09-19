@@ -52,8 +52,8 @@ export function InvoiceDocument({
   )
 
   return (
-    <Card className="flex min-h-[690px] flex-col overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.05)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
+    <Card className="flex flex-col overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.05)]">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
         <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1">
           <button
             onClick={() => onZoom(Math.max(60, zoom - 10))}
@@ -95,7 +95,7 @@ export function InvoiceDocument({
           {highlight ? 'Ocultar hechos' : 'Señalar hechos'}
         </button>
       </div>
-      <div className="flex-1 overflow-auto bg-raised p-5 sm:p-8">
+      <div className="bg-raised p-5 sm:p-8">
         <div
           ref={pageRef}
           className="relative mx-auto flex min-h-[610px] max-w-[820px] flex-col overflow-hidden rounded-sm border border-line bg-surface p-7 shadow-[0_4px_14px_rgba(43,55,51,0.08)] transition-transform duration-200 ease-out"

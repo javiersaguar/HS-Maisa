@@ -1,5 +1,6 @@
 'use client'
 
+import { Activity, CheckCircle2, Euro, Files } from 'lucide-react'
 import { BRAND } from '@/lib/config'
 import { formatEur, formatNumber, formatPercent } from '@/lib/format'
 import { useEtapas } from '@/hooks/useEtapas'
@@ -8,12 +9,7 @@ import { EventosTable } from '@/components/workers/EventosTable'
 import { Card } from '@/components/ui/Card'
 import { ErrorCard, LoadingCard } from '@/components/ui/states'
 
-const KPI_STYLES = [
-  { icon: '▤', color: 'var(--color-accent-dark)', iconBg: 'var(--color-accent-soft)', pill: 'Caja + lotes' },
-  { icon: '↗', color: 'var(--color-ink-soft)', iconBg: 'var(--color-raised)', pill: 'Tabla eventos' },
-  { icon: '✓', color: 'var(--color-ok)', iconBg: 'var(--color-ok-soft)', pill: 'Estado ok' },
-  { icon: '€', color: 'var(--color-warn)', iconBg: 'var(--color-warn-soft)', pill: 'LLM' },
-]
+const KPI_ICONS = [Files, Activity, CheckCircle2, Euro] as const
 
 export default function EtapasPage() {
   const { data, error, loading, initialLoading, refresh } = useEtapas({ live: true })
@@ -27,7 +23,8 @@ export default function EtapasPage() {
         ['Ficheros', formatNumber(data.ficheros), 'PDFs registrados en la base de datos'],
         ['Eventos', formatNumber(eventos), 'Al menos uno por etapa y fichero'],
         ['Eventos OK', formatPercent(eventos ? (ok / eventos) * 100 : null), 'El resto: reintentos, errores y pendientes'],
-        ['Coste acumulado', formatEur(coste, 2), 'Tokens de extracción con LLM'],
+        // Con la Caja hidratada sin LLM (`hechos import`) el coste es 0: sin tarjeta; reaparece con tokens reales.
+        ...(coste > 0 ? [['Coste acumulado', formatEur(coste, 2), 'Tokens de extracción con LLM']] : []),
       ]
     : []
 
@@ -53,36 +50,19 @@ export default function EtapasPage() {
           </div>
         ) : (
           <>
-            <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <section className={`mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 ${kpis.length === 4 ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
               {kpis.map(([label, value, description], index) => {
-                const style = KPI_STYLES[index]
+                const Icon = KPI_ICONS[index]
                 return (
-                  <Card
-                    key={label}
-                    className="overflow-hidden rounded-2xl border-line bg-surface p-5 shadow-[0_7px_24px_rgba(43,55,51,0.045)]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[18px] font-semibold"
-                        style={{ color: style.color, backgroundColor: style.iconBg }}
-                      >
-                        {style.icon}
-                      </span>
-                      <p
-                        className="min-w-0 flex-1 text-[30px] font-bold leading-none tracking-[-0.06em] tabular-nums"
-                        style={{ color: style.color }}
-                      >
-                        {value}
-                      </p>
-                      <span
-                        className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                        style={{ color: style.color, backgroundColor: style.iconBg }}
-                      >
-                        {style.pill}
+                  <Card key={label} className="rounded-2xl border-line bg-surface p-5 shadow-[0_7px_24px_rgba(43,55,51,0.045)]">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[12px] font-medium tracking-[0.04em] text-muted uppercase">{label}</p>
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-dark">
+                        <Icon className="size-4" aria-hidden />
                       </span>
                     </div>
-                    <h3 className="mt-4 text-[14px] font-semibold text-ink">{label}</h3>
-                    <p className="mt-1 text-[13px] text-muted">{description}</p>
+                    <p className="mt-3 text-[28px] font-semibold tracking-[-0.04em] text-ink tabular-nums">{value}</p>
+                    <p className="mt-1.5 text-[13px] leading-5 text-muted">{description}</p>
                   </Card>
                 )
               })}

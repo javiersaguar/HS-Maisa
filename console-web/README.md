@@ -20,6 +20,42 @@ con las trampas reales de `docs/trampas.md` (p. ej. `F26-2201_transportes.pdf`, 
 y un `PENDIENTE` (`scan_017.pdf`, LLM caído). Las decisiones del mock salen de `lib/mock/norma.ts`, copia de `rules/norma_v3.py`;
 la UI nunca la importa.
 
+## Arrancar todo contra la BD real
+
+Tres procesos, **uno por puerto**, cada uno en su terminal desde la raíz del repo:
+
+| Puerto | Proceso | Comando |
+|---|---|---|
+| 8000 | puente con la bandeja (`dist/bandeja.db`, Dropzone activo) | `uv run python -m albertitos.console.api --bandeja` |
+| 8001 | chat AlbertitosAI sobre la misma BD | `uv run python -m albertitos.chat --servidor --db dist/bandeja.db` |
+| 3000 | consola Next | `cd console-web && pnpm dev` (con el `.env.local` de «Conectar el backend») |
+
+`bandeja.db` es una copia de la de la entrega (se crea sola la primera vez) más lo que subas por el Dropzone, que
+va al lote 99 y nunca toca `dist/albertitos.db`. Chat y consola sobre la misma BD ven las mismas facturas. Sin
+Dropzone basta el puente sin `--bandeja` y `make chat`, los dos sobre `dist/albertitos.db`.
+
+Comprobación: `curl http://127.0.0.1:8000/salud` da `"ficheros": 500` y `curl http://127.0.0.1:8001/chat/salud`
+da `"api": 2, "modelo_disponible": true`. Si la salud del chat no trae `api` ni `modelo_disponible`, contestas a un
+servidor viejo.
+
+**Windows: dos procesos pueden escuchar en el mismo puerto** sin error y las peticiones van al más antiguo. Así un
+chat arrancado antes de un merge contesta con código viejo («Ahora mismo no puedo consultar al modelo») aunque el
+nuevo funcione. Antes de arrancar, mira que el puerto esté libre y mata lo que sobre:
+
+```powershell
+netstat -ano | Select-String ':(8000|8001) .*LISTEN'        # un PID por puerto, o ninguno
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object CommandLine -like '*albertitos*' |
+  Select-Object ProcessId, CreationDate, CommandLine      # qué es cada uno y desde cuándo
+Stop-Process -Id <pid> -Force
+```
+
+`make console` levanta 8000 y 3000 juntos, pero en Windows Ctrl-C puede dejar vivo el Python: compruébalo con `netstat`.
+El puente con `--bandeja` sirve `dist/bandeja.db` (la de subir PDFs), no la Caja: no lo tengas a la vez que el normal
+en el 8000.
+
+Si el chat contesta «degradado», prueba sin la consola: `uv run python -m albertitos.chat "¿Cuántas facturas hay en
+PAGAR, ESCALAR y NO_PAGAR?"`. Si ahí contesta bien, el problema es el proceso del 8001, no el modelo ni la clave.
+
 ## Pantallas
 
 | Ruta | Qué es |

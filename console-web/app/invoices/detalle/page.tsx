@@ -3,7 +3,7 @@
 import { Suspense, useRef, useState, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { BRAND } from '@/lib/config'
-import { describirEvento, frase, loteNombre, motivoPrincipal, resumenReglas, tituloEvento, tituloRegla } from '@/lib/format'
+import { describirEvento, frase, motivoPrincipal, resumenReglas, tituloEvento, tituloRegla } from '@/lib/format'
 import { COLORS } from '@/lib/theme'
 import { useFichero } from '@/hooks/useFicheros'
 import { useTraza } from '@/hooks/useTraza'
@@ -14,7 +14,6 @@ import { ErpMatchPanel } from '@/components/invoices/ErpMatchPanel'
 import { ExtractedFields, type CampoHecho } from '@/components/invoices/ExtractedFields'
 import { InvoiceDocument } from '@/components/invoices/InvoiceDocument'
 import { Linaje } from '@/components/invoices/Linaje'
-import { ConfianzaChip } from '@/components/confianza/ConfianzaChip'
 import { ConfianzaTarjeta } from '@/components/confianza/ConfianzaTarjeta'
 import { BackLink } from '@/components/ui/BackLink'
 import { Card } from '@/components/ui/Card'
@@ -59,18 +58,7 @@ function FicheroDetail() {
   const header = (
     <div className="mb-5 flex items-start justify-between gap-4">
       <title>{`${fileId} · ${BRAND}`}</title>
-      <div className="min-w-0">
-        <h1 className="break-all text-[26px] font-semibold tracking-[-0.03em]">{fileId}</h1>
-        {fichero && (
-          <p className="mt-1.5 flex items-center gap-2 text-[13px] text-muted animate-in fade-in duration-200">
-            Factura de {loteNombre(fichero.lote)}
-            <ResultadoBadge estado={fichero.estado} />
-            {confianza && fichero.decision && (
-              <ConfianzaChip banda={confianza.banda} razon={confianza.razones[0]} />
-            )}
-          </p>
-        )}
-      </div>
+      <h1 className="min-w-0 break-all text-[26px] font-semibold tracking-[-0.03em]">{fileId}</h1>
       <div className="shrink-0">
         <BackLink href="/invoices">Volver a ficheros</BackLink>
       </div>
@@ -175,7 +163,7 @@ function FicheroDetail() {
     <div className="px-4 py-4 sm:px-6">
       <div className="mx-auto max-w-[1540px]">
         {header}
-        <div className="grid min-h-[calc(100vh-112px)] gap-5 lg:grid-cols-[minmax(0,1fr)_500px]">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_500px] lg:items-start">
           <InvoiceDocument
             fichero={fichero}
             zoom={zoom}
@@ -185,7 +173,7 @@ function FicheroDetail() {
             activeField={activeField}
           />
           <aside className="min-w-0">
-            <Card className="h-full overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.06)]">
+            <Card className="overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.06)]">
               <div className="flex border-b border-line bg-surface px-2" role="tablist" aria-label="Análisis del fichero">
                 {TABS.map((item, index) => (
                   <button
@@ -219,16 +207,18 @@ function FicheroDetail() {
                 id="fichero-tabpanel"
                 role="tabpanel"
                 aria-labelledby={`tab-${TABS.indexOf(tab)}`}
-                className="max-h-[calc(100vh-165px)] overflow-y-auto p-5 animate-in fade-in slide-in-from-bottom-1 duration-200"
+                className="p-5 animate-in fade-in slide-in-from-bottom-1 duration-200"
               >
                 {tab === 'Decisión' && (
                   <>
                     <div className="rounded-xl border border-line bg-raised p-4">
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
-                        <span className="text-[13px] text-muted">
-                          {decision ? resumenReglas(decision) : 'Todavía no hay decisión'}
-                        </span>
+                        {(!decision || resumenReglas(decision)) && (
+                          <span className="text-[13px] text-muted">
+                            {decision ? resumenReglas(decision) : 'Todavía no hay decisión'}
+                          </span>
+                        )}
                       </div>
                       <p className="mt-3 text-[13px] leading-5 text-ink-soft">
                         {decision
