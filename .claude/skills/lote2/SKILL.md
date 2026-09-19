@@ -15,7 +15,7 @@ Ensayo E3, 19/09: 10 PDFs, 2 escaneadas **cacheadas**, 0 tokens nuevos. Prefligh
 ## 0. Las tres cosas que no se pueden olvidar
 
 1. **Simulados fuera y respaldo coherente:** `uv run python scripts/preflight_lote2.py --respaldar`. No usar `cp` con WAL. Si hay fantasmas, prepara el respaldo aunque salga rojo; revisar sus nombres y ejecutar `uv run python scripts/preflight_lote2.py --limpiar`. Después `uv run albertitos reprocess --todo --erp v1 --fecha-corte 2026-09-18` quita marcas heredadas de duplicados. Repetir preflight y exigir 0. No borrar por prefijo `L2-` a ciegas ni respaldar por primera vez después de limpiar.
-2. **Flujo con duplicados:** `run` entero; si aún no admite `run --erp`, usar la alternativa del paso 2: `extract` + `reprocess --todo --erp v1`. `reprocess` incluye `marcar_duplicados`; `extract` + `decide` solos no.
+2. **Flujo con duplicados:** `run --erp v1` entero. `run` y `reprocess` incluyen `marcar_duplicados`; `extract` + `decide` solos no.
 3. **Hash contra el canal:** `uv run python scripts/verificar_material.py "$ZIP" --hash "$HASH_PUBLICADO" --esperados 40`. Calcularlo sin `--hash` o revisar un directorio no acredita el ZIP recibido.
 
 Preguntar al mentor y registrar: ¿el lote 1 conserva v3/v1 o se actualiza a v4/v2? ¿Qué hacer si el lote 2 duplica una factura pagable del lote 1? ¿Dónde y en qué formato llega la regla? Mónica decide la norma; no inferirla de notas en las facturas.
@@ -58,23 +58,19 @@ La estructura final debe ser `data/lote2/facturas/` y `data/lote2/erp_export_lot
 
 El verificador comprueba NFC, colisiones por mayúsculas/tildes y con lote 1, apertura de PDF y columnas/filas del CSV; `--esperados 40` exige el recuento. **PDF idénticos (misma SHA-256, otro nombre) — P0-1 (Miguel, `e3b3764`, tabla `identidades`):** en una rama sin P0-1, el verificador los **para** (ROJO «PDF idéntico por SHA-256»): ingest reasignaría el original o colapsaría los dos nombres, y las dos salidas son NO APTO. Qué hacer: `/sync` con `main` y repetir la verificación; nunca ingerir así. Con P0-1, sale **AVISO «copia exacta…»**: se sigue normalmente; cada nombre tendrá su línea en su lote y todas las copias (también el original del lote 1) saldrán ESCALAR por `marcar_duplicados`, que corre dentro de `run` y de `reprocess`. Comprobar después con `albertitos trace <copia>`: la cabecera dice «copia exacta de X» y el paso 4 DUPLICADO nombra a la otra; en la línea entregada, el motivo acaba en «el mismo PDF que X (lote N)». Ensayado el 19/09 11:04 con `data/fixtures/lote2_identicos/` (`dist/ensayo/p01/e2e.log`). Nunca modificar un PDF ni un nombre oficial para esquivar el control. Bloquea `.PDF` y subcarpetas que ingest omitiría. Los PDF fuera de `facturas/` se muestran como adjuntos. Sin esa carpeta, se consideran facturas salvo nombres de norma/regla/manual. Revisar la clasificación si la estructura es otra. Si la regla llega por el canal, conservarla literalmente con su procedencia para Mónica.
 
-**Mismo nombre que lote 1, distinto contenido — P0-5:** el verificador **para** (ROJO «nombre coincide con lote 1»). `ficheros.file_id` es UNIQUE: ingest registra ERROR y el lote 2 se queda sin línea → NO APTO. **No hay salida hasta que Miguel decida** (quitar UNIQUE o id interno ≠ file_id de entrega). Fixture + xfail: `data/fixtures/lote2_nombre_repetido/` · `tests/test_nombre_repetido.py`. Chuleta de 18:00: [CHULETA-LOTE2.md](../../../docs/agentes/CHULETA-LOTE2.md).
+**Mismo nombre que lote 1, distinto contenido — P0-5:** sin la rama de Miguel el verificador **para** (ROJO «nombre coincide con lote 1»), y con razón: `ficheros.file_id` es UNIQUE, ingest registra ERROR y el lote 2 se queda sin línea → NO APTO. **Sí hay salida, y es un merge** (Miguel, bitácora 19/09 11:40): `git merge origin/miguel/p0-5-nombre-repetido && make check`, y se sigue con la ingesta. El PDF que choca entra en `ficheros` como `./X.pdf` (`db.PREFIJO_INTERNO`) y su nombre de entrega va en `identidades`: sus hechos, su decisión y su línea; `package` y la auditoría saltan el interno. Se dejó fuera de `main` a propósito porque la colisión es poco probable (en el lote 1 faltan `scan_019/020/024`, lo que apunta a una serie única de 540 repartida entre los dos lotes). Fixture y tests: `data/fixtures/lote2_nombre_repetido/` · `tests/test_nombre_repetido.py`. Ensayo cronometrado del desvío: `scripts/ensayo/lote2-desvio-p05.sh` (19/09 13:15: **39 s** del ROJO a los dos lotes APTO, 36 s de `make check`). Chuleta de 18:00: [CHULETA-LOTE2.md](../../../docs/agentes/CHULETA-LOTE2.md).
 
 ## 2. Ingesta y flujo completo contra v1
 
 ```bash
 uv run albertitos ingest --dir data/lote2/facturas --lote 2
-if uv run albertitos run --help | grep -q -- '--erp'; then
-  uv run albertitos run --erp v1 --norma v3 --fecha-corte 2026-09-18 --salida dist/lote2-preauditoria
-else
-  uv run albertitos maestro
-  uv run albertitos extract --workers 4
-  uv run albertitos reprocess --todo --erp v1 --norma v3 --fecha-corte 2026-09-18
-fi
+uv run albertitos run --erp v1 --norma v3 --fecha-corte 2026-09-18 --salida dist/lote2-preauditoria
 uv run albertitos status
 ```
 
-La alternativa es necesaria en la CLI comprobada: ni `run` ni `pipeline.run.correr` aceptan destino ERP; está pedido a Miguel. Se probó `extract` + `reprocess --todo --erp`, que incluye duplicados. También se midió `run` íntegro en una copia: último snapshot v1 comprobado antes y 510 decisiones con v1 comprobadas después. Ese ensayo controlado no elimina la limitación de la CLI.
+`run --erp <versión>` ya existe en `cli.py` (Miguel): si el snapshot no está en la BD, falla en vez de usar otro. La vieja alternativa (`maestro` + `extract` + `reprocess --todo --erp v1`) ya no hace falta; sigue siendo válida como camino manual si hay que separar las etapas.
+
+**En un ENSAYO, ojo:** `cli.LOTE2` es la constante `Path("data/lote2")`. `run`, `package` y `validate --lote 2` miran siempre `data/lote2/facturas` y **no** leen `ALBERTITOS_DIR_LOTE2` (ése lo usan el preflight y el inventario). Para ensayar con `data/fixtures/lote2_sim/` hay que copiar los PDFs a `data/lote2/facturas` dentro de un worktree desechable: lo hace `scripts/ensayo/lote2-ensayo.sh`. En el lote real no aplica, porque el material va justo ahí.
 
 `run` también empaqueta: su salida preliminar va a `dist/lote2-preauditoria`, nunca a la entrega final. `extract` puede terminar con pendientes y salida 0; mirar su resumen y `status`. La auditoría impedirá entregar si falta una decisión.
 
@@ -120,9 +116,9 @@ uv run python scripts/auditoria_entrega.py --db "$ALBERTITOS_DB" --lote ambos --
 
 Sólo con ambas auditorías sin rojo, ejecutar `/entrega`. La primera controla hechos/decisiones antes de escribir; la segunda comprueba también los JSONL nuevos. Un ámbar por salida preliminar antigua antes de package es esperable; rojo no se ignora. Deben existir 500 líneas de lote 1 y 40 de lote 2, ambos APTO. Un JSONL estructuralmente válido no acredita hechos o norma correctos.
 
-El rojo heredado de `scan_025.pdf` requiere reextracción cacheada y reprocesado. Si cambia el resultado, Mónica debe resolver la política antes de la entrega real. No corregir JSONL a mano ni silenciar la auditoría.
+El rojo heredado de `scan_025.pdf` está resuelto (ADR-0010 de Mónica; reextraído y reprocesado el 19/09 a las 10:07, entrega `232bb76` con la auditoría en verde). No corregir JSONL a mano ni silenciar la auditoría.
 
-**Mientras `package` no ejecute la auditoría por sí mismo** (hoy sólo valida el JSONL: la puerta de G1 espera a que la auditoría real salga verde o a un `--aceptar-rojo` en `package`), quien entrega pasa **obligatoriamente** `make publicar` en seco o `uv run python scripts/auditoria_entrega.py` antes de `/entrega`.
+**`package` ya audita por sí mismo** (la puerta de G1 está activa, `c2a8e58`): se niega si falta una decisión o si la auditoría sale roja. Para forzarlo hace falta `--aceptar-rojo "<motivo>"`, que es el último recurso: deja el evento `AUDITORIA-ROJA-ACEPTADA` con el motivo y los rojos, y nunca acepta un JSONL inválido, una auditoría que revienta ni un motivo vacío. `--sin-auditoria` la salta a mano y no se usa para entregar.
 
 ## 6. Si a las 07:30 del domingo queda algún PENDIENTE (último recurso, ADR-0009)
 
