@@ -933,3 +933,8 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **PARA Miguel:** `test_bonus.py::test_el_bonus_no_cambia_la_entrega_ni_la_bd` falla en cualquier carpeta con el lote 2 ingerido y sin decidir: hace `package` sobre la `dist/albertitos.db` real y la auditoría sale ROJA (lote 2 sin decisión, duplicados que mezclan lotes). Es del estado de la BD, no del código. Rama lista para mergear.
 - **PARA A:** si el maestro v2 lee los NIF de `proveedores_nuevos.csv`, que pase por `formatos.normalizar_nif`: el CNPJ de P014 queda `12345678000195`, igual que el que saca el PDF.
 - **Ingesta:** 40 en el lote 2 (lista en `dist/ensayo/lote2/j2/lote2.txt`). **Extracción:** 23 por plantilla, bien, incluidas las dos de «Suma y sigue» con el total de la última página y `e18` con `anotacion_a_mano`. Las 17 `e01`–`e17` necesitan el LLM: **falta el `.env` en `HS-Maisa-lote2`**.
+
+### 20:35 · Javier · integrado en `main` para grabar la demo: lote2-fuentes (A) + lote2-extract (B) + consola de Alejandro
+- `make check`: 696 passed. Sin conflictos.
+- Con los validadores de B, el CNPJ de P014 se normaliza sin barra y el maestro del lote 2 pasa a la versión **`f504377103b2`** (la `4fa206ac8bb2` de mi entrada anterior queda vieja).
+- **Sigue pendiente:** las 17 `e*` de B (falta el `.env` en `../HS-Maisa-lote2`, lo copia Javier a mano); el M5 real sobre la BD de Javier; el visto bueno de Miguel para publicar.
