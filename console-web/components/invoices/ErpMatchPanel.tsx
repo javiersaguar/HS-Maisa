@@ -68,7 +68,9 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
       <div className="rounded-xl border border-[#dfe4de] bg-[#fafcfa] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Maestro de proveedores</h3>
-          <span className="font-mono text-[12px] text-[#8a958e]">versión {shortHash(fuentes.maestro_version, 12)}</span>
+          <span className="font-mono text-[12px] text-[#8a958e]">
+            {fuentes.maestro_version ? `versión ${shortHash(fuentes.maestro_version, 12)}` : 'sin snapshot'}
+          </span>
         </div>
         <p className="mt-2 leading-5 text-[#68736d]">
           {proveedor
@@ -118,7 +120,9 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
       <div className="rounded-xl border border-[#dfe4de] bg-[#fafcfa] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Asiento en el {ERP_NOMBRE}</h3>
-          <span className="font-mono text-[12px] text-[#8a958e]">snapshot {fuentes.erp_version}</span>
+          <span className="font-mono text-[12px] text-[#8a958e]">
+            {fuentes.erp_version ? `snapshot ${fuentes.erp_version}` : 'sin snapshot'}
+          </span>
         </div>
         {asientos.length === 0 ? (
           <p className="mt-2 leading-5 text-[#68736d]">

@@ -14,6 +14,13 @@ const mockFlag = process.env.NEXT_PUBLIC_USE_MOCK
 /** El mock es el defecto; HTTP exige el flag a false y una URL. */
 export const USE_MOCK = mockFlag === 'false' && API_BASE_URL !== '' ? false : true
 
+/**
+ * Versión del contrato JSON que entiende esta consola (`lecturas.API_VERSION` en el backend).
+ * El puente la manda en `X-Albertitos-Api` y en el campo `api` de cada colección.
+ */
+export const API_CONTRACT_VERSION = 1
+export const API_VERSION_HEADER = 'X-Albertitos-Api'
+
 export const BRAND = 'Albertitos'
 
 /** El ERP de Alberto: un bridge Oracle de 2009 que se descarga en snapshots (v1, v2). */

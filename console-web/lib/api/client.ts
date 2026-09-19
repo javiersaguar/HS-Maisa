@@ -6,7 +6,7 @@
  * - No component ever calls `fetch` directly.
  */
 
-import { API_BASE_URL } from '../config'
+import { API_BASE_URL, API_CONTRACT_VERSION, API_VERSION_HEADER } from '../config'
 
 export class ApiError extends Error {
   readonly status: number
@@ -29,6 +29,29 @@ export class ApiError extends Error {
 
   get isNetwork() {
     return this.status === 0
+  }
+
+  /** El puente vive pero no tiene BD (503): el mensaje trae el comando que la crea. */
+  get isUnavailable() {
+    return this.status === 503
+  }
+}
+
+let versionAvisada = false
+
+/**
+ * El puente declara la versión de su contrato en una cabecera. Si no coincide con la que este
+ * frontend entiende, se avisa una vez en consola: los mappers siguen tolerando alias, pero un
+ * cambio de Miguel no debe pasar en silencio.
+ */
+function comprobarVersion(response: Response) {
+  const declarada = response.headers.get(API_VERSION_HEADER)
+  if (!declarada || versionAvisada) return
+  if (Number(declarada) !== API_CONTRACT_VERSION) {
+    versionAvisada = true
+    console.warn(
+      `[albertitos] el puente habla el contrato v${declarada} y esta consola espera v${API_CONTRACT_VERSION}: revisa lib/api/mappers.ts`,
+    )
   }
 }
 
@@ -87,6 +110,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       error,
     )
   }
+
+  comprobarVersion(response)
 
   if (!response.ok) {
     let details: unknown

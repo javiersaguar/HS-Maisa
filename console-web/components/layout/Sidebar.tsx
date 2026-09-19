@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, FileText, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
-import { BRAND } from '@/lib/config'
-import { formatNumber } from '@/lib/format'
+import { Activity, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
+import { BRAND, USE_MOCK } from '@/lib/config'
+import { ORIGEN_DATOS } from '@/lib/api/salud'
+import { formatNumber, formatRelative } from '@/lib/format'
 import { useEtapas } from '@/hooks/useEtapas'
+import { useSalud } from '@/hooks/useSalud'
 import { saludEtapa } from '@/components/workers/EtapaIcon'
 
 const ITEMS = [
@@ -18,6 +20,59 @@ const ITEMS = [
 function isActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
   return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+/**
+ * De dónde salen los datos. Se enseña siempre: en la defensa nadie debe confundir el mock con la Caja.
+ *  - mock: datos de ejemplo (`NEXT_PUBLIC_USE_MOCK=true`).
+ *  - http: BD real (ficheros y último evento), puente sin BD (503) o puente apagado (red).
+ */
+function OrigenDatos() {
+  const { data, error } = useSalud({ live: !USE_MOCK })
+
+  if (USE_MOCK) {
+    return (
+      <div
+        title="NEXT_PUBLIC_USE_MOCK=true: 510 ficheros inventados. No es la Caja."
+        className="flex items-center gap-2 rounded-lg border border-[#eee8bd] bg-[#fffbe8] px-2.5 py-1.5 text-[12px] font-semibold text-[#8a7400]"
+      >
+        <FlaskConical className="size-3.5 shrink-0" />
+        Datos de ejemplo
+      </div>
+    )
+  }
+
+  const bd = data?.bd ?? null
+  const tone = error
+    ? 'border-[#f1dada] bg-[#fff0f0] text-[#bd3434]'
+    : !data
+      ? 'border-[#e1e7e2] bg-[#f7f8f5] text-[#8a958e]'
+      : bd
+        ? 'border-[#dcefe6] bg-[#eff8f3] text-[#176d59]'
+        : 'border-[#f1dada] bg-[#fff0f0] text-[#bd3434]'
+  const label = error ? 'Puente apagado' : !data ? 'Conectando…' : bd ? 'BD real' : 'Puente sin BD'
+  const detail = error
+    ? ORIGEN_DATOS
+    : !data
+      ? ORIGEN_DATOS
+      : bd
+        ? `${formatNumber(bd.ficheros)} ficheros · ${bd.pendientes ? `${formatNumber(bd.pendientes)} pendientes` : `norma ${bd.versiones.norma ?? '—'}`}`
+        : 'make db && albertitos ingest'
+  const title = error
+    ? `${error.message}. Arranca: uv run python -m albertitos.console.api`
+    : bd
+      ? `${ORIGEN_DATOS} · último evento ${formatRelative(bd.ultimoEventoEn)}${bd.identidades ? ' · identidades (mismo PDF, dos nombres)' : ''}`
+      : ORIGEN_DATOS
+
+  return (
+    <div title={title} className={`rounded-lg border px-2.5 py-1.5 text-[12px] ${tone}`}>
+      <div className="flex items-center gap-2 font-semibold">
+        <Database className="size-3.5 shrink-0" />
+        {label}
+      </div>
+      <p className="mt-0.5 truncate pl-[22px] font-mono text-[11px] opacity-80">{detail}</p>
+    </div>
+  )
 }
 
 export function Sidebar() {
@@ -57,24 +112,27 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto shrink-0 border-t border-[#e2e5df] p-4">
-        <div className="flex items-center gap-2 text-[14px] font-medium text-[#46504b]">
-          <span
-            className={`size-2 rounded-full transition-colors ${
-              error ? 'bg-[#f05b5b]' : !data ? 'animate-pulse bg-[#c9cec9]' : conIncidencias ? 'bg-[#e0c95a]' : 'bg-[#63d5aa]'
-            }`}
-          />
-          {error
-            ? 'Sin datos del pipeline'
-            : !data
-              ? 'Conectando…'
-              : conIncidencias
-                ? `${conIncidencias} ${conIncidencias === 1 ? 'etapa' : 'etapas'} con incidencias`
-                : 'Pipeline al día'}
+      <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-[#e2e5df] p-4">
+        <OrigenDatos />
+        <div>
+          <div className="flex items-center gap-2 text-[14px] font-medium text-[#46504b]">
+            <span
+              className={`size-2 rounded-full transition-colors ${
+                error ? 'bg-[#f05b5b]' : !data ? 'animate-pulse bg-[#c9cec9]' : conIncidencias ? 'bg-[#e0c95a]' : 'bg-[#63d5aa]'
+              }`}
+            />
+            {error
+              ? 'Sin datos del pipeline'
+              : !data
+                ? 'Conectando…'
+                : conIncidencias
+                  ? `${conIncidencias} ${conIncidencias === 1 ? 'etapa' : 'etapas'} con incidencias`
+                  : 'Pipeline al día'}
+          </div>
+          <p className="mt-1 pl-4 text-[14px] text-[#a0a6a2]">
+            {error ? 'Reintentando en segundo plano' : !data ? 'Leyendo eventos…' : `${formatNumber(data.ficheros)} ficheros · sólo lectura`}
+          </p>
         </div>
-        <p className="mt-1 pl-4 text-[14px] text-[#a0a6a2]">
-          {error ? 'Reintentando en segundo plano' : !data ? 'Leyendo eventos…' : `${formatNumber(data.ficheros)} ficheros · sólo lectura`}
-        </p>
       </div>
     </aside>
   )
