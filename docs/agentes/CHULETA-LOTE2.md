@@ -73,7 +73,7 @@ Flags reales: `material` posicional · `--hash` · `--db` · `--lote1-dir` · `-
 **Los proveedores P012-P015 y los 39 pedidos nuevos vienen en CSV, no en el Excel.** Sin este paso, las facturas
 `e*` salen con el NIF o el pedido «fuera del maestro»:
 ```bash
-uv run albertitos maestro --lote2 data/lote2   # 15 proveedores · 555 pedidos · versión 4fa206ac8bb2
+uv run albertitos maestro --lote2 data/lote2   # 15 proveedores · 555 pedidos · versión f504377103b2
 ```
 **Ojo:** si `albertitos run` recarga sólo el Excel (`pipeline/run.py`, avisado a Miguel en la bitácora), pisa este
 maestro: después de cada `run`, vuelve a ejecutar `maestro --lote2` y luego `reprocess --impacted --lote 2`.
