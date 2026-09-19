@@ -42,7 +42,8 @@
       "docs/agentes/PLAN-10.md",
       "docs/agentes/partes/PARTE-09.md",
       "scripts/ensayo/*",
-      "docs/agentes/RESILIENCIA-Y-COSTE.md"
+      "docs/agentes/RESILIENCIA-Y-COSTE.md",
+      "docs/agentes/ANALISIS-JEV.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
