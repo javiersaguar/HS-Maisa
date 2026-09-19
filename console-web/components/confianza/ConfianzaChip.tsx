@@ -6,9 +6,9 @@ import type { BandaConfianza } from '@/lib/types'
  * arquetipos, no mide un intervalo; el desglose con puntos está en ConfianzaTarjeta. Paleta de StatusBadge.
  */
 const TONO: Record<BandaConfianza, string> = {
-  alta: 'bg-[#edf9f4] text-[#087b5b]',
-  media: 'bg-[#fff9e6] text-[#a87000]',
-  baja: 'bg-[#fff0f0] text-[#bd3434]',
+  alta: 'bg-accent-soft text-accent-dark',
+  media: 'bg-warn-soft text-warn',
+  baja: 'bg-bad-soft text-bad',
 }
 
 export function ConfianzaChip({
@@ -19,7 +19,7 @@ export function ConfianzaChip({
   /** Se enseña al pasar el ratón (`razon_principal`). */
   razon?: string | null
 }) {
-  if (!banda || !TONO[banda]) return <span className="text-[#9aa39e]">—</span>
+  if (!banda || !TONO[banda]) return <span className="text-muted">—</span>
   return (
     <span
       title={razon ? `Confianza ${banda}: ${razon}` : `Confianza ${banda}`}

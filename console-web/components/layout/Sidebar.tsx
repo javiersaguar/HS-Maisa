@@ -52,7 +52,7 @@ function OrigenDatos() {
     return (
       <div
         title="NEXT_PUBLIC_USE_MOCK=true: 510 ficheros inventados. No es la Caja."
-        className="rounded-lg border border-[#eee8bd] bg-[#fffbe8] px-2.5 py-1.5 text-[12px] text-[#8a7400]"
+        className="rounded-lg border border-warn-line bg-warn-soft px-2.5 py-1.5 text-[12px] text-warn"
       >
         <div className="flex items-center gap-2 font-semibold">
           <FlaskConical className="size-3.5 shrink-0" />
@@ -65,12 +65,12 @@ function OrigenDatos() {
 
   const bd = data?.bd ?? null
   const tone = error
-    ? 'border-[#f1dada] bg-[#fff0f0] text-[#bd3434]'
+    ? 'border-bad-line bg-bad-soft text-bad'
     : !data
-      ? 'border-[#e1e7e2] bg-[#f7f8f5] text-[#8a958e]'
+      ? 'border-line bg-canvas text-muted'
       : bd
-        ? 'border-[#dcefe6] bg-[#eff8f3] text-[#176d59]'
-        : 'border-[#f1dada] bg-[#fff0f0] text-[#bd3434]'
+        ? 'border-line bg-accent-soft text-accent-dark'
+        : 'border-bad-line bg-bad-soft text-bad'
   const label = error ? 'Sin conexión' : !data ? 'Conectando…' : bd ? 'Caja de Alberto' : 'Aún no hay Caja'
   const detail = error
     ? 'El puente no responde'
@@ -136,26 +136,26 @@ function EstadoPipeline() {
 
   const dot =
     tone === 'red'
-      ? 'bg-[#f05b5b]'
+      ? 'bg-bad'
       : tone === 'pulse'
-        ? 'animate-pulse bg-[#c9cec9]'
+        ? 'animate-pulse bg-line'
         : tone === 'yellow'
-          ? 'bg-[#e0c95a]'
-          : 'bg-[#63d5aa]'
+          ? 'bg-warn'
+          : 'bg-accent'
 
   const inner = (
     <>
-      <div className="flex items-center gap-2 text-[14px] font-medium text-[#46504b]">
+      <div className="flex items-center gap-2 text-[14px] font-medium text-ink-soft">
         <span className={`size-2 rounded-full transition-colors ${dot}`} />
         {titulo}
       </div>
-      <p className="mt-1 pl-4 text-[13px] text-[#a0a6a2]">{detalle}</p>
+      <p className="mt-1 pl-4 text-[13px] text-muted">{detalle}</p>
     </>
   )
 
   if (irAEtapas) {
     return (
-      <Link href="/workers" className="rounded-lg outline-none hover:text-[#164f45] focus-visible:ring-2 focus-visible:ring-[#164f45]/30">
+      <Link href="/workers" className="rounded-lg outline-none hover:text-accent-dark focus-visible:ring-2 focus-visible:ring-accent-dark/30">
         {inner}
       </Link>
     )
@@ -168,14 +168,14 @@ export function Sidebar() {
   const pathname = usePathname() ?? '/'
 
   return (
-    <aside className="flex h-full w-[220px] shrink-0 flex-col overflow-hidden rounded-[28px] border border-[#e2e5df] bg-white shadow-[0_8px_24px_rgba(20,55,45,0.06)]">
-      <Link href="/" className="flex h-[84px] shrink-0 items-center gap-3 border-b border-[#e2e5df] px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-[#155247] text-white">
+    <aside className="flex h-full w-[220px] shrink-0 flex-col overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_8px_24px_rgba(43,55,51,0.06)]">
+      <Link href="/" className="flex h-[84px] shrink-0 items-center gap-3 border-b border-line px-5">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-accent-dark text-canvas">
           <Sparkles className="size-4" />
         </div>
         <div>
-          <p className="text-[14px] font-semibold tracking-tight text-[#17211e]">{BRAND}</p>
-          <p className="text-[14px] text-[#9aa39e]">Cuentas a pagar</p>
+          <p className="text-[14px] font-semibold tracking-tight text-ink">{BRAND}</p>
+          <p className="text-[14px] text-muted">Cuentas a pagar</p>
         </div>
       </Link>
 
@@ -187,8 +187,8 @@ export function Sidebar() {
             aria-current={isActive(pathname, href) ? 'page' : undefined}
             className={`flex h-9 items-center gap-3 rounded-lg px-3 text-left text-[14px] transition-colors ${
               isActive(pathname, href)
-                ? 'bg-[#164f45] font-semibold text-white shadow-sm'
-                : 'text-[#6b716e] hover:bg-[#f1f5f1] hover:text-[#164f45]'
+                ? 'bg-accent-dark font-semibold text-canvas shadow-sm'
+                : 'text-ink-soft hover:bg-raised hover:text-accent-dark'
             }`}
           >
             <Icon className="size-[17px]" />
@@ -197,7 +197,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-[#e2e5df] p-4">
+      <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-line p-4">
         <OrigenDatos />
         <EstadoPipeline />
       </div>

@@ -70,9 +70,9 @@ function celdas(mes: string): Celda[] {
 
 /** Tres tonos del verde de la marca según el importe del día, en escala logarítmica (431 facturas frente a 1). */
 const TONOS = [
-  { caja: 'bg-[#e9f5ef] text-[#164f45]', sub: 'text-[#4f7a6e]' },
-  { caja: 'bg-[#cdeadd] text-[#0f3d34]', sub: 'text-[#2f6b5c]' },
-  { caja: 'bg-[#164f45] text-white', sub: 'text-white/75' },
+  { caja: 'bg-accent-soft text-accent-dark', sub: 'text-accent-dark' },
+  { caja: 'bg-accent-line text-accent-dark', sub: 'text-accent-dark' },
+  { caja: 'bg-accent-dark text-canvas', sub: 'text-canvas/75' },
 ]
 
 function tono(centimos: number, maximo: number) {
@@ -110,20 +110,20 @@ export function CalendarioMes({
   const maximo = Math.max(0, ...delMes.map((dia) => dia.centimos))
 
   const flecha =
-    'inline-flex size-10 items-center justify-center rounded-full border border-[#dde3de] bg-white text-[#164f45] shadow-[0_1px_2px_rgba(20,55,45,0.06)] transition hover:border-[#9fcdb9] hover:bg-[#f3faf6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#164f45]/30 disabled:cursor-default disabled:border-[#eef0ed] disabled:bg-transparent disabled:text-[#cdd3cf] disabled:shadow-none'
+    'inline-flex size-10 items-center justify-center rounded-full border border-line bg-surface text-accent-dark shadow-[0_1px_2px_rgba(43,55,51,0.06)] transition hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-dark/30 disabled:cursor-default disabled:border-line-soft disabled:bg-transparent disabled:text-muted/60 disabled:shadow-none'
 
   return (
     <section
       aria-label={`Pagos de ${nombreMes(mes)}`}
       style={LETRA}
-      className="flex h-full min-h-[600px] flex-col rounded-2xl border border-[#e3e7e2] bg-white px-4 pt-5 pb-4 shadow-[0_8px_28px_rgba(20,55,45,0.05)] sm:px-6"
+      className="flex h-full min-h-[600px] flex-col rounded-2xl border border-line bg-surface px-4 pt-5 pb-4 shadow-[0_8px_28px_rgba(43,55,51,0.05)] sm:px-6"
     >
       <header className="flex flex-col items-center gap-1.5">
         <div className="flex items-center gap-5">
           <button onClick={() => anterior && onMes(anterior)} disabled={!anterior} aria-label="Mes anterior" className={flecha}>
             <ChevronLeft className="size-5" />
           </button>
-          <h1 className="min-w-[220px] text-center text-[28px] font-semibold tracking-[-0.02em] text-[#10231e]">
+          <h1 className="min-w-[220px] text-center text-[28px] font-semibold tracking-[-0.02em] text-ink">
             {nombreMes(mes)}
           </h1>
           <button
@@ -135,11 +135,11 @@ export function CalendarioMes({
             <ChevronRight className="size-5" />
           </button>
         </div>
-        <p className="text-[13px] text-[#6b7771]">
+        <p className="text-[13px] text-ink-soft">
           {facturasMes > 0 ? (
             <>
-              <span className="font-semibold text-[#164f45]">{formatNumber(facturasMes)} facturas</span> a pagar ·{' '}
-              <span className="font-semibold text-[#164f45]">{formatImporte(deCentimos(centimosMes))}</span>
+              <span className="font-semibold text-accent-dark">{formatNumber(facturasMes)} facturas</span> a pagar ·{' '}
+              <span className="font-semibold text-accent-dark">{formatImporte(deCentimos(centimosMes))}</span>
             </>
           ) : (
             'Sin pagos este mes'
@@ -147,38 +147,38 @@ export function CalendarioMes({
         </p>
       </header>
 
-      <div className="mt-5 grid grid-cols-7 pb-2 text-[12px] font-medium text-[#8a948f]">
+      <div className="mt-5 grid grid-cols-7 pb-2 text-[12px] font-medium text-muted">
         {DIAS_SEMANA.map((dia, index) => (
-          <span key={dia} className={`px-3 ${index > 4 ? 'text-[#a7afab]' : ''}`}>
+          <span key={dia} className={`px-3 ${index > 4 ? 'text-muted' : ''}`}>
             {dia}
           </span>
         ))}
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-xl border border-[#e6e9e5] bg-[#e6e9e5]">
+      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-xl border border-line bg-raised">
         {celdas(mes).map(({ fecha, fuera }, index) => {
           const numero = Number(fecha.slice(8))
           const dia = fuera ? undefined : dias.get(fecha)
           const corte = fecha === fechaCorte && !fuera
           const activo = fecha === diaActivo
-          const fondo = fuera ? 'bg-[#fafbfa]' : index % 7 > 4 ? 'bg-[#fcfdfc]' : 'bg-white'
+          const fondo = fuera ? 'bg-canvas' : index % 7 > 4 ? 'bg-canvas/60' : 'bg-surface'
 
           const cabecera = (
             <span className="flex items-center gap-2">
               <span
                 className={`inline-flex size-7 items-center justify-center rounded-full text-[13px] ${
                   corte
-                    ? 'bg-[#164f45] font-semibold text-white'
+                    ? 'bg-accent-dark font-semibold text-canvas'
                     : fuera
-                      ? 'text-[#c4cac6]'
+                      ? 'text-muted/60'
                       : dia
-                        ? 'font-semibold text-[#10231e]'
-                        : 'text-[#8a948f]'
+                        ? 'font-semibold text-ink'
+                        : 'text-muted'
                 }`}
               >
                 {numero}
               </span>
-              {corte && <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#164f45]">Corte</span>}
+              {corte && <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-dark">Corte</span>}
             </span>
           )
 
@@ -198,11 +198,11 @@ export function CalendarioMes({
               aria-haspopup="dialog"
               aria-expanded={activo}
               aria-label={`${numero} de ${nombreMes(mes)}: ${dia.pagos.length} factura${dia.pagos.length === 1 ? '' : 's'}, ${formatImporte(deCentimos(dia.centimos))}${corte ? ', día de corte' : ''}`}
-              className={`group relative flex min-h-[84px] flex-col justify-between gap-2 p-2 text-left transition-colors hover:bg-[#f4faf7] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#164f45]/40 ${fondo} ${activo ? 'z-10 ring-2 ring-inset ring-[#164f45]' : ''}`}
+              className={`group relative flex min-h-[84px] flex-col justify-between gap-2 p-2 text-left transition-colors hover:bg-accent-soft focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-dark/40 ${fondo} ${activo ? 'z-10 ring-2 ring-inset ring-accent-dark' : ''}`}
             >
               {cabecera}
               <span
-                className={`flex w-full flex-col rounded-lg px-2.5 py-1.5 transition group-hover:shadow-[0_2px_8px_rgba(20,55,45,0.14)] ${caja}`}
+                className={`flex w-full flex-col rounded-lg px-2.5 py-1.5 transition group-hover:shadow-[0_2px_8px_rgba(43,55,51,0.14)] ${caja}`}
               >
                 <span className="text-[14px] leading-5 font-semibold">
                   {formatNumber(dia.pagos.length)}
@@ -217,10 +217,10 @@ export function CalendarioMes({
         })}
       </div>
 
-      <footer className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-[12px] text-[#7b8680]">
+      <footer className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-[12px] text-muted">
         <span className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
           <span className="flex items-center gap-2">
-            <span aria-hidden className="inline-flex size-3.5 rounded-full bg-[#164f45]" />
+            <span aria-hidden className="inline-flex size-3.5 rounded-full bg-accent-dark" />
             Día de corte: las vencidas se ejecutarían ese día
           </span>
           <span className="flex items-center gap-1">

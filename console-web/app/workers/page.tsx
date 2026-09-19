@@ -9,10 +9,10 @@ import { Card } from '@/components/ui/Card'
 import { ErrorCard, LoadingCard } from '@/components/ui/states'
 
 const KPI_STYLES = [
-  { icon: '▤', color: '#176d59', iconBg: '#e4f8ef', pill: 'Caja + lotes' },
-  { icon: '↗', color: '#6354a8', iconBg: '#f0edff', pill: 'Tabla eventos' },
-  { icon: '✓', color: '#16825f', iconBg: '#e4f8ef', pill: 'Estado ok' },
-  { icon: '€', color: '#b36a35', iconBg: '#fff1e4', pill: 'LLM' },
+  { icon: '▤', color: 'var(--color-accent-dark)', iconBg: 'var(--color-accent-soft)', pill: 'Caja + lotes' },
+  { icon: '↗', color: 'var(--color-ink-soft)', iconBg: 'var(--color-raised)', pill: 'Tabla eventos' },
+  { icon: '✓', color: 'var(--color-ok)', iconBg: 'var(--color-ok-soft)', pill: 'Estado ok' },
+  { icon: '€', color: 'var(--color-warn)', iconBg: 'var(--color-warn-soft)', pill: 'LLM' },
 ]
 
 export default function EtapasPage() {
@@ -35,9 +35,9 @@ export default function EtapasPage() {
     <div className="px-5 py-6 sm:px-8">
       <title>{`Etapas · ${BRAND}`}</title>
       <div className="mx-auto max-w-[1380px]">
-        <header className="border-b border-[#e2e5df] pb-5">
+        <header className="border-b border-line pb-5">
           <h1 className="text-[22px] font-semibold tracking-[-0.03em]">Etapas</h1>
-          <p className="mt-1 text-[13px] text-[#8d9891]">
+          <p className="mt-1 text-[13px] text-muted">
             Las seis etapas del pipeline, del PDF a la línea de entrega. Todo sale de la tabla de eventos.
           </p>
         </header>
@@ -59,7 +59,7 @@ export default function EtapasPage() {
                 return (
                   <Card
                     key={label}
-                    className="overflow-hidden rounded-2xl border-[#e5e9e4] bg-[#fffefa] p-5 shadow-[0_7px_24px_rgba(20,55,45,0.045)]"
+                    className="overflow-hidden rounded-2xl border-line bg-surface p-5 shadow-[0_7px_24px_rgba(43,55,51,0.045)]"
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -81,8 +81,8 @@ export default function EtapasPage() {
                         {style.pill}
                       </span>
                     </div>
-                    <h3 className="mt-4 text-[14px] font-semibold text-[#354940]">{label}</h3>
-                    <p className="mt-1 text-[13px] text-[#829088]">{description}</p>
+                    <h3 className="mt-4 text-[14px] font-semibold text-ink">{label}</h3>
+                    <p className="mt-1 text-[13px] text-muted">{description}</p>
                   </Card>
                 )
               })}
@@ -92,9 +92,9 @@ export default function EtapasPage() {
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <h2 className="text-[15px] font-semibold">Etapas del pipeline</h2>
-                  <p className="text-[14px] text-[#9aa39e]">El anillo es la salud de la etapa, no siempre un recuento de ficheros</p>
+                  <p className="text-[14px] text-muted">El anillo es la salud de la etapa, no siempre un recuento de ficheros</p>
                 </div>
-                <span className="text-[13px] text-[#8d9891]">{data.etapas.length} etapas</span>
+                <span className="text-[13px] text-muted">{data.etapas.length} etapas</span>
               </div>
               <div className="-mx-1 overflow-x-auto px-1 pb-4 [scrollbar-color:#b8d8ca_transparent] [scrollbar-width:thin]">
                 <div className="flex min-w-max gap-4">
@@ -106,9 +106,9 @@ export default function EtapasPage() {
             </section>
 
             <Card className="mt-5 flex min-h-[28rem] flex-col overflow-hidden">
-              <div className="flex items-center justify-between gap-4 border-b border-[#e5e8e3] px-5 py-4">
+              <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
                 <h2 className="text-[14px] font-semibold">Últimos eventos</h2>
-                <p className="text-[14px] text-[#9aa39e]">De todas las etapas</p>
+                <p className="text-[14px] text-muted">De todas las etapas</p>
               </div>
               <div className="min-h-0 flex-1 overflow-auto">
                 <EventosTable eventos={data.recientes} showEtapa />

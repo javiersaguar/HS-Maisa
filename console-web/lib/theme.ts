@@ -5,22 +5,22 @@
  */
 
 export const COLORS = {
-  canvas: '#f7f8f5',
-  surface: '#ffffff',
-  primary: '#164f45',
-  primaryDark: '#0d4037',
-  primarySoft: '#eff8f3',
-  mint: '#67d4ad',
-  mintStrong: '#35b889',
-  lime: '#d6f52a',
-  limeSoft: '#fff6c9',
-  danger: '#bd3434',
-  dangerSoft: '#f05b5b',
-  text: '#17211e',
-  textMuted: '#68736d',
-  textFaint: '#9aa39e',
-  border: '#e1e5df',
-  track: '#e7e9e5',
+  canvas: '#f2f2e8',
+  surface: '#f8f8f1',
+  primary: '#6b8279',
+  primaryDark: '#506c63',
+  primarySoft: '#e4e8e4',
+  mint: '#6b8279',
+  mintStrong: '#506c63',
+  lime: '#a87a1e',
+  limeSoft: '#f3ecd8',
+  danger: '#a4483e',
+  dangerSoft: '#a4483e',
+  text: '#2b3733',
+  textMuted: '#6f7772',
+  textFaint: '#6f7772',
+  border: '#ddddd1',
+  track: '#e6e6db',
 } as const
 
 export type Tone = 'green' | 'yellow' | 'red' | 'gray'
@@ -44,8 +44,8 @@ export function eventoTone(estado: EstadoEvento): Tone {
 /** Colour ramp for coverage gauges (share of files a stage finished). */
 export function progressColor(value: number | null): string {
   const score = value ?? 0
-  if (score >= 90) return COLORS.mintStrong
-  if (score >= 75) return '#8b5cf6'
-  if (score > 0) return COLORS.dangerSoft
-  return '#b8c0ba'
+  if (score >= 90) return COLORS.primaryDark
+  if (score >= 75) return COLORS.primary
+  if (score > 0) return COLORS.danger
+  return COLORS.border
 }

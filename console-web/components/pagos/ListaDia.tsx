@@ -24,8 +24,8 @@ const COLUMNAS = 'grid grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_132px] items-ce
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div className="flex flex-col">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-[#8a948f]">{etiqueta}</span>
-      <span className="text-[17px] font-semibold text-[#10231e]">{valor}</span>
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted">{etiqueta}</span>
+      <span className="text-[17px] font-semibold text-ink">{valor}</span>
     </div>
   )
 }
@@ -77,7 +77,7 @@ export function ListaDia({
   return (
     <div
       style={LETRA}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1f1a]/45 p-3 backdrop-blur-[2px] animate-in fade-in duration-150 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 p-3 backdrop-blur-[2px] animate-in fade-in duration-150 sm:p-6"
       onClick={onCerrar}
     >
       <section
@@ -85,22 +85,22 @@ export function ListaDia({
         aria-modal="true"
         aria-labelledby={titulo}
         onClick={(event) => event.stopPropagation()}
-        className="flex h-[min(88vh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_32px_80px_rgba(11,31,26,0.28)] ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200"
+        className="flex h-[min(88vh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_32px_80px_rgba(43,55,51,0.28)] ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200"
       >
-        <header className="shrink-0 border-b border-[#eceeeb] px-6 pt-5 pb-4">
+        <header className="shrink-0 border-b border-line-soft px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-[#6b8f82]">
+              <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-accent">
                 Pagos del día{corte && ' · día de corte'}
               </p>
-              <h2 id={titulo} className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-[#10231e]">
+              <h2 id={titulo} className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-ink">
                 {fechaLarga(dia.fecha)}
               </h2>
             </div>
             <button
               onClick={onCerrar}
               aria-label="Cerrar"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[#6b7771] transition hover:bg-[#f1f4f2] hover:text-[#10231e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#164f45]/30"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition hover:bg-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-dark/30"
             >
               <X className="size-5" />
             </button>
@@ -114,20 +114,20 @@ export function ListaDia({
             </div>
             <label className="relative w-full sm:w-[300px]">
               <span className="sr-only">Buscar en las facturas del día</span>
-              <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#9aa39e]" />
+              <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
               <input
                 ref={buscarRef}
                 value={texto}
                 onChange={(event) => setTexto(event.target.value)}
                 placeholder="Proveedor, factura o fichero"
-                className="h-10 w-full rounded-xl border border-[#dde3de] bg-[#fafbfa] pr-3 pl-9 text-[14px] text-[#10231e] outline-none transition placeholder:text-[#a3aba6] focus:border-[#9fcdb9] focus:bg-white focus:ring-2 focus:ring-[#164f45]/15"
+                className="h-10 w-full rounded-xl border border-line bg-surface pr-3 pl-9 text-[14px] text-ink outline-none transition placeholder:text-muted focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent-dark/15"
               />
             </label>
           </div>
         </header>
 
         <div
-          className={`${COLUMNAS} shrink-0 border-b border-[#eceeeb] bg-[#fafbfa] px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#8a948f]`}
+          className={`${COLUMNAS} shrink-0 border-b border-line-soft bg-surface px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted`}
         >
           <span>Proveedor</span>
           <span>Factura</span>
@@ -137,7 +137,7 @@ export function ListaDia({
         </div>
 
         {pagos.length === 0 ? (
-          <p className="flex flex-1 items-center justify-center p-10 text-[14px] text-[#7b8680]">
+          <p className="flex flex-1 items-center justify-center p-10 text-[14px] text-muted">
             Ninguna factura de este día coincide con «{texto}».
           </p>
         ) : (
@@ -147,38 +147,38 @@ export function ListaDia({
                 key={pago.file_id}
                 {...rowLink(ficheroHref(pago.file_id))}
                 aria-label={`Abrir ${pago.file_id}`}
-                className={`${COLUMNAS} group cursor-pointer border-b border-[#f0f2ef] px-6 py-3 transition-colors hover:bg-[#f5faf7] focus-visible:bg-[#f5faf7] focus-visible:outline-none`}
+                className={`${COLUMNAS} group cursor-pointer border-b border-line-soft px-6 py-3 transition-colors hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none`}
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#eef4f1] text-[12px] font-semibold text-[#3f6b5f]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-raised text-[12px] font-semibold text-accent-dark">
                     {initials(pago.beneficiario)}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[14px] font-medium text-[#10231e]">{pago.beneficiario}</p>
-                    <p className="truncate text-[12px] text-[#8a948f]">{pago.proveedor_id}</p>
+                    <p className="truncate text-[14px] font-medium text-ink">{pago.beneficiario}</p>
+                    <p className="truncate text-[12px] text-muted">{pago.proveedor_id}</p>
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[14px] text-[#2c3a35]">{pago.referencia}</p>
-                  <p className="truncate font-mono text-[12px] text-[#8a948f]" title={pago.file_id}>
+                  <p className="truncate text-[14px] text-ink">{pago.referencia}</p>
+                  <p className="truncate font-mono text-[12px] text-muted" title={pago.file_id}>
                     {pago.file_id}
                   </p>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-[14px] text-[#2c3a35]">{formatDate(pago.vencimiento)}</p>
-                  <p className="text-[12px] text-[#8a948f]">{pago.vencido ? 'Vencida' : 'En plazo'}</p>
+                  <p className="text-[14px] text-ink">{formatDate(pago.vencimiento)}</p>
+                  <p className="text-[12px] text-muted">{pago.vencido ? 'Vencida' : 'En plazo'}</p>
                 </div>
-                <p className="text-right text-[15px] font-semibold text-[#10231e]">{formatImporte(pago.importe_eur)}</p>
+                <p className="text-right text-[15px] font-semibold text-ink">{formatImporte(pago.importe_eur)}</p>
                 <ChevronRight
                   aria-hidden
-                  className="hidden size-4 text-[#c4cac6] transition group-hover:translate-x-0.5 group-hover:text-[#164f45] sm:block"
+                  className="hidden size-4 text-muted/60 transition group-hover:translate-x-0.5 group-hover:text-accent-dark sm:block"
                 />
               </li>
             ))}
           </ul>
         )}
 
-        <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[#eceeeb] bg-[#fafbfa] px-6 py-3 text-[12px] text-[#7b8680]">
+        <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-line-soft bg-surface px-6 py-3 text-[12px] text-muted">
           <span>
             {texto
               ? `${formatNumber(pagos.length)} de ${formatNumber(dia.pagos.length)} facturas · ${formatImporte(deCentimos(centimosFiltrados))}`

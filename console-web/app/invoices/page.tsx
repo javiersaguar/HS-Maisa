@@ -187,7 +187,7 @@ function FicherosScreen() {
   }
 
   const pagerButton =
-    'inline-flex items-center gap-1.5 rounded-lg border border-[#d5e2da] bg-white px-3 py-1.5 font-semibold text-[#315d53] transition hover:bg-[#edf8f3] disabled:border-[#e5eae6] disabled:bg-transparent disabled:font-normal disabled:text-[#b2bbb5]'
+    'inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:border-line disabled:bg-transparent disabled:font-normal disabled:text-muted'
 
   return (
     <div className="px-5 py-6 sm:px-8">
@@ -198,13 +198,13 @@ function FicherosScreen() {
             <h1 className="text-[32px] font-semibold tracking-[-0.04em]">Ficheros</h1>
             {summary ? (
               <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold tabular-nums animate-in fade-in duration-300">
-                <span className="rounded-full border border-[#e1e7e2] bg-white px-3 py-1 text-[#65736b]">
+                <span className="rounded-full border border-line bg-surface px-3 py-1 text-ink-soft">
                   {formatNumber(summary.ficheros)} ficheros
                 </span>
                 <button
                   onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'ESCALAR' })}
                   aria-pressed={filters.estado === 'ESCALAR'}
-                  className={`rounded-full border px-3 py-1 text-[#a08400] transition hover:bg-[#fff6c9] ${filters.estado === 'ESCALAR' ? 'border-[#e0c95a] bg-[#fff6c9]' : 'border-[#eee8bd] bg-[#fffbe8]'}`}
+                  className={`rounded-full border px-3 py-1 text-warn transition hover:bg-warn-soft ${filters.estado === 'ESCALAR' ? 'border-warn bg-warn-soft' : 'border-warn-line bg-surface'}`}
                 >
                   {formatNumber(summary.porEstado.ESCALAR)} escalados
                 </button>
@@ -213,7 +213,7 @@ function FicherosScreen() {
                     onClick={toggleRevisar}
                     aria-pressed={revisando}
                     title="Se escalan sólo porque no se leyeron con seguridad: si el original está limpio, lo correcto sería PAGAR."
-                    className={`rounded-full border px-3 py-1 text-[#bd3434] transition hover:bg-[#ffe3e3] ${revisando ? 'border-[#e6a9a9] bg-[#ffe3e3]' : 'border-[#f1dada] bg-[#fff0f0]'}`}
+                    className={`rounded-full border px-3 py-1 text-bad transition hover:bg-bad-soft ${revisando ? 'border-bad bg-bad-soft' : 'border-bad-line bg-surface'}`}
                   >
                     Revisar primero · {formatNumber(porRevisar)}
                   </button>
@@ -222,7 +222,7 @@ function FicherosScreen() {
                   <button
                     onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'PENDIENTE' })}
                     aria-pressed={filters.estado === 'PENDIENTE'}
-                    className={`rounded-full border px-3 py-1 text-[#65736b] transition hover:bg-[#eef3f1] ${filters.estado === 'PENDIENTE' ? 'border-[#c9d6cf] bg-[#eef3f1]' : 'border-[#e1e7e2] bg-[#f7f8f5]'}`}
+                    className={`rounded-full border px-3 py-1 text-ink-soft transition hover:bg-raised ${filters.estado === 'PENDIENTE' ? 'border-line bg-raised' : 'border-line bg-canvas'}`}
                   >
                     {formatNumber(summary.porEstado.PENDIENTE)} pendiente{summary.porEstado.PENDIENTE === 1 ? '' : 's'}
                   </button>
@@ -236,7 +236,7 @@ function FicherosScreen() {
             <button
               onClick={exportFicheros}
               disabled={exporting || (!data?.total && !selectedIds.length)}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#dfe4de] bg-white px-4 py-2 text-[14px] font-semibold transition hover:bg-[#eff8f3] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-[14px] font-semibold transition hover:bg-accent-soft disabled:opacity-50"
             >
               {exporting && <Spinner />}
               {exporting ? 'Exportando…' : selectedIds.length ? `Exportar ${selectedIds.length} seleccionados` : 'Exportar CSV'}
@@ -254,9 +254,9 @@ function FicherosScreen() {
         />
 
         <div ref={tableRef} className="scroll-mt-4">
-          <Card className="mt-7 overflow-hidden rounded-2xl border-[#e1e7e2] shadow-[0_8px_28px_rgba(20,55,45,0.045)]">
+          <Card className="mt-7 overflow-hidden rounded-2xl border-line shadow-[0_8px_28px_rgba(43,55,51,0.045)]">
             {revisando && (
-              <p className="border-b border-[#f1dada] bg-[#fff8f8] px-5 py-3 text-[13px] text-[#8c3b3b]">
+              <p className="border-b border-bad-line bg-bad-soft px-5 py-3 text-[13px] text-bad">
                 <strong>Revisar primero:</strong> se escalan sólo porque no se leyeron con seguridad. De menor a mayor
                 confianza en la clasificación (no es probabilidad de pago).{' '}
                 <button onClick={toggleRevisar} className="font-semibold underline">
@@ -291,7 +291,7 @@ function FicherosScreen() {
                 action={
                   <button
                     onClick={() => changeFilters(EMPTY_FILTERS)}
-                    className="rounded-lg border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:bg-[#eff8f3]"
+                    className="rounded-lg border border-line bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:bg-accent-soft"
                   >
                     Quitar filtros
                   </button>
@@ -309,9 +309,9 @@ function FicherosScreen() {
               </div>
             )}
             {!revisando && data && data.total > 0 && (
-              <div className="flex items-center justify-between border-t border-[#edf0ec] px-5 py-3 text-[13px] text-[#819088]">
+              <div className="flex items-center justify-between border-t border-line-soft px-5 py-3 text-[13px] text-muted">
                 <span className="flex items-center gap-2">
-                  {loading && <Spinner className="size-3 text-[#315d53]" />}
+                  {loading && <Spinner className="size-3 text-accent-dark" />}
                   Mostrando {(data.page - 1) * data.pageSize + 1}–{(data.page - 1) * data.pageSize + ficheros.length} de{' '}
                   {data.total} ficheros
                 </span>
@@ -319,7 +319,7 @@ function FicherosScreen() {
                   <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page <= 1 || loading} className={pagerButton}>
                     Anterior
                   </button>
-                  <span className="rounded-lg border border-[#d5e2da] bg-white px-3 py-1.5 font-semibold text-[#315d53] tabular-nums">
+                  <span className="rounded-lg border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark tabular-nums">
                     {page} / {pageCount}
                   </span>
                   <button
@@ -336,16 +336,16 @@ function FicherosScreen() {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-3 rounded-xl border border-[#68d4ad] bg-[#e2f8ee] px-5 py-3 text-[14px] font-semibold shadow-[0_10px_24px_rgba(20,75,60,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-3 rounded-xl border border-accent bg-accent-soft px-5 py-3 text-[14px] font-semibold shadow-[0_10px_24px_rgba(43,55,51,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-200">
             {selectedIds.length} fichero{selectedIds.length === 1 ? '' : 's'} seleccionado{selectedIds.length === 1 ? '' : 's'}
             <span className="flex items-center gap-3">
               <button
                 onClick={exportFicheros}
-                className="rounded-lg bg-[#164f45] px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-[#0d4037]"
+                className="rounded-lg bg-accent-dark px-3 py-1.5 text-[13px] font-semibold text-canvas transition hover:bg-ink"
               >
                 Exportar selección
               </button>
-              <button onClick={() => setSelected({})} className="text-[13px] font-semibold text-[#315d53] underline">
+              <button onClick={() => setSelected({})} className="text-[13px] font-semibold text-accent-dark underline">
                 Quitar selección
               </button>
             </span>

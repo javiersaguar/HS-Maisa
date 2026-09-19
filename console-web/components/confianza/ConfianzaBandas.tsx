@@ -10,8 +10,8 @@ import { COLORS } from '@/lib/theme'
  */
 
 const BANDAS: Array<[BandaConfianza, string]> = [
-  ['alta', '#087b5b'],
-  ['media', '#d9a21b'],
+  ['alta', COLORS.primaryDark],
+  ['media', COLORS.lime],
   ['baja', COLORS.danger],
 ]
 

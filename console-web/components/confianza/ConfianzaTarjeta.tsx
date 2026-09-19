@@ -23,9 +23,9 @@ const FUENTE: Record<string, string> = {
 const ORDEN = Object.keys(FUENTE)
 
 const CALLOUT: Record<BandaConfianza, string> = {
-  alta: 'border-[#cfeee0] bg-[#f3fbf7] text-[#0f5e48]',
-  media: 'border-[#f1e3b5] bg-[#fffbeb] text-[#7a5a00]',
-  baja: 'border-[#f1d4d4] bg-[#fff6f6] text-[#8c2f2f]',
+  alta: 'border-accent-line bg-accent-soft text-accent-dark',
+  media: 'border-warn-line bg-warn-soft text-warn',
+  baja: 'border-bad-line bg-bad-soft text-bad',
 }
 
 const OPINION: Record<string, string> = {
@@ -36,9 +36,9 @@ const OPINION: Record<string, string> = {
 
 /** Cuánto pesa una duda, en palabras. Los cortes siguen los pesos de `confianza/modelo.py` (5-55). */
 function peso(aplicado: number): { texto: string; clase: string } {
-  if (aplicado >= 20) return { texto: 'pesa mucho', clase: 'bg-[#fff0f0] text-[#bd3434]' }
-  if (aplicado >= 10) return { texto: 'pesa bastante', clase: 'bg-[#fff9e6] text-[#a87000]' }
-  return { texto: 'pesa poco', clase: 'bg-[#f3f4f1] text-[#68736d]' }
+  if (aplicado >= 20) return { texto: 'pesa mucho', clase: 'bg-bad-soft text-bad' }
+  if (aplicado >= 10) return { texto: 'pesa bastante', clase: 'bg-warn-soft text-warn' }
+  return { texto: 'pesa poco', clase: 'bg-raised text-ink-soft' }
 }
 
 /** `por_que` es la frase para personas; se le quitan referencias internas (ADR, pesos) y la pregunta va aparte. */
@@ -62,7 +62,7 @@ function respaldo(texto: string): string {
 }
 
 function Fuente({ clave }: { clave: string }) {
-  return <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9aa39e]">{FUENTE[clave] ?? clave}</span>
+  return <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{FUENTE[clave] ?? clave}</span>
 }
 
 export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
@@ -77,12 +77,12 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
   const opinion = ficha.fuentes.revisor?.opinion
 
   return (
-    <section className="mt-4 rounded-xl border border-[#e4e5df] bg-white p-4 animate-in fade-in duration-300">
+    <section className="mt-4 rounded-xl border border-line bg-surface p-4 animate-in fade-in duration-300">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[13px] font-bold uppercase tracking-wide">¿Cuánto nos fiamos?</h3>
         <ConfianzaChip banda={ficha.banda} />
       </div>
-      <p className="mt-1 text-[12px] text-[#8a958e]">Confianza en la clasificación, no probabilidad de pago.</p>
+      <p className="mt-1 text-[12px] text-muted">Confianza en la clasificación, no probabilidad de pago.</p>
 
       <p className={`mt-3 rounded-lg border px-3 py-2 text-[13px] font-semibold leading-5 ${CALLOUT[ficha.banda]}`}>
         {frase(ficha.causa)}.
@@ -90,7 +90,7 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
 
       {cuentan.length > 0 && (
         <div className="mt-4">
-          <h4 className="text-[12px] font-bold text-[#203b31]">Qué nos hace dudar</h4>
+          <h4 className="text-[12px] font-bold text-ink">Qué nos hace dudar</h4>
           <ul className="mt-2 flex flex-col gap-2.5">
             {cuentan.map(({ clave, duda }) => {
               const { texto, pregunta } = explicar(duda)
@@ -101,12 +101,12 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
                     <Fuente clave={clave} />
                     <span className={`rounded-full px-1.5 py-px text-[11px] font-semibold ${clase}`}>{cuanto}</span>
                     {pregunta && (
-                      <span className="rounded-full border border-[#e1e7e2] px-1.5 py-px text-[11px] font-semibold text-[#65736b]">
+                      <span className="rounded-full border border-line px-1.5 py-px text-[11px] font-semibold text-ink-soft">
                         pendiente del mentor · {pregunta}
                       </span>
                     )}
                   </span>
-                  <span className="text-[13px] leading-5 text-[#3c4a44]">{texto}</span>
+                  <span className="text-[13px] leading-5 text-ink-soft">{texto}</span>
                 </li>
               )
             })}
@@ -116,11 +116,11 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
 
       {aFavor.length > 0 && (
         <div className="mt-4">
-          <h4 className="text-[12px] font-bold text-[#203b31]">Lo que la respalda</h4>
+          <h4 className="text-[12px] font-bold text-ink">Lo que la respalda</h4>
           <ul className="mt-2 flex flex-col gap-2">
             {aFavor.map(({ clave, texto }) => (
-              <li key={`${clave}-${texto}`} className="flex gap-2 text-[13px] leading-5 text-[#3c4a44]">
-                <span aria-hidden className="mt-px font-bold text-[#087b5b]">
+              <li key={`${clave}-${texto}`} className="flex gap-2 text-[13px] leading-5 text-ink-soft">
+                <span aria-hidden className="mt-px font-bold text-accent-dark">
                   ✓
                 </span>
                 <span className="flex flex-col gap-0.5">
@@ -134,7 +134,7 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
       )}
 
       {opinion && (
-        <p className="mt-4 text-[13px] leading-5 text-[#3c4a44]">
+        <p className="mt-4 text-[13px] leading-5 text-ink-soft">
           <Fuente clave="revisor" />
           <span className="block">
             Un segundo modelo {OPINION[opinion.opinion] ?? opinion.opinion}: {opinion.frase}
@@ -143,7 +143,7 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
       )}
 
       {cuentan.length === 0 && aFavor.length === 0 && !opinion && (
-        <ul className="mt-3 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-5 text-[#52605a]">
+        <ul className="mt-3 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-5 text-ink-soft">
           {ficha.razones.slice(0, 3).map((razon) => (
             <li key={razon}>{frase(razon)}</li>
           ))}
@@ -151,15 +151,15 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
       )}
 
       {anotadas.length > 0 && (
-        <details className="group mt-4 rounded-lg border border-[#edf0ec] px-3 py-2 text-[12px] text-[#68736d]">
-          <summary className="cursor-pointer font-semibold text-[#52605a]">
+        <details className="group mt-4 rounded-lg border border-line-soft px-3 py-2 text-[12px] text-ink-soft">
+          <summary className="cursor-pointer font-semibold text-ink-soft">
             También se anotó, pero no cambia la confianza ({anotadas.length})
           </summary>
           <ul className="mt-2 flex flex-col gap-1.5">
             {anotadas.map(({ clave, duda }) => (
               <li key={duda.id} className="leading-5">
                 {explicar(duda).texto}{' '}
-                <span className="text-[#9aa39e]">
+                <span className="text-muted">
                   {[duda.factor === 0 ? 'No se cuenta dos veces: ya es el motivo por el que se escala' : null, FUENTE[clave] ?? clave]
                     .filter(Boolean)
                     .join(' · ')}
@@ -171,12 +171,12 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
       )}
 
       {ficha.mismo_pdf_que.length > 0 && (
-        <p className="mt-3 text-[12px] text-[#68736d]">
+        <p className="mt-3 text-[12px] text-ink-soft">
           Es el mismo PDF que{' '}
           {ficha.mismo_pdf_que.map((otro, index) => (
             <span key={otro}>
               {index > 0 && ', '}
-              <Link href={ficheroHref(otro)} className="font-mono font-semibold text-[#176d59] underline">
+              <Link href={ficheroHref(otro)} className="font-mono font-semibold text-accent-dark underline">
                 {otro}
               </Link>
             </span>
