@@ -100,7 +100,7 @@ Ese PAGAR depende de lo que decida Mónica (abajo).
 | Motivo o evidencia falsos | ROJO | `texto_sospechoso` = "None"/vacío; una cita que no está en el texto del PDF (sólo facturas con capa de texto); el motivo de R6 citando una evidencia distinta de la de los hechos | Reextraer el fichero (`extract --no-solo-pendientes --fixture <lista>`, 0 tokens desde la caché) y `reprocess --impacted`. Si cambia el resultado, a Mónica antes de entregar |
 | Evidencia que no es literal | ÁMBAR | La cita sólo casa sin tildes o mayúsculas, o no está el PDF | `trace`; no bloquea |
 | PAGAR con un aviso del extractor que no es benigno | ÁMBAR | Se paga una factura con un aviso que ninguna regla mira. Benignos: `sin_texto`, `fecha_en_letra` | A quien lleve la norma, con el `file_id` |
-| Reparto de resultados fuera de lo esperable | ÁMBAR | ESCALAR > 15 % o NO_PAGAR > 5 % en un lote | Comparar con la referencia (443/48/9 en el lote 1 con v3 y ERP v1) y ver qué regla lo explica |
+| Reparto de resultados fuera de lo esperable | ÁMBAR | ESCALAR > 15 % o NO_PAGAR > 5 % en un lote | Comparar con la referencia (438/53/9 desde las 10:00 del 19/09, tras ADR-0010/0011; antes 443/48/9, en el lote 1 con v3 y ERP v1) y ver qué regla lo explica |
 | PAGAR con una lectura reconciliada (confianza < 1) | ÁMBAR | Escaneadas cuyo NIF o IBAN se eligió con el maestro (ADR-0003) | Política nº 2 de DECISIONES-NORMA, pendiente de Mónica |
 | La entrega que hay en disco no pasa el validador | ROJO | El JSONL que se subiría no es válido | `make package` la regenera, todo o nada |
 | La entrega en disco no es la de las decisiones vigentes | ÁMBAR | Se decidió algo después del último `package` | `make package` antes de `/entrega` |

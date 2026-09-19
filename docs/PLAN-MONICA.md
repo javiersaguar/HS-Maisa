@@ -21,7 +21,7 @@ pregunta.
 ```bash
 cd <tu clon de HS-Maisa> && git fetch && git switch monica/norma && git pull --ff-only
 ./bootstrap.sh && make check                     # 363 en verde
-uv run albertitos status | head -3               # 500 ficheros · 443 PAGAR · 48 ESCALAR · 9 NO_PAGAR
+uv run albertitos status | head -3               # 500 ficheros · 438 PAGAR · 53 ESCALAR · 9 NO_PAGAR (tras tus ADR-0010/0011)
 ```
 Tu rama ya está al día con `main`. No hace falta merge, sólo el `pull`. Si no tienes `dist/albertitos.db`, pídele el
 kit a Javier (`make kit-instalar KIT=<fichero>`; son 1,2 MB): sin la BD no ves las decisiones de verdad.

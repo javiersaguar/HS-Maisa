@@ -591,8 +591,8 @@ def comprobar_distribucion(informe: Informe, filas: list[Fila], lotes: list[int]
         "Reparto de resultados fuera de lo esperable",
         hallazgos,
         AMBAR,
-        "No es un error por sí mismo. Compara con la referencia (lote 1 con v3 y ERP v1: 443 PAGAR · "
-        "48 ESCALAR · 9 NO_PAGAR) y mira qué regla explica la diferencia.",
+        "No es un error por sí mismo. Compara con la referencia (lote 1 con v3 y ERP v1, tras ADR-0010/0011: 438 PAGAR · "
+        "53 ESCALAR · 9 NO_PAGAR) y mira qué regla explica la diferencia.",
     )
 
 

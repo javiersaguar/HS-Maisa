@@ -6,9 +6,9 @@ portátil de Javier. **En el tuyo serán otros: cronométralos en el ensayo de l
 ## Antes de salir de casa (con red)
 1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red.
 2. Copia el kit que te pase Javier a `dist/kit/` e instálalo: `make kit-instalar KIT=dist/kit/albertitos-kit-<fecha>.tar.gz`.
-   Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **443 PAGAR · 48 ESCALAR · 9 NO_PAGAR** y caché 881.
+   Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881 (kit de las 10:07, con las decisiones de Mónica; el de las 09:02 decía 443/48/9).
    Si te pide `--forzar`, es que ya tenías una BD con datos: añade `ARGS=--forzar` (la anterior queda en `…antes-del-kit`).
-3. `uv run albertitos status` (los mismos recuentos) y `make console` una vez: tres pestañas, Panel con 500/443/48/9.
+3. `uv run albertitos status` (los mismos recuentos) y `make console` una vez: tres pestañas, Panel con 500/438/53/9.
 4. Ensaya el bloque entero con cronómetro. El ERP no hace falta para nada de esto.
 
 ## En la sala, en orden

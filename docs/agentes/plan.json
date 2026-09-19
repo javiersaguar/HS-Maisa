@@ -12,8 +12,7 @@
     "G1": [
       "src/albertitos/pipeline/auditoria.py",
       "scripts/auditoria_entrega.py",
-      "tests/test_auditoria.py",
-      "docs/agentes/AUDITORIA-ENTREGA.md"
+      "tests/test_auditoria.py"
     ],
     "G2": [
       "src/albertitos/sources/erp.py",
@@ -21,7 +20,6 @@
       "tests/test_erp.py",
       "tests/test_snapshot.py",
       "src/albertitos/sources/CLAUDE.md",
-      "docs/CIFRAS.md",
       "scripts/cifras_check.py",
       "tests/test_cifras.py",
       "docs/agentes/RESILIENCIA-Y-COSTE.md",
@@ -46,7 +44,10 @@
       "scripts/contingencia.py",
       "tests/test_contingencia.py",
       "data/fixtures/hechos_caja.jsonl",
-      "docs/adr/0003-*"
+      "docs/adr/0003-*",
+      "docs/agentes/KIT-DEFENSA.md",
+      "docs/CIFRAS.md",
+      "docs/agentes/AUDITORIA-ENTREGA.md"
     ],
     "Mónica": [
       "src/albertitos/rules/*",
