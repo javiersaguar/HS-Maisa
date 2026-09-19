@@ -24,7 +24,9 @@ def escenario(conn, maestro, tmp_path):
     maestro.proveedores["P001"].condiciones_dias = 30
     db.guardar_snapshot(conn, "maestro", maestro.version, maestro.model_dump_json())
 
-    def agregar(nombre="a.pdf", resultado="PAGAR", total="10.10", referencia=None, **campos):
+    def agregar(
+        nombre="a.pdf", resultado="PAGAR", total="10.10", referencia=None, lote=1, **campos
+    ):
         h = InvoiceFacts(
             file_id=nombre,
             sha256=nombre,
@@ -39,7 +41,7 @@ def escenario(conn, maestro, tmp_path):
         )
         h = h.model_copy(update=campos)
         db.guardar_fichero(
-            conn, sha256=nombre, file_id=nombre, lote=1, bytes_=1, paginas=1, tiene_texto=True
+            conn, sha256=nombre, file_id=nombre, lote=lote, bytes_=1, paginas=1, tiene_texto=True
         )
         db.guardar_hechos(conn, h)
         db.guardar_decision(
@@ -233,3 +235,169 @@ def test_modo_estricto_excluye_lo_que_un_banco_rechazaria(escenario, conn, maest
     informe = calcular(ruta, estricto=True)
     assert not informe.remesa
     assert {a.codigo for a in informe.avisos} == {"IBAN_INVALIDO"}
+
+
+# --------------------------------------------------------------------- K1: tesorería, proveedores, rutas
+
+
+def _informe_varios(escenario, conn):
+    """Tres pagos de P001 a 30 días: `b` vencido (01/08 → 31/08); `a` vence justo el día de corte (19/08 →
+    18/09: no está vencido) y `c`, del lote 2, en plazo (10/09 → 10/10)."""
+    ruta, agregar = escenario
+    agregar("a.pdf", total="100.00", referencia="F-1")
+    agregar("b.pdf", total="250.50", referencia="F-2", fecha=date(2026, 8, 1))
+    agregar("c.pdf", total="49.50", referencia="F-3", fecha=date(2026, 9, 10), lote=2)
+    return ruta, calcular(ruta)
+
+
+def test_cada_pago_dice_su_lote(escenario, conn):
+    _, informe = _informe_varios(escenario, conn)
+    assert {p.file_id: p.lote for p in informe.calendario} == {"a.pdf": 1, "b.pdf": 1, "c.pdf": 2}
+
+
+def test_tesoreria_y_proveedores_cuadran_al_centimo(escenario, conn):
+    from albertitos.bonus import tesoreria as tes
+
+    _, informe = _informe_varios(escenario, conn)
+    t = tes.tesoreria(informe)
+    assert t["importe_eur"] == "400.00"
+    assert sum(Decimal(s["importe_eur"]) for s in t["semanas"]) == Decimal("400.00")
+    assert t["semanas"][-1]["acumulado_eur"] == "400.00"
+    assert Decimal(t["vencido_importe_eur"]) + Decimal(t["en_plazo_importe_eur"]) == Decimal(
+        "400.00"
+    )
+    assert (t["vencido_numero"], t["en_plazo_numero"]) == (1, 2)
+    (p,) = tes.proveedores(informe)
+    assert (p["proveedor_id"], p["numero"], p["importe_eur"], p["lotes"]) == (
+        "P001",
+        3,
+        "400.00",
+        [1, 2],
+    )
+
+
+def test_programa_respeta_el_tope_y_dice_cuanto_se_tarda(escenario, conn):
+    from albertitos.bonus import tesoreria as tes
+
+    _, informe = _informe_varios(escenario, conn)
+    pr = tes.programa(informe, Decimal("260"))
+    assert all(Decimal(s["importe_eur"]) <= 260 for s in pr["semanas"])
+    assert pr["sin_programar_numero"] == 0 and pr["semanas_para_ponerse_al_dia"] >= 1
+    assert sum(s["numero"] for s in pr["semanas"]) == 3
+    # un pago mayor que el tope sale solo, marcado, y no se trocea
+    grande = tes.programa(informe, Decimal("200"))
+    assert any(s["supera_tope"] and s["numero"] == 1 for s in grande["semanas"])
+    assert grande["sin_programar_numero"] == 0
+    with pytest.raises(ValueError):
+        tes.programa(informe, Decimal("0"))
+
+
+def test_rutas_por_el_puente_de_la_consola(escenario, conn, monkeypatch):
+    """Lo que hará Alejandro con una línea (RUTAS.update(bonus.rutas())), probado sin tocar su fichero."""
+    from albertitos import bonus
+    from albertitos.console import api
+
+    ruta, _ = _informe_varios(escenario, conn)
+    for path, handler in bonus.rutas().items():
+        monkeypatch.setitem(api.RUTAS, path, handler)
+    ro = db.conectar(ruta, solo_lectura=True)
+    try:
+        st, body = api.despachar("GET", "/bonus/resumen", {}, ro)
+        assert st == 200 and body["decisiones_pagar"] == 3 and body["lotes"] == [1, 2]
+        st, body = api.despachar("GET", "/bonus/calendario", {"lote": ["2"]}, ro)
+        assert st == 200 and [p["file_id"] for p in body["pagos"]] == ["c.pdf"]
+        assert (
+            body["pagos"][0]["importe_eur"] == "49.50"
+        )  # Decimal como string, sin perder céntimos
+        st, body = api.despachar(
+            "GET", "/bonus/calendario", {"vencido": ["true"], "limite": ["1"]}, ro
+        )
+        assert (st, body["total"], body["mostrados"]) == (200, 1, 1)
+        st, body = api.despachar("GET", "/bonus/tesoreria", {"tope": ["260"]}, ro)
+        assert st == 200 and body["programa"]["tope_semanal_eur"] == "260.00"
+        for path in ("/bonus/proveedores", "/bonus/remesa", "/bonus/avisos"):
+            assert api.despachar("GET", path, {}, ro)[0] == 200
+        assert api.despachar("GET", "/bonus/tesoreria", {"tope": ["-5"]}, ro)[0] == 400
+        assert api.despachar("GET", "/bonus/calendario", {"vencido": ["quizá"]}, ro)[0] == 400
+        assert (
+            api.despachar("POST", "/bonus/resumen", {}, ro)[0] == 405
+        )  # el puente sigue siendo GET
+        assert (
+            not ro.in_transaction
+        )  # la lectura no deja transacciones abiertas en la conexión del puente
+    finally:
+        ro.close()
+
+
+def test_rutas_con_bd_sin_decisiones_dicen_por_que(tmp_path, monkeypatch):
+    from albertitos import bonus
+
+    vacia = tmp_path / "vacia.db"
+    c = db.conectar(vacia)
+    db.init_schema(c)
+    c.close()
+    ro = db.conectar(vacia, solo_lectura=True)
+    try:
+        st, body = bonus.rutas()["/bonus/resumen"](ro, {})
+        assert st == 409 and "corte" in body["error"]
+    finally:
+        ro.close()
+
+
+def test_exporta_tesoreria_y_proveedores(escenario, conn, tmp_path):
+    ruta, informe = _informe_varios(escenario, conn)
+    salida = tmp_path / "bonus"
+    exportar(informe, salida, ruta_bd=ruta, tope_semanal=Decimal("260"))
+    teso = json.loads((salida / "tesoreria.json").read_text(encoding="utf-8"))
+    assert teso["importe_eur"] == "400.00" and "programa" in teso
+    filas = list(csv.DictReader((salida / "proveedores.csv").open(encoding="utf-8"), delimiter=";"))
+    assert [(f["proveedor_id"], f["importe_eur"]) for f in filas] == [("P001", "400.00")]
+    html = (salida / "calendario.html").read_text(encoding="utf-8")
+    assert "<h2>Tesorería</h2>" in html and "260.00 € por semana" in html
+
+
+BD_REAL = Path("dist/albertitos.db")
+
+
+@pytest.mark.skipif(not BD_REAL.exists(), reason="sin la BD real (dist/albertitos.db)")
+def test_el_bonus_no_cambia_la_entrega_ni_la_bd(tmp_path, monkeypatch):
+    """Regla 5 del PLAN-11: con el bonus ejecutado entero (calendario, tesorería, rutas y exportación)
+    sobre una copia de la BD real, la BD no cambia ni un byte y `package` da el mismo outcomes.jsonl."""
+    import sqlite3
+
+    from albertitos import bonus
+    from albertitos.bonus import tesoreria as tes
+
+    copia = tmp_path / "copia.db"
+    origen = sqlite3.connect(f"file:{BD_REAL}?mode=ro", uri=True)
+    destino = sqlite3.connect(copia)
+    origen.backup(destino)
+    destino.close()
+    origen.close()
+
+    def package(salida: Path) -> str:
+        env = {k: v for k, v in __import__("os").environ.items() if not k.startswith("ALBERTITOS_")}
+        env.update(ALBERTITOS_DB=str(copia), PYTHONUTF8="1")
+        subprocess.run(
+            [sys.executable, "-m", "albertitos.cli", "package", "--salida", str(salida)],
+            env=env,
+            check=True,
+            capture_output=True,
+        )
+        return hashlib.sha256((salida / "outcomes.jsonl").read_bytes()).hexdigest()
+
+    antes = package(tmp_path / "antes")
+    huella_bd = hashlib.sha256(copia.read_bytes()).hexdigest()
+    informe = calcular(copia)
+    tes.tesoreria(informe)
+    tes.proveedores(informe)
+    tes.programa(informe, Decimal("150000"))
+    ro = db.conectar(copia, solo_lectura=True)
+    try:
+        for handler in bonus.rutas().values():
+            handler(ro, {"tope": ["150000"]})
+    finally:
+        ro.close()
+    exportar(informe, tmp_path / "bonus", ruta_bd=copia, tope_semanal=Decimal("150000"))
+    assert hashlib.sha256(copia.read_bytes()).hexdigest() == huella_bd
+    assert package(tmp_path / "despues") == antes

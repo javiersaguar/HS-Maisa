@@ -6,6 +6,7 @@ import csv
 import html
 import json
 import re
+import sqlite3
 from collections import Counter
 from datetime import date, timedelta
 from decimal import Decimal
@@ -20,6 +21,7 @@ from albertitos.formatos import iban_valido, normalizar_iban
 
 class Pago(BaseModel):
     file_id: str
+    lote: int = 1
     decision_id: int
     proveedor_id: str
     beneficiario: str
@@ -104,7 +106,21 @@ def calcular(ruta_bd: Path, fecha_corte: date | None = None, estricto: bool = Fa
     IBAN, o distinto del de la factura, se excluye siempre."""
     conn = db.conectar(ruta_bd, solo_lectura=True)
     try:
+        return calcular_conn(conn, fecha_corte, estricto)
+    finally:
+        conn.close()
+
+
+def calcular_conn(
+    conn: sqlite3.Connection, fecha_corte: date | None = None, estricto: bool = False
+) -> Informe:
+    """Lo mismo que `calcular`, sobre una conexión ya abierta (la del puente de la consola, en sólo
+    lectura). Abre su propia transacción de lectura para ver un estado consistente y la cierra al
+    acabar sin escribir nada; si la conexión ya estaba en una transacción, la respeta."""
+    propia = not conn.in_transaction
+    if propia:
         conn.execute("BEGIN")  # Vista consistente también con otros lectores/escritores.
+    try:
         decisiones = db.decisiones_vigentes(conn)
         cortes = {d["fecha_corte"] for d in decisiones}
         if fecha_corte is None:
@@ -206,6 +222,7 @@ def calcular(ruta_bd: Path, fecha_corte: date | None = None, estricto: bool = Fa
             informe.calendario.append(
                 Pago(
                     file_id=d["file_id"],
+                    lote=int(d["lote"] or 1),
                     decision_id=d["id"],
                     proveedor_id=proveedor.id,
                     beneficiario=proveedor.razon_social,
@@ -238,7 +255,8 @@ def calcular(ruta_bd: Path, fecha_corte: date | None = None, estricto: bool = Fa
         informe.calendario.sort(key=lambda p: (p.vencimiento, p.file_id))
         return informe
     finally:
-        conn.close()
+        if propia and conn.in_transaction:
+            conn.rollback()  # sólo lectura: cerrar la transacción, nunca confirmar nada
 
 
 def _celda(valor: object) -> str:
@@ -251,14 +269,24 @@ def _celda(valor: object) -> str:
     )
 
 
-def exportar(informe: Informe, salida: Path, *, ruta_bd: Path) -> None:
+def exportar(
+    informe: Informe, salida: Path, *, ruta_bd: Path, tope_semanal: Decimal | None = None
+) -> None:
     """CSV UTF-8, separador ;, fechas ISO, euros con punto decimal. No envía pagos."""
     salida = salida.resolve()
     raiz = Path(__file__).resolve().parents[3]
     protegidos = [raiz / "dist/entrega", raiz / "data/caja", raiz.parent / "HS-Maisa-Entrega"]
     if any(salida == p.resolve() or p.resolve() in salida.parents for p in protegidos):
         raise ValueError("La salida no puede estar en la Caja ni en la entrega oficial.")
-    nombres = ("calendario.csv", "remesa.csv", "avisos.csv", "resumen.json", "calendario.html")
+    nombres = (
+        "calendario.csv",
+        "remesa.csv",
+        "avisos.csv",
+        "resumen.json",
+        "calendario.html",
+        "tesoreria.json",
+        "proveedores.csv",
+    )
     for nombre in nombres:
         destino = salida / nombre
         if (
@@ -279,6 +307,21 @@ def exportar(informe: Informe, salida: Path, *, ruta_bd: Path) -> None:
             writer.writerows(
                 {k: _celda(v) for k, v in m.model_dump(mode="json").items()} for m in modelos
             )
+    from albertitos.bonus import tesoreria as tes  # perezoso: tesoreria importa este módulo
+
+    teso = tes.tesoreria(informe)
+    if tope_semanal is not None:
+        teso["programa"] = tes.programa(informe, tope_semanal)
+    (salida / "tesoreria.json").write_text(
+        json.dumps(teso, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    provs = tes.proveedores(informe)
+    with (salida / "proveedores.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=list(provs[0]) if provs else ["proveedor_id"], delimiter=";"
+        )
+        writer.writeheader()
+        writer.writerows({k: _celda(v) for k, v in fila.items()} for fila in provs)
     resumen = informe.resumen()
     (salida / "resumen.json").write_text(
         json.dumps(resumen, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -310,8 +353,49 @@ def exportar(informe: Informe, salida: Path, *, ruta_bd: Path) -> None:
         f"{resumen['vencidos']} vencidos · {resumen['vencen_semana_corte']} vencen esta semana.</p>"
         f"<p>Remesa: {resumen['remesa_numero']} pagos · {resumen['remesa_total_eur']} € · "
         f"{resumen['excluidos_remesa']} excluidos. No se ha ejecutado ningún pago.</p>"
-        '<p><a href="remesa.csv">Remesa CSV</a> · <a href="avisos.csv">Avisos por factura</a> · <a href="resumen.json">Totales por semana</a></p>'
+        + _html_tesoreria(teso, provs)
+        + '<p><a href="remesa.csv">Remesa CSV</a> · <a href="avisos.csv">Avisos por factura</a> · <a href="resumen.json">Totales por semana</a></p>'
         "<table><thead><tr><th>Semana</th><th>Vence</th><th>Factura</th><th>Proveedor</th><th>EUR</th><th>Plazo</th><th>Remesa</th></tr></thead>"
         f"<tbody>{filas}</tbody></table></html>",
         encoding="utf-8",
+    )
+
+
+def rutas() -> dict:
+    """Rutas GET para el puente de la consola: `RUTAS.update(bonus.rutas())` (ver bonus/consola.py)."""
+    from albertitos.bonus.consola import rutas as _rutas  # perezoso: evita el import circular
+
+    return _rutas()
+
+
+def _html_tesoreria(teso: dict, provs: list[dict]) -> str:
+    """Tesorería por semana y por proveedor para calendario.html (datos escapados)."""
+    e = html.escape
+    semanas = "".join(
+        f"<tr><td>{e(f['semana'])}</td><td>{e(f['desde'])}</td><td>{f['numero']}</td>"
+        f"<td>{e(f['importe_eur'])}</td><td>{e(f['acumulado_eur'])}</td>"
+        f"<td>{f['vencidos_numero']}</td></tr>"
+        for f in teso["semanas"]
+    )
+    proveedores = "".join(
+        f"<tr><td>{e(p['beneficiario'])}</td><td>{p['numero']}</td><td>{e(p['importe_eur'])}</td>"
+        f"<td>{p['vencidos_numero']}</td><td>{e(p['primera_ejecucion'])} → {e(p['ultima_ejecucion'])}</td></tr>"
+        for p in provs
+    )
+    programa = ""
+    if "programa" in teso:
+        pr = teso["programa"]
+        programa = (
+            f"<p>Con un tope de <b>{e(pr['tope_semanal_eur'])} € por semana</b>: al día con lo vencido en "
+            f"<b>{pr['semanas_para_ponerse_al_dia']}</b> semanas; todo pagado en "
+            f"<b>{pr['semanas_para_pagarlo_todo']}</b>.</p>"
+        )
+    return (
+        f"<h2>Tesorería</h2><p>Vencido a {e(teso['fecha_corte'])}: <b>{e(teso['vencido_importe_eur'])} €</b> "
+        f"({teso['vencido_numero']} facturas) · en plazo: {e(teso['en_plazo_importe_eur'])} €.</p>{programa}"
+        "<table><thead><tr><th>Semana</th><th>Desde</th><th>Pagos</th><th>EUR</th><th>Acumulado</th>"
+        f"<th>Vencidos</th></tr></thead><tbody>{semanas}</tbody></table>"
+        "<h2>Por proveedor</h2><table><thead><tr><th>Proveedor</th><th>Facturas</th><th>EUR</th>"
+        f"<th>Vencidas</th><th>Pagos</th></tr></thead><tbody>{proveedores}</tbody></table>"
+        "<h2>Detalle</h2>"
     )

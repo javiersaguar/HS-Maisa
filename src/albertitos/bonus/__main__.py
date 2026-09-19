@@ -6,6 +6,7 @@ import os
 import sqlite3
 import sys
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from albertitos.bonus import calcular, exportar
@@ -29,10 +30,17 @@ def main() -> int:
         action="store_true",
         help="excluye de la remesa los IBAN que no pasan el mod-97 (los de la Caja son sintéticos)",
     )
+    parser.add_argument(
+        "--tope-semanal",
+        type=Decimal,
+        help="reparte la remesa en semanas sin pasar de este importe (EUR) y dice cuánto se tarda",
+    )
     args = parser.parse_args()
+    if args.tope_semanal is not None and args.tope_semanal <= 0:
+        parser.error("--tope-semanal tiene que ser positivo")
     try:
         informe = calcular(args.db, args.fecha_corte, estricto=args.estricto)
-        exportar(informe, args.salida, ruta_bd=args.db)
+        exportar(informe, args.salida, ruta_bd=args.db, tope_semanal=args.tope_semanal)
     except (ValueError, OSError, sqlite3.Error) as exc:
         sys.stderr.write(f"Bonus: {exc}\n")
         return 1
