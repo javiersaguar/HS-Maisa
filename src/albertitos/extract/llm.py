@@ -340,9 +340,17 @@ class ClienteLLM:
         pin, pout = self.precios.get(modelo, (self.precio_in, self.precio_out))
         return (Decimal(tin) * pin + Decimal(tout) * pout) / Decimal(1_000_000)
 
-    def _comprobar_breaker(self) -> None:
+    def _comprobar_breaker(self, saltar: bool = False) -> None:
         """Si el breaker está abierto, ni se sale a la red. Se comprueba antes de cada intento, no
-        sólo al empezar: con varios hilos, los que ya habían pasado la comprobación también cortan."""
+        sólo al empezar: con varios hilos, los que ya habían pasado la comprobación también cortan.
+
+        `saltar=True` sólo para el modelo de RESPALDO: el breaker protege al proveedor que está
+        fallando, y el respaldo existe justo para esa situación. Si no, el respaldo no llegaba a
+        intentarse nunca (el principal agota 3 intentos, el breaker se abre, y la llamada al
+        respaldo moría en esta comprobación).
+        """
+        if saltar:
+            return
         e = self.estado
         with e.lock:
             if time.time() < e.abierto_hasta:
@@ -439,7 +447,9 @@ class ClienteLLM:
                     "modelo": respaldo,
                     "respaldo": True,
                 }
-            respuesta = self._llamar(respaldo, texto=texto, png=png, intentos=1, marca=marca)
+            respuesta = self._llamar(
+                respaldo, texto=texto, png=png, intentos=1, marca=marca, saltar_breaker=True
+            )
             modelo = respaldo
             respuesta["uso"]["respaldo"] = True
         uso = respuesta["uso"]
@@ -479,11 +489,13 @@ class ClienteLLM:
         png: bytes | None,
         intentos: int = 3,
         marca: str = "",
+        saltar_breaker: bool = False,
     ) -> dict[str, Any]:
         ultimo: Exception | None = None
         for intento in range(1, intentos + 1):
             try:
-                self._comprobar_breaker()  # otro hilo puede haberlo abierto mientras esperábamos
+                # otro hilo puede haberlo abierto mientras esperábamos (salvo en el respaldo)
+                self._comprobar_breaker(saltar_breaker)
                 if chaos.modo() == "llm_429" and intento == 1:
                     raise ErrorLLM("LLM-429", "caos: rate limit")
                 if chaos.modo() == "llm_timeout":

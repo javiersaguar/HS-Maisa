@@ -856,3 +856,32 @@ def test_con_hilos_el_breaker_corta_a_todos(bd_muchos):
     assert r.errores.get("LLM-CIRCUIT-OPEN", 0) >= 1, r.errores
     assert r.errores.get("LLM-DOWN", 0) >= 5, "los primeros fallos siguen siendo LLM-DOWN"
     chaos.desactivar()
+
+
+def test_el_respaldo_se_intenta_aunque_el_breaker_este_abierto(bd, tmp_path, monkeypatch):
+    """El breaker protege al proveedor que falla; el respaldo es OTRO modelo y existe para eso.
+
+    Antes de este arreglo, el principal agotaba sus 3 intentos, el breaker se abría por esos mismos
+    fallos y la llamada al respaldo moría en la comprobación: el respaldo no se usaba nunca.
+    """
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", "glm5.3-flash")
+    monkeypatch.setenv("ALBERTITOS_BREAKER_FALLOS", "2")  # el principal lo abre en sus 3 intentos
+    usados: list[str] = []
+
+    class Api:
+        class messages:
+            @staticmethod
+            def create(**kw):
+                usados.append(kw["model"])
+                if kw["model"] != "glm5.3-flash":
+                    raise RuntimeError("el principal está caído")
+                return api_falsa(RESPUESTA_P001).messages.create(**kw)
+
+    monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
+    assert r.ok == 1, r.errores
+    assert usados.count("glm5.3-flash") == 1 and usados[0] != "glm5.3-flash"
+    detalle = bd.execute(
+        "SELECT detalle FROM eventos WHERE etapa='extract' AND estado='ok'"
+    ).fetchone()[0]
+    assert "glm5.3-flash" in detalle  # la traza dice qué modelo respondió
