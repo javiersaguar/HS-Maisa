@@ -857,3 +857,7 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Sigue pendiente:** las dos líneas de `console-web/.env.example` (a mano; la regla de permisos lo bloquea para los agentes).
 
 - **17:44 · Javier (sesión principal)** · bandeja «Añadir facturas»: no estaba rota, el puente del 8000 corre sin `--bandeja` (`/inbox` → `disponible: false`). La zona ahora lo explica, el comando va aparte con botón Copiar (antes se copiaba `--bandeja.`) y se activa sola al relanzar. Puerto ocupado → una línea con un puerto libre de verdad (puente y chat). `4483b82`, 597 tests en verde.
+### 16:45 · Javier · el chat en la consola lo hacemos nosotros (PLAN-13, rama `javier/chat`)
+- **PARA Alejandro:** ya no te toca el prompt del chat (`PROMPT-ALEJANDRO-CHAT.md` queda sin efecto). Lo hacen C1 (backend) y C2 (panel) en la rama `javier/chat`, carpeta `../HS-Maisa-chat`. En console-web sólo tocamos `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, **una línea (y su import) en `app/layout.tsx`** para montar el panel, `.env.example` y la sección «Chat» del README. Si tu rama toca `app/layout.tsx`, respeta esa línea al mergear. Lo demás de console-web sigue siendo tuyo (pagos, confianza, bandeja).
+- El backend del chat cambia: ventana y tope por variable de entorno, `/chat/salud` v2 con la disponibilidad del modelo, orígenes `localhost:3000` y `127.0.0.1:3000`, y modelo de respaldo. Contrato en `docs/agentes/PLAN-13.md` (rama `javier/chat`).
+- Nadie llama al modelo hasta que el lote 2 esté publicado; después, prueba en vivo y merge a `main`.
