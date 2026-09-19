@@ -48,7 +48,10 @@
       "Makefile",
       "tests/test_erp.py",
       "tests/test_hooks.py",
-      "src/albertitos/sources/estado_bd.py"
+      "src/albertitos/sources/estado_bd.py",
+      "docs/ESTADO-BACKEND.md",
+      "scripts/cifras_check.py",
+      "tests/test_cifras.py"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -75,7 +78,9 @@
     "Alejandro": [
       "console-web/*",
       "src/albertitos/console/*",
-      "tests/test_console.py"
+      "tests/test_console.py",
+      "docs/agentes/FASE-3-UNION.md",
+      "docs/agentes/fix_invoice_detail_*"
     ],
     "Alfonso": [
       "docs/plan/*",
