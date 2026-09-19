@@ -24,10 +24,12 @@ from albertitos.core.contracts import Aviso, InvoiceFacts
 from albertitos.formatos import (
     CENT,
     iban_valido,
+    identificador_extranjero,
     normalizar_iban,
     normalizar_nif,
     normalizar_pedido,
 )
+from albertitos.formatos import iban_bien_formado as _iban_forma_por_pais
 
 IVA_GENERAL = Decimal("21")
 OBLIGATORIOS = ("nif_emisor", "iban", "pedido", "fecha", "total")
@@ -37,21 +39,18 @@ RECOMENDADOS = (
     "iva",
 )  # su ausencia no impide decidir, pero deja cojo el cruce
 
-_IBAN_FORMA = re.compile(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}")
 _NIF_FORMA = re.compile(r"(?:[A-HJ-NP-SUVW]\d{7}[0-9A-J]|\d{8}[A-Z]|[XYZ]\d{7}[A-Z])")
 _LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE"
 
 
 def iban_bien_formado(s: str) -> bool:
-    """Forma esperada en esta Caja: `ES` + 2 dígitos de control + 20 cifras, 24 caracteres.
+    """Forma del IBAN según su país (`formatos.LONGITUD_IBAN`): país con IBAN, longitud exacta y alfabeto.
 
-    Se exige España a propósito: los 11 proveedores del maestro son españoles, así que un IBAN de
-    otro país es casi seguro un error de extracción (o un cambio de cuenta que hay que mirar). Si
-    el lote 2 trae un proveedor extranjero saltará el aviso y alguien lo revisará, que es el lado
-    seguro por el que equivocarse.
+    Hasta el lote 2 se exigía España (los 11 proveedores eran españoles). El lote 2 trae P012-P015 (DE, FR,
+    BR, JP): un IBAN alemán bien formado ya no es un error de extracción. Uno japonés sí sale mal formado,
+    porque Japón no usa IBAN. Que la cuenta no sea la del maestro lo mira la norma (R1), no esto.
     """
-    s = normalizar_iban(s)
-    return bool(_IBAN_FORMA.fullmatch(s)) and s.startswith("ES") and len(s) == 24
+    return _iban_forma_por_pais(s)
 
 
 def iban_checksum_ok(s: str) -> bool:
@@ -125,7 +124,13 @@ def validar(h: InvoiceFacts) -> list[Aviso]:
         avisos.append(Aviso.IBAN_INVALIDO)
     # NIF con forma imposible (p. ej. 8 caracteres). Sólo forma: la letra de control no se exige porque
     # los NIF de la Caja son sintéticos (46/468 la pasan); `nif_letra_control_ok` queda para datos reales.
-    if h.nif_emisor and not nif_bien_formado(h.nif_emisor):
+    # Un identificador extranjero (IVA DE…/FR…, CNPJ, número japonés; proveedores P012-P015 del lote 2) no es
+    # un NIF español inválido: sin esto, NIF_INVALIDO haría escalar una factura extranjera que cuadra en todo.
+    if (
+        h.nif_emisor
+        and not nif_bien_formado(h.nif_emisor)
+        and not identificador_extranjero(h.nif_emisor)
+    ):
         avisos.append(Aviso.NIF_INVALIDO)
 
     vistos: list[Aviso] = []
