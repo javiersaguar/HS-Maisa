@@ -66,7 +66,7 @@ function FicheroDetail() {
             Factura de {loteNombre(fichero.lote)}
             <ResultadoBadge estado={fichero.estado} />
             {confianza && fichero.decision && (
-              <ConfianzaChip puntuacion={confianza.puntuacion} banda={confianza.banda} razon={confianza.razones[0]} />
+              <ConfianzaChip banda={confianza.banda} razon={confianza.razones[0]} />
             )}
           </p>
         )}

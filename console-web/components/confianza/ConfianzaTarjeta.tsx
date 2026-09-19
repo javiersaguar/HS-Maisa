@@ -28,7 +28,7 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
     <section className="mt-4 rounded-xl border border-[#e4e5df] bg-white p-4 animate-in fade-in duration-300">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[13px] font-bold uppercase tracking-wide">¿Cuánto nos fiamos?</h3>
-        <ConfianzaChip puntuacion={ficha.puntuacion} banda={ficha.banda} />
+        <ConfianzaChip banda={ficha.banda} />
       </div>
       <p className="mt-1 text-[12px] text-[#8a958e]">Confianza en la clasificación, no probabilidad de pago.</p>
       <p className="mt-3 text-[13px] font-semibold text-[#203b31]">{frase(ficha.causa)}.</p>

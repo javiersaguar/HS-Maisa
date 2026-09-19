@@ -103,7 +103,7 @@ export function InvoiceTable({
                   <ResultadoBadge estado={fichero.estado} withIcon={false} />
                 </td>
                 <td className="px-3 py-4">
-                  <ConfianzaChip puntuacion={conf?.puntuacion} banda={conf?.banda} razon={conf?.razon_principal} />
+                  <ConfianzaChip banda={conf?.banda} razon={conf?.razon_principal} />
                 </td>
                 <td className="max-w-[320px] px-3 py-4">
                   <p className="line-clamp-2 text-[13px] leading-5 text-[#68736d]" title={motivoPrincipal(fichero)}>
