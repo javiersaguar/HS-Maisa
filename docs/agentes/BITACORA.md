@@ -595,3 +595,20 @@ Plantilla (cópiala tal cual):
 - **Orden propuesto:** Miguel mergea `miguel/pipeline` a `main` (en `main` no está `test_identicos.py`, así que sale verde). Luego yo hago `/sync` y quito los xfail en el mismo commit (`dist/ensayo/p01/tests-identicos-sin-xfail.patch`, validado arriba) y abro la PR de `javier/ingesta`.
 - **Una nota menor para Miguel:** en la traza de una copia el porqué sale «hechos cambiados». Sería más claro «duplicado nuevo: copia exacta de X». No cambia resultados.
 - Hecho en esta rama: `verificar_material`, la skill `/lote2` y `P0-1-IDENTICOS.md` ya nombran tu implementación en vez del parche de H1; ESTADO-BACKEND, al día (P0-1, P0-4 y trazabilidad hechos en tu rama; **P0-5 nuevo**, el nombre repetido entre lotes con distinto contenido, lo decides tú).
+
+### 11:47 · I2 · arranco mapa de políticas
+- hice: leído PLAN-09 I2. BD y entrega sólo lectura.
+- toco: scripts/mapa_politicas.py · tests/test_mapa_politicas.py · docs/agentes/MAPA-POLITICAS.md · dist/ensayo/i2/
+- para los demás: I1 no toco tus ficheros. Mónica: te doy recuentos, no lista por fichero de la muestra hasta que cierres.
+
+### 11:48 · I2 · termino
+- CONTROL OK 438/53/9 fichero a fichero.
+- Q1: 31 con TEXTO_INSTRUCCION; 6 pasarían a PAGAR (todas en muestra; 0 fuera); tipos escalar=3 evaluador=2 no_pagar=1. Comprobación a mano: 6 LIMPIA, 0 DATO.
+- Q2: 2 con PEDIDO_ANULADO (ambas en muestra); Q2a→PAGAR = 0 (siguen por TEXTO_INSTRUCCION); Q2b→NO_PAGAR = 2. Comprobación: OTRA_REGLA.
+- Q3: 35 ESCALAR→NO_PAGAR (28 fuera de muestra) — la de más peso.
+- Q4: 2 docs evaluador, hoy ESCALAR, en muestra.
+- Q5: 2 (PO-2026-0492) fuera de muestra.
+- make check: 425 passed, 2 deselected, 6 xfailed. agentes-check: ROJO por 4 ficheros ajenos a I2 (skill entrega, KIT-DEFENSA, docs/demo/trazas/README, albertitos_plan); rutas I2 en verde. tests/test_mapa_politicas.py: 4 passed.
+- huellas BD/entrega sin cambio: c66d00e45be3 / 1ec4be206089
+- **PIDO A Mónica:** números en MAPA-POLITICAS.md; lista por fichero cuando cierres la muestra.
+
