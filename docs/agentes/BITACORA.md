@@ -541,3 +541,31 @@ Plantilla (cópiala tal cual):
 - **Puerta de auditoría en `package` activada** (parche de G1, `c2a8e58`): 400 tests; la entrega queda con `"auditoria": "verde"`; la demo sin red sigue funcionando (1,8 s).
 - **Entrega republicada**: `232bb76` (438/53/9, sha256 `1ec4be206089`) sustituye a la de seguro `fdc76e8`; registrada en `docs/entregas.log`. Kit nuevo: `dist/kit/albertitos-kit-20260919-1007.tar.gz`. KIT-DEFENSA, CIFRAS, AUDITORIA-ENTREGA y la auditoría citan ya 438/53/9.
 - **Para Mónica, sobre su punto 2 a Miguel (`confianza` fuera del hash):** el linaje ya recalcula cuando los hechos se reescriben después de decidir, aunque el hash no cambie (`test_linaje.py::test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide`). No es urgente; meterla en el hash es lo limpio, pero cambia todos los `hechos_hash`. **PIDO A Miguel**: decidirlo antes de las 17:00 o dejarlo anotado. **Propuesta para Mónica:** el próximo cambio de comportamiento en la v3 sube la etiqueta (`v3.1`) para que el linaje y la traza lo vean solos (ESTADO-BACKEND §2).
+
+### 10:35 · H1 · arranco P0-1 (PDF idéntico con otro nombre)
+- hice: leído PLAN-08. Al empezar: BD real y `outcomes.jsonl` con sus sha256 anotados en el parte; no se tocan.
+- toco ahora: `data/fixtures/lote2_identicos/`, `tests/test_identicos.py`; después el parche en `dist/ensayo/h1/` (worktree aparte, nada de core/ ni pipeline/ en este árbol), el verificador y `P0-1-IDENTICOS.md`.
+
+### 10:28 · H2 · arranco la tercera lectura de la muestra, a ciegas
+- hice: leído PLAN-08 (mi prompt). Fuentes que voy a usar: `data/caja/README.md` (norma de Alberto), `MANUAL_ERP_2009.md`, el Excel, los 21 PDFs de `data/fixtures/muestra.txt` y el ERP (bridge o `snapshots` v1). Fecha de corte 2026-09-18.
+- **declaro antes de empezar:** en una sesión anterior a este encargo, esta misma sesión leyó ficheros que ahora tengo prohibidos (cola de esta bitácora, ESTADO-BACKEND, cabecera de CIFRAS, índice de ADRs, `esperado_muestra.csv` —vacía—, PLAN-MONICA y el guion de la defensa). Lo detallo en mi parte y marcaré como contaminadas las etiquetas afectadas.
+- toco ahora (ficheros): nada del repo. Trabajo en `dist/ensayo/h2/` (gitignorado). Después `scripts/comparar_muestra.py` + `tests/test_comparar_muestra.py` y `docs/agentes/MUESTRA-CONTRASTE.md`.
+- necesito / bloqueo: nada. En esta bitácora sólo escribiré progreso («N de 21»), nunca etiquetas ni resultados de la muestra.
+- para los demás: Mónica, no mires `dist/ensayo/h2/`. H1, no toco nada tuyo.
+
+### 10:50 · H1 · P0-1 reproducido
+- hice: `data/fixtures/lote2_identicos/` + `tests/test_identicos.py`. Con el ERP v1 real y el maestro real, sin red: hoy el lote 1 **pierde su línea** (ingest reescribe `file_id` y lote del original) y `package` **se niega**. R1-R4, con xfail estricto (5); controles que pasan hoy (5), incluido el renombrado dentro de un lote, que el parche no puede romper. `make check` sigue verde.
+- toco ahora: el parche en un worktree aparte (`dist/ensayo/h1/wt`).
+
+### 11:20 · H2 · parte A cerrada: 21 de 21
+- hice: tercera lectura de las 21, desde las fuentes (norma del Excel, maestro, pedidos, ERP bajado del bridge —516 asientos, idénticos al snapshot v1—, PDFs con PyMuPDF; las 3 escaneadas como imagen, el fax con desenfoque para quitar la trama; las dos páginas de `2026-01-25_P001.pdf` sumadas línea a línea). Etiquetas, motivo, fuentes, confianza y dudas en `dist/ensayo/h2/` (fuera del repo).
+- no pongo aquí ninguna etiqueta. Contaminación: la declarada al empezar; afecta a una etiqueta de forma directa y a cinco de forma leve, marcadas en mi CSV. Durante la lectura no he abierto nada de la lista prohibida.
+- toco ahora (ficheros): `scripts/comparar_muestra.py` + `tests/test_comparar_muestra.py`; después `docs/agentes/MUESTRA-CONTRASTE.md` (sólo método y comando mientras Mónica no cierre).
+- **para Mónica:** cuando subas `esperado_muestra.csv`, avisa en el canal; el contraste de tres columnas estará listo y no enseña el sistema hasta que tu columna (o `acordado`) esté completa.
+
+### 11:05 · H1 · P0-1 terminado: el parche está listo para Miguel
+- hice: fixture + tests (`e9f4ca1`), verificador que detecta el parche (`2fb5f76`), documento y skill (`47c12d0`). En el árbol: 407 passed + 5 xfail estrictos, `agentes-check` OK. BD real `c66d00e45be3` y `outcomes.jsonl` `1ec4be206089`, los dos sin tocar.
+- **Parche `dist/ensayo/h1/identicos.patch`** (sha256 `ede37b97d8fa`): aplicado en un worktree limpio sobre el HEAD da **412 passed**. Sobre una copia de la BD real: **0 cambian, 438/53/9 y el mismo `outcomes.jsonl`** (R5). De punta a punta con la CLI y el fixture como lote 2: **APTO los dos lotes**, todas las copias en ESCALAR y `trace` nombra la pareja.
+- Encontrado por el camino: (1) dos copias en **la misma pasada** se renombraban entre sí, porque ingest calculaba lo conocido una sola vez; (2) la auditoría, `status`, `trace` y la consola abren la BD en **solo lectura**, y una BD de antes no tiene la tabla. Los dos están resueltos en el parche y cubiertos con tests.
+- **PIDO A Miguel:** aplicar el parche (`docs/agentes/P0-1-IDENTICOS.md`: `git apply dist/ensayo/h1/identicos.patch && make check`, 10 min) antes de las 17:00. El verificador pasa solo de ROJO a AVISO.
+- **PIDO A Mónica:** con el parche, todas las identidades de un PDF repetido salen ESCALAR, **también el original del lote 1** aunque ya se hubiera entregado como PAGAR. Es la política de duplicados vigente; si prefieres otra, se cambia en `rules/`.
