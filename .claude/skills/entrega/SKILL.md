@@ -34,21 +34,21 @@ Un push rechazado no se registra como publicado: conserva el commit local, revis
 
 ## Aceptar un rojo
 
-Sólo una decisión explícita de la persona que entrega permite esta excepción. Ejemplo histórico: scan_025 permanece ESCALAR correctamente, pero su motivo cita «None» y Mónica aún no ha decidido DOCUMENTO_SUPERPUESTO. Esto no supone autorización permanente.
+Sólo una decisión explícita de la persona que entrega permite esta excepción, y no supone autorización permanente. El caso que la motivó (scan_025: ESCALAR correcto con la evidencia «None») se resolvió con el ADR-0010 y la auditoría está en verde desde el 19/09 10:07.
 
 ```bash
-make publicar ARGS='--aceptar-rojo "scan_025: ESCALAR correcto; evidencia None pendiente de decisión de Mónica"'
+make publicar ARGS='--aceptar-rojo "<fichero>: <por qué el resultado es correcto aunque la auditoría salga roja>"'
 # Tras revisar la salida y confirmar ese criterio:
-make publicar ARGS='--publicar --aceptar-rojo "scan_025: ESCALAR correcto; evidencia None pendiente de decisión de Mónica"'
+make publicar ARGS='--publicar --aceptar-rojo "<el mismo motivo>"'
 ```
 
-El motivo no puede estar vacío y queda íntegro en el mensaje del commit y en el registro (escapado como JSON si contiene saltos de línea). Se acepta el informe rojo completo: leer todos sus hallazgos. No permite saltarse package, validate, un fallo técnico de la auditoría, el horario ni archivos extra.
+El motivo no puede estar vacío y queda íntegro en el mensaje del commit y en el registro (escapado como JSON si contiene saltos de línea). Se acepta el informe rojo completo: leer todos sus hallazgos. No permite saltarse package, validate, un fallo técnico de la auditoría, el horario ni archivos extra. `make publicar` se lo pasa a `package` (`429552a`), que también audita antes de escribir: el rojo aceptado queda en un evento `AUDITORIA-ROJA-ACEPTADA` con el motivo.
 
-Ensayo F1, 19/09: `make publicar` **0,685 s**, package/validate APTO (500, 443/48/9), rojo sólo por la evidencia falsa de scan_025. BD, dist/entrega y archivos del clon real con hashes idénticos antes/después. Publicaciones ensayadas exclusivamente contra remotos bare locales.
+Ensayo F1, 19/09 (antes de las decisiones de Mónica): `make publicar` **0,685 s**, package/validate APTO (500, entonces 443/48/9; la referencia hoy es 438/53/9, entrega `232bb76`), rojo sólo por la evidencia falsa de scan_025. BD, dist/entrega y archivos del clon real con hashes idénticos antes/después. Publicaciones ensayadas exclusivamente contra remotos bare locales.
 
 ## Si el script falla: comandos manuales de diagnóstico y recuperación
 
-Se conservan los comandos anteriores debajo. No son una vía para omitir la auditoría: después de generar/validar, ejecutar `uv run python scripts/auditoria_entrega.py` y detenerse con rojo. Para aceptar uno, volver al script con motivo. El flujo manual sí escribe dist/entrega y eventos emit en la BD; no usarlo para un ensayo que deba dejar los originales intactos.
+Se conservan los comandos anteriores debajo. No son una vía para omitir la auditoría: `make package` ya audita antes de escribir (`c2a8e58`) y se niega con rojo; después de generar/validar, ejecutar `uv run python scripts/auditoria_entrega.py` y detenerse con rojo. Para aceptar uno, volver al script con motivo. El flujo manual sí escribe dist/entrega y eventos emit en la BD; no usarlo para un ensayo que deba dejar los originales intactos.
 
 ### Generar
 ```

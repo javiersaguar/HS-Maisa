@@ -45,6 +45,28 @@ COLUMNAS_ERP = (
 NOMBRE_REGLA = re.compile(r"norma|regla|instruccion|manual|readme|bases", re.I)
 
 
+def pipeline_admite_copias() -> bool:
+    """P0-1: ¿el pipeline guarda otro nombre para el mismo PDF sin tocar el original?
+
+    Se detecta en el código, no se supone: lo añade P0-1 (Miguel, `e3b3764`: tabla `identidades` y
+    `core.db.guardar_identidad`). Sin él, un PDF idéntico renombrado o reescribe el file_id del original
+    (el lote 1 pierde su línea) o se colapsa con su pareja: los dos caminos son NO APTO, así que se para.
+    Con él, cada nombre tiene su línea y todos salen ESCALAR: basta con avisar.
+    """
+    return hasattr(db, "guardar_identidad")
+
+
+def pipeline_admite_nombre_repetido() -> bool:
+    """P0-5: ¿el lote 2 puede traer un PDF con el nombre exacto de uno del lote 1 y otro contenido?
+
+    Lo añade la rama de Miguel `miguel/p0-5-nombre-repetido` (`db.PREFIJO_INTERNO`: el que choca se guarda
+    con un nombre interno y el de entrega va a `identidades`). Sin ella, `ficheros.file_id` es UNIQUE: la
+    ingesta falla y ese PDF se queda sin línea (NO APTO), así que se para. Con ella, cada lote tiene su
+    línea: basta con avisar. Sólo el nombre EXACTO: si coincide ignorando mayúsculas o tildes, se para igual.
+    """
+    return hasattr(db, "PREFIJO_INTERNO")
+
+
 @dataclass
 class InformeMaterial:
     origen: str
@@ -298,16 +320,31 @@ def verificar(
             if hay_carpeta and p.parent.name.casefold() != "facturas":
                 inf.errores.append(f"factura en subcarpeta no ingerible: {nombre}")
             huella = hashlib.sha256(datos).hexdigest()
+            admite = pipeline_admite_copias()
             if huella in hashes_originales:
-                inf.errores.append(
-                    f"PDF idéntico por SHA-256 al lote 1: {nombre} / {hashes_originales[huella]}; "
-                    "ingest reasignaría el original. Pedir a Miguel soporte de identidades múltiples."
-                )
+                if admite:
+                    inf.avisos.append(
+                        f"copia exacta (SHA-256) de {hashes_originales[huella]} del lote 1: {nombre}. "
+                        "Tendrá su línea y saldrá ESCALAR, igual que el original (P0-1)."
+                    )
+                else:
+                    inf.errores.append(
+                        f"PDF idéntico por SHA-256 al lote 1: {nombre} / {hashes_originales[huella]}; "
+                        "ingest reasignaría el original. Esta rama no tiene P0-1 (Miguel, e3b3764): "
+                        "haz /sync con main antes de ingerir."
+                    )
             if huella in hashes:
-                inf.errores.append(
-                    f"PDF idéntico por SHA-256 dentro del material: {hashes[huella]} / {nombre}; "
-                    "ingest colapsaría ambos nombres. No alterar el PDF para evitar este control."
-                )
+                if admite:
+                    inf.avisos.append(
+                        f"copia exacta (SHA-256) dentro del material: {hashes[huella]} / {nombre}. "
+                        "Cada nombre tendrá su línea y los dos saldrán ESCALAR (P0-1)."
+                    )
+                else:
+                    inf.errores.append(
+                        f"PDF idéntico por SHA-256 dentro del material: {hashes[huella]} / {nombre}; "
+                        "ingest colapsaría ambos nombres. Esta rama no tiene P0-1 (Miguel, e3b3764): "
+                        "haz /sync con main. No alterar el PDF para evitar este control."
+                    )
             hashes[huella] = nombre
             clave = clave_nombre(p.name)
             if clave in nombres:
@@ -316,7 +353,17 @@ def verificar(
                 )
             nombres[clave] = nombre
             if clave in originales:
-                inf.errores.append(f"nombre coincide con lote 1: {nombre} / {originales[clave]}")
+                if originales[clave] == p.name and pipeline_admite_nombre_repetido():
+                    inf.avisos.append(
+                        f"nombre coincide con lote 1 y el contenido es otro: {nombre}. Tendrá su línea "
+                        "en cada lote, con su propia decisión (P0-5)."
+                    )
+                else:
+                    inf.errores.append(
+                        f"nombre coincide con lote 1: {nombre} / {originales[clave]}. "
+                        "Sin P0-5 (rama miguel/p0-5-nombre-repetido) la ingesta falla y el lote 2 "
+                        "queda sin línea: avisar a Miguel. No renombrar nunca un PDF oficial."
+                    )
             try:
                 _pdf(datos)
             except Exception as exc:

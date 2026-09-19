@@ -4,7 +4,8 @@ Tiempos medidos por F2 el 19/09 a las 07:25 en un clon limpio del repo (`docs/de
 portátil de Javier. **En el tuyo serán otros: cronométralos en el ensayo de las 15:00.** Todo es bash (WSL, Linux o Mac).
 
 ## Antes de salir de casa (con red)
-1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red.
+1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red. Hazlo **después del merge
+   de `miguel/pipeline`**: trae el `trace` legible y el `status` nuevo. El kit de las 10:07 sirve igual.
 2. Copia el kit que te pase Javier a `dist/kit/` e instálalo: `make kit-instalar KIT=dist/kit/albertitos-kit-<fecha>.tar.gz`.
    Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881 (kit de las 10:07, con las decisiones de Mónica; el de las 09:02 decía 443/48/9).
    Si te pide `--forzar`, es que ya tenías una BD con datos: añade `ARGS=--forzar` (la anterior queda en `…antes-del-kit`).
@@ -20,14 +21,16 @@ portátil de Javier. **En el tuyo serán otros: cronométralos en el ensayo de l
 | 2 | los 5 comandos de RESILIENCIA §3 (b bis), tal cual, con `chaos --llm-down` antes del `extract` | `{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3}` | ~2 s el bloque | «A partir del quinto fallo dejamos de castigar al proveedor. Lo pendiente sigue pendiente.» |
 | 3 | consola → Traza → `copia_2026_0518.pdf` | eventos `LLM-DOWN` y `LLM-INVALID` del viernes y, después, la extracción buena | — | «Esto no es un ensayo: pasó el viernes con esta factura, y se reanudó sin tocar nada.» |
 
-Si en pantalla sale `extract pendiente 7` o `2.3823 EUR` en `status`: «son eventos del viernes; los 7 pendientes son
-pruebas de caos de ficheros que luego se extrajeron bien (0 sin decisión), y los 2,38 € son una tarifa inventada que
-corregimos: los modelos que usamos no cobran por token».
+`status` enseña el último evento de cada fichero: el `extract pendiente 7` y los `2.3823 EUR` del viernes ya no salen
+(sólo con `status --historico`). Si salen ahí o en el Panel de la consola: «son eventos del viernes; los 7 pendientes
+son pruebas de caos de ficheros que luego se extrajeron bien (0 sin decisión), y los 2,38 € son una tarifa inventada
+que corregimos: los modelos que usamos no cobran por token».
 
 ## Si algo falla
 - **La demo no arranca:** enseña `docs/demo/transcripcion-demo-caos.txt` (la misma demo con red, 104 s, tokens incluidos).
 - **La consola no abre:** `uv run albertitos status` y `uv run albertitos trace F26-2201_transportes.pdf` en la terminal.
-  El porqué está en `motivos_json` de la última decisión (la vigente); `docs/demo/trazas/README.md` dice qué mirar.
+  `trace` sale legible, un paso por bloque (hechos → maestro → ERP → duplicado → reglas → resultado) y con la vigente
+  primero en el historial; `docs/demo/trazas/README.md` dice qué mirar.
 - **No hay ERP en la sala:** da igual para la demo (se comprobó apagándolo). Sólo fallan `erp pull` y el preflight.
 
 ## Qué pregunta responde cada cosa

@@ -95,6 +95,6 @@ Seis tablas en una SQLite WAL: ficheros (sha256), hechos, snapshots versionados,
 La traza de una factura es una consulta; el reprocesado usa el historial; la idempotencia sale de las claves (sha256).
 Postgres (infraestructura en cinco portátiles), JSONL por etapa (sin atomicidad ni cruces) y ORM (coste sin beneficio): descartados.
 Riesgo aceptado: un solo escritor a la vez; ya nos mordió (`database is locked` con 4 hilos) y se resolvió con commit por fichero.
-3,3 MB para 500 facturas y 1.000 decisiones; reprocesar 500 decisiones, 0,04 s.
+3,3 MB para 500 facturas y 1.000 decisiones; reprocesar 500 decisiones, 0,11 s.
 
 ### ADR-000N · …

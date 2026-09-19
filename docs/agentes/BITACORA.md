@@ -542,6 +542,83 @@ Plantilla (cópiala tal cual):
 - **Entrega republicada**: `232bb76` (438/53/9, sha256 `1ec4be206089`) sustituye a la de seguro `fdc76e8`; registrada en `docs/entregas.log`. Kit nuevo: `dist/kit/albertitos-kit-20260919-1007.tar.gz`. KIT-DEFENSA, CIFRAS, AUDITORIA-ENTREGA y la auditoría citan ya 438/53/9.
 - **Para Mónica, sobre su punto 2 a Miguel (`confianza` fuera del hash):** el linaje ya recalcula cuando los hechos se reescriben después de decidir, aunque el hash no cambie (`test_linaje.py::test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide`). No es urgente; meterla en el hash es lo limpio, pero cambia todos los `hechos_hash`. **PIDO A Miguel**: decidirlo antes de las 17:00 o dejarlo anotado. **Propuesta para Mónica:** el próximo cambio de comportamiento en la v3 sube la etiqueta (`v3.1`) para que el linaje y la traza lo vean solos (ESTADO-BACKEND §2).
 
+### 10:35 · H1 · arranco P0-1 (PDF idéntico con otro nombre)
+- hice: leído PLAN-08. Al empezar: BD real y `outcomes.jsonl` con sus sha256 anotados en el parte; no se tocan.
+- toco ahora: `data/fixtures/lote2_identicos/`, `tests/test_identicos.py`; después el parche en `dist/ensayo/h1/` (worktree aparte, nada de core/ ni pipeline/ en este árbol), el verificador y `P0-1-IDENTICOS.md`.
+
+### 10:28 · H2 · arranco la tercera lectura de la muestra, a ciegas
+- hice: leído PLAN-08 (mi prompt). Fuentes que voy a usar: `data/caja/README.md` (norma de Alberto), `MANUAL_ERP_2009.md`, el Excel, los 21 PDFs de `data/fixtures/muestra.txt` y el ERP (bridge o `snapshots` v1). Fecha de corte 2026-09-18.
+- **declaro antes de empezar:** en una sesión anterior a este encargo, esta misma sesión leyó ficheros que ahora tengo prohibidos (cola de esta bitácora, ESTADO-BACKEND, cabecera de CIFRAS, índice de ADRs, `esperado_muestra.csv` —vacía—, PLAN-MONICA y el guion de la defensa). Lo detallo en mi parte y marcaré como contaminadas las etiquetas afectadas.
+- toco ahora (ficheros): nada del repo. Trabajo en `dist/ensayo/h2/` (gitignorado). Después `scripts/comparar_muestra.py` + `tests/test_comparar_muestra.py` y `docs/agentes/MUESTRA-CONTRASTE.md`.
+- necesito / bloqueo: nada. En esta bitácora sólo escribiré progreso («N de 21»), nunca etiquetas ni resultados de la muestra.
+- para los demás: Mónica, no mires `dist/ensayo/h2/`. H1, no toco nada tuyo.
+
+### 10:50 · H1 · P0-1 reproducido
+- hice: `data/fixtures/lote2_identicos/` + `tests/test_identicos.py`. Con el ERP v1 real y el maestro real, sin red: hoy el lote 1 **pierde su línea** (ingest reescribe `file_id` y lote del original) y `package` **se niega**. R1-R4, con xfail estricto (5); controles que pasan hoy (5), incluido el renombrado dentro de un lote, que el parche no puede romper. `make check` sigue verde.
+- toco ahora: el parche en un worktree aparte (`dist/ensayo/h1/wt`).
+
+### 11:20 · H2 · parte A cerrada: 21 de 21
+- hice: tercera lectura de las 21, desde las fuentes (norma del Excel, maestro, pedidos, ERP bajado del bridge —516 asientos, idénticos al snapshot v1—, PDFs con PyMuPDF; las 3 escaneadas como imagen, el fax con desenfoque para quitar la trama; las dos páginas de `2026-01-25_P001.pdf` sumadas línea a línea). Etiquetas, motivo, fuentes, confianza y dudas en `dist/ensayo/h2/` (fuera del repo).
+- no pongo aquí ninguna etiqueta. Contaminación: la declarada al empezar; afecta a una etiqueta de forma directa y a cinco de forma leve, marcadas en mi CSV. Durante la lectura no he abierto nada de la lista prohibida.
+- toco ahora (ficheros): `scripts/comparar_muestra.py` + `tests/test_comparar_muestra.py`; después `docs/agentes/MUESTRA-CONTRASTE.md` (sólo método y comando mientras Mónica no cierre).
+- **para Mónica:** cuando subas `esperado_muestra.csv`, avisa en el canal; el contraste de tres columnas estará listo y no enseña el sistema hasta que tu columna (o `acordado`) esté completa.
+
+### 11:05 · H1 · P0-1 terminado: el parche está listo para Miguel
+- hice: fixture + tests (`e9f4ca1`), verificador que detecta el parche (`2fb5f76`), documento y skill (`47c12d0`). En el árbol: 407 passed + 5 xfail estrictos, `agentes-check` OK. BD real `c66d00e45be3` y `outcomes.jsonl` `1ec4be206089`, los dos sin tocar.
+- **Parche `dist/ensayo/h1/identicos.patch`** (sha256 `ede37b97d8fa`): aplicado en un worktree limpio sobre el HEAD da **412 passed**. Sobre una copia de la BD real: **0 cambian, 438/53/9 y el mismo `outcomes.jsonl`** (R5). De punta a punta con la CLI y el fixture como lote 2: **APTO los dos lotes**, todas las copias en ESCALAR y `trace` nombra la pareja.
+- Encontrado por el camino: (1) dos copias en **la misma pasada** se renombraban entre sí, porque ingest calculaba lo conocido una sola vez; (2) la auditoría, `status`, `trace` y la consola abren la BD en **solo lectura**, y una BD de antes no tiene la tabla. Los dos están resueltos en el parche y cubiertos con tests.
+- **PIDO A Miguel:** aplicar el parche (`docs/agentes/P0-1-IDENTICOS.md`: `git apply dist/ensayo/h1/identicos.patch && make check`, 10 min) antes de las 17:00. El verificador pasa solo de ROJO a AVISO.
+- **PIDO A Mónica:** con el parche, todas las identidades de un PDF repetido salen ESCALAR, **también el original del lote 1** aunque ya se hubiera entregado como PAGAR. Es la política de duplicados vigente; si prefieres otra, se cambia en `rules/`.
+
+### 10:42 · H2 · corrección de hora
+- la entrada «11:20 · H2 · parte A cerrada» de arriba lleva la hora mal: la parte A se cerró a las **10:38** (la calculé en vez de mirarla). Lo demás de esa entrada vale.
+- comprobado a las 10:41 (`git fetch`): Mónica no ha subido `esperado_muestra.csv` en ninguna rama (0 de 21). El comparador ya está (10 tests); `MUESTRA-CONTRASTE.md` va con el método y el comando, sin etiquetas.
+
+### 10:50 · H2 · termino: A, B y D hechos; C espera a Mónica
+- hice: tercera lectura 21 de 21 (en `dist/ensayo/h2/`, fuera del repo) · `9f31b5f` comparador (`scripts/comparar_muestra.py`, 10 tests: con la muestra humana abierta no enseña ni el sistema ni al agente, ni abre la BD) · `19aaf99` `MUESTRA-CONTRASTE.md` (método y comando, sin etiquetas). `make check`: 417 passed, 5 xfailed (de H1). Detalle en PARTE.md, sección H2.
+- sin etiquetas aquí. Contaminación: la declarada a las 10:28, marcada etiqueta a etiqueta en mi CSV.
+- **PIDO A Mónica:** avisa en el canal cuando subas tu columna; entonces se copia mi CSV a `data/fixtures/`, se ejecuta el comparador y cada discrepancia sale con dueño (REGLA / DATO / ETIQUETA). Receta en MUESTRA-CONTRASTE.md.
+- **PIDO A Mónica, para el mentor hoy, sin esperar a la muestra:** ¿qué se hace con una factura cuyos datos cuadran con maestro, pedido y ERP pero que trae texto que ordena la decisión (escalar, bloquear, no pagar)? Afecta a varias de las 21 y a más de la Caja; es la pregunta 4 de hitos.md ampliada.
+
+### 19/09 11:00 · Javier · cierre del ciclo 8 (H1, H2) y P0-1
+- H1 y H2 cerrados; partes en `partes/PARTE-08.md`. Corrección de hora: la entrada «10:50 · H2 · termino» se escribió a las 10:44.
+- **P0-1: vale la implementación de Miguel** (`e3b3764` en `miguel/pipeline`, tabla `identidades`), que llegó a la vez que el parche de H1. **`dist/ensayo/h1/identicos.patch` queda superado y no se aplica** (además, no entraba en `main`: `contratos.md` choca con `70ed35b` y `tests/test_identicos.py` sólo existe en esta rama). Lo que sigue valiendo de H1: el fixture `lote2_identicos/`, `tests/test_identicos.py` y el ensayo de punta a punta.
+- **RESPONDO A Miguel:** valido ahora `miguel/pipeline` + esta rama con los tests de H1 (en un worktree de `dist/ensayo/p01/`), el fixture de punta a punta y R5 sobre una copia de la BD real. Resultado en la siguiente entrada.
+
+### 19/09 11:10 · Javier · P0-1 de Miguel validado con lo de H1
+- **RESPONDO A Miguel:** tu `miguel/pipeline` (`58e2bd8`) mezclado con `javier/ingesta` (`647e995`, ya con `main`) en un worktree, sin conflictos (sólo la bitácora, por unión):
+  - `make check` en Linux: **430 passed**; sólo fallan los 5 xfail estrictos de H1, que ahora pasan (XPASS). Tus 7 fallos de Windows aquí pasan.
+  - Tests de H1 como tests normales (`--runxfail`): **8 passed** (R1-R4 y los controles); los dos «hoy» se saltan solos.
+  - **R5**, copia de la BD real (`c66d00e45be3`): `reprocess --todo --erp v1` → 500 de 500 · 0 cambian; `package` con auditoría → APTO **438/53/9**, `outcomes.jsonl` **idéntico byte a byte** a la entrega publicada (`1ec4be206089`).
+  - **De punta a punta** con `data/fixtures/lote2_identicos/` (`dist/ensayo/p01/e2e.log`): el verificador **avisa** («copia exacta… saldrá ESCALAR (P0-1)»), ingest 4 → reprocess (`duplicados: +5`) → `package` APTO lote 1 (500) y lote 2 (4, todas ESCALAR) → `validate` APTO/APTO. Los motivos nombran a la pareja («el mismo PDF que 2026-01-08_P001.pdf (lote 1)») y `trace` de la copia sale legible con «copia exacta de …» y el paso DUPLICADO.
+  - BD real y entrega sin tocar (mismas huellas antes y después).
+- **Orden propuesto:** Miguel mergea `miguel/pipeline` a `main` (en `main` no está `test_identicos.py`, así que sale verde). Luego yo hago `/sync` y quito los xfail en el mismo commit (`dist/ensayo/p01/tests-identicos-sin-xfail.patch`, validado arriba) y abro la PR de `javier/ingesta`.
+- **Una nota menor para Miguel:** en la traza de una copia el porqué sale «hechos cambiados». Sería más claro «duplicado nuevo: copia exacta de X». No cambia resultados.
+- Hecho en esta rama: `verificar_material`, la skill `/lote2` y `P0-1-IDENTICOS.md` ya nombran tu implementación en vez del parche de H1; ESTADO-BACKEND, al día (P0-1, P0-4 y trazabilidad hechos en tu rama; **P0-5 nuevo**, el nombre repetido entre lotes con distinto contenido, lo decides tú).
+
+### 11:47 · I2 · arranco mapa de políticas
+- hice: leído PLAN-09 I2. BD y entrega sólo lectura.
+- toco: scripts/mapa_politicas.py · tests/test_mapa_politicas.py · docs/agentes/MAPA-POLITICAS.md · dist/ensayo/i2/
+- para los demás: I1 no toco tus ficheros. Mónica: te doy recuentos, no lista por fichero de la muestra hasta que cierres.
+
+### 11:48 · I2 · termino
+- CONTROL OK 438/53/9 fichero a fichero.
+- Q1: 31 con TEXTO_INSTRUCCION; 6 pasarían a PAGAR (todas en muestra; 0 fuera); tipos escalar=3 evaluador=2 no_pagar=1. Comprobación a mano: 6 LIMPIA, 0 DATO.
+- Q2: 2 con PEDIDO_ANULADO (ambas en muestra); Q2a→PAGAR = 0 (siguen por TEXTO_INSTRUCCION); Q2b→NO_PAGAR = 2. Comprobación: OTRA_REGLA.
+- Q3: 35 ESCALAR→NO_PAGAR (28 fuera de muestra) — la de más peso.
+- Q4: 2 docs evaluador, hoy ESCALAR, en muestra.
+- Q5: 2 (PO-2026-0492) fuera de muestra.
+- make check: 425 passed, 2 deselected, 6 xfailed. agentes-check: ROJO por 4 ficheros ajenos a I2 (skill entrega, KIT-DEFENSA, docs/demo/trazas/README, albertitos_plan); rutas I2 en verde. tests/test_mapa_politicas.py: 4 passed.
+- huellas BD/entrega sin cambio: c66d00e45be3 / 1ec4be206089
+- **PIDO A Mónica:** números en MAPA-POLITICAS.md; lista por fichero cuando cierres la muestra.
+
+
+### 11:58 · Javier · I1 sin terminal: lo que dejó, revisado y subido
+- I1 se quedó sin shell (`powershell.exe ENOENT` en Cursor) y trabajó sólo escribiendo ficheros. **Su borrador de esta bitácora (cabecera «¿¿:??») no llegó al fichero**; su parte sí (lo commiteó I2 en `adc3f50`). Repongo aquí lo que pedía.
+- Revisado antes de subir: `tests/test_nombre_repetido.py` pasa (3 + 1 xfail estricto). **El PDF del fixture era de juguete** (453 bytes, texto «P0-5 L2 distinto») aunque el README decía otra cosa: ahora es la copia real de `lote2_sim/L2-2026-01-16_P004.pdf` (`4d15672a49cc`, distinto del de la Caja `dc54bdbf1be4`, fuera de la muestra), y el README lleva los sha256.
+- I1 también dejó al día documentos fuera de su lista, que subo tal cual: la skill `/entrega` y `KIT-DEFENSA.md` (`--aceptar-rojo` de Miguel, `trace` legible, `status` sin histórico, 438/53/9), `docs/demo/trazas/README.md` y **la línea 98 del plan de Alfonso** (0,04 s → 0,11 s: `cifras_check` ya no la marca). **Alfonso:** esa línea la he corregido yo en tu fichero; revísala.
+- **Sin hacer (necesita shell):** el ensayo general A cronometrado, `--aceptar-rojo` probado, la chuleta y la skill con tiempos reales. `CHULETA-LOTE2.md` es un borrador **sin ejecutar**: no usarla a las 18:00 hasta que I1 (u otra sesión) la ensaye.
+- **PIDO A Miguel (de I1, P0-5):** mismo nombre que un PDF del lote 1 y distinto contenido. Fixture en `data/fixtures/lote2_nombre_repetido/` y requisito en `tests/test_nombre_repetido.py` (xfail estricto: los dos nombres, cada uno en su lote y con su decisión; validate APTO en los dos). Hoy: el verificador para y la ingesta no deja línea en el lote 2. Parche nuestro no hay. Lo decides tú.
 ### 19/09 10:55 · Miguel · P0-4, P0-1 y la trazabilidad hechos en `miguel/pipeline` (sin push todavía)
 - hice (`make check`: 408 en verde; los 7 que fallan en mi portátil son de Windows —hooks, rutas, conexión rechazada— y fallan igual sin mis cambios):
   - **P0-4 · `429552a`**: `package` y `run --aceptar-rojo "<motivo>"`. El rojo aceptado queda en un emit `AUDITORIA-ROJA-ACEPTADA` con el motivo y los rojos; el emit del lote dice `"auditoria": "roja aceptada: <motivo>"`. Una auditoría que falla, un JSONL inválido o un motivo vacío no se aceptan nunca. **`make publicar --aceptar-rojo` ahora se lo pasa a `package`**: con la puerta activa, su excepción era inalcanzable (package se negaba antes).
@@ -552,3 +629,15 @@ Plantilla (cópiala tal cual):
 - **PIDO A Mónica (R3):** las copias exactas salen por la norma como cualquier duplicado: `DUPLICADO_SOSPECHOSO` → R6 → ESCALAR (o NO_PAGAR si otra regla lo dice antes, p. ej. el asiento ya PAGADA). Nunca PAGAR. Si quieres otra política, se cambia en `ANOMALIAS_HUMANO`/R6, no en pipeline.
 - **Riesgo NUEVO, sin resolver (lo decide Miguel):** un PDF del lote 2 con **el mismo nombre que uno del lote 1 y distinto contenido**. `ficheros.file_id` es UNIQUE: la ingesta falla (`PDF-ILEGIBLE` por la restricción), no hay hechos ni línea → NO APTO. `verificar_material` ya lo marca en ROJO («nombre coincide con lote 1»). Arreglarlo exige reconstruir `ficheros` sin el UNIQUE (migración) o un file_id interno distinto del de entrega. No lo toco sin decisión.
 - **`.env.example`**: está bloqueado para los agentes; Miguel añade a mano `ALBERTITOS_BREAKER_FALLOS=5`, `ALBERTITOS_BREAKER_SEGUNDOS=60` y `ALBERTITOS_WORKERS=3` (ya los leen `extract/llm.py` y `demo_caos.py`).
+
+### 12:12 · Javier · ensayo de integración: todas las ramas juntas, en verde
+- En un worktree desechable, `javier/ingesta` (`a5e1bb7`, con `main` dentro) + `miguel/pipeline` + `miguel/p0-5-nombre-repetido` + `monica/norma-v3` + `alfonso/presentaciones-y-pdf`, en ese orden: **0 conflictos**.
+- `make check` de todo junto: **444 passed, 1 skipped, 0 failed** (el skip es el control «sin P0-5», que con P0-5 no aplica). R5 sobre una copia de la BD real: 500 de 500, 0 cambian, **438/53/9 y `outcomes.jsonl` idéntico** (`1ec4be206089`).
+- **RESPONDO A Miguel (P0-5):** tu rama cumple el requisito donde importa. En el fixture de I1, cada lote tiene su línea `2026-01-16_P004.pdf`, `validate` da APTO en los dos y no se pagan las dos (comparten pedido: ESCALAR por duplicado). Ensayado también por la CLI sobre una copia de la BD real. El test de I1 miraba el `file_id` interno (`./X.pdf`) y lo he reescrito para que mire la línea entregada. Esta rama ya vale con tu P0-5 y sin él: se detecta por `db.PREFIJO_INTERNO`, y el verificador, con P0-5, avisa en vez de parar (sólo con el nombre exacto).
+- En esta rama: `main` dentro y los xfail de P0-1 quitados (pasan). **Miguel: `javier/ingesta` se puede mergear a `main` cuando quieras**; lleva el comparador de la muestra, el mapa de políticas (I2), los fixtures y tests de P0-1 y P0-5, y docs al día.
+### 19/09 11:40 · Miguel · main = 8935c3e; P0-5 preparado en rama aparte
+- hice: **`main` avanzado a `8935c3e`** (fast-forward de `miguel/pipeline`, validado por Javier/H1 en Linux). Incluye la nota de Javier: el porqué del linaje ya no dice «hechos cambiados» cuando lo único distinto es la marca de duplicado; con una copia dice «copia exacta: el mismo PDF llega como X (lote 1), Y (lote 2) → duplicado marcado».
+- **P0-5 (mismo nombre que un PDF del lote 1, otro contenido) en `miguel/p0-5-nombre-repetido` (`334845e`), NO en main.** El PDF que choca entra en `ficheros` como `./X.pdf` (único en la BD; contra la carpeta de su lote es el mismo fichero, así que extract y la auditoría lo leen sin cambios) y su nombre de entrega en `identidades`: sus hechos, su decisión, su línea. `package` y la auditoría saltan el interno; `trace X.pdf --lote 2`. Sin esquema nuevo; R5 byte a byte; test en `test_copias.py` (falla sin el arreglo).
+  - Por qué rama aparte: en el lote 1 faltan `scan_019/020/024`, lo que apunta a una serie única de 540 nombres repartida entre los dos lotes; la colisión es poco probable y no quiero meter cambios en ingest/package/auditoría antes del lote 2 sin necesidad.
+- **PIDO A Javier:** (1) a las 18:00, si `verificar_material` da «nombre coincide con lote 1», me avisas y mergeo la rama (o la mergeas tú: `git merge origin/miguel/p0-5-nombre-repetido`, `make check`) y se sigue con la ingesta; (2) esa rama toca `sources/estado_bd.ficheros_fantasma` (tuyo): con `db.nombre_entrega`, para que `preflight --limpiar` no borre el `./X.pdf`. Revísalo; (3) para el verificador, la capacidad se detecta con `albertitos.core.db.PREFIJO_INTERNO`.
+- **Para Mónica (R3, de su lista):** con una copia exacta en el lote 2, el original del lote 1 también sale ESCALAR (una decisión por contenido). Si el mentor dice que el lote 1 no debe cambiar por el lote 2 (P0-2), se cambia en `package` en ~30 min: sólo la copia escala.

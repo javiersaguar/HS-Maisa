@@ -1,4 +1,4 @@
-# Qué queda del backend para terminar · sábado 19/09, 09:50 (actualizado 10:15)
+# Qué queda del backend para terminar · sábado 19/09, 09:50 (actualizado 11:10)
 
 **Resumen.** El backend hace todo lo que la entrega exige y está ensayado. Con los datos de hoy, 500 de 500 facturas
 tienen decisión (**438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** desde las decisiones de Mónica) y la entrega publicada es la
@@ -6,18 +6,21 @@ tienen decisión (**438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** desde las decisiones
 ha ensayado entero dos veces. `make check` pasa con 392 tests. Lo que queda **no es construir el sistema**, sino
 cuatro agujeros que pueden dejarnos NO APTO y una lista de mejoras que valen puntos en la defensa.
 
-**10:15:** `main` = `javier/ingesta` (merge de Mónica incluido); las ramas de Mónica y Alfonso, avanzadas al mismo
-punto. Alfonso y Alejandro no han subido nada todavía hoy.
+**11:10:** Miguel ha hecho P0-1, P0-4 y los seis puntos de trazabilidad **en `miguel/pipeline`, sin mergear a `main` a las 11:10**. Validado con los tests y el
+fixture de H1 sobre `javier/ingesta` + `miguel/pipeline` (bitácora 11:10). `main` tiene ya la consola web de Alejandro
+(datos de ejemplo; en la defensa va Streamlit). Queda un riesgo nuevo, P0-5, que decide Miguel.
 
 ## 1 · Lo que puede dejarnos sin premio (P0)
 Por orden de hora límite. Ninguno es mucho código; todos dependen de una decisión o de una persona concreta.
 
 | # | Qué | Por qué es P0 | Quién | Antes de |
 |---|---|---|---|---|
-| **P0-1** | **PDF idéntico con otro nombre** (misma sha256, distinto `file_id`), dentro del lote 2 o repetido del lote 1 | `ficheros` tiene la sha256 como clave: la ingesta **sobrescribe el `file_id` y el lote del original**. El lote 1 pierde una línea → NO APTO. `verificar_material` lo detecta y **se para**, pero entonces ese PDF del lote 2 no tiene línea → NO APTO igual. Hoy no tiene salida. En el lote 1 no hay ningún caso (500 sha256 distintas), así que nunca se ha probado. Una «factura duplicada» exacta es una trampa muy plausible en el lote 2 | **Miguel** (`core/` + ingest) · política: **Mónica** | 17:00 |
+| ~~P0-1~~ ✅ 11:10 · falta el merge | **PDF idéntico con otro nombre** — hecho por Miguel (`e3b3764`, tabla `identidades`) **en `miguel/pipeline`, sin mergear a `main` a las 11:10**. Validado: R1-R4 con los tests de H1, R5 sobre una copia de la BD real (438/53/9 y `outcomes.jsonl` idéntico, `1ec4be206089`) y de punta a punta con `lote2_identicos/` (APTO/APTO, copias ESCALAR nombrando a la pareja). El parche de H1 queda superado. Al entrar en esta rama: quitar los xfail (`dist/ensayo/p01/tests-identicos-sin-xfail.patch`). Antes decía: (misma sha256, distinto `file_id`), dentro del lote 2 o repetido del lote 1 | `ficheros` tiene la sha256 como clave: la ingesta **sobrescribe el `file_id` y el lote del original**. El lote 1 pierde una línea → NO APTO. `verificar_material` lo detecta y **se para**, pero entonces ese PDF del lote 2 no tiene línea → NO APTO igual. Hoy no tiene salida. En el lote 1 no hay ningún caso (500 sha256 distintas), así que nunca se ha probado. Una «factura duplicada» exacta es una trampa muy plausible en el lote 2 | **Miguel** (`core/` + ingest) · política: **Mónica** | 17:00 |
 | **P0-2** | **¿La entrega final del lote 1 va con la regla nueva y el ERP actualizado?** | Pregunta 3 de `docs/hitos.md` a los mentores, **sin respuesta desde el viernes**. Si la respuesta es sí y no rehacemos el lote 1, la entrega queda mal hecha aunque pase el validador. Técnicamente cuesta 7 s (`reprocess --todo`, ENSAYO-REPROCESADO); lo que falta es saberlo | **Mónica** (mentores) | 18:00 |
 | ~~P0-3~~ ✅ 10:07 | **`scan_025` y la auditoría en rojo** — resuelto: ADR-0010 de Mónica, reextraído y reprocesado; auditoría VERDE | Es lo único rojo, y lo arregla una línea de Mónica (respuesta A: `DOCUMENTO_SUPERPUESTO` en `ANOMALIAS_HUMANO`). Mientras siga así: no se puede republicar sin `--aceptar-rojo`, el kit de la demo enseña un motivo falso y no se puede activar la auditoría dentro de `package` | **Mónica** → Miguel mergea → **Javier** aplica a la BD real (final de `AUDITORIA-ENTREGA.md`) | 12:00 |
-| ~~P0-4~~ ✅ 10:05 | **La auditoría no para `package`** — resuelto: la puerta de G1 está activada (`c2a8e58`); falta sólo, como seguro, el `--aceptar-rojo` de Miguel | Miguel dejó el hueco y G1 el módulo (`dist/ensayo/g1/puerta-auditoria.patch`: 394 tests en verde en un clon). No se puede activar hasta que (a) la auditoría real salga verde (P0-3) **o** (b) `package` tenga `--aceptar-rojo "<motivo>"` (parche en la bitácora, G1 09:05). Sin él, una puerta roja a las 07:55 del domingo no tiene salida | **Miguel** (b) · **Javier** aplica el parche | 17:00 |
+| ~~P0-4~~ ✅ 10:05 · 11:10 | **La auditoría no para `package`** — resuelto: la puerta de G1 está activada (`c2a8e58`), y Miguel ha añadido `package`/`run --aceptar-rojo "<motivo>"` (`429552a`, **en `miguel/pipeline`, sin mergear a `main` a las 11:10**; `make publicar` se lo pasa) | Miguel dejó el hueco y G1 el módulo (`dist/ensayo/g1/puerta-auditoria.patch`: 394 tests en verde en un clon). No se puede activar hasta que (a) la auditoría real salga verde (P0-3) **o** (b) `package` tenga `--aceptar-rojo "<motivo>"` (parche en la bitácora, G1 09:05). Sin él, una puerta roja a las 07:55 del domingo no tiene salida | **Miguel** (b) · **Javier** aplica el parche | 17:00 |
+
+| **P0-5** (nuevo, 10:55) | **PDF del lote 2 con el mismo nombre que uno del lote 1 y distinto contenido** | `ficheros.file_id` es UNIQUE: la ingesta falla, no hay hechos ni línea → NO APTO. `verificar_material` ya lo marca en ROJO («nombre coincide con lote 1»), así que no llega por sorpresa, pero no tiene salida. Arreglarlo es una migración (quitar el UNIQUE) o un id interno distinto del `file_id` de entrega | **Miguel** decide | 17:00 |
 
 **Ya cerrado y ensayado:** la contingencia para un PDF del lote 2 sin hechos (ADR-0009, aceptado; `scripts/contingencia.py`,
 13 tests y ensayo de punta a punta) y la entrega de seguro. Ya no hace falta pensar en ellas.
@@ -39,7 +42,7 @@ reforzada a ESCALAR si tiene más de una. Es decisión de Miguel.
 ## 2 · Lo que da puntos en la defensa (P1)
 
 ### Trazabilidad (20 pts) · Miguel
-Todo está pedido en la bitácora con el parche escrito; nada cambia resultados.
+**Los seis, hechos por Miguel (`534aaec`) **en `miguel/pipeline`, sin mergear a `main` a las 11:10****: `trace` legible por defecto (`--json` para el volcado), con la línea del ERP y la pareja del duplicado; `por` en `run`/`decide`; `status` actual (`--historico` para el log); `erp pull` sin ERP en una línea; `run --erp` explícito. La tabla de abajo es lo que se pidió.
 | Qué | Estado | Dónde |
 |---|---|---|
 | `erp pull` sin ERP: una línea en vez de 92 de traceback | la parte de `sources/` está hecha (G2); falta capturar `ErrorERP` en `cli.py` (5 líneas) | bitácora, G2 «ERP medido» |
@@ -78,7 +81,7 @@ con el mentor, tests de las 9 políticas (hoy hay 7 tests de reglas) y `norma_v4
 ## 3 · Deseable (P2)
 | Qué | Quién | Nota |
 |---|---|---|
-| `run --erp <versión>` explícito | Miguel | Hoy `run` usa el último snapshot, que tras `erp pull --tag v2` es el v2. El preflight vigila cuál se usaría |
+| ~~`run --erp <versión>` explícito~~ ✅ `534aaec` (en `miguel/pipeline`) | Miguel | Hoy `run` usa el último snapshot, que tras `erp pull --tag v2` es el v2. El preflight vigila cuál se usaría |
 | `regla_5_erp` reconstruye `por_pedido()` en cada factura | Mónica/Miguel | 28 ms/factura con 50k asientos; a 540 facturas no se nota |
 | `ALBERTITOS_BREAKER_FALLOS`/`_SEGUNDOS` en `.env.example` | Miguel | Los agentes no pueden leer ese fichero; comprobarlo a mano |
 | Bonus (+10): calendario de vencimientos y fichero de remesa | Javier + Alejandro | Sólo si P0 y P1 están verdes a las 16:30; se cancela a las 22:00 si el lote 2 no está hecho |
@@ -86,8 +89,8 @@ con el mentor, tests de las 9 políticas (hoy hay 7 tests de reglas) y `norma_v4
 ## 4 · Lo de Javier hoy
 1. ~~Arreglo de `scan_025`, auditoría verde, publicar, kit nuevo, puerta de G1~~ ✅ 10:07 (entrega `232bb76`, kit
    `albertitos-kit-20260919-1007.tar.gz`). **Falta pasarle el kit nuevo a Alfonso.**
-2. **Con P0-1 hecho por Miguel:** cambiar `verificar_material` para que avise en vez de bloquear, y ensayarlo con una
-   copia exacta renombrada dentro del lote 2 simulado.
+2. ~~Con P0-1 hecho por Miguel: `verificar_material` avisa en vez de bloquear, ensayado con copias exactas~~ ✅ 11:10
+   (H1 + validación de `miguel/pipeline`, `dist/ensayo/p01/e2e.log`). **Cuando Miguel mergee:** `/sync` + quitar los xfail.
 3. **15:00:** ensayo de la defensa en el portátil de Alfonso (kit, chuleta `docs/agentes/KIT-DEFENSA.md`).
 4. **18:00, lote 2 (skill `/lote2`):** hashes → `verificar_material` → ingest → extract (primero las escaneadas, que
    son lo lento: 0,065-0,106 f/s) → `erp pull --tag v2` → diff → inventario. Después: la v4 de Mónica →
