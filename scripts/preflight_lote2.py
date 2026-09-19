@@ -14,6 +14,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -79,6 +80,27 @@ def respaldar(origen: Path, destino: Path) -> None:
         closing(sqlite3.connect(destino)) as dst,
     ):
         src.backup(dst)
+
+
+def _coincide_con_manifiesto(dir2: Path, pdfs: list[str], manifiesto: Path) -> bool:
+    """Los PDF de `dir2` son exactamente los de las líneas `/facturas/` del manifiesto, con el mismo hash."""
+    if not pdfs or not manifiesto.is_file():
+        return False
+    esperado = {
+        ruta.rsplit("/", 1)[-1]: h
+        for h, ruta in (
+            linea.split("  ", 1)
+            for linea in manifiesto.read_text(encoding="utf-8").splitlines()
+            if "  " in linea
+        )
+        if "/facturas/" in ruta
+    }
+    if set(esperado) != set(pdfs):
+        return False
+    return all(
+        hashlib.sha256((dir2 / nombre).read_bytes()).hexdigest() == h
+        for nombre, h in esperado.items()
+    )
 
 
 def comprobar_llm(entorno: Mapping[str, str]) -> Check:
@@ -241,17 +263,24 @@ def comprobar(args) -> list[Check]:
             )
         )
 
-    # 8. el directorio del lote 2 debería estar vacío antes de descomprimir el material real
+    # 8. el directorio del lote 2: vacío antes del material real, o exactamente el material del manifiesto
+    #    (19/09: el lote 2 llegó como commit del repo de participantes y está en data/lote2 con data/lote2.sha256)
     dir2 = Path(args.dir_lote2)
     previos = sorted(p.name for p in dir2.glob("*.pdf")) if dir2.is_dir() else []
+    manifiesto2 = Path(getattr(args, "manifiesto_lote2", "data/lote2.sha256"))
+    oficial = _coincide_con_manifiesto(dir2, previos, manifiesto2)
     checks.append(
         Check(
             "data/lote2/facturas",
-            VERDE if not previos else AMBAR,
+            VERDE if not previos or oficial else AMBAR,
             "vacío o inexistente"
             if not previos
+            else f"{len(previos)} PDF, idénticos a {manifiesto2} (material oficial)"
+            if oficial
             else f"{len(previos)} PDF de un intento anterior: {previos[:3]}",
-            "" if not previos else "si no es el material bueno, muévelo antes de descomprimir",
+            ""
+            if not previos or oficial
+            else "si no es el material bueno, muévelo antes de descomprimir",
         )
     )
 
@@ -325,9 +354,8 @@ def comprobar(args) -> list[Check]:
                 "caché del LLM",
                 AMBAR,
                 f"{sum(viejas.values())} lecturas de otra versión de prompt ({viejas}); la actual es {PROMPT_VERSION}",
-                "si el prompt no cambió, re-etiqueta: UPDATE cache_llm SET clave = replace(clave, '|<vieja>|', '|"
-                + PROMPT_VERSION
-                + "|')",
+                "normal si el prompt cambió (p-0.4 añade la moneda, ADR-0019): los hechos del lote 1 ya están y no se "
+                "reextraen. Re-etiquetar la caché SÓLO si el prompt no cambió de verdad",
             )
         )
     elif versiones:
@@ -369,10 +397,12 @@ def comprobar(args) -> list[Check]:
                 VERDE if not distintos else AMBAR,
                 "los hechos del fixture son los de la BD"
                 if not distintos
-                else f"{len(distintos)} hechos distintos de los de la BD ({distintos[:3]}): el fixture está sin reexportar",
+                else f"{len(distintos)} hechos distintos de los de la BD ({distintos[:3]})",
                 ""
                 if not distintos
-                else "uv run albertitos hechos export --salida data/fixtures/hechos_caja.jsonl",
+                else "mira cuál es el bueno ANTES de tocar nada: si el fixture es más nuevo (p. ej. la pasada del "
+                "ADR-0017), `albertitos hechos import`; si lo es la BD, `albertitos hechos export`. Exportar a "
+                "ciegas pisa el fixture de otro",
             )
         )
 
@@ -421,6 +451,11 @@ def main() -> int:
     ap.add_argument("--dir-lote1", default="data/caja/facturas")
     ap.add_argument(
         "--dir-lote2", default=os.environ.get("ALBERTITOS_DIR_LOTE2", "data/lote2/facturas")
+    )
+    ap.add_argument(
+        "--manifiesto-lote2",
+        default="data/lote2.sha256",
+        help="si data/lote2/facturas coincide con él, es el material oficial, no un intento anterior",
     )
     ap.add_argument("--fixture", default="data/fixtures/hechos_caja.jsonl")
     ap.add_argument(

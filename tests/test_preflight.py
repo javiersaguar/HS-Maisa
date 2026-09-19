@@ -241,3 +241,25 @@ def test_llm_sin_clave_avisa_y_con_todo_en_regla_verde(preflight):
     assert (
         "API_KEY" not in chk.detalle
     )  # nunca se enseña la clave, ni su nombre en el veredicto verde
+
+
+def test_material_del_manifiesto_no_es_un_intento_anterior(preflight, tmp_path, conn):
+    """19/09: el lote 2 llegó como commit y está en data/lote2 con su manifiesto. Eso es VERDE; un PDF
+    de más o con otro contenido sigue siendo ÁMBAR (un intento anterior que hay que apartar)."""
+    import hashlib
+
+    args = montar(tmp_path, conn)
+    d = Path(args.dir_lote2)
+    d.mkdir()
+    (d / "x.pdf").write_bytes(b"%PDF-lote2")
+    manifiesto = tmp_path / "lote2.sha256"
+    h = hashlib.sha256(b"%PDF-lote2").hexdigest()
+    manifiesto.write_text(
+        f"{h}  data/lote2/facturas/x.pdf\n{'0' * 64}  data/lote2/a.csv\n", encoding="utf-8"
+    )
+    args.manifiesto_lote2 = str(manifiesto)
+    nivel = {c.nombre: c.nivel for c in preflight.comprobar(args)}
+    assert nivel["data/lote2/facturas"] == "VERDE"
+    (d / "x.pdf").write_bytes(b"%PDF-otro")
+    nivel = {c.nombre: c.nivel for c in preflight.comprobar(args)}
+    assert nivel["data/lote2/facturas"] == "ÁMBAR"
