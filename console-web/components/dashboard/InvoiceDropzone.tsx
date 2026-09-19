@@ -19,8 +19,6 @@ import { RecuentoResultados, ResultadoMarca } from '@/components/ui/Resultado'
 import { Spinner } from '@/components/ui/Spinner'
 
 const MAX_FICHEROS = 20
-/** La consola habla con un puente público (ADR-0023), no con el del portátil: ahí no hay comando que dar. */
-const DEMO_PUBLICA = !USE_MOCK && /^https:\/\//.test(API_BASE_URL)
 const POLL_MS = 1000
 const REVISAR_MS = 5000
 /** La lista acumulada de la portada sobrevive a cambiar de pantalla, no a cerrar la pestaña. */
@@ -52,7 +50,10 @@ function guardarHistorial(filas: Fila[]) {
   }
 }
 
-/** El comando exacto, con el puerto del puente al que habla esta consola (sin --db: usa dist/bandeja.db). */
+/**
+ * El comando exacto, con el puerto del puente al que habla esta consola (sin --db: usa dist/bandeja.db). Si la consola
+ * no corre en el 3000, el puente tiene que autorizar su origen o cada subida da 403.
+ */
 function comandoArranque(): string {
   let puerto = '8000'
   try {
@@ -60,7 +61,9 @@ function comandoArranque(): string {
   } catch {
     /* URL rara: el puerto por defecto */
   }
-  return `uv run python -m albertitos.console.api --bandeja${puerto === '8000' ? '' : ` --puerto ${puerto}`}`
+  const origen = typeof window === 'undefined' ? null : window.location.origin
+  const origenes = origen && !/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(origen) ? `ALBERTITOS_CONSOLA_ORIGENES=${origen} ` : ''
+  return `${origenes}uv run python -m albertitos.console.api --bandeja${puerto === '8000' ? '' : ` --puerto ${puerto}`}`
 }
 
 const PASOS: Array<{ estado: EstadoBandeja; label: string; detalle: string }> = [
@@ -273,6 +276,9 @@ export function InvoiceDropzone({
   }
 
   const comando = comandoArranque()
+  // En una URL pública (Vercel) el comando no le sirve a nadie: ahí el recuadro sólo explica qué pasa.
+  const enLocal =
+    typeof window === 'undefined' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(comando)
@@ -397,45 +403,42 @@ export function InvoiceDropzone({
               avisar ? 'ring-2 ring-warn' : ''
             }`}
           >
-            {DEMO_PUBLICA ? (
+            {USE_MOCK ? (
               <p>
-                Esta es la demo pública, de sólo lectura: aquí se consultan las decisiones, su traza y el chat, pero no
-                se suben facturas (leer una factura nueva gasta el modelo). Subir facturas se enseña en la consola local
-                del equipo.
+                Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
+                NEXT_PUBLIC_USE_MOCK=false.
+              </p>
+            ) : enLocal ? (
+              <p>
+                Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
+                activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
+                proyecto, con este comando:
               </p>
             ) : (
-              <>
-              {USE_MOCK ? (
-                <p>
-                  Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
-                  NEXT_PUBLIC_USE_MOCK=false.
-                </p>
-              ) : (
-                <p>
-                  Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
-                  activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
-                  proyecto, con este comando:
-                </p>
-              )}
-              <div className="mt-2 flex items-center gap-2">
-                <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
-                  {comando}
-                </code>
-                <button
-                  type="button"
-                  onClick={copiar}
-                  className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
-                >
-                  {copiado ? 'Copiado' : 'Copiar'}
-                </button>
-              </div>
-              {!USE_MOCK && (
-                <p className="mt-2 text-[12px] text-muted">
-                  Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
-                  vuelva con la bandeja, este recuadro desaparece sin recargar la página.
-                </p>
-              )}
-              </>
+              <p>
+                Esta demo pública es de sólo lectura: enseña las facturas ya decididas, pero no admite subir
+                ninguna. Subir facturas funciona en la consola del equipo, con el puente en modo bandeja.
+              </p>
+            )}
+            {(USE_MOCK || enLocal) && (
+            <div className="mt-2 flex items-center gap-2">
+              <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
+                {comando}
+              </code>
+              <button
+                type="button"
+                onClick={copiar}
+                className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
+              >
+                {copiado ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+            )}
+            {!USE_MOCK && enLocal && (
+              <p className="mt-2 text-[12px] text-muted">
+                Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
+                vuelva con la bandeja, este recuadro desaparece sin recargar la página.
+              </p>
             )}
           </div>
         )}

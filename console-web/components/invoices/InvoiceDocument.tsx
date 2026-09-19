@@ -133,7 +133,7 @@ export function InvoiceDocument({
               ? hechos.lineas.map((linea, index) => (
                   <div key={index} className="flex justify-between gap-4">
                     <span>{linea.concepto}</span>
-                    <span className="tabular-nums">{formatAmount(linea.importe)}</span>
+                    <span className="tabular-nums">{formatAmount(linea.importe, hechos?.moneda)}</span>
                   </div>
                 ))
               : [1, 2, 3].map((line) => (

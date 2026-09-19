@@ -58,6 +58,8 @@ export interface InvoiceFacts {
   iva_pct: number | null
   iva: number | null
   total: number | null
+  /** ISO-4217 de la factura ("USD"); null en los 500 del lote 1, que son anteriores al campo y van en EUR. */
+  moneda: string | null
   lineas: LineaFactura[]
   metodo: MetodoExtraccion
   extractor_version: string

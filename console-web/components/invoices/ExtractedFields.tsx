@@ -21,11 +21,11 @@ export function campoValor(hechos: InvoiceFacts, campo: CampoHecho): string | nu
       return hechos.fecha ? formatDate(hechos.fecha) : null
     case 'base':
     case 'total':
-      return hechos[campo] === null ? null : formatAmount(hechos[campo])
+      return hechos[campo] === null ? null : formatAmount(hechos[campo], hechos.moneda)
     case 'iva':
       return hechos.iva === null
         ? null
-        : `${formatAmount(hechos.iva)}${hechos.iva_pct !== null ? ` (${String(hechos.iva_pct).replace('.', ',')} %)` : ''}`
+        : `${formatAmount(hechos.iva, hechos.moneda)}${hechos.iva_pct !== null ? ` (${String(hechos.iva_pct).replace('.', ',')} %)` : ''}`
     default:
       return hechos[campo]
   }

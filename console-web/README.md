@@ -34,6 +34,33 @@ Tres procesos, **uno por puerto**, cada uno en su terminal desde la raíz del re
 va al lote 99 y nunca toca `dist/albertitos.db`. Chat y consola sobre la misma BD ven las mismas facturas. Sin
 Dropzone basta el puente sin `--bandeja` y `make chat`, los dos sobre `dist/albertitos.db`.
 
+### «Este puente sirve la BD de la entrega… no admite facturas nuevas»
+
+Lo dice el Dropzone cuando el puente se arrancó sin `--bandeja`: es a propósito, la BD de la entrega nunca se toca.
+Para (Ctrl+C) **sólo el puente** y arráncalo con el comando que enseña el recuadro (botón «Copiar»); la consola lo
+detecta en 5 s sin recargar. Dos casos en que el comando cambia:
+
+- **La consola no está en el 3000** (p. ej. `pnpm dev -p 3001` porque el 3000 lo usa otro programa): el puente sólo
+  acepta subidas de `localhost:3000` y `127.0.0.1:3000`, y cualquier otro origen da 403. Autorízalo con
+  `ALBERTITOS_CONSOLA_ORIGENES` (coma, igual que `ALBERTITOS_CHAT_ORIGENES` en el chat). El recuadro ya lo incluye.
+- **La consola enseña otra BD que la de la entrega** (p. ej. la de la demo con el lote 2): `--bandeja --db <ruta
+  nueva>` copiaría `dist/albertitos.db`, no la tuya. Copia antes tu BD con la API de backup y apunta ahí puente y
+  chat:
+
+```bash
+# una vez (para empezar de cero, borra dist/demo/bandeja.db y dist/demo/inbox/)
+uv run python -c "from albertitos.console import bandeja as b; b.preparar('dist/demo/albertitos-demo.db', 'dist/demo/bandeja.db')"
+# terminal 1 · puente con la bandeja
+ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3001 uv run python -m albertitos.console.api --bandeja --db dist/demo/bandeja.db
+# terminal 2 · chat sobre la misma BD (8101 si el 8001 está ocupado)
+ALBERTITOS_CHAT_PUERTO=8101 ALBERTITOS_CHAT_ORIGENES=http://localhost:3001 uv run python -m albertitos.chat --servidor --db dist/demo/bandeja.db
+# terminal 3 · consola
+cd console-web && NEXT_PUBLIC_USE_MOCK=false NEXT_PUBLIC_API_URL=http://127.0.0.1:8000 NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101 pnpm dev -p 3001
+```
+
+Abre `http://localhost:3001`; con `127.0.0.1`, `next dev` bloquea sus recursos. Un PDF que ya está en la BD (mismo
+sha256) sale al instante con su decisión; uno nuevo pasa por ingest → extract (LLM si no hay plantilla) → decide.
+
 Comprobación: `curl http://127.0.0.1:8000/salud` da `"ficheros": 500` y `curl http://127.0.0.1:8001/chat/salud`
 da `"api": 2, "modelo_disponible": true`. Si la salud del chat no trae `api` ni `modelo_disponible`, contestas a un
 servidor viejo.

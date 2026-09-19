@@ -560,6 +560,44 @@ def test_inbox_se_niega_con_la_bd_de_la_entrega():
     assert b.runner.llamadas == []
 
 
+@pytest.mark.parametrize(
+    ("variable", "esperado"),
+    [
+        (None, 403),
+        ("http://localhost:3001", 400),
+        ("http://localhost:3000, http://localhost:3001/", 400),
+    ],
+)
+def test_inbox_origen_de_la_consola_configurable(conn, tmp_path, monkeypatch, variable, esperado):
+    """Consola en el 3001 (el 3000 ocupado): 403 salvo que el puente lo autorice con
+    ALBERTITOS_CONSOLA_ORIGENES. El 400 es que pasó el filtro y llegó a leer el cuerpo."""
+    import http.client
+    import threading
+
+    if variable is None:
+        monkeypatch.delenv("ALBERTITOS_CONSOLA_ORIGENES", raising=False)
+    else:
+        monkeypatch.setenv("ALBERTITOS_CONSOLA_ORIGENES", variable)
+    httpd = api.ThreadingHTTPServer(
+        ("127.0.0.1", 0), api.hacer_handler(tmp_path / "test.db", bandeja_activa=True)
+    )
+    hilo = threading.Thread(target=httpd.serve_forever, daemon=True)
+    hilo.start()
+    try:
+        c = http.client.HTTPConnection("127.0.0.1", httpd.server_address[1], timeout=5)
+        cabeceras = {"Origin": "http://localhost:3001", "Content-Type": "text/plain"}
+        c.request("POST", "/inbox", body=b"x", headers=cabeceras)
+        r = c.getresponse()
+        cuerpo = r.read().decode()
+        assert r.status == esperado
+        if esperado == 403:
+            assert "ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3001" in cuerpo
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+    assert not (tmp_path / "inbox").exists()
+
+
 def test_inbox_cerrado_sin_el_flag_aunque_la_bd_no_sea_la_de_la_entrega(conn, tmp_path):
     """Puente arrancado con --db <otra ruta a la BD real> y sin --bandeja: POST 409, nada escrito."""
     b = bandeja.Bandeja(tmp_path / "test.db", runner=_RunnerFalso())
@@ -578,6 +616,54 @@ def test_inbox_400_sin_pdf_o_con_nombre_que_windows_no_acepta(conn, tmp_path):
     assert _post(b, *_multipart(('fa"ctura?.pdf', _pdf("a"))))[0] == 400
     assert b.runner.llamadas == [] and b.estado()["estado"] == "idle"
     assert api.despachar("POST", "/panel", {}, conn)[0] == 405
+
+
+def test_inbox_decide_con_la_norma_de_la_bd_y_no_con_la_de_por_defecto(
+    conn, maestro, erp, tmp_path
+):
+    """Con el lote 2 dentro, la BD decide con la v4: un PDF subido tiene que decidirse igual. Sin `--norma`,
+    `decide` aplicaría la v3 y una factura en divisa saldría sin su motivo (R7)."""
+    _semilla(conn, maestro, erp)
+    h = _hechos("v4.pdf", fecha=date(2026, 5, 1))
+    _alta(
+        conn, "v4.pdf", lote=2, hechos=h, resultado=None, ts=datetime(2026, 9, 19, 18, tzinfo=UTC)
+    )
+    db.guardar_decision(
+        conn,
+        Decision(
+            file_id=h.file_id,
+            sha256=h.sha256,
+            resultado=Resultado.ESCALAR,
+            motivos=[Motivo(regla_id="v4.R7", ok=False, detalle="factura en USD")],
+            norma_version="v4",
+            fecha_corte=CORTE,
+            hechos_hash=h.hash(),
+            maestro_version="m-test",
+            erp_version="e-test",
+            decidido_en=datetime(2026, 9, 19, 18, 30, tzinfo=UTC),
+        ),
+    )
+    conn.commit()
+    assert bandeja.norma_de(tmp_path / "test.db") == "v4"
+    b = _bandeja(tmp_path)
+    status, _ = _post(b, *_multipart(("nueva.pdf", _pdf("nueva"))))
+    assert status == 202
+    b.esperar(5)
+    decide = next(a for a in b.runner.llamadas if a[0] == "decide")
+    assert decide[-2:] == ["--norma", "v4"]
+
+
+def test_inbox_sin_decisiones_deja_la_norma_por_defecto_de_la_cli(tmp_path):
+    """BD recién creada (nada decidido): no se inventa una norma, decide la suya."""
+    c = db.conectar(tmp_path / "test.db")
+    db.init_schema(c)
+    c.close()
+    assert bandeja.norma_de(tmp_path / "test.db") is None
+    b = _bandeja(tmp_path)
+    _post(b, *_multipart(("nueva.pdf", _pdf("nueva"))))
+    b.esperar(5)
+    decide = next(a for a in b.runner.llamadas if a[0] == "decide")
+    assert "--norma" not in decide
 
 
 def test_inbox_202_lote_99_nfc_y_ciclo_completo(conn, maestro, erp, tmp_path):
@@ -760,17 +846,6 @@ def test_puerto_ocupado_da_una_linea_y_no_un_traceback(tmp_path, monkeypatch):
     mensaje = str(e.value)
     assert "El puerto 8000 ya lo usa otro proceso" in mensaje and "Ctrl+C" in mensaje
     assert "--puerto 8003" in mensaje and "NEXT_PUBLIC_API_URL=http://127.0.0.1:8003" in mensaje
-
-
-def test_origenes_de_la_bandeja_configurables(monkeypatch):
-    """Con el 3000 ocupado (19/09: un Grafana de otro proyecto), la consola va en otro puerto y la bandeja tiene
-    que aceptarlo sin tocar el código. Sin la variable, los de siempre."""
-    monkeypatch.delenv("ALBERTITOS_CONSOLA_ORIGENES", raising=False)
-    assert api.origenes_bandeja() == ("http://localhost:3000", "http://127.0.0.1:3000")
-    monkeypatch.setenv(
-        "ALBERTITOS_CONSOLA_ORIGENES", "http://localhost:3002/, http://127.0.0.1:3002"
-    )
-    assert api.origenes_bandeja() == ("http://localhost:3002", "http://127.0.0.1:3002")
 
 
 def test_red_local_solo_para_los_origenes_de_la_consola(monkeypatch):

@@ -26,6 +26,7 @@ import sys
 import threading
 import unicodedata
 from collections.abc import Callable
+from contextlib import closing
 from email.parser import BytesParser
 from email.policy import default as politica_email
 from pathlib import Path
@@ -130,6 +131,23 @@ def leer_multipart(cuerpo: bytes, tipo: str | None) -> list[tuple[str, bytes]]:
 def carpeta_de(ruta_bd: Path) -> Path:
     """Donde la bandeja guarda los PDF de la BD `ruta_bd` (extract los busca ahí como lote 99)."""
     return Path(ruta_bd).parent / "inbox"
+
+
+def norma_de(ruta_bd: Path) -> str | None:
+    """La norma de la decisión vigente más reciente de esa BD (la misma que enseña el panel), o None si aún no
+    hay ninguna. Un PDF de la bandeja se decide con la norma con la que se decidió el resto: con el lote 2
+    dentro es la v4 y, sin pasarla, `decide` aplicaría la v3 y una factura en divisa no daría su motivo."""
+    try:
+        with closing(db.conectar(Path(ruta_bd), solo_lectura=True)) as conn:
+            fila = conn.execute(
+                "SELECT norma_version FROM decisiones WHERE vigente = 1 ORDER BY decidido_en DESC LIMIT 1"
+            ).fetchone()
+    except sqlite3.Error:
+        logger.exception(
+            "bandeja: no se pudo leer la norma vigente; decide con su valor por defecto"
+        )
+        return None
+    return fila["norma_version"] if fila else None
 
 
 def cli(args: list[str], ruta: Path) -> tuple[int, str]:
@@ -319,9 +337,11 @@ class Bandeja:
             if not self._paso("extract", ["extract", "--fixture", str(lista)]):
                 return
             self._poner(estado="decidiendo")
-            # La norma de la bandeja: la de siempre, o la del lote 2 (v4) si se enseñan facturas del lote 2.
-            norma = os.environ.get("ALBERTITOS_BANDEJA_NORMA", "v3")
-            if not self._paso("decide", ["decide", "--fixture", str(lista), "--norma", norma]):
+            # La norma de la BD (la misma que enseña el panel: con el lote 2 dentro, la v4), o la que se
+            # fije a mano con ALBERTITOS_BANDEJA_NORMA. Sin ninguna, `decide` aplica su valor por defecto.
+            norma = os.environ.get("ALBERTITOS_BANDEJA_NORMA") or norma_de(self.ruta)
+            orden = ["decide", "--fixture", str(lista)] + (["--norma", norma] if norma else [])
+            if not self._paso("decide", orden):
                 return
             self._poner(estado="listo")
         except Exception as exc:  # noqa: BLE001 — el hilo no puede morir callado: el panel hace poll
