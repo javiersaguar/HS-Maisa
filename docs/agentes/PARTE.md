@@ -48,7 +48,7 @@ _(pendiente)_
   - mapa de I2: 45 de 45 ficheros con la misma pregunta abierta, calculados por otro camino;
   - las 6 que I2 comprobó limpias a mano salen en media;
   - las 10 de menor confianza y las 13 bajas ya se sabían dudosas. No es independiente: usa los mismos avisos.
-  - **Tercera lectura de H2** (21 de la muestra, fuera del repo, sólo recuentos): alta 5 de 5 coinciden · media 5 de 13 · baja 0 de 3. No se publica en `docs/` hasta que Mónica cierre.
+  - **Tercera lectura de H2** (21 de la muestra): contrastada, pero sus recuentos quedan en `dist/ensayo/k3/calibracion.json`, fuera del repo, hasta que Mónica cierre la muestra.
 - **Revisor LLM (opcional, apagado por defecto), en vivo a las 15:13 sobre la copia de la BD:** **53 llamadas de un tope de 60**, todas antes de las 17:30. Resultado: 52 «de acuerdo», 0 en desacuerdo, 1 `LLM-TIMEOUT` degradado bien. p50 1,5 s, `deepseek-v4-flash`. Confirma que ninguna clasificación contradice la norma escrita, pero no resuelve las preguntas abiertas porque juzga con la misma norma. Un «de acuerdo» no suma puntos.
 - **Verificado:** `make check` → 565 passed; `make agentes-check` OK; `tests/test_confianza.py`, 27 tests en 0,9 s, con la regla 5 (sobre una copia de la BD real, `package` antes y después da el mismo `outcomes.jsonl`, y la copia no cambia ni un byte). **Huellas:** BD real `0dc1c7817fda` y `outcomes.jsonl` `1ec4be206089`, iguales al empezar (14:52) y al terminar.
 - **Hallazgos:**
