@@ -57,8 +57,10 @@ status: ## Estado por etapa
 trace: ## Traza de una decisión: make trace FILE=factura_123.pdf
 	$(UV) run albertitos trace "$(FILE)"
 
-console: ## Consola Streamlit (sólo lectura sobre la BD)
-	$(UV) run streamlit run src/albertitos/console/app.py
+console: ## Puente HTTP (:8000) + consola Next (:3000); Ctrl-C para los dos. Antes: cd console-web && pnpm install
+	@trap 'kill 0' INT TERM EXIT; \
+	$(UV) run python -m albertitos.console.api & \
+	cd console-web && pnpm dev
 
 package: ## Genera y valida dist/entrega/*.jsonl (nunca a mano)
 	$(UV) run albertitos package
