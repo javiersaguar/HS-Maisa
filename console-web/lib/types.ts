@@ -307,3 +307,218 @@ export interface Salud {
     versiones: Versiones
   } | null
 }
+
+/* ---------------------------------------------------------------- bonus --- */
+/*
+ * Calendario de pagos y tesorería (K1). Nombres de campo EXACTOS de docs/api/bonus.md: snake_case, sin
+ * mapper que los renombre. Importes como string de 2 decimales ("8107.54"): no se suman en cliente.
+ */
+
+/** Una factura PAGAR en el calendario. */
+export interface Pago {
+  file_id: string
+  lote: number
+  decision_id: number
+  proveedor_id: string
+  beneficiario: string
+  iban: string
+  referencia: string
+  importe_eur: string
+  fecha_factura: string
+  vencimiento: string
+  fecha_ejecucion: string
+  semana: string
+  vencido: boolean
+  maestro_version: string
+  apto_remesa: boolean
+  iban_control_ok: boolean
+  /** Sólo con `con_confianza=true`: la ficha de K3 o null si K3 no está. */
+  confianza?: ConfianzaFicha | null
+}
+
+export interface BonusResumen {
+  tipo: string
+  fecha_corte: string
+  decisiones_pagar: number
+  calendario_numero: number
+  calendario_total_eur: string
+  remesa_numero: number
+  remesa_total_eur: string
+  excluidos_remesa: number
+  remesa_iban_sin_control: number
+  sin_vencimiento_calculable: number
+  vencidos: number
+  vencen_semana_corte: number
+  avisos_por_codigo: Record<string, number>
+  semanas: Record<string, { numero: number; importe_eur: string }>
+  vencido_importe_eur: string
+  en_plazo_importe_eur: string
+  semana_corte: string
+  lotes: number[]
+  proveedores: number
+}
+
+export interface CalendarioFiltros {
+  semana: string | null
+  proveedor: string | null
+  lote: number | null
+  vencido: boolean | null
+}
+
+export interface Calendario {
+  filtros: CalendarioFiltros
+  total: number
+  mostrados: number
+  pagos: Pago[]
+  confianza_nota?: string
+}
+
+export interface ProveedorPago {
+  proveedor_id: string
+  beneficiario: string
+  numero: number
+  importe_eur: string
+  vencidos_numero: number
+  vencidos_importe_eur: string
+  primera_ejecucion: string
+  ultima_ejecucion: string
+  lotes: number[]
+  iban_control_ok: boolean
+  en_remesa_numero: number
+}
+
+export interface Remesa {
+  tipo: string
+  iban_sin_control: number
+  total: number
+  mostrados: number
+  pagos: Pago[]
+}
+
+export interface AvisoBonus {
+  file_id: string
+  codigo: string
+  detalle: string
+}
+
+export interface SemanaTesoreria {
+  semana: string
+  desde: string
+  numero: number
+  importe_eur: string
+  acumulado_eur: string
+  vencidos_numero: number
+  vencidos_importe_eur: string
+  en_remesa_numero: number
+}
+
+export interface SemanaPrograma {
+  semana: string
+  desde: string
+  numero: number
+  importe_eur: string
+  supera_tope: boolean
+  arrastrado_numero: number
+  arrastrado_importe_eur: string
+}
+
+export interface Programa {
+  tope_semanal_eur: string
+  numero: number
+  importe_eur: string
+  semanas_para_ponerse_al_dia: number | null
+  semanas_para_pagarlo_todo: number | null
+  sin_programar_numero: number
+  semanas: SemanaPrograma[]
+}
+
+export interface Tesoreria {
+  fecha_corte: string
+  semana_corte: string
+  numero: number
+  importe_eur: string
+  vencido_numero: number
+  vencido_importe_eur: string
+  en_plazo_numero: number
+  en_plazo_importe_eur: string
+  semanas: SemanaTesoreria[]
+  programa?: Programa
+}
+
+/* ------------------------------------------------------------ confianza --- */
+/* Confianza en la CLASIFICACIÓN por factura (K3, docs/api/confianza.md). No es InvoiceFacts.confianza. */
+
+export type BandaConfianza = 'alta' | 'media' | 'baja'
+
+export interface DudaConfianza {
+  id: string
+  texto: string
+  puntos: number
+  factor: number
+  aplicado: number
+  por_que: string
+}
+
+export interface FuenteConfianza {
+  penalizacion: number
+  dudas: DudaConfianza[]
+  a_favor: string[]
+}
+
+/** `GET /confianza/fichero?file_id=` */
+export interface ConfianzaFicha {
+  file_id: string
+  lote: number
+  resultado: Resultado
+  regla: string | null
+  puntuacion: number
+  banda: BandaConfianza
+  razones: string[]
+  causa: string
+  metodo: string
+  mismo_pdf_que: string[]
+  fuentes: Record<string, FuenteConfianza>
+  escala?: string
+  version?: string
+}
+
+/** Fila de `GET /confianza/ficheros`. */
+export interface ConfianzaItem {
+  file_id: string
+  lote: number
+  resultado: Resultado
+  regla: string | null
+  puntuacion: number
+  banda: BandaConfianza
+  razon_principal: string
+  razones: string[]
+}
+
+export interface ConfianzaResumen {
+  version: string
+  total: number
+  bandas: Record<BandaConfianza, number>
+  por_resultado: Record<string, Record<BandaConfianza, number>>
+  media: number
+  umbrales: { alta: number; media: number }
+  escala: string
+}
+
+/* ----------------------------------------------------------------- chat --- */
+/* Chat de sólo lectura (K2, docs/api/chat.md): proceso aparte en :8001. */
+
+export interface ChatTurno {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export type ChatEstado = 'ok' | 'solo_lectura' | 'sin_datos' | 'sin_evidencia' | 'limite' | 'degradado'
+
+export interface ChatRespuesta {
+  respuesta: string
+  citas: string[]
+  herramientas_usadas: string[]
+  modelo: string
+  latencia_ms: number
+  estado: ChatEstado
+}
