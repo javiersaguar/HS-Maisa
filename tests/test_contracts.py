@@ -86,6 +86,22 @@ def test_decision_motivo_principal():
     assert d.reglas_incumplidas == ["v3.R2"]
 
 
+def test_moneda_nueva_no_cambia_el_hash_de_lo_ya_guardado():
+    """+InvoiceFacts.moneda (19/09, lote 2): un hecho guardado sin moneda conserva exactamente su hash de
+    antes del campo; con moneda, la moneda entra en el hash (si cambia, se redecide)."""
+    from albertitos.core.hashing import hash_canonico
+
+    h = hechos()
+    sin_campo = h.model_dump(
+        mode="json",
+        exclude={"metodo", "confianza", "extractor_version", "texto_sospechoso", "moneda"},
+    )
+    assert h.moneda is None and h.hash() == hash_canonico(sin_campo)  # la fórmula de antes
+    guardado = h.model_dump_json(exclude={"moneda"})  # JSON de un hecho anterior al campo
+    assert InvoiceFacts.model_validate_json(guardado).hash() == h.hash()
+    assert hechos(moneda="USD").hash() != hechos(moneda="EUR").hash() != h.hash()
+
+
 def test_contratos_v1_compatibles_hacia_atras():
     # hechos guardados antes de NIF_INVALIDO siguen cargando; el aviso nuevo cambia el hash (linaje)
     antiguo = hechos(avisos=[Aviso.IBAN_INVALIDO])

@@ -19,6 +19,7 @@
 | 0016 | La consola es Next sobre un puente HTTP de sólo lectura, no Streamlit | aceptado (implementado en #5 y #7) | Alejandro |
 | 0017 | Cuando las lecturas de una escaneada no coinciden, decide una prueba independiente (tercera lectura o cuentas de la factura), no el maestro | aceptado por Miguel; falta Javier y Mónica | Miguel |
 | 0018 | En una escaneada, una instrucción sólo se cita si la ven dos lecturas (B'); el prompt nuevo (D) se midió y se descartó | aceptado (B') / descartado (D) | Miguel |
+| 0019 | Los importes llevan su moneda (ISO 4217) y el hash de lo ya guardado no cambia | aceptado | Miguel |
 
 Cada ADR termina con un **Resumen para el plan (5 líneas)** listo para pegar en
 `docs/plan/albertitos_plan.md` § ADRs (lo hace Alfonso; los dueños no tocan el plan).
