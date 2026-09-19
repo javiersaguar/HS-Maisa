@@ -20,11 +20,12 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from albertitos.core import db
 from albertitos.core.contracts import (
     Aviso,
     ErpEntry,
@@ -185,6 +186,16 @@ def cargar_filas(conn: sqlite3.Connection) -> list[Fila]:
                 decision=decisiones.get(f["sha256"]),
             )
         )
+    # Un nombre extra (copia exacta, P0-1) es otra línea de la entrega con los hechos y la decisión de
+    # su PDF: entra como una fila más, y así el conjunto, los fantasmas, el pago doble (dos nombres del
+    # mismo pedido) y la entrega en disco lo miran sin comprobaciones nuevas.
+    if db.hay_identidades(conn):
+        por_sha = {f.sha256: f for f in filas}
+        for i in conn.execute("SELECT file_id, lote, sha256 FROM identidades"):
+            base = por_sha.get(i["sha256"])
+            if base is not None:
+                filas.append(replace(base, file_id=str(i["file_id"]), lote=int(i["lote"])))
+        filas.sort(key=lambda f: f.file_id)
     return filas
 
 

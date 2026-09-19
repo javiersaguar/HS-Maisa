@@ -68,6 +68,21 @@ def guardar_fichero(
     )
 
 
+def guardar_identidad(conn: sqlite3.Connection, *, file_id: str, lote: int, sha256: str) -> None:
+    """Un nombre extra de un PDF que ya está en `ficheros` (copia exacta, P0-1). No toca `ficheros`.
+    Idempotente; si ese nombre del lote apuntaba a otro contenido, pasa a apuntar a este."""
+    conn.execute(
+        """INSERT INTO identidades (file_id, lote, sha256, ingerido_en) VALUES (?, ?, ?, ?)
+           ON CONFLICT(file_id, lote) DO UPDATE SET sha256=excluded.sha256,
+             ingerido_en=excluded.ingerido_en""",
+        (file_id, lote, sha256, ahora_iso()),
+    )
+
+
+def quitar_identidad(conn: sqlite3.Connection, *, file_id: str, lote: int) -> None:
+    conn.execute("DELETE FROM identidades WHERE file_id=? AND lote=?", (file_id, lote))
+
+
 def guardar_hechos(conn: sqlite3.Connection, hechos: InvoiceFacts) -> None:
     conn.execute(
         """INSERT INTO hechos (sha256, extractor_version, metodo, hechos_json, hechos_hash, creado_en)
@@ -168,6 +183,50 @@ def decisiones_vigentes(conn: sqlite3.Connection, lote: int | None = None) -> li
     return list(conn.execute(sql + " ORDER BY d.file_id", params).fetchall())
 
 
+def hay_identidades(conn: sqlite3.Connection) -> bool:
+    """¿Tiene la BD la tabla `identidades` (esquema v3)? Una BD anterior abierta en sólo lectura
+    (`status`, `trace`, un kit de la demo) no pasa por `init_schema`: se lee como si no hubiera copias."""
+    return (
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='identidades'"
+        ).fetchone()
+        is not None
+    )
+
+
+def identidades_vigentes(conn: sqlite3.Connection, lote: int) -> list[sqlite3.Row]:
+    """Las líneas extra de la entrega de un lote: cada nombre extra (copia exacta) con la decisión
+    vigente de su sha256, con las mismas columnas que `decisiones_vigentes`."""
+    if not hay_identidades(conn):
+        return []
+    return list(
+        conn.execute(
+            """SELECT d.id, d.sha256, i.file_id, d.resultado, d.norma_version, d.fecha_corte,
+                      d.hechos_hash, d.maestro_version, d.erp_version, d.motivos_json,
+                      d.decidido_en, d.vigente, i.lote
+               FROM identidades i JOIN decisiones d ON d.sha256 = i.sha256 AND d.vigente = 1
+               WHERE i.lote = ? ORDER BY i.file_id""",
+            (lote,),
+        ).fetchall()
+    )
+
+
+def nombres_por_sha(conn: sqlite3.Connection) -> dict[str, list[tuple[str, int]]]:
+    """sha256 que llega con más de un nombre (copias exactas) → [(file_id, lote)] de todos sus nombres,
+    el de `ficheros` primero. Vacío si no hay copias (el lote 1 de la Caja: 500 sha256 distintas)."""
+    out: dict[str, list[tuple[str, int]]] = {}
+    if not hay_identidades(conn):
+        return out
+    for r in conn.execute(
+        """SELECT f.sha256, f.file_id, f.lote, 0 AS extra FROM ficheros f
+             WHERE f.sha256 IN (SELECT sha256 FROM identidades)
+           UNION ALL SELECT sha256, file_id, lote, 1 FROM identidades
+           ORDER BY 1, 4, 3, 2"""
+    ):
+        out.setdefault(r[0], []).append((str(r[1]), int(r[2])))
+    return out
+
+
 def ficheros(conn: sqlite3.Connection, lote: int | None = None) -> list[sqlite3.Row]:
     if lote is None:
         return list(conn.execute("SELECT * FROM ficheros ORDER BY file_id").fetchall())
@@ -177,14 +236,27 @@ def ficheros(conn: sqlite3.Connection, lote: int | None = None) -> list[sqlite3.
 
 
 def traza(conn: sqlite3.Connection, file_id: str) -> dict[str, Any]:
-    """Todo lo que sabemos de un fichero: para `albertitos trace` y la vista Traza de la consola."""
+    """Todo lo que sabemos de un fichero: para `albertitos trace` y la vista Traza de la consola.
+    Un nombre extra (copia exacta) lleva a su PDF: `identidad` dice cuál, y `copias` lista todos los
+    nombres de ese contenido."""
     fichero = conn.execute("SELECT * FROM ficheros WHERE file_id=?", (file_id,)).fetchone()
+    identidad = None
+    if fichero is None and hay_identidades(conn):
+        identidad = conn.execute(
+            "SELECT * FROM identidades WHERE file_id=? ORDER BY lote DESC LIMIT 1", (file_id,)
+        ).fetchone()
+        if identidad is not None:
+            fichero = conn.execute(
+                "SELECT * FROM ficheros WHERE sha256=?", (identidad["sha256"],)
+            ).fetchone()
     if fichero is None:
         return {"file_id": file_id, "fichero": None}
     sha = fichero["sha256"]
     return {
         "file_id": file_id,
         "fichero": dict(fichero),
+        "identidad": None if identidad is None else dict(identidad),
+        "copias": nombres_por_sha(conn).get(sha, []),
         "hechos": [
             dict(r)
             for r in conn.execute("SELECT * FROM hechos WHERE sha256=? ORDER BY creado_en", (sha,))
@@ -204,13 +276,47 @@ def traza(conn: sqlite3.Connection, file_id: str) -> dict[str, Any]:
     }
 
 
+def estado_actual(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Etapa × estado del ÚLTIMO evento de cada fichero que sigue en la BD: lo que pasa ahora, sin los
+    fallos ya resueltos (un extract PENDIENTE del viernes que luego salió bien no cuenta)."""
+    return [
+        dict(r)
+        for r in conn.execute(
+            """SELECT e.etapa, e.estado, count(*) n, round(avg(e.latencia_ms)) lat_media_ms
+               FROM eventos e
+               JOIN (SELECT file_id, etapa, max(id) id FROM eventos
+                     WHERE file_id IS NOT NULL GROUP BY file_id, etapa) u ON u.id = e.id
+               JOIN ficheros f ON f.file_id = e.file_id
+               GROUP BY e.etapa, e.estado ORDER BY e.etapa, e.estado"""
+        )
+    ]
+
+
+def historico(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Lo acumulado en el log de eventos desde el primero (incluye ensayos y fallos ya resueltos)."""
+    r = conn.execute(
+        """SELECT count(*) n, min(ts) desde, sum(intento>1) reintentos,
+                  round(coalesce(sum(coste_eur),0), 4) coste_eur FROM eventos"""
+    ).fetchone()
+    return dict(r)
+
+
 def resumen(conn: sqlite3.Connection) -> dict[str, Any]:
-    """Contadores para `status` y el Panel."""
+    """Contadores para `status` y el Panel. `eventos` es el histórico entero; `estado_actual`, sólo
+    el último evento de cada fichero y etapa."""
     out: dict[str, Any] = {}
     out["ficheros"] = {
         r["lote"]: r["n"]
         for r in conn.execute("SELECT lote, count(*) n FROM ficheros GROUP BY lote")
     }
+    out["copias"] = (  # nombres extra (copia exacta de otro PDF): también tienen su línea
+        {
+            r["lote"]: r["n"]
+            for r in conn.execute("SELECT lote, count(*) n FROM identidades GROUP BY lote")
+        }
+        if hay_identidades(conn)
+        else {}
+    )
     out["decisiones"] = {
         r["resultado"]: r["n"]
         for r in conn.execute(
@@ -234,4 +340,6 @@ def resumen(conn: sqlite3.Connection) -> dict[str, Any]:
         )
     ]
     out["cache_llm"] = conn.execute("SELECT count(*) n FROM cache_llm").fetchone()["n"]
+    out["estado_actual"] = estado_actual(conn)
+    out["historico"] = historico(conn)
     return out

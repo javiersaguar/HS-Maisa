@@ -2,11 +2,12 @@
 
 | Fichero | Qué hace | Estado |
 |---|---|---|
-| `etapas.py` | `ingest` (PDF→ficheros), `extract` (delega en `extract/etapa.py`, **Javier**), `marcar_duplicados`, `decide` (norma → decisiones) | ingest/decide hechos |
-| `run.py` | `correr(...)`: el `run` entero (ingest → maestro → ERP → extract → duplicados → decide → package) → `ResumenRun`. Sin extract, decide con los hechos que haya. `reprocesar(...)`: `reprocess --impacted` → `ResumenReproceso` | hecho |
+| `etapas.py` | `ingest` (PDF→ficheros), `extract` (delega en `extract/etapa.py`, **Javier**), `marcar_duplicados` (con `grupos_duplicados`, que también usa la traza), `decide` (norma → decisiones; `por`/`por_defecto` al evento) | ingest/decide hechos |
+| `run.py` | `correr(...)`: el `run` entero (ingest → maestro → ERP → extract → duplicados → decide → package) → `ResumenRun`. Sin extract, decide con los hechos que haya. `erp_version=` fija el snapshot (`run --erp v2`). `porques(...)`: el porqué del linaje para `run`/`decide`, que redeciden todo. `reprocesar(...)`: `reprocess --impacted` → `ResumenReproceso` | hecho |
+| `traza.py` | `legible(conn, file_id)`: `albertitos trace` (por defecto; `--json` el volcado): hechos → maestro → ERP (con `linea_erp`: consultas y reintentos del snapshot) → duplicado (la pareja, al vuelo) → reglas → resultado, con el porqué de cada decisión del historial | hecho |
 | `linaje.py` | `evaluar(...)`: qué recalcular y por qué (hechos, norma, corte, o el diff de maestro/ERP toca su pedido o NIF), qué sigue valiendo con otra versión (evento `decide/skip`); `diff_maestro`; `diff_decisiones(desde_id=)` antes/después. ADR-0006 | hecho |
 | `validar.py` | `listar_pdfs`, `validar_jsonl`: replica el verificador privado (conjunto exacto, NFC, únicos, enum, BOM) | hecho |
-| `package.py` | `empaquetar`: BD → `dist/entrega/*.jsonl` todo o nada (`.tmp` → validar todos los lotes → **auditar** → sustituir); una entrega inválida o con la auditoría roja (o rota) no pisa la anterior. `auditar=` recibe `Auditor = (conn, {lote: dir}) -> InformeAuditoria` (`ok`, `rojos`, `texto()`); `auditor_de_entrega()` lo toma de `pipeline/auditoria.py` (E2) cuando exista, y el CLI lo pasa en `package` y `run` (`--sin-auditoria` lo salta a mano). Eventos emit: uno por intento y lote (`auditoria`: verde / no ejecutada; `AUDITORIA-ROJA`/`AUDITORIA-ERROR` si niega); por fichero, al cambiar lo entregado o si no se puede entregar | hecho; falta `pipeline/auditoria.py` (E2) |
+| `package.py` | `empaquetar`: BD → `dist/entrega/*.jsonl` todo o nada (`.tmp` → validar todos los lotes → **auditar** → sustituir); una entrega inválida o con la auditoría roja (o rota) no pisa la anterior. `auditar=` recibe `Auditor = (conn, {lote: dir}) -> InformeAuditoria` (`ok`, `rojos`, `texto()`); `auditor_de_entrega()` lo toma de `pipeline/auditoria.py`, y el CLI lo pasa en `package` y `run` (`--sin-auditoria` lo salta a mano; `--aceptar-rojo "<motivo>"` entrega un rojo y lo deja en un evento AUDITORIA-ROJA-ACEPTADA; un fallo de la auditoría no se acepta nunca). Eventos emit: uno por intento y lote (`auditoria`: verde / no ejecutada; `AUDITORIA-ROJA`/`AUDITORIA-ERROR` si niega); por fichero, al cambiar lo entregado o si no se puede entregar | hecho |
 | `bench.py` | cifras medidas desde `eventos` para `docs/benchmark.md` | hecho |
 
 ## Invariantes
@@ -18,7 +19,9 @@
 - `reprocess --impacted` = `marcar_duplicados` → `linaje.evaluar(...)` → `decide(solo=..., por=...)` → diff de esta pasada. Con eso el cambio del sábado y el "dato en vivo" del domingo son el mismo mecanismo.
 - Las decisiones no afectadas por un cambio de maestro/ERP **no se tocan**: conservan la versión con que se decidieron (ADR-0006). Supone que la norma lee maestro/ERP sólo por el pedido y el NIF de la factura; `test_la_norma_solo_lee_su_pedido_y_su_nif` lo vigila para cada norma del REGISTRO.
 - `marcar_duplicados` pone y quita `DUPLICADO_SOSPECHOSO` (es la única que lo pone): borrar ficheros deshace la marca en la siguiente pasada.
+- Copias exactas (P0-1): un PDF con la misma sha256 y otro nombre, o en otro lote, va a `identidades`; `ficheros` guarda el primero y **no se toca**. Hechos y decisión son uno por contenido; `package` escribe una línea por nombre en su lote (el motivo nombra a los demás), `marcar_duplicados` cuenta los nombres como grupo (ninguno se paga) y la auditoría los ve como filas. Renombrar dentro del mismo lote (el nombre viejo ya no está en la carpeta) sigue actualizando el `file_id`. Tests: `tests/test_copias.py`.
 - `run` = ingest → extract → marcar_duplicados → decide → package. Si `extract` deja PENDIENTES, `decide` no los toca y `package` se niega (entrega parcial = NO APTO).
+- Toda decisión lleva su porqué en el evento decide (`por`): el del linaje en `reprocess`, y en `run`/`decide` el del linaje o «ninguna entrada cambió». `status` enseña el último evento de cada fichero (`db.estado_actual`); el histórico, con `--historico`.
 
 ## Demo de resiliencia
 `make demo-caos` (`scripts/demo_caos.py`): copia de la BD en `dist/demo.db`, caos en `dist/demo_chaos.json`, entrega en
