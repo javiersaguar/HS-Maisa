@@ -440,3 +440,33 @@ def test_confianza_opcional_en_el_calendario(escenario, conn, monkeypatch):
         )  # sin pedirla, el calendario no la toca
     finally:
         ro.close()
+
+
+def test_una_factura_en_divisa_no_entra_en_el_calendario(escenario):
+    """El calendario, la tesorería y la remesa van en euros, como el maestro y el ERP. Si una PAGAR viniera en
+    otra moneda (el lote 2 trae 8, hoy todas ESCALAR), sumar su total sería sumar dólares como si fueran euros."""
+    ruta, agregar = escenario
+    agregar(nombre="euros.pdf", total="100.00", moneda="EUR")
+    agregar(nombre="dolares.pdf", total="2450.00", moneda="USD")
+    agregar(nombre="yenes.pdf", total="850000.00", moneda="JPY")
+    informe = calcular(ruta)
+    assert [p.file_id for p in informe.calendario] == ["euros.pdf"]
+    assert informe.excluidos_moneda == 2
+    resumen = informe.resumen()
+    assert resumen["calendario_total_eur"] == "100.00" and resumen["excluidos_moneda"] == 2
+    assert (
+        resumen["sin_vencimiento_calculable"] == 0
+    )  # no es que falte el vencimiento: es la moneda
+    codigos = {(a.file_id, a.codigo) for a in informe.avisos}
+    assert codigos == {("dolares.pdf", "MONEDA_NO_EUR"), ("yenes.pdf", "MONEDA_NO_EUR")}
+    assert "USD" in next(a.detalle for a in informe.avisos if a.file_id == "dolares.pdf")
+
+
+def test_sin_moneda_en_los_hechos_se_trata_como_euros(escenario):
+    """Los 500 hechos del lote 1 se extrajeron antes de que existiera el campo (ADR-0019): moneda None es EUR."""
+    ruta, agregar = escenario
+    agregar(nombre="vieja.pdf", total="50.00", moneda=None)
+    informe = calcular(ruta)
+    assert [p.file_id for p in informe.calendario] == [
+        "vieja.pdf"
+    ] and informe.excluidos_moneda == 0
