@@ -70,7 +70,8 @@
       "scripts/calibrar_confianza.py",
       "docs/api/confianza.md",
       "docs/api/ejemplos/confianza-*",
-      "docs/adr/0014-*"
+      "docs/adr/0014-*",
+      "src/albertitos/extract/etapa.py"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -98,7 +99,10 @@
       "console-web/*",
       "src/albertitos/console/*",
       "tests/test_console.py",
-      "docs/agentes/FASE-3-UNION.md"
+      "docs/agentes/FASE-3-UNION.md",
+      ".claude/rules/consola.md",
+      "docs/adr/0007-*",
+      "docs/agentes/añadir_facturas_panel_*"
     ],
     "Alfonso": [
       "docs/plan/*",
