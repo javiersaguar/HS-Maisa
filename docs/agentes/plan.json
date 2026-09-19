@@ -43,7 +43,9 @@
       "docs/agentes/PROMPT-ALEJANDRO-BONUS.md",
       "docs/agentes/PROMPT-ALEJANDRO-CONFIANZA.md",
       "docs/agentes/PROMPT-ALEJANDRO-CHAT.md",
-      "docs/adr/README.md"
+      "docs/adr/README.md",
+      "docs/agentes/PLAN-12.md",
+      "docs/revision/*"
     ],
     "Miguel": [
       "src/albertitos/core/*",

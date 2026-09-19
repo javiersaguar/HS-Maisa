@@ -11,7 +11,7 @@ export interface Bandeja {
   estado: EstadoBandeja
   fileIds: string[]
   /** Resultado de cada fichero en la BD: null si ni siquiera se ingirió (PDF ilegible). */
-  ficheros: Array<{ fileId: string; estado: EstadoFichero | null }>
+  ficheros: Array<{ fileId: string; nombre: string; estado: EstadoFichero | null }>
   log: string[]
   error: string | null
   /** false si el puente sirve la BD de la entrega: arráncalo con `--bandeja`. */
@@ -31,6 +31,8 @@ function toBandeja(raw: unknown): Bandeja {
     fileIds: Array.isArray(r.file_ids) ? (r.file_ids as string[]) : [],
     ficheros: ficheros.map((f) => ({
       fileId: String(f.file_id ?? ''),
+      // el nombre subido: el file_id puede ser `./<nombre>` (nombre ya usado en la Caja) o el del original
+      nombre: String(f.nombre ?? f.file_id ?? ''),
       estado: (f.estado as EstadoFichero | null) ?? null,
     })),
     log: Array.isArray(r.log) ? (r.log as string[]) : [],

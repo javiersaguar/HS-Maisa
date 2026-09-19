@@ -39,7 +39,7 @@ añadir campos no la sube (`mappers.ts` ignora lo que no conoce).
 | `/traza?file_id&etapa&categoria` | `PasoTraza[]`: un `evento` por fila y, tras `decide`, un `motivo` por regla de la **vigente** | `db.traza()` |
 | `/etapas` | `{ api, ficheros, etapas: EtapaResumen[], recientes: Event[] }` | `eventos` por etapa/estado |
 | `/eventos?etapa&limit` | `Event[]` | últimas filas |
-| `/inbox` | `{ estado: idle\|ingiriendo\|extrayendo\|decidiendo\|listo\|error, file_ids, ficheros[{file_id, estado}], log[], error, lote: 99, disponible, bd }` | memoria del puente + `lecturas.estados` |
+| `/inbox` | `{ estado: idle\|ingiriendo\|extrayendo\|decidiendo\|listo\|error, file_ids, subidos[], ficheros[{file_id, nombre, estado}], log[], error, lote: 99, disponible, bd }` | memoria del puente + `lecturas.estados` |
 
 **Rutas del bonus, registradas, no escritas aquí.** `api.py` hace `RUTAS.update(bonus.rutas())` y
 `RUTAS.update(confianza.rutas())` en un import perezoso: si falta el módulo, el puente arranca igual y la consola
@@ -57,10 +57,15 @@ responde. Su CORS admite sólo `http://localhost:3000`: abre la consola por `loc
 **La bandeja (`bandeja.py`), el único POST.** `POST /inbox` multipart (≤ 20 PDF, 10 MB cada uno) → guarda en
 `<carpeta de la BD>/inbox/`, `ingest --lote 99` síncrono y **202** `{ file_ids, lote: 99 }`; en un hilo
 `extract --fixture` + `decide --fixture` (CLI por subproceso, nunca `reprocess`). 400 sin PDF, 409 si hay un trabajo
-en curso. **Sólo con `--bandeja`** (sirve `dist/bandeja.db`, copia de la real si no existe; bórrala para empezar de
-cero): contra `dist/albertitos.db` responde **409**, porque un fichero de lote 99 allí deja la auditoría en ROJO
+en curso o si el puente no se arrancó con `--bandeja`, 403 si el `Origin` no es la consola (`localhost:3000`).
+**Sólo con `--bandeja`**, un flag que llega a `hacer_handler` y no se deduce de la ruta. Sirve `dist/bandeja.db`, una
+copia de la real si no existe; bórrala para empezar de cero. Nunca abre la bandeja sobre `dist/albertitos.db`, porque un fichero de lote 99 allí deja la auditoría en ROJO
 (`comprobar_fantasmas`, package se niega) y el siguiente `run` lo mete en `marcar_duplicados`. Una copia exacta de un
-PDF de la Caja entra en `identidades` y hereda su decisión sin LLM. Añadir la ruta no sube `API_VERSION`.
+PDF de la Caja entra en `identidades` y hereda su decisión sin LLM (no se vuelve a extraer). Cada subida se sigue
+por su sha256 hasta el `file_id` que le dio ingest, nunca por el nombre. Si el nombre ya era de la Caja y el
+contenido es otro, ingest lo guarda como `./<nombre>` (P0-5), y el panel enseña su decisión, no la del original. El
+mismo nombre subido otra vez con otro contenido da 400 y pide renombrarlo. `bandeja.cli` pasa
+`ALBERTITOS_DIR_BANDEJA` para que extract encuentre los PDF (lote 99 en `extract.etapa.DIRECTORIOS`). Añadir la ruta no sube `API_VERSION`.
 
 Reglas del contrato:
 - `file_id` en NFC, `encodeURIComponent` en la URL; el servidor `unquote` + NFC. Un `estado` sin decisión vigente es `PENDIENTE`.

@@ -134,7 +134,7 @@ export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 's
   const filas = bandeja
     ? bandeja.ficheros.length
       ? bandeja.ficheros
-      : bandeja.fileIds.map((fileId) => ({ fileId, estado: null }))
+      : bandeja.fileIds.map((fileId) => ({ fileId, nombre: fileId, estado: null }))
     : []
   const hayPendientes = fase === 'hecho' && filas.some((f) => f.estado === 'PENDIENTE' || f.estado === null)
 
@@ -237,10 +237,10 @@ export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 's
                 <li key={f.fileId} className="flex items-center justify-between gap-3 px-3 py-2 text-[13px]">
                   {f.estado ? (
                     <Link href={ficheroHref(f.fileId)} className="truncate font-medium text-[#176d59] hover:underline">
-                      {f.fileId}
+                      {f.nombre}
                     </Link>
                   ) : (
-                    <span className="truncate font-medium text-[#233f35]">{f.fileId}</span>
+                    <span className="truncate font-medium text-[#233f35]">{f.nombre}</span>
                   )}
                   <ResultadoBadge estado={f.estado} />
                 </li>

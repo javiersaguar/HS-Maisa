@@ -796,3 +796,8 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - hecho: módulo, rutas, 27 tests (regla 5 incluida), calibración, contrato con ejemplos reales, ADR-0014 y revisor LLM opcional. Detalle y cifras en PARTE.md, sección K3. `make check`: 565 en verde. Huellas de la BD real y la entrega, iguales al empezar y al terminar.
 - LLM: 53 llamadas de un tope de 60, todas a las 15:13 (antes de las 17:30). Ninguna más.
 - Siguen en pie: **PIDO A Alejandro** (la línea en `console/api.py` y las pantallas) y **PIDO A Javier o Alfonso** (la fila del ADR-0014 en `docs/adr/README.md`).
+
+### 15:50 · Alejandro · PR #5 (bandeja): arreglados los 3 bloqueantes de Miguel
+- **AVISO A Alfonso**: una línea en `extract/etapa.py`. `DIRECTORIOS[99]` sólo existe si viene `ALBERTITOS_DIR_BANDEJA`, que pasa `bandeja.cli` al subproceso. Sin la variable, extract hace lo mismo que antes.
+- La bandeja sigue cada PDF por la sha256 que registró ingest, no por el nombre: `./<nombre>` si el nombre ya era de la Caja (P0-5); el del original si es una copia exacta. POST sólo con `--bandeja` y desde `localhost:3000`.
+- `make check` en verde: 574 tests. Uno pasa por la CLI real (ingest → extract por plantilla → decide) con 0 tokens.
