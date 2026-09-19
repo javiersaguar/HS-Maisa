@@ -16,6 +16,7 @@
 | 0012 | Calendario, tesorería y remesa de sólo lectura (bonus) | implementado (PLAN-10 y PLAN-11) | Javier (J5, K1) |
 | 0013 | Un chat de consulta con herramientas cerradas, sin SQL generado y sin escritura (bonus) | implementado y evaluado (14/15 + 1 parcial) | Javier (K2) |
 | 0014 | Confianza en la clasificación por factura: ordinal, por fuente y con razones, no una probabilidad (bonus) | propuesto (lo aceptan Javier y Mónica) | Javier (K3) |
+| 0015 | Jev (TypeSafe) se evalúa y se descarta: no ve imágenes, no extrae y no explica | aceptado | Javier |
 | 0016 | La consola es Next sobre un puente HTTP de sólo lectura, no Streamlit | aceptado (implementado en #5 y #7) | Alejandro |
 | 0017 | Cuando las lecturas de una escaneada no coinciden, decide una prueba independiente (tercera lectura o cuentas de la factura), no el maestro | aceptado por Miguel; falta Javier y Mónica | Miguel |
 | 0018 | En una escaneada, una instrucción sólo se cita si la ven dos lecturas (B'); el prompt nuevo (D) se midió y se descartó | aceptado (B') / descartado (D) | Miguel |
@@ -23,6 +24,7 @@
 | 0020 | Lo escrito o tachado a mano en un PDF con texto lo mira una persona | aceptado | Miguel |
 | 0021 | Cada lote se decide en su contexto y el lote 2 no reabre el lote 1 (P0-2, duplicados entre lotes) | aceptado; P0-2 abierta al mentor | Miguel |
 | 0022 | La norma v4 es la v3 más R7 (moneda): la divisa escala hasta que haya tipo de cambio | propuesto; revisa Mónica | Miguel |
+| 0023 | La demo pública vive en Render y es de sólo lectura (la consola en Vercel) | propuesto | Javier |
 
 Cada ADR termina con un **Resumen para el plan (5 líneas)** listo para pegar en
 `docs/plan/albertitos_plan.md` § ADRs (lo hace Alfonso; los dueños no tocan el plan).
