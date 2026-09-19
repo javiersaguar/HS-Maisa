@@ -620,3 +620,51 @@ reverso. `scan_023.pdf` tiene el suyo confirmado visualmente y ya escala. Ningun
 9. ¿Qué semántica tiene el lote 2: altas/cambios/eliminaciones? ¿Una desaparición de asiento también exige reprocesar el pedido anterior?
 
 <!-- A3: inventario generado FIN -->
+
+## Documentos superpuestos: lo que ve el detector y lo que no (E2 · 19/09/2026 03:55 CEST)
+
+Fuera de los marcadores del inventario a propósito: `inventario_trampas.py` sin `--sin-docs` reescribe todo lo que
+hay entre `INICIO` y `FIN` (también las secciones de D2 de arriba).
+
+**Qué había.** `scan_025.pdf` es una factura limpia de Limpiezas Turia (P004) con otra factura transparentándose
+por detrás (Electricidad Montcada, P006). La lectura principal devolvió `texto_sospechoso = "None"`, que se guardó
+como instrucción: la factura escalaba con el motivo `el documento dice: "None"`. La segunda lectura (recorte
+superior a 200 dpi) sí vio la otra factura y la dejó en `texto_sospechoso`:
+"Electricidad Montcada S.A. NIF: A48990201 Cuenta de abono (IBAN): ES35 2038 5778 0830 0076 5412 FACTURA Nº
+F26-2206 Fecha: 07/05/2026 Pedido: PO-2026-0720 …". Hasta ahora el código tiraba el `texto_sospechoso` de la
+segunda lectura.
+
+**Qué hace ahora `extract/etapa.py`** (`_evidencia_de_lecturas`, commit `b678cfd`):
+- si un fragmento de cualquiera de las dos lecturas nombra a un proveedor del maestro **distinto** del de la
+  factura (razón social de ≥ 2 palabras sin forma societaria, o NIF exacto) → `Aviso.DOCUMENTO_SUPERPUESTO`,
+  con el fragmento y el proveedor en el detalle del evento de extract. **No** va a `texto_sospechoso`: ese campo es
+  para instrucciones y R6 lo cita como "el documento dice";
+- si la principal ya lo había tomado por instrucción, se deja así (ante la duda, escalar) y se añade el aviso;
+- una instrucción que sólo trae la segunda lectura se adopta como `TEXTO_INSTRUCCION` si casa con las regex de
+  `instrucciones.py`; un sello o una nota que no casan, no (la relectura en frío tomó "RECIBIDO CONTABILIDAD" por
+  instrucción);
+- ningún `file_id` en el código.
+
+**Medido sobre las 29 escaneadas**, en una copia de la BD (`dist/ensayo/e2.db`), todo desde la caché:
+`extract: 29/29 ok · métodos {'cache': 29} · tokens 0/0 · 42.5 s`. Sólo 4 de las 29 traen fragmento en alguna
+lectura:
+
+| file_id | principal | segunda lectura (sup200) | Resultado |
+|---|---|---|---|
+| `scan_025.pdf` | `"None"` | "Electricidad Montcada S.A. NIF: A48990201 …" | `documento_superpuesto` (P006 sobre P004); pierde el `texto_instruccion` falso |
+| `scan_016.pdf` | "NOTA: NUEVO NUM. DE CUENTA - actualizar antes del pago" | la misma | sin cambios (instrucción real) |
+| `scan_029.pdf` | "NOTA: Nuevo numero de cuenta desde este mes. …" | la misma | sin cambios (instrucción real) |
+| `scan_018.pdf` | — | `"None"` | sin cambios (se descarta) |
+
+El detector salta en **1 de 29**: `scan_025`. Ninguna otra escaneada cambia de avisos.
+
+**Lo que no ve.** `scan_023.pdf` lleva otra factura superpuesta (Informática Benimámet, P010) que C1 vio a ojo a
+220 dpi, pero **ninguna de sus cuatro lecturas en caché** (principal, sup200 y las dos terceras lecturas del ciclo
+3) nombra a otro proveedor. Con las lecturas de producción no es detectable. Escala igualmente por R1, R2, R5 y R6
+(`discrepancia_extractores`: las lecturas del NIF, `B96233418` / `B08233419`, no son el de P005).
+
+**Efecto en la decisión (medido en la copia, `reprocess --impacted` con v3, corte 2026-09-18, ERP v1):**
+`29 de 500 recalculadas · 1 cambian: scan_025.pdf ESCALAR → PAGAR`. Reparto de la copia: 444 PAGAR · 47 ESCALAR ·
+9 NO_PAGAR. Pasa a PAGAR porque `DOCUMENTO_SUPERPUESTO` no está en `ANOMALIAS_HUMANO` de `rules/norma_v3.py`, y NIF,
+IBAN, pedido, importe y asiento cuadran. **No se ha aplicado a la BD real**: es decisión de Mónica (bitácora,
+04:00). Recomendación: que escale, "anomalía que un humano debe ver".
