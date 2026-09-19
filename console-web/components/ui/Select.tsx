@@ -30,10 +30,8 @@ export function Select<T extends string>({
   disabled?: boolean
   radius?: 'lg' | 'xl'
 }) {
-  // `radius` se conserva por compatibilidad de la API; el diseño usa un solo radio corto.
-  void radius
-  const popupRadius = ''
-  const itemRadius = ''
+  const popupRadius = radius === 'xl' ? 'rounded-xl' : 'rounded-lg'
+  const itemRadius = radius === 'xl' ? 'rounded-lg' : 'rounded-md'
 
   return (
     <BaseSelect.Root
@@ -49,20 +47,21 @@ export function Select<T extends string>({
       <BaseSelect.Trigger
         aria-label={ariaLabel}
         className={cn(
-          'inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 border border-line bg-surface px-2.5 text-left text-[13px] font-normal normal-case tracking-normal text-ink outline-none transition hover:border-faint focus-visible:border-accent data-popup-open:border-accent disabled:opacity-60',
+          'inline-flex w-full min-w-0 items-center justify-between gap-2 border border-line bg-surface px-3 py-2.5 text-left text-[14px] font-medium normal-case tracking-normal text-ink outline-none transition hover:border-accent-line focus-visible:border-accent focus-visible:ring-4 focus-visible:ring-line-soft data-popup-open:border-accent data-popup-open:ring-4 data-popup-open:ring-line-soft disabled:opacity-60',
+          radius === 'xl' ? 'rounded-xl' : 'rounded-lg',
           className,
         )}
       >
         <BaseSelect.Value className="min-w-0 truncate" />
-        <BaseSelect.Icon className="flex shrink-0 text-faint transition-transform data-popup-open:rotate-180">
-          <ChevronDown className="size-3.5" />
+        <BaseSelect.Icon className="flex shrink-0 text-muted transition-transform data-popup-open:rotate-180">
+          <ChevronDown className="size-4" />
         </BaseSelect.Icon>
       </BaseSelect.Trigger>
       <BaseSelect.Portal>
         <BaseSelect.Positioner className="z-50 outline-none" sideOffset={6} alignItemWithTrigger={false}>
           <BaseSelect.Popup
             className={cn(
-              'w-[var(--anchor-width)] origin-[var(--transform-origin)] overflow-hidden border border-line bg-surface p-1 outline-none',
+              'w-[var(--anchor-width)] origin-[var(--transform-origin)] overflow-hidden border border-line bg-surface p-1 shadow-[0_10px_30px_rgba(43,55,51,0.14)] outline-none',
               popupRadius,
             )}
           >
@@ -72,7 +71,7 @@ export function Select<T extends string>({
                   key={option.value}
                   value={option.value}
                   className={cn(
-                    'flex min-h-8 cursor-default items-center px-2.5 text-[13px] text-ink outline-none select-none data-highlighted:bg-raised data-selected:font-semibold',
+                    'flex min-h-9 cursor-default items-center px-3 text-[14px] text-ink outline-none select-none data-highlighted:bg-accent-soft data-highlighted:text-accent-dark data-selected:font-semibold data-selected:text-accent-dark',
                     itemRadius,
                   )}
                 >

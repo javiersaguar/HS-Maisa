@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import Link from 'next/link'
-import { FileUp } from 'lucide-react'
-import { USE_MOCK } from '@/lib/config'
+import { Check, ChevronRight, FileUp } from 'lucide-react'
+import { API_BASE_URL, USE_MOCK } from '@/lib/config'
 import { toApiError } from '@/lib/api/client'
 import {
   BANDEJA_EN_CURSO,
@@ -20,12 +20,23 @@ import { Spinner } from '@/components/ui/Spinner'
 
 const MAX_FICHEROS = 20
 const POLL_MS = 1000
-const ARRANQUE = 'uv run python -m albertitos.console.api --bandeja'
+const REVISAR_MS = 5000
 
-const PASOS: Array<{ estado: EstadoBandeja; label: string }> = [
-  { estado: 'ingiriendo', label: 'Registrar' },
-  { estado: 'extrayendo', label: 'Leer' },
-  { estado: 'decidiendo', label: 'Aplicar la norma' },
+/** El comando exacto, con el puerto del puente al que habla esta consola (sin --db: usa dist/bandeja.db). */
+function comandoArranque(): string {
+  let puerto = '8000'
+  try {
+    if (API_BASE_URL) puerto = new URL(API_BASE_URL).port || puerto
+  } catch {
+    /* URL rara: el puerto por defecto */
+  }
+  return `uv run python -m albertitos.console.api --bandeja${puerto === '8000' ? '' : ` --puerto ${puerto}`}`
+}
+
+const PASOS: Array<{ estado: EstadoBandeja; label: string; detalle: string }> = [
+  { estado: 'ingiriendo', label: 'Registrar', detalle: 'Se guarda cada PDF con su huella' },
+  { estado: 'extrayendo', label: 'Leer', detalle: 'Se sacan los datos de la factura' },
+  { estado: 'decidiendo', label: 'Aplicar la norma', detalle: 'Se cruza con proveedores y ERP' },
 ]
 
 type Fase = 'elegir' | 'subiendo' | 'procesando' | 'hecho'
@@ -35,12 +46,12 @@ function esPdf(file: File) {
 }
 
 /**
- * Entrada principal del panel: soltar o elegir PDF y verlos decididos. La consola no decide: el
+ * Tarjeta izquierda de la portada: soltar o elegir PDF y verlos decididos. La consola no decide: el
  * puente guarda los PDF en la bandeja (lote 99, BD aparte de la entrega) y lanza la CLI. Aquí sólo
  * se enseña lo que la BD dice.
  *
- * Cada fila de la bandeja selecciona la factura que se argumenta en el panel de la derecha, así que
- * el trabajo entero —soltar, leer, entender por qué— ocurre sin salir de la portada.
+ * Cada fila selecciona la factura que se argumenta en la tarjeta de la derecha, así que el trabajo
+ * entero —soltar, leer, entender por qué— ocurre sin salir de la portada.
  */
 export function InvoiceDropzone({
   onDone,
@@ -56,9 +67,12 @@ export function InvoiceDropzone({
   const [error, setError] = useState<string | null>(null)
   const [noDisponible, setNoDisponible] = useState(USE_MOCK)
   const [arrastrando, setArrastrando] = useState(false)
+  const [avisar, setAvisar] = useState(false)
+  const [copiado, setCopiado] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Al cargar: si el puente no tiene la bandeja activa se dice; si hay un trabajo en curso, se retoma.
+  // Al cargar: si el puente no tiene la bandeja activa se dice; si hay un trabajo en curso se retoma, y
+  // si el último envío ya acabó se vuelve a enseñar, para no perderlo al volver de otra pantalla.
   useEffect(() => {
     if (USE_MOCK) return
     let vivo = true
@@ -69,13 +83,42 @@ export function InvoiceDropzone({
         if (BANDEJA_EN_CURSO.includes(b.estado)) {
           setBandeja(b)
           setFase('procesando')
+        } else if (b.ficheros.length) {
+          setBandeja(b)
+          setFase('hecho')
+          const primera = b.ficheros.find((f) => f.estado)
+          if (primera) onSelect?.(primera.fileId)
         }
       })
       .catch((e) => vivo && setError(toApiError(e).message))
     return () => {
       vivo = false
     }
+    // Sólo al montar: onSelect es estable y no debe reabrir la bandeja.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Sin bandeja, se vuelve a mirar cada 5 s: si el puente se reinicia con --bandeja, esto se activa solo.
+  useEffect(() => {
+    if (USE_MOCK || !noDisponible) return
+    let vivo = true
+    const timer = window.setInterval(async () => {
+      try {
+        const b = await fetchBandeja()
+        if (vivo && b.disponible) {
+          setNoDisponible(false)
+          setError(null)
+          onDone('Bandeja activa: ya puedes soltar facturas', 'success')
+        }
+      } catch {
+        /* el puente se está reiniciando: se vuelve a mirar en 5 s */
+      }
+    }, REVISAR_MS)
+    return () => {
+      vivo = false
+      window.clearInterval(timer)
+    }
+  }, [noDisponible, onDone])
 
   // Poll mientras la CLI trabaja.
   useEffect(() => {
@@ -138,10 +181,31 @@ export function InvoiceDropzone({
     }
   }
 
+  /** Pulsar o soltar sobre la zona desactivada: se señala el recuadro que explica cómo activarla. */
+  const explicar = () => {
+    setAvisar(true)
+    window.setTimeout(() => setAvisar(false), 1600)
+  }
+
   const onDrop = (event: DragEvent) => {
-    event.preventDefault()
+    event.preventDefault() // siempre: si no, el navegador abre el PDF y saca al usuario de la consola
     setArrastrando(false)
+    if (bloqueado) {
+      if (noDisponible) explicar()
+      return
+    }
     subir(event.dataTransfer.files)
+  }
+
+  const comando = comandoArranque()
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(comando)
+      setCopiado(true)
+      window.setTimeout(() => setCopiado(false), 1500)
+    } catch {
+      /* sin portapapeles: el comando se puede seleccionar a mano */
+    }
   }
 
   const pasoActual = PASOS.findIndex((p) => p.estado === bandeja?.estado)
@@ -157,59 +221,72 @@ export function InvoiceDropzone({
     return acc
   }, {})
   const sinLeer = filas.filter((f) => !f.estado).length
+  const conLista = bandeja !== null && (fase === 'procesando' || fase === 'hecho')
 
   return (
-    <Card className="flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+    <Card className="flex min-h-0 flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div>
-          <h2 className="text-[14px] font-semibold">Bandeja de facturas</h2>
-          <p className="mt-0.5 text-[12px] text-muted">
-            Se leen y se deciden con la misma norma, fuera de la entrega
-          </p>
+          <h2 className="text-[15px] font-semibold text-ink">Añadir facturas</h2>
+          <p className="mt-0.5 text-[13px] text-muted">Se leen y se deciden con la misma norma, fuera de la entrega</p>
         </div>
         {fase === 'hecho' ? (
           <Link
             href={`/invoices?lote=${LOTE_BANDEJA}`}
-            className="shrink-0 whitespace-nowrap text-[13px] text-accent hover:underline"
+            className="shrink-0 whitespace-nowrap text-[13px] font-medium text-accent-dark hover:underline"
           >
             Ver la bandeja
           </Link>
         ) : (
-          <span className="shrink-0 whitespace-nowrap text-[12px] text-faint">
+          <span className="shrink-0 whitespace-nowrap rounded-full bg-raised px-2 py-0.5 text-[12px] font-medium text-muted">
             Lote {LOTE_BANDEJA}
           </span>
         )}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
+        <div
+          className="shrink-0"
           onDragOver={(event) => {
             event.preventDefault()
             if (!bloqueado) setArrastrando(true)
           }}
           onDragLeave={() => setArrastrando(false)}
           onDrop={onDrop}
-          disabled={bloqueado}
-          className={`flex w-full flex-col items-center gap-2 border border-dashed px-4 py-8 text-center transition disabled:cursor-not-allowed ${
+        >
+        <button
+          type="button"
+          onClick={() => (noDisponible ? explicar() : inputRef.current?.click())}
+          disabled={ocupado}
+          aria-disabled={bloqueado}
+          aria-describedby={noDisponible ? 'bandeja-como-activar' : undefined}
+          className={`flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition disabled:cursor-not-allowed ${
+            conLista ? 'py-5' : 'py-10'
+          } ${
             arrastrando
-              ? 'border-accent'
+              ? 'border-accent bg-accent-soft'
               : bloqueado
-                ? 'border-line opacity-60'
-                : 'border-line hover:border-faint'
+                ? 'cursor-not-allowed border-line bg-canvas opacity-70'
+                : 'border-accent-line bg-canvas hover:border-accent hover:bg-accent-soft'
           }`}
         >
-          {ocupado ? <Spinner className="size-6" /> : <FileUp className="size-5 text-faint" />}
-          <span className="text-[13px] font-medium text-ink">
+          {ocupado ? <Spinner className="size-6" /> : <FileUp className="size-7 text-accent" />}
+          <span className="text-[15px] font-semibold text-ink">
             {fase === 'subiendo'
               ? 'Subiendo…'
               : fase === 'procesando'
                 ? 'Procesando las facturas…'
-                : 'Suelta aquí los PDF o haz clic para elegirlos'}
+                : noDisponible
+                  ? 'Subir facturas está desactivado en este puente'
+                  : fase === 'hecho'
+                    ? 'Suelta más PDF para otro envío'
+                    : 'Suelta aquí los PDF o haz clic para elegirlos'}
           </span>
-          <span className="text-[12px] text-faint">Hasta {MAX_FICHEROS} facturas, 10 MB cada una</span>
+          <span className="text-[12px] text-muted">
+            {noDisponible ? 'Abajo tienes cómo activarlo' : `Hasta ${MAX_FICHEROS} facturas, 10 MB cada una`}
+          </span>
         </button>
+        </div>
         <input
           ref={inputRef}
           type="file"
@@ -223,44 +300,109 @@ export function InvoiceDropzone({
         />
 
         {noDisponible && (
-          <p className="border-l-2 border-warn py-1 pl-3 text-[13px] text-muted">
-            {USE_MOCK
-              ? 'Con datos de ejemplo no se suben facturas: hace falta el puente real.'
-              : 'El puente sirve la BD de la entrega y no escribe en ella.'}{' '}
-            Arráncalo con <code className="font-mono text-[12px]">{ARRANQUE}</code>.
-          </p>
+          <div
+            id="bandeja-como-activar"
+            className={`shrink-0 rounded-lg border border-warn-line bg-warn-soft px-3 py-2.5 text-[13px] text-ink-soft transition ${
+              avisar ? 'ring-2 ring-warn' : ''
+            }`}
+          >
+            {USE_MOCK ? (
+              <p>
+                Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
+                NEXT_PUBLIC_USE_MOCK=false.
+              </p>
+            ) : (
+              <p>
+                Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
+                activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
+                proyecto, con este comando:
+              </p>
+            )}
+            <div className="mt-2 flex items-center gap-2">
+              <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
+                {comando}
+              </code>
+              <button
+                type="button"
+                onClick={copiar}
+                className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
+              >
+                {copiado ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+            {!USE_MOCK && (
+              <p className="mt-2 text-[12px] text-muted">
+                Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
+                vuelva con la bandeja, este recuadro desaparece sin recargar la página.
+              </p>
+            )}
+          </div>
         )}
 
-        {bandeja && (fase === 'procesando' || fase === 'hecho') && (
+        {fase === 'elegir' && !bandeja && (
+          <div className="shrink-0">
+            <p className="text-[13px] font-semibold text-ink">Qué pasa al soltarlas</p>
+            <ol className="mt-3 space-y-3">
+              {PASOS.map((paso, i) => (
+                <li key={paso.estado} className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-raised text-[12px] font-semibold text-ink-soft">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="text-[13px] font-medium text-ink">{paso.label}</p>
+                    <p className="text-[13px] text-muted">{paso.detalle}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-[13px] leading-relaxed text-muted">
+              Cuando acaben, cada factura sale con su resultado. Elige una y a la derecha verás el porqué.
+            </p>
+          </div>
+        )}
+
+        {conLista && (
           <>
-            <ol className="flex gap-2">
+            <ol className="grid shrink-0 grid-cols-3 gap-2" aria-label="Pasos del procesamiento">
               {PASOS.map((paso, i) => {
                 const hecho = fase === 'hecho' ? bandeja.estado === 'listo' || i < pasoActual : i < pasoActual
                 const activo = fase === 'procesando' && i === pasoActual
                 return (
                   <li
                     key={paso.estado}
-                    className={`flex flex-1 items-center gap-2 border-b-2 pb-1.5 text-[12px] ${
+                    aria-current={activo ? 'step' : undefined}
+                    title={paso.detalle}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-semibold ${
                       activo
-                        ? 'border-accent text-ink'
+                        ? 'border-accent bg-accent-soft text-accent-dark'
                         : hecho
-                          ? 'border-line text-muted'
-                          : 'border-line-soft text-faint'
+                          ? 'border-line-soft bg-canvas text-ink-soft'
+                          : 'border-line-soft bg-surface text-muted'
                     }`}
                   >
-                    {activo ? <Spinner className="size-3.5" /> : <span>{hecho ? '✓' : i + 1}</span>}
-                    {paso.label}
+                    {activo ? (
+                      <Spinner className="size-3.5" />
+                    ) : hecho ? (
+                      <Check className="size-3.5 text-accent" />
+                    ) : (
+                      <span className="w-3.5 text-center">{i + 1}</span>
+                    )}
+                    <span className="truncate">{paso.label}</span>
                   </li>
                 )
               })}
             </ol>
-            <div className="shrink-0 border-t border-line-soft pt-3">
-              <p className="mb-2 text-[12px] text-muted">
+
+            <div className="shrink-0">
+              <p className="text-[13px] font-semibold text-ink">
                 Este envío · {filas.length} {filas.length === 1 ? 'factura' : 'facturas'}
               </p>
-              <RecuentoResultados porEstado={porEstado} sinLeer={sinLeer} />
+              <div className="mt-1">
+                <RecuentoResultados porEstado={porEstado} sinLeer={sinLeer} />
+              </div>
             </div>
-            <ul className="min-h-0 flex-1 divide-y divide-line-soft overflow-y-auto border-t border-line-soft">
+
+            <ul className="min-h-[120px] flex-1 divide-y divide-line-soft overflow-y-auto rounded-xl border border-line">
               {filas.map((f) => {
                 const activa = seleccionado === f.fileId
                 return (
@@ -270,14 +412,25 @@ export function InvoiceDropzone({
                       onClick={() => f.estado && onSelect?.(f.fileId)}
                       disabled={!f.estado}
                       aria-current={activa ? 'true' : undefined}
-                      className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-[13px] transition ${
-                        activa ? 'bg-raised' : 'hover:bg-raised disabled:hover:bg-transparent'
-                      } disabled:cursor-default`}
+                      className={`group flex min-h-10 w-full items-center gap-3 border-l-2 px-3 py-2 text-left text-[13px] transition disabled:cursor-default ${
+                        activa
+                          ? 'border-l-accent bg-accent-soft'
+                          : 'border-l-transparent hover:bg-canvas disabled:hover:bg-transparent'
+                      }`}
                     >
-                      <span className={`truncate ident text-[12px] ${activa ? 'text-ink' : 'text-ink-soft'}`}>
+                      <span
+                        className={`min-w-0 flex-1 truncate font-mono text-[12px] ${activa ? 'font-medium text-ink' : 'text-ink-soft'}`}
+                        title={f.nombre}
+                      >
                         {f.nombre}
                       </span>
                       <ResultadoMarca estado={f.estado} />
+                      <ChevronRight
+                        aria-hidden
+                        className={`size-3.5 shrink-0 transition ${
+                          !f.estado ? 'invisible' : activa ? 'text-accent-dark' : 'text-line group-hover:text-muted'
+                        }`}
+                      />
                     </button>
                   </li>
                 )
@@ -287,16 +440,18 @@ export function InvoiceDropzone({
         )}
 
         {hayPendientes && (
-          <p className="border-l-2 border-warn py-1 pl-3 text-[13px] text-muted">
+          <p className="shrink-0 rounded-lg border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink-soft">
             Alguna factura no se ha podido leer (el LLM no respondió o el PDF es ilegible). Queda PENDIENTE y sin
             decisión: no se inventa ninguna.
           </p>
         )}
         {bandeja?.estado === 'error' && bandeja.error && (
-          <p className="border-l-2 border-bad py-1 pl-3 text-[13px] text-bad">{bandeja.error}</p>
+          <p className="shrink-0 rounded-lg border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
+            {bandeja.error}
+          </p>
         )}
         {error && (
-          <p role="alert" className="border-l-2 border-bad py-1 pl-3 text-[13px] text-bad">
+          <p role="alert" className="shrink-0 rounded-lg border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
             {error}
           </p>
         )}

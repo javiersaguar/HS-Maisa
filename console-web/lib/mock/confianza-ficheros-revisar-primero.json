@@ -1,0 +1,78 @@
+{
+  "api": 1,
+  "items": [
+    {
+      "file_id": "scan_021.pdf",
+      "lote": 1,
+      "resultado": "ESCALAR",
+      "regla": "v3.R1",
+      "puntuacion": 20,
+      "banda": "baja",
+      "razon_principal": "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+      "razones": [
+        "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+        "falla R1 de forma objetiva: ESCALAR o NO_PAGAR (Q3)",
+        "sus lecturas no coinciden y no se reconciliaron"
+      ]
+    },
+    {
+      "file_id": "scan_023.pdf",
+      "lote": 1,
+      "resultado": "ESCALAR",
+      "regla": "v3.R1",
+      "puntuacion": 20,
+      "banda": "baja",
+      "razon_principal": "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+      "razones": [
+        "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+        "falla R1 de forma objetiva: ESCALAR o NO_PAGAR (Q3)",
+        "sus lecturas no coinciden y no se reconciliaron"
+      ]
+    },
+    {
+      "file_id": "scan_016.pdf",
+      "lote": 1,
+      "resultado": "ESCALAR",
+      "regla": "v3.R1",
+      "puntuacion": 42,
+      "banda": "baja",
+      "razon_principal": "falla R1 de forma objetiva: ESCALAR o NO_PAGAR (Q3)",
+      "razones": [
+        "falla R1 de forma objetiva: ESCALAR o NO_PAGAR (Q3)",
+        "sus lecturas no coinciden y no se reconciliaron",
+        "4 lecturas de la imagen; no coinciden en iban, total"
+      ]
+    },
+    {
+      "file_id": "scan_006.pdf",
+      "lote": 1,
+      "resultado": "ESCALAR",
+      "regla": "v3.R6",
+      "puntuacion": 45,
+      "banda": "baja",
+      "razon_principal": "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+      "razones": [
+        "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+        "la lectura se eligió reconciliándola con el maestro (confianza 0.6)",
+        "4 lecturas de la imagen; no coinciden en iban, nif_emisor"
+      ]
+    },
+    {
+      "file_id": "scan_009.pdf",
+      "lote": 1,
+      "resultado": "ESCALAR",
+      "regla": "v3.R6",
+      "puntuacion": 45,
+      "banda": "baja",
+      "razon_principal": "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+      "razones": [
+        "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+        "la lectura se eligió reconciliándola con el maestro (confianza 0.6)",
+        "4 lecturas de la imagen; no coinciden en iban, nif_emisor, total"
+      ]
+    }
+  ],
+  "total": 13,
+  "limite": 20,
+  "nota_del_ejemplo": "sin las facturas de la muestra etiquetada (abierta); la ruta real las incluye"
+}

@@ -35,6 +35,11 @@ export class ApiError extends Error {
   get isUnavailable() {
     return this.status === 503
   }
+
+  /** 409: la BD no tiene decisiones o mezcla cortes (bonus), o la bandeja está ocupada. */
+  get isConflict() {
+    return this.status === 409
+  }
 }
 
 let versionAvisada = false

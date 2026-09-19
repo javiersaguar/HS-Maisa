@@ -1,0 +1,21 @@
+{
+  "fuente": "docs/api/ejemplos/chat-06-semana.json",
+  "pregunta": "¿Cuánto vence en la semana 2026-W38? Cita las facturas.",
+  "respuesta": {
+    "respuesta": "En la semana 2026-W38 vencen 2 facturas por un total de 14.518,10 EUR: factura_7087.pdf (P001, 8.107,54 EUR, vence 2026-09-19) y 2026-07-31_P005.pdf (P005, 6.410,56 EUR, vence 2026-09-14, ya vencida al corte de 2026-09-18). Son decisiones del borrador de calendario, no pagos ejecutados.",
+    "citas": [
+      "factura_7087.pdf",
+      "2026-07-31_P005.pdf"
+    ],
+    "herramientas_usadas": [
+      "pagos"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 3786,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "2 facturas, 14518.10 EUR; fechas e importes coinciden con calendario."
+  }
+}

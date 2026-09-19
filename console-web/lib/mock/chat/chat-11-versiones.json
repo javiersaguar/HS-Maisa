@@ -1,0 +1,19 @@
+{
+  "fuente": "docs/api/ejemplos/chat-11-versiones.json",
+  "pregunta": "¿Qué lotes y versiones de norma, maestro y ERP se están usando?",
+  "respuesta": {
+    "respuesta": "Según el corte guardado (2026-09-18): un único lote, el lote 1, con 500 facturas. Versiones en uso: norma v3, maestro 80911e429c6c y ERP v1. Reparto: 438 PAGAR, 53 ESCALAR, 9 NO_PAGAR.",
+    "citas": [],
+    "herramientas_usadas": [
+      "resumen",
+      "resumen"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 4483,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "Un lote, v3 / 80911e429c6c / v1 y corte 2026-09-18 correctos."
+  }
+}

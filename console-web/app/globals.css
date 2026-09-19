@@ -21,9 +21,7 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -45,6 +43,7 @@
 
 :root {
   color-scheme: light;
+  /* Las variables de shadcn beben de la misma paleta: ni un blanco ni un negro puros. */
   --background: #f2f2e8;
   --foreground: #2b3733;
   --card: #f8f8f1;
@@ -68,7 +67,7 @@
   --chart-3: #6b8279;
   --chart-4: #506c63;
   --chart-5: #2b3733;
-  --radius: 0;
+  --radius: 0.625rem;
   --sidebar: #f8f8f1;
   --sidebar-foreground: #2b3733;
   --sidebar-primary: #6b8279;
@@ -80,16 +79,17 @@
 }
 
 /* ---------------------------------------------------------------- Albertitos
- * Un solo sitio para los valores de diseño. La dirección es herramienta de trabajo
- * densa y sobria: neutros, un acento, bordes de 1px y nada de sombras.
+ * Paleta beige y salvia (la de Mónica, b4a941a) en un solo sitio. El código usa estos tokens
+ * (`bg-canvas`, `text-ink`, `border-line`, `text-accent`, `bg-warn-soft`…) y el JS bebe de
+ * lib/theme.ts con los mismos valores. Las esquinas siguen redondas: --radius no se toca.
  */
 @theme {
-  /* Fondo y superficies: beige cálido, separadas sólo por bordes. */
+  /* Fondo y superficies: beige cálido. */
   --color-canvas: #f2f2e8;
   --color-surface: #f8f8f1;
   --color-raised: #eaeade;
 
-  /* Texto. Dos niveles y no un tercero más claro: sobre el beige no se leería. */
+  /* Texto. Dos grises y no un tercero más claro: sobre el beige no se leería. */
   --color-ink: #2b3733;
   --color-ink-soft: #414d48;
   --color-muted: #6f7772;
@@ -98,71 +98,41 @@
   --color-line: #ddddd1;
   --color-line-soft: #e6e6db;
 
-  /* Un solo acento. */
+  /* Un solo acento: salvia. */
   --color-accent: #6b8279;
   --color-accent-dark: #506c63;
   --color-accent-soft: #e4e8e4;
+  --color-accent-line: #c7d1cb;
 
-  /* Estados del resultado: sólo punto y texto, nunca fondo. */
+  /* Estados del resultado. El tinte y su borde, para avisos y pastillas que ya existían. */
   --color-ok: #506c63;
+  --color-ok-soft: #e4e8e4;
   --color-warn: #a87a1e;
+  --color-warn-soft: #f3ecd8;
+  --color-warn-line: #e2d3a6;
   --color-bad: #a4483e;
-
-  --radius-ui: 0;
-  --radius-card: 0;
-
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: ui-serif, Georgia, 'Iowan Old Style', 'Times New Roman', serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --color-bad-soft: #f4e4de;
+  --color-bad-line: #e3c2b9;
 }
+
+
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-
-  /* Ninguna esquina redondeada en toda la consola: las cajas se definen con un borde de 1px.
-     Va en `base`, así que lo que deba ser circular por función (los puntos de estado) lo pide con
-     su utilidad y gana por capa. */
-  *,
-  *::before,
-  *::after {
-    border-radius: 0;
-  }
-
   body {
-    background: var(--color-canvas);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
-    font-size: 14px;
-    line-height: 1.5;
+    @apply bg-canvas text-ink;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
     text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
   }
 
-  /* Identificadores y cifras: monoespaciada y cifras tabulares, para que columnen. */
-  .ident {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-  }
-
-  .cifra {
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Serif sólo para el título de cada pantalla. Del sistema: la demo corre sin red. */
-  .titulo {
-    font-family: var(--font-serif);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-
-  /* Casillas: check fino del sistema con el acento, nunca un cuadrado negro relleno. */
-  input[type='checkbox'] {
+  /* Casillas con el acento del sistema, no el azul del navegador. */
+  input[type='checkbox'],
+  input[type='radio'] {
     accent-color: var(--color-accent);
-    width: 14px;
-    height: 14px;
   }
 
   button,
@@ -187,8 +157,8 @@
   textarea:focus-visible,
   a:focus-visible,
   [tabindex]:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 1px;
+    outline: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+    outline-offset: 2px;
   }
 
   ::selection {
@@ -257,4 +227,31 @@
 
 .animate-import {
   animation: import-fill 550ms ease-out forwards;
+}
+
+
+/* AlbertitosAI: feedback and state changes, independent of the rest of the console. */
+:root { --chat-ease-out: cubic-bezier(0.23, 1, 0.32, 1); --chat-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); }
+.chat-panel { animation: chat-panel-in 240ms var(--chat-ease-drawer) both; }
+.chat-message { animation: chat-message-in 200ms var(--chat-ease-out) both; }
+.chat-cita { animation: chat-message-in 180ms var(--chat-ease-out) both; }
+.chat-bar { transition: transform 600ms var(--chat-ease-out); }
+.chat-delta { animation: chat-delta-up 600ms var(--chat-ease-out) both; }
+.chat-trigger[data-pulse="true"] { animation: chat-pulse 250ms var(--chat-ease-out) both; }
+.chat-press { transition: transform 120ms var(--chat-ease-out); }
+.chat-press:active:not(:disabled) { transform: scale(.97); }
+.chat-thinking i { width: 5px; height: 5px; border-radius: 50%; background: #176d59; animation: chat-dot 240ms ease-in-out infinite alternate; }
+.chat-thinking i:nth-child(2) { animation-delay: 80ms; }
+.chat-thinking i:nth-child(3) { animation-delay: 160ms; }
+.chat-texto-corto { max-height: 8.125em; overflow: hidden; }
+.chat-texto-corto[data-fade="true"] { mask-image: linear-gradient(#000 65%, transparent); }
+@keyframes chat-panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes chat-message-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes chat-delta-up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-14px); } }
+@keyframes chat-pulse { 50% { transform: scale(1.035); } }
+@keyframes chat-dot { from { opacity: .35; transform: translateY(1px); } to { opacity: 1; transform: translateY(-1px); } }
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel, .chat-message, .chat-cita, .chat-delta, .chat-trigger, .chat-thinking i { animation: none !important; }
+  .chat-bar, .chat-press { transition: none !important; }
+  .chat-press:active:not(:disabled) { transform: none; }
 }

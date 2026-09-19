@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
-import { OrigenBanner } from './OrigenBanner'
 import { Sidebar } from './Sidebar'
 
 /**
@@ -20,14 +19,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname])
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-canvas text-ink">
+    <div className="flex h-screen w-full overflow-hidden bg-canvas py-3 pl-3 text-ink">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <OrigenBanner />
-        <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-          {children}
-        </main>
-      </div>
+      <main ref={mainRef} className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+        {children}
+      </main>
     </div>
   )
 }

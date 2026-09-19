@@ -13,7 +13,7 @@ export const COLORS = {
   mint: '#6b8279',
   mintStrong: '#506c63',
   lime: '#a87a1e',
-  limeSoft: '#e6e6db',
+  limeSoft: '#f3ecd8',
   danger: '#a4483e',
   dangerSoft: '#a4483e',
   text: '#2b3733',

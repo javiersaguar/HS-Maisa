@@ -1,22 +1,11 @@
 import type { ReactNode } from 'react'
 import type { Tone } from '@/lib/theme'
 
-/**
- * Estado como punto de color y texto. Sin fondo, sin borde y sin forma ovalada: el color es la
- * señal y el texto la dice; el resto era decoración.
- */
-const PUNTO: Record<Tone, string> = {
-  green: 'bg-ok',
-  yellow: 'bg-warn',
-  red: 'bg-bad',
-  gray: 'bg-faint',
-}
-
-const TEXTO: Record<Tone, string> = {
-  green: 'text-ok',
-  yellow: 'text-warn',
-  red: 'text-bad',
-  gray: 'text-muted',
+const TONES: Record<Tone, string> = {
+  green: 'bg-accent-soft text-accent-dark',
+  yellow: 'bg-warn-soft text-warn',
+  red: 'bg-bad-soft text-bad',
+  gray: 'bg-raised text-muted',
 }
 
 export function StatusBadge({
@@ -29,8 +18,9 @@ export function StatusBadge({
   className?: string
 }) {
   return (
-    <span className={`inline-flex items-center gap-2 text-[13px] font-medium ${TEXTO[tone]} ${className}`}>
-      <span aria-hidden className={`size-2 shrink-0 rounded-full ${PUNTO[tone]}`} />
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[13px] font-medium ${TONES[tone]} ${className}`}
+    >
       {children}
     </span>
   )

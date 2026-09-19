@@ -223,3 +223,21 @@ def test_fixture_ilegible_no_revienta_el_preflight(preflight, tmp_path, conn):
     )  # sin sha256 ni método
     avisos = {c.nombre: c for c in preflight.comprobar(args) if c.nivel != "VERDE"}
     assert "fixture vs BD" in avisos and "ilegibles" in avisos["fixture vs BD"].detalle
+
+
+def test_llm_sin_clave_avisa_y_con_todo_en_regla_verde(preflight):
+    """R1 (PLAN-12): sin .env las escaneadas del lote 2 quedarían PENDIENTE. La clave sólo se mira si existe."""
+    chk = preflight.comprobar_llm({})
+    assert chk.nivel == preflight.AMBAR and "clave" in chk.detalle
+    chk = preflight.comprobar_llm({"ALBERTITOS_LLM_API_KEY": "x"})
+    assert chk.nivel == preflight.AMBAR and "402" in chk.detalle  # visión por defecto: claude-*
+    base = {"ALBERTITOS_LLM_API_KEY": "x", "ALBERTITOS_MODELO_VISION": "qwen3.6"}
+    chk = preflight.comprobar_llm(base)
+    assert chk.nivel == preflight.AMBAR and "NINGUNO" in chk.detalle
+    chk = preflight.comprobar_llm(
+        {**base, "ALBERTITOS_MODELO_VISION_FALLBACK": "deepseek-v4-flash"}
+    )
+    assert chk.nivel == preflight.VERDE and "deepseek-v4-flash" in chk.detalle
+    assert (
+        "API_KEY" not in chk.detalle
+    )  # nunca se enseña la clave, ni su nombre en el veredicto verde

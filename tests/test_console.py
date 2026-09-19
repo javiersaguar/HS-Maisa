@@ -10,6 +10,8 @@ from decimal import Decimal
 from pathlib import Path
 from urllib.parse import quote
 
+import pytest
+
 from albertitos.console import api, bandeja, lecturas
 from albertitos.core import db
 from albertitos.core.contracts import (
@@ -457,6 +459,24 @@ def test_despachar_rutas_y_tilde(conn, maestro, erp):
     assert {"file_id", "etapa", "estado", "ts"} <= body[0].keys()
 
 
+def test_rutas_del_bonus_y_confianza_registradas_y_solo_get(conn, maestro, erp):
+    """El puente sirve los GET del bonus (K1) y de la confianza (K3); un POST sigue siendo 405."""
+    pytest.importorskip("albertitos.bonus")
+    _semilla(conn, maestro, erp)
+    status, body = api.despachar("GET", "/bonus/resumen", {}, conn)
+    assert status == 200, body
+    assert body["calendario_numero"] == body["decisiones_pagar"]
+    status, body = api.despachar("GET", "/bonus/tesoreria", {"tope": ["-1"]}, conn)
+    assert status == 400 and body["error"]
+    status, body = api.despachar("POST", "/bonus/resumen", {}, conn)
+    assert status == 405
+
+    pytest.importorskip("albertitos.confianza")
+    status, body = api.despachar("GET", "/confianza/resumen", {}, conn)
+    assert status == 200 and body["api"] == 1
+    assert body["total"] == 4  # las que tienen decisión vigente
+
+
 def test_console_no_usa_fecha_de_hoy():
     """La consola no decide; fecha_corte llega de la decisión. Nada de date.today()."""
     raiz = Path("src/albertitos/console")
@@ -720,3 +740,23 @@ def test_traza_motivos_una_vez_aunque_se_decida_varias_veces(conn, maestro, erp)
         i for i, p in enumerate(pasos) if p["tipo"] == "evento" and p["evento"]["etapa"] == "decide"
     ]
     assert pasos[decides[-1] + 1]["tipo"] == "motivo"
+
+
+def test_puerto_ocupado_da_una_linea_y_no_un_traceback(tmp_path, monkeypatch):
+    """Con otro puente ya abierto, el arranque dice qué hacer (y qué puerto usar) en una línea."""
+    import errno
+
+    import pytest
+
+    def ocupado(*a, **k):
+        raise OSError(errno.EADDRINUSE, "Address already in use")
+
+    monkeypatch.setattr(api, "ThreadingHTTPServer", ocupado)
+    monkeypatch.setattr(
+        api, "puerto_libre", lambda p: 8003
+    )  # el que esté libre de verdad en esta máquina
+    with pytest.raises(SystemExit) as e:
+        api.servir(tmp_path / "no.db", 8000)
+    mensaje = str(e.value)
+    assert "El puerto 8000 ya lo usa otro proceso" in mensaje and "Ctrl+C" in mensaje
+    assert "--puerto 8003" in mensaje and "NEXT_PUBLIC_API_URL=http://127.0.0.1:8003" in mensaje

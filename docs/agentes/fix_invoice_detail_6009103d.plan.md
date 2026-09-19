@@ -34,7 +34,7 @@ El enlace se construye así:
 export const ficheroHref = (fileId: string) => `/invoices/${encodeURIComponent(fileId)}`
 ```
 
-Eso alimenta `router.push` / `<Link>` hacia [`app/invoices/[id]/page.tsx`](console-web/app/invoices/[id]/page.tsx).
+Eso alimenta `router.push` / `<Link>` hacia [`app/invoices/[id]/page.tsx`](../../console-web/app/invoices/[id]/page.tsx).
 
 - En la Caja hay **decenas** de `file_id` con tilde: `FA-5590_ofimática.pdf`, `F26-3355_mensajería.pdf`, `*_informática.pdf`, etc. `FA-5590_ofimática.pdf` es fichero de demo.
 - `encodeURIComponent` convierte `á` en `%C3%A1`. Next App Router **vuelve a codificar** el path (`%` → `%25`). `useParams` + un solo `decodeURIComponent` se queda a medias (`ofim%C3%A1tica`) y el puente busca un nombre que no existe → 404 / pantalla de error.
@@ -63,22 +63,22 @@ Esos mismos logs muestran `GET /invoices/scan_0xx.pdf 200`. La ruta monta. Mucho
 
 **Navegación por query, path ASCII.** Así Next no ve tildes ni `%` en el segmento dinámico.
 
-1. Extraer `ficheroHref` a [`console-web/lib/routes.ts`](console-web/lib/routes.ts):
+1. Extraer `ficheroHref` a [`console-web/lib/routes.ts`](../../console-web/lib/routes.ts):
 
 ```ts
 export const ficheroHref = (fileId: string) =>
   `/invoices/detalle?file=${encodeURIComponent(fileId.normalize('NFC'))}`
 ```
 
-2. Mover el detalle de [`app/invoices/[id]/page.tsx`](console-web/app/invoices/[id]/page.tsx) a `app/invoices/detalle/page.tsx`. Leer el id con `useSearchParams().get('file')` (ya viene decodificado) y NFC. Quitar el `decodeURIComponent` extra.
+2. Mover el detalle de [`app/invoices/[id]/page.tsx`](../../console-web/app/invoices/[id]/page.tsx) a `app/invoices/detalle/page.tsx`. Leer el id con `useSearchParams().get('file')` (ya viene decodificado) y NFC. Quitar el `decodeURIComponent` extra.
 
 3. Dejar `[id]/page.tsx` como **alias** que redirige a `detalle?file=…` para que sigan valiendo los enlaces ASCII del guion (`/invoices/F26-2201_transportes.pdf`, `/invoices/scan_017.pdf`).
 
-4. Actualizar usos de `ficheroHref`: tabla, [`RecentDecisions`](console-web/components/dashboard/RecentDecisions.tsx), [`EventosTable`](console-web/components/workers/EventosTable.tsx), [`ChainOfWork`](console-web/components/audit/ChainOfWork.tsx).
+4. Actualizar usos de `ficheroHref`: tabla, [`RecentDecisions`](../../console-web/components/dashboard/RecentDecisions.tsx), [`EventosTable`](../../console-web/components/workers/EventosTable.tsx), [`ChainOfWork`](../../console-web/components/audit/ChainOfWork.tsx).
 
 5. Vacío honesto: si no hay `hechos`/`decisión`, el tab Decisión debe decir que el fichero está PENDIENTE y enseñar ya los eventos de traza (ingest/extract), no un documento en blanco que parece un fallo de carga.
 
-6. En [`api.py`](src/albertitos/console/api.py) `do_GET`: capturar `Exception` (hoy solo `sqlite3.Error`). Un JSON raro hoy deja `status` sin asignar y una respuesta HTTP rota → la UI se queda colgada.
+6. En [`api.py`](../../src/albertitos/console/api.py) `do_GET`: capturar `Exception` (hoy solo `sqlite3.Error`). Un JSON raro hoy deja `status` sin asignar y una respuesta HTTP rota → la UI se queda colgada.
 
 ## Comprobar en el navegador (dev ya corre)
 

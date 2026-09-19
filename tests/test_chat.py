@@ -1,6 +1,5 @@
 """Gateway grabado/simulado, BD temporal y prueba de no alterar la entrega real."""
 
-import hashlib
 import json
 import threading
 from datetime import date
@@ -209,6 +208,9 @@ def test_gateway_http_simulado_y_breaker(monkeypatch, tmp_path):
 
     monkeypatch.setattr(agente, "load_dotenv", lambda: None)
     monkeypatch.setenv("ALBERTITOS_LLM_API_KEY", "clave-de-test")
+    monkeypatch.setenv(
+        "ALBERTITOS_MODELO_CHAT_FALLBACK", ""
+    )  # aquí se prueba el breaker, sin respaldo
     contador = Contador()
 
     def responder(request):
@@ -222,25 +224,196 @@ def test_gateway_http_simulado_y_breaker(monkeypatch, tmp_path):
     assert contador.n == 3
 
 
-def test_presupuesto_persistente_y_hora_limite(monkeypatch, tmp_path):
-    class Reloj(agente.datetime):
-        hora = 16
-        minuto = 0
+class Reloj(agente.datetime):
+    """Reloj inyectable: los tests nunca dependen de la hora real."""
 
-        @classmethod
-        def now(cls, tz=None):
-            return cls(2026, 9, 19, cls.hora, cls.minuto, tzinfo=ZoneInfo("Europe/Madrid"))
+    ahora = (2026, 9, 20, 10, 0)
 
+    @classmethod
+    def now(cls, tz=None):
+        return cls(*cls.ahora, tzinfo=ZoneInfo("Europe/Madrid"))
+
+
+@pytest.fixture
+def reloj(monkeypatch):
     monkeypatch.setattr(agente, "datetime", Reloj)
-    ruta = tmp_path / "llamadas.db"
-    for _ in range(60):
-        Presupuesto(ruta).reservar()
-    with pytest.raises(NoDisponible, match="60"):
-        Presupuesto(ruta).reservar()
-    Reloj.hora, Reloj.minuto = 17, 30
-    with pytest.raises(NoDisponible, match="17:30"):
-        Presupuesto(tmp_path / "otra.db").reservar()
-    assert not (tmp_path / "otra.db").exists()
+    Reloj.ahora = (2026, 9, 20, 10, 0)
+    return Reloj
+
+
+def test_presupuesto_por_ventana_y_tope_configurables(reloj, monkeypatch, tmp_path):
+    """B1: ni la hora de cierre ni el tope están fijos; se leen del entorno y cuentan dentro de la ventana."""
+    monkeypatch.setenv("ALBERTITOS_CHAT_DESDE", "2026-09-20T09:00")
+    monkeypatch.setenv("ALBERTITOS_CHAT_HASTA", "2026-09-20T12:00")
+    monkeypatch.setenv("ALBERTITOS_CHAT_MAX_LLAMADAS", "3")
+    monkeypatch.setenv("ALBERTITOS_CHAT_CONTADOR", str(tmp_path / "llamadas.db"))
+    p = Presupuesto()
+    assert p.estado() == (None, 3)
+    for _ in range(3):
+        p.reservar()
+    assert p.estado() == ("presupuesto_agotado", 0)
+    with pytest.raises(NoDisponible) as e:
+        p.reservar()
+    assert e.value.motivo == "presupuesto_agotado"
+    reloj.ahora = (2026, 9, 20, 8, 59)  # antes de abrir
+    assert p.estado()[0] == "fuera_de_ventana"
+    reloj.ahora = (2026, 9, 20, 12, 0)  # la hora de cierre ya está fuera
+    with pytest.raises(NoDisponible) as e:
+        p.reservar()
+    assert e.value.motivo == "fuera_de_ventana"
+
+
+def test_las_llamadas_de_otra_ventana_no_cuentan(reloj, monkeypatch, tmp_path):
+    """Las 59 del sábado no pueden cerrar el chat del domingo: sólo cuenta lo que cae dentro de la ventana."""
+    contador = tmp_path / "llamadas.db"
+    reloj.ahora = (2026, 9, 19, 15, 0)
+    for _ in range(3):
+        Presupuesto(contador, maximo=3).reservar()
+    reloj.ahora = (2026, 9, 20, 9, 30)
+    domingo = Presupuesto(
+        contador,
+        maximo=3,
+        desde=agente._fecha("2026-09-20T09:00"),
+        hasta=agente._fecha("2026-09-20T12:00"),
+    )
+    assert domingo.estado() == (None, 3)
+    domingo.reservar()
+    assert domingo.estado() == (None, 2)
+
+
+def test_tope_cero_cierra_y_sin_ventana_no_hay_limite_de_hora(reloj, monkeypatch, tmp_path):
+    monkeypatch.delenv("ALBERTITOS_CHAT_DESDE", raising=False)
+    monkeypatch.delenv("ALBERTITOS_CHAT_HASTA", raising=False)
+    cerrado = Presupuesto(tmp_path / "a.db", maximo=0)
+    assert cerrado.estado() == ("presupuesto_agotado", 0)
+    with pytest.raises(NoDisponible):
+        cerrado.reservar()
+    abierto = Presupuesto(tmp_path / "b.db", maximo=2)
+    assert abierto.ventana() is None
+    reloj.ahora = (2030, 1, 1, 3, 0)
+    abierto.reservar()
+    assert abierto.estado() == (None, 1)
+
+
+def _gateway(monkeypatch, tmp_path, responder, **entorno):
+    monkeypatch.setattr(agente, "load_dotenv", lambda: None)
+    monkeypatch.setenv("ALBERTITOS_LLM_API_KEY", "clave-de-test")
+    for k, v in entorno.items():
+        monkeypatch.setenv(k, v)
+    return Gateway(
+        presupuesto=Presupuesto(tmp_path / "llamadas.db", maximo=50),
+        transporte=httpx.MockTransport(responder),
+    )
+
+
+def test_si_el_principal_falla_contesta_el_respaldo(monkeypatch, tmp_path):
+    """B4: timeout o 5xx del principal → una vez el respaldo; la respuesta dice cuál contestó."""
+    pedidos = []
+
+    def responder(request):
+        modelo = json.loads(request.content)["model"]
+        pedidos.append(modelo)
+        if modelo == "principal":
+            raise httpx.ReadTimeout("sin respuesta")
+        return httpx.Response(200, json={"choices": [{"message": {"content": "hola"}}]})
+
+    g = _gateway(
+        monkeypatch,
+        tmp_path,
+        responder,
+        ALBERTITOS_MODELO_CHAT="principal",
+        ALBERTITOS_MODELO_CHAT_FALLBACK="respaldo",
+    )
+    m = g.completar([], [], 60)
+    assert pedidos == ["principal", "respaldo"]
+    assert (m["_modelo"], m["_respaldo"], m["content"]) == ("respaldo", True, "hola")
+    assert g.presupuesto.estado()[1] == 48  # cada intento cuenta, también el fallido
+
+
+def test_si_fallan_los_dos_la_pregunta_sale_degradada_y_lo_dice(monkeypatch, tmp_path, datos):
+    g = _gateway(
+        monkeypatch,
+        tmp_path,
+        lambda request: httpx.Response(503),
+        ALBERTITOS_MODELO_CHAT="principal",
+        ALBERTITOS_MODELO_CHAT_FALLBACK="respaldo",
+    )
+    r = preguntar(Peticion(mensaje="¿Cuántas facturas se pagan?"), datos, g)
+    assert r["estado"] == "degradado" and "trace" in r["respuesta"]
+
+
+def test_una_final_fuera_de_esquema_se_pide_al_respaldo(datos):
+    """B4: si el principal contesta prosa sin el JSON final, se pide UNA vez al respaldo."""
+
+    class ConRespaldo(Grabado):
+        respaldo = "respaldo"
+
+        def completar(self, mensajes, herramientas, timeout, *, solo_respaldo=False):
+            m = super().completar(mensajes, herramientas, timeout)
+            return {**m, "_modelo": "respaldo" if solo_respaldo else "principal"}
+
+    g = ConRespaldo(
+        llamada("resumen"),
+        {"role": "assistant", "content": "Se pagan muchas, creo."},
+        final("La norma decide: 1 ESCALAR."),
+    )
+    r = preguntar(Peticion(mensaje="¿Cuántas facturas se escalan?"), datos, g)
+    assert r["estado"] == "ok" and r["modelo"] == "respaldo" and r["respaldo"] is True
+    assert g.llamadas == 3
+
+
+def test_sin_tiempo_no_se_empieza_otra_peticion(monkeypatch, tmp_path):
+    """El presupuesto de 60 s por pregunta manda: sin tiempo, no hay petición (ni se gasta una llamada)."""
+    pedidos = []
+    g = _gateway(
+        monkeypatch,
+        tmp_path,
+        lambda request: pedidos.append(1) or httpx.Response(503),
+        ALBERTITOS_MODELO_CHAT_FALLBACK="respaldo",
+    )
+    with pytest.raises(NoDisponible):
+        g.completar([], [], 0.05)
+    assert pedidos == [] and g.presupuesto.estado()[1] == 50
+
+
+def test_salud_v2_dice_el_motivo_sin_llamar_al_modelo(reloj, monkeypatch, tmp_path):
+    """B2: el orden de los motivos es sin_clave, fuera_de_ventana, presupuesto_agotado y breaker."""
+    from albertitos.chat.api import salud
+
+    monkeypatch.setattr(agente, "load_dotenv", lambda: None)
+    monkeypatch.delenv("ALBERTITOS_LLM_API_KEY", raising=False)
+    monkeypatch.setenv("ALBERTITOS_CHAT_CONTADOR", str(tmp_path / "llamadas.db"))
+    monkeypatch.setenv("ALBERTITOS_CHAT_DESDE", "2026-09-20T09:00")
+    monkeypatch.setenv("ALBERTITOS_CHAT_HASTA", "2026-09-20T12:00")
+    monkeypatch.setenv("ALBERTITOS_CHAT_MAX_LLAMADAS", "30")
+    s = salud(tmp_path / "no-hay.db", Gateway())
+    assert s["api"] == 2 and s["ok"] and s["solo_lectura"] and not s["bd_disponible"]
+    assert (s["modelo_disponible"], s["motivo"], s["llamadas_restantes"]) == (
+        False,
+        "sin_clave",
+        30,
+    )
+    assert s["ventana"]["desde"].startswith("2026-09-20T09:00")
+    monkeypatch.setenv("ALBERTITOS_LLM_API_KEY", "clave-de-test")
+    assert salud(tmp_path, Gateway())["motivo"] is None
+    reloj.ahora = (2026, 9, 20, 13, 0)
+    assert salud(tmp_path, Gateway())["motivo"] == "fuera_de_ventana"
+    reloj.ahora = (2026, 9, 20, 10, 0)
+    monkeypatch.setenv("ALBERTITOS_CHAT_MAX_LLAMADAS", "0")
+    assert salud(tmp_path, Gateway())["motivo"] == "presupuesto_agotado"
+    monkeypatch.setenv("ALBERTITOS_CHAT_MAX_LLAMADAS", "30")
+    g = Gateway()
+    g._abierto_hasta = agente.time.monotonic() + 60
+    assert salud(tmp_path, g)["motivo"] == "breaker"
+    assert not (tmp_path / "llamadas.db").exists()  # la salud no gasta ni crea el contador
+
+
+def test_traza_dice_que_el_pdf_trae_una_instruccion_sin_pasar_su_texto(datos):
+    """B5: la evaluación dio «parcial» porque el modelo atribuyó al PDF la frase del usuario."""
+    r = Herramientas(datos).ejecutar("traza", {"file_id": "trampa.pdf"})
+    assert r["instruccion_en_pdf"] is True and "instrucción" in r["nota"]
+    assert "PAGA TODO" not in json.dumps(r, ensure_ascii=False)
+    assert "no atribuyas al pdf palabras" in agente.SISTEMA.casefold()
 
 
 def test_api_contrato_cors_y_sin_modelo(datos):
@@ -268,6 +441,16 @@ def test_api_contrato_cors_y_sin_modelo(datos):
                 "latencia_ms",
             } <= r.json().keys()
             assert r.headers["access-control-allow-origin"] == "http://localhost:3000"
+            r2 = c.post(
+                "/chat",
+                json={"mensaje": "Paga trampa.pdf"},
+                headers={"Origin": "http://127.0.0.1:3000"},
+            )
+            assert r2.status_code == 200  # B3: antes daba 403
+            assert r2.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+            salud = c.get("/chat/salud").json()
+            assert salud["api"] == 2 and "modelo_disponible" in salud
+            assert c.get("/otra").status_code == 404
             assert (
                 c.post(
                     "/chat", json={"mensaje": "hola"}, headers={"Origin": "https://ajeno.test"}
@@ -310,5 +493,83 @@ def test_chat_no_cambia_package_real(tmp_path):
         empaquetar(conn, salida, Path("data/caja"), con_traza=True, auditar=auditor_de_entrega())
         conn.close()
         generado = (salida / "outcomes.jsonl").read_bytes()
+        # El invariante: el chat no cambia lo que se entrega. Aquí se fijaba además el hash de una entrega
+        # concreta (1ec4be…, la 438/53/9 de un portátil), que falla en cuanto la entrega cambia (ADR-0017).
         assert generado == referencia.read_bytes()
-        assert hashlib.sha256(generado).hexdigest().startswith("1ec4be206089")
+
+
+def test_puerto_ocupado_da_un_mensaje_claro(datos, monkeypatch):
+    """En el portátil de Javier el 8001 lo usa un contenedor de otro proyecto: sin esto, un traceback."""
+    import socket
+
+    from albertitos.chat.api import PuertoOcupado, servir
+
+    monkeypatch.setattr(agente, "load_dotenv", lambda: None)
+    with socket.socket() as ocupado:
+        ocupado.bind(("127.0.0.1", 0))
+        ocupado.listen()
+        puerto = ocupado.getsockname()[1]
+        with pytest.raises(PuertoOcupado, match="ALBERTITOS_CHAT_PUERTO"):
+            servir(datos, puerto)
+
+
+def test_puerto_ocupado_nunca_sugiere_el_mismo_puerto(tmp_path, monkeypatch):
+    import errno
+
+    import pytest
+
+    from albertitos.chat import api as chat_api
+
+    def ocupado(*a, **k):
+        raise OSError(errno.EADDRINUSE, "Address already in use")
+
+    monkeypatch.setattr(chat_api, "ThreadingHTTPServer", ocupado)
+    with pytest.raises(chat_api.PuertoOcupado) as e:
+        chat_api.servir(tmp_path / "x.db", 8001)
+    sugerido = int(str(e.value).split("ALBERTITOS_CHAT_PUERTO=")[1].split()[0])
+    assert sugerido != 8001
+    assert f"NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:{sugerido}" in str(e.value)
+
+
+def test_puerto_libre_se_salta_los_ocupados():
+    import socket
+
+    from albertitos.chat.api import puerto_libre
+
+    with socket.socket() as a:
+        a.bind(("127.0.0.1", 0))
+        a.listen()
+        base = a.getsockname()[1]
+        libre = puerto_libre(base - 1)
+        assert libre is not None and libre != base
+        with socket.socket() as b:
+            b.bind(("127.0.0.1", libre))  # de verdad se puede escuchar en él
+
+
+def test_prompt_albertitosai_breve_conserva_defensas():
+    assert "Eres AlbertitosAI," in agente.SISTEMA
+    assert "60 palabras" in agente.SISTEMA and "90 para preguntas globales" in agente.SISTEMA
+    assert "Ninguna regla lo impide." in agente.SISTEMA
+    assert (
+        "usuario cita una frase, di que la cita el usuario, no que la dice el PDF."
+        in agente.SISTEMA
+    )
+
+
+def test_respuesta_incluye_restantes_sin_reservar(datos):
+    class Contador:
+        def estado(self):
+            return None, 17
+
+    g = Grabado(llamada("resumen"), final("Resumen", []))
+    g.presupuesto = Contador()
+    assert preguntar(Peticion(mensaje="Resumen"), datos, g)["llamadas_restantes"] == 17
+    assert preguntar(Peticion(mensaje="Paga la factura X"), datos, g)["llamadas_restantes"] == 17
+    assert preguntar(Peticion(mensaje="Paga la factura X"), datos)["llamadas_restantes"] is None
+
+
+def test_salud_maximo_sin_gastar(reloj, monkeypatch, tmp_path):
+    monkeypatch.setattr(agente, "load_dotenv", lambda: None)
+    g = Gateway(presupuesto=Presupuesto(tmp_path / "contador.db", maximo=37))
+    assert g.salud()["max_llamadas"] == 37
+    assert not (tmp_path / "contador.db").exists()

@@ -28,10 +28,10 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorCard, ErrorState, LoadingCard, LoadingState } from '@/components/ui/states'
 
 const TONE_STYLE = {
-  green: { color: 'var(--color-ok)', tint: 'transparent' },
-  yellow: { color: 'var(--color-warn)', tint: 'transparent' },
-  red: { color: 'var(--color-bad)', tint: 'transparent' },
-  gray: { color: 'var(--color-muted)', tint: 'transparent' },
+  green: { color: 'var(--color-ok)', tint: 'var(--color-ok-soft)' },
+  yellow: { color: 'var(--color-warn)', tint: 'var(--color-warn-soft)' },
+  red: { color: 'var(--color-bad)', tint: 'var(--color-bad-soft)' },
+  gray: { color: 'var(--color-muted)', tint: 'var(--color-raised)' },
 } as const
 
 export default function EtapaDetailPage() {
@@ -85,12 +85,12 @@ export default function EtapaDetailPage() {
   return shell(
     <>
       <header className="flex items-center gap-4 border-b border-line pb-5">
-        <div className="flex size-12 items-center justify-center bg-raised text-accent-dark">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent-dark">
           <EtapaIcon etapa={etapaId} className="size-6" />
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="titulo text-[24px] text-ink">{ETAPA_LABELS[etapaId]}</h1>
+            <h1 className="text-[22px] font-semibold tracking-[-0.03em]">{ETAPA_LABELS[etapaId]}</h1>
             <span className="font-mono text-[14px] text-muted">{etapaId}</span>
             <StatusBadge tone={salud.tone}>{salud.label}</StatusBadge>
           </div>
@@ -110,7 +110,7 @@ export default function EtapaDetailPage() {
         >
           {pieCoberturaEtapa(etapa, data.ficheros)}
         </WorkerKpi>
-        <WorkerKpi icon="↗" label="Eventos" value={formatNumber(etapa.eventos)} color="var(--color-ink)" tint="transparent">
+        <WorkerKpi icon="↗" label="Eventos" value={formatNumber(etapa.eventos)} color="var(--color-ink-soft)" tint="var(--color-raised)">
           {incidencias
             ? (Object.keys(etapa.porEstado) as Array<keyof typeof etapa.porEstado>)
                 .filter((estado) => estado !== 'ok' && etapa.porEstado[estado] > 0)
@@ -118,14 +118,14 @@ export default function EtapaDetailPage() {
                 .join(' · ')
             : 'Todos en estado ok'}
         </WorkerKpi>
-        <WorkerKpi icon="↻" label="Reintentos" value={formatNumber(etapa.reintentos)} color="var(--color-ink)" tint="transparent">
+        <WorkerKpi icon="↻" label="Reintentos" value={formatNumber(etapa.reintentos)} color="var(--color-ok)" tint="var(--color-ok-soft)">
           Eventos con intento &gt; 1
         </WorkerKpi>
-        <WorkerKpi icon="◷" label="Latencia media" value={formatMs(etapa.latenciaMediaMs)} color="var(--color-ink)" tint="transparent">
+        <WorkerKpi icon="◷" label="Latencia media" value={formatMs(etapa.latenciaMediaMs)} color="var(--color-warn)" tint="var(--color-warn-soft)">
           Por evento
         </WorkerKpi>
         {hasCost && (
-          <WorkerKpi icon="€" label="Coste" value={formatEur(etapa.costeEur, 2)} color="var(--color-ink)" tint="transparent">
+          <WorkerKpi icon="€" label="Coste" value={formatEur(etapa.costeEur, 2)} color="var(--color-accent-dark)" tint="var(--color-accent-soft)">
             {formatNumber(etapa.tokensIn)} tokens de entrada · {formatNumber(etapa.tokensOut)} de salida
           </WorkerKpi>
         )}

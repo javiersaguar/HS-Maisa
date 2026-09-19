@@ -20,7 +20,7 @@ export default function TrazaPage() {
       <Card className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="titulo text-[24px] text-ink">Traza</h1>
+            <h1 className="text-[22px] font-semibold tracking-[-0.025em]">Traza</h1>
             <p className="mt-1 text-[13px] text-muted">
               Chain of Work del pipeline: eventos de cada etapa (latencia, reintentos, tokens, coste) y cada regla de
               la norma con su evidencia. Lo más reciente primero.

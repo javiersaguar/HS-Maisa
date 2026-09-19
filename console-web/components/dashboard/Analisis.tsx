@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowUpRight, FileSearch } from 'lucide-react'
+import { useConfianzaFichero } from '@/hooks/useConfianza'
 import { useFichero } from '@/hooks/useFicheros'
 import type { Fichero, Motivo } from '@/lib/types'
 import {
@@ -15,24 +16,29 @@ import {
   tituloRegla,
 } from '@/lib/format'
 import { ficheroHref } from '@/lib/routes'
+import { ConfianzaChip } from '@/components/confianza/ConfianzaChip'
 import { ResultadoTitular } from '@/components/ui/Resultado'
-import { ErrorCard, LoadingCard } from '@/components/ui/states'
+import { ErrorState, LoadingState } from '@/components/ui/states'
 
 /** Una regla de la norma, con su evidencia en palabras. Es el argumento, no un adorno. */
 function Regla({ motivo }: { motivo: Motivo }) {
   const evidencia = describirEvidencia(motivo.evidencia)
+  // Mismo código que la ficha: salvia si cumple, rojo si al fallar impide pagar, ámbar si sólo escala.
+  const punto = motivo.ok ? 'bg-accent' : motivo.evidencia.no_pagar ? 'bg-bad' : 'bg-warn'
+  const aviso = motivo.evidencia.no_pagar ? 'text-bad' : 'text-warn'
   return (
     <li className="flex gap-2.5 border-t border-line-soft py-3 first:border-t-0 first:pt-0">
-      <span
-        aria-hidden
-        className={`mt-[5px] size-2 shrink-0 rounded-full ${motivo.ok ? 'bg-line' : 'bg-warn'}`}
-      />
+      <span aria-hidden className={`mt-[6px] size-2 shrink-0 rounded-full ${punto}`} />
       <div className="min-w-0">
-        <p className="text-[12px] text-muted">
+        <p className="text-[13px] font-medium text-ink">
           {tituloRegla(motivo.regla_id)}
-          {!motivo.ok && <span className="ml-2 text-warn">no se cumple</span>}
+          {!motivo.ok && (
+            <span className={`ml-2 text-[12px] font-normal ${aviso}`}>
+              {motivo.evidencia.no_pagar ? 'no se cumple · impide pagar' : 'no se cumple'}
+            </span>
+          )}
         </p>
-        <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">{frase(motivo.detalle)}</p>
+        <p className="mt-1 text-[14px] leading-relaxed text-ink-soft">{frase(motivo.detalle)}</p>
         {evidencia.length > 0 && (
           <ul className="mt-1.5 space-y-0.5">
             {evidencia.map((linea) => (
@@ -50,14 +56,26 @@ function Regla({ motivo }: { motivo: Motivo }) {
 function Dato({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="text-[12px] text-muted">{label}</p>
-      <p className="mt-1 truncate text-[13px] text-ink cifra">{children ?? '—'}</p>
+      <dt className="text-[12px] text-muted">{label}</dt>
+      <dd className="mt-0.5 truncate text-[14px] text-ink tabular-nums" title={typeof children === 'string' ? children : undefined}>
+        {children ?? '—'}
+      </dd>
     </div>
+  )
+}
+
+function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-6 border-t border-line-soft pt-5">
+      <h3 className="text-[13px] font-semibold text-ink">{titulo}</h3>
+      {children}
+    </section>
   )
 }
 
 function Contenido({ fichero }: { fichero: Fichero }) {
   const { decision, hechos, fuentes } = fichero
+  const { data: confianza } = useConfianzaFichero(decision ? fichero.file_id : null)
   const motivos = decision?.motivos ?? []
   const fallan = motivos.filter((m) => !m.ok)
   const cumplen = motivos.filter((m) => m.ok)
@@ -67,7 +85,9 @@ function Contenido({ fichero }: { fichero: Fichero }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
         <div className="min-w-0">
-          <h2 className="truncate ident text-[14px] text-ink">{fichero.file_id}</h2>
+          <h2 className="truncate font-mono text-[14px] font-medium text-ink" title={fichero.file_id}>
+            {fichero.file_id}
+          </h2>
           <p className="mt-1 text-[12px] text-muted">
             {loteNombre(fichero.lote)}
             {hechos ? ` · leída por ${METODO_LABELS[hechos.metodo].toLowerCase()}` : ''}
@@ -75,31 +95,43 @@ function Contenido({ fichero }: { fichero: Fichero }) {
         </div>
         <Link
           href={ficheroHref(fichero.file_id)}
-          className="flex shrink-0 items-center gap-1 text-[13px] text-accent hover:underline"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-[13px] font-medium text-accent-dark transition hover:border-accent hover:bg-accent-soft"
         >
           Ficha completa
           <ArrowUpRight className="size-3.5" />
         </Link>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-        <ResultadoTitular estado={fichero.estado} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-20">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <ResultadoTitular estado={fichero.estado} />
+          {confianza && (
+            <p className="flex items-center gap-2 text-[12px] text-muted">
+              Confianza
+              <ConfianzaChip banda={confianza.banda} razon={confianza.razones[0]} />
+            </p>
+          )}
+        </div>
 
         {decision ? (
           <>
-            <p className="mt-5 text-[14px] leading-relaxed text-ink-soft">{resumenReglas(decision)}</p>
+            <p className="mt-5 rounded-lg bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
+              {resumenReglas(decision)}
+            </p>
 
             {fallan.length > 0 && (
-              <ul className="mt-4">
-                {fallan.map((m) => (
-                  <Regla key={m.regla_id} motivo={m} />
-                ))}
-              </ul>
+              <Seccion titulo={fallan.length === 1 ? 'Qué ha fallado' : `Qué ha fallado (${fallan.length})`}>
+                <ul className="mt-3">
+                  {fallan.map((m) => (
+                    <Regla key={m.regla_id} motivo={m} />
+                  ))}
+                </ul>
+              </Seccion>
             )}
 
             {hechos?.texto_sospechoso && (
-              <figure className="mt-5 border-l-2 border-warn py-1 pl-3">
-                <figcaption className="text-[12px] font-medium text-warn">
+              <figure className="mt-5 rounded-lg border border-warn-line bg-warn-soft px-4 py-3">
+                <figcaption className="text-[13px] font-semibold text-warn">
                   El documento intenta decidir por su cuenta
                 </figcaption>
                 <blockquote className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">
@@ -110,33 +142,17 @@ function Contenido({ fichero }: { fichero: Fichero }) {
                 </p>
               </figure>
             )}
-
-            {cumplen.length > 0 && (
-              <details className="mt-5 border-t border-line-soft pt-3">
-                <summary className="cursor-pointer text-[13px] text-muted hover:text-ink">
-                  Lo que sí cumple ({cumplen.length})
-                </summary>
-                <ul className="mt-3">
-                  {cumplen.map((m) => (
-                    <Regla key={m.regla_id} motivo={m} />
-                  ))}
-                </ul>
-              </details>
-            )}
           </>
         ) : (
-          <p className="mt-5 text-[14px] leading-relaxed text-ink-soft">
+          <p className="mt-5 rounded-lg bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
             No hay decisión vigente. El PDF no se ha podido leer, así que la norma no se ha aplicado: no se inventa un
             resultado.
           </p>
         )}
 
         {hechos && (
-          <section className="mt-6 border-t border-line-soft pt-5">
-            <h3 className="text-[12px] text-muted">
-              Lo que dice la factura
-            </h3>
-            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+          <Seccion titulo="Lo que dice la factura">
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
               <Dato label="Nº factura">{hechos.num_factura}</Dato>
               <Dato label="Fecha">{formatDate(hechos.fecha)}</Dato>
               <Dato label="Pedido">{hechos.pedido}</Dato>
@@ -146,64 +162,63 @@ function Contenido({ fichero }: { fichero: Fichero }) {
               <Dato label="Base">{formatAmount(hechos.base)}</Dato>
               <Dato label="IVA">{formatAmount(hechos.iva)}</Dato>
               <Dato label="Total">{formatAmount(hechos.total)}</Dato>
-            </div>
-          </section>
+            </dl>
+          </Seccion>
         )}
 
         {(fuentes?.proveedor || fuentes?.pedido || asiento) && (
-          <section className="mt-6 border-t border-line-soft pt-5">
-            <h3 className="text-[12px] text-muted">
-              Contra lo que se ha cruzado
-            </h3>
-            <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+          <Seccion titulo="Contra lo que se ha cruzado">
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
               <Dato label="Proveedor del maestro">{fuentes?.proveedor?.razon_social}</Dato>
               <Dato label="IBAN del maestro">{fuentes?.proveedor?.iban}</Dato>
               <Dato label="Importe del pedido">{formatAmount(fuentes?.pedido?.importe_total ?? null)}</Dato>
               <Dato label="Asiento ERP">{asiento?.asiento_id}</Dato>
               <Dato label="Estado en el ERP">{asiento?.estado}</Dato>
               <Dato label="Importe que espera">{formatAmount(asiento?.importe_esperado ?? null)}</Dato>
-            </div>
-          </section>
+            </dl>
+          </Seccion>
+        )}
+
+        {cumplen.length > 0 && (
+          <details className="group mt-6 border-t border-line-soft pt-4">
+            <summary className="cursor-pointer text-[13px] font-medium text-muted transition hover:text-ink">
+              Lo que sí cumple ({cumplen.length})
+            </summary>
+            <ul className="mt-3">
+              {cumplen.map((m) => (
+                <Regla key={m.regla_id} motivo={m} />
+              ))}
+            </ul>
+          </details>
         )}
       </div>
     </div>
   )
 }
 
-/** Columna derecha: por qué esa factura sale PAGAR, NO_PAGAR, ESCALAR o PENDIENTE. */
+/** Tarjeta derecha de la portada: por qué esa factura sale PAGAR, NO_PAGAR, ESCALAR o PENDIENTE. */
 export function Analisis({ fileId }: { fileId: string | null }) {
   const { data, error, initialLoading, refresh, loading } = useFichero(fileId ?? '')
 
   if (!fileId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
-        <FileSearch className="size-7 text-muted" />
-        <p className="mt-4 max-w-[34ch] text-[14px] text-ink-soft">
-          Elige una factura de la bandeja y aquí verás qué decide la norma y con qué argumentos.
+        <span className="flex size-11 items-center justify-center rounded-2xl bg-accent-soft text-accent-dark">
+          <FileSearch className="size-5" />
+        </span>
+        <p className="mt-4 max-w-[36ch] text-[15px] font-semibold text-ink">
+          Aquí verás qué decide la norma y por qué
         </p>
-        <p className="mt-2 max-w-[42ch] text-[13px] leading-relaxed text-faint">
-          Se cruzan tres fuentes: el PDF, el maestro de proveedores y el ERP de 2009. La consola no decide nada, sólo
-          enseña lo que la norma dejó escrito.
+        <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-muted">
+          Sube facturas a la izquierda y elige una de la lista. Se cruzan tres fuentes: el PDF, el maestro de
+          proveedores y el ERP de 2009. La consola no decide nada, sólo enseña lo que la norma dejó escrito.
         </p>
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <ErrorCard error={error} onRetry={refresh} retrying={loading} />
-      </div>
-    )
-  }
-
-  if (initialLoading || !data) {
-    return (
-      <div className="p-6">
-        <LoadingCard label="Leyendo la decisión" rows={5} />
-      </div>
-    )
-  }
+  if (error) return <ErrorState error={error} onRetry={refresh} retrying={loading} />
+  if (initialLoading || !data) return <LoadingState label="Leyendo la decisión" rows={5} />
 
   return <Contenido fichero={data} />
 }

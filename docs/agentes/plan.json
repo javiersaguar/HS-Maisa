@@ -1,7 +1,7 @@
 {
-  "ciclo": 11,
-  "rama": "javier/ingesta",
-  "base": "c350f04",
+  "ciclo": 13,
+  "rama": "javier/chat",
+  "base": "3038d25",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -16,7 +16,6 @@
       "docs/agentes/RESILIENCIA-Y-COSTE.md",
       "docs/agentes/ANALISIS-JEV.md",
       ".github/workflows/windows.yml",
-      "Makefile",
       "tests/test_erp.py",
       "tests/test_hooks.py",
       "src/albertitos/sources/estado_bd.py",
@@ -45,7 +44,32 @@
       "docs/agentes/PROMPT-ALEJANDRO-CHAT.md",
       "docs/adr/README.md",
       "docs/agentes/PLAN-12.md",
-      "docs/revision/*"
+      "docs/revision/*",
+      "scripts/enlaces_check.py",
+      "tests/test_enlaces.py",
+      "scripts/contrato_api_check.py",
+      "tests/test_contrato_api.py",
+      "scripts/smoke.sh",
+      "scripts/preflight_lote2.py",
+      "tests/test_preflight.py",
+      "docs/agentes/fix_invoice_detail_*",
+      "src/albertitos/bonus/*",
+      "tests/test_bonus.py",
+      "docs/BONUS.md",
+      "docs/adr/0012-*",
+      "docs/api/bonus.md",
+      "docs/api/ejemplos/bonus-*",
+      "src/albertitos/confianza/*",
+      "tests/test_confianza.py",
+      "scripts/calibrar_confianza.py",
+      "docs/api/confianza.md",
+      "docs/api/ejemplos/confianza-*",
+      "docs/adr/0014-*",
+      "src/albertitos/extract/etapa.py",
+      "scripts/agentes_check.py",
+      "docs/agentes/PLAN-13.md",
+      "docs/agentes/partes/PARTE-11.md",
+      "docs/api/ejemplos/chat-[01]*"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -70,38 +94,32 @@
       "docs/ANALISIS-DATOS.md"
     ],
     "Alejandro": [
-      "console-web/*",
       "src/albertitos/console/*",
       "tests/test_console.py",
       "docs/agentes/FASE-3-UNION.md",
-      "docs/agentes/fix_invoice_detail_*"
+      ".claude/rules/consola.md",
+      "docs/adr/0007-*",
+      "docs/agentes/añadir_facturas_panel_*"
     ],
     "Alfonso": [
       "docs/plan/*",
       "presentaciones/*"
     ],
-    "K1": [
-      "src/albertitos/bonus/*",
-      "tests/test_bonus.py",
-      "docs/BONUS.md",
-      "docs/adr/0012-*",
-      "docs/api/bonus.md",
-      "docs/api/ejemplos/bonus-*"
-    ],
-    "K2": [
+    "C1": [
       "src/albertitos/chat/*",
       "tests/test_chat.py",
       "docs/api/chat.md",
-      "docs/api/ejemplos/chat-*",
-      "docs/adr/0013-*"
+      "docs/api/ejemplos/chat-salud*",
+      "docs/adr/0013-*",
+      "Makefile"
     ],
-    "K3": [
-      "src/albertitos/confianza/*",
-      "tests/test_confianza.py",
-      "scripts/calibrar_confianza.py",
-      "docs/api/confianza.md",
-      "docs/api/ejemplos/confianza-*",
-      "docs/adr/0014-*"
+    "C2": [
+      "console-web/lib/api/chat.ts",
+      "console-web/lib/mock/chat*",
+      "console-web/components/chat/*",
+      "console-web/app/layout.tsx",
+      "console-web/.env.example",
+      "console-web/README.md"
     ]
   }
 }

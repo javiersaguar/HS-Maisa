@@ -1,16 +1,19 @@
-# Chat con Alberto · contrato K2
+# AlbertitosAI · contrato K2, actualizado en el PLAN-13 (C1)
 
 Proceso independiente, sólo consulta; no hay que registrar POST en `console.api`. Stack existente: httpx, pydantic y servidor HTTP stdlib. ADR: [0013](../adr/0013-chat-consulta-con-herramientas.md).
 
 ## Arranque y demo en 30 segundos
 
-Desde la raíz, para el ensayo de PLAN-11:
+Desde la raíz:
 
 ```bash
-uv run python -m albertitos.chat --servidor --db dist/ensayo/k2/chat.db
+make chat                                   # = uv run python -m albertitos.chat --servidor
+ALBERTITOS_CHAT_PUERTO=8101 make chat       # si el 8001 está ocupado (en el portátil de Javier lo usa otro proyecto)
+uv run python -m albertitos.chat --salud    # ¿hay modelo y, si no, por qué? Sin llamarlo
 ```
 
-Escucha exclusivamente en `127.0.0.1:8001`. La copia se ha creado con `sqlite3.Connection.backup`; el módulo nunca inicializa ni migra la BD de negocio. `--db` puede señalar la BD instalada del portátil (siempre abre en modo `ro`); por defecto usa `ALBERTITOS_DB` o `dist/albertitos.db`.
+Escucha exclusivamente en `127.0.0.1`, en `ALBERTITOS_CHAT_PUERTO` (8001 por defecto). Si el puerto está ocupado, lo
+dice en una línea y sale con 1. La copia se ha creado con `sqlite3.Connection.backup`; el módulo nunca inicializa ni migra la BD de negocio. `--db` puede señalar la BD instalada del portátil (siempre abre en modo `ro`); por defecto usa `ALBERTITOS_DB` o `dist/albertitos.db`.
 
 Repliegue de terminal:
 
@@ -22,11 +25,19 @@ Mostrar la respuesta con cita, abrir la traza de esa factura y preguntar «Paga 
 
 ## Peticiones y respuesta
 
-`GET /chat/salud` devuelve 200 sin llamar al modelo:
+`GET /chat/salud` (versión 2, `api: 2`) devuelve 200 **sin llamar al modelo ni crear el contador**, y dice si una
+pregunta llegaría al modelo:
 
 ```json
-{"ok":true,"solo_lectura":true,"bd_disponible":true}
+{"ok":true,"api":2,"solo_lectura":true,"bd_disponible":true,
+ "modelo_disponible":false,"motivo":"fuera_de_ventana",
+ "modelo":"deepseek-v4-flash","respaldo":"glm5.3-flash",
+ "llamadas_restantes":30,"max_llamadas":100,
+ "ventana":{"desde":"2026-09-20T09:00:00+02:00","hasta":"2026-09-20T12:00:00+02:00"}}
 ```
+`motivo`: `null` (disponible) · `"sin_clave"` · `"fuera_de_ventana"` · `"presupuesto_agotado"` · `"breaker"`, en ese
+orden de prioridad. `ventana` es `null` si no hay ventana. Ejemplos reales: `ejemplos/chat-salud.json` (sin clave) y
+`ejemplos/chat-salud-domingo.json` (la ventana del domingo, vista el sábado).
 
 `POST /chat`, `Content-Type: application/json`:
 
@@ -44,7 +55,9 @@ Respuesta 200, tanto para éxito como degradación controlada:
   "citas":["F26-2201_transportes.pdf"],
   "herramientas_usadas":["traza"],
   "modelo":"deepseek-v4-flash",
+  "respaldo":false,
   "latencia_ms":4500,
+  "llamadas_restantes":97,
   "estado":"ok"
 }
 ```
@@ -55,9 +68,13 @@ Errores HTTP: 400 petición inválida, 403 origen no autorizado, 404 ruta descon
 
 ## Integración para Alejandro
 
-Panel lateral contra `http://127.0.0.1:8001/chat` (no contra `:8000`). CORS autoriza exactamente `http://localhost:3000`; el servidor rechaza otros `Origin` en POST. OPTIONS soportado. Usar `fetch` con JSON, botón bloqueado durante la petición y timeout de interfaz algo mayor de 60 s. Renderizar `respuesta` como texto/Markdown seguro, nunca HTML sin sanitizar. Convertir cada `citas[]` en enlace interno a la traza usando `encodeURIComponent(file_id)`.
+Panel lateral contra `http://127.0.0.1:8001/chat` (no contra `:8000`). CORS autoriza los orígenes de `ALBERTITOS_CHAT_ORIGENES` (por defecto `http://localhost:3000` y `http://127.0.0.1:3000`) y devuelve el origen que pide, nunca `*`; el servidor rechaza con 403 los demás `Origin` en POST. OPTIONS soportado. Usar `fetch` con JSON, botón bloqueado durante la petición y timeout de interfaz algo mayor de 60 s. Renderizar `respuesta` como texto/Markdown seguro, nunca HTML sin sanitizar. Convertir cada `citas[]` en enlace interno a la traza usando `encodeURIComponent(file_id)`.
 
-Mostrar «Consulta de sólo lectura · la norma decide», el estado degradado sin ocultarlo, el modelo y la latencia. No convertir frases del modelo en botones de ejecución. El modelo puede errar en la explicación: la decisión persistida y la traza siguen siendo la fuente de verdad.
+Mostrar «AlbertitosAI», «Consulta de sólo lectura · la norma decide», la latencia y los estados degradado, sólo lectura o respuesta grabada sin ocultarlos. El nombre del modelo, el respaldo y las herramientas se conservan en el contrato, pero no se muestran en la interfaz ni en sus ayudas. No convertir frases del modelo en botones de ejecución. El modelo puede errar en la explicación: la decisión persistida y la traza siguen siendo la fuente de verdad.
+
+El campo aditivo `llamadas_restantes` de POST es un entero o `null`: se lee del contador existente después de contestar, sin llamadas adicionales. Una negativa local sin gateway devuelve `null`. Salud incorpora `max_llamadas`; ambos campos son opcionales para clientes compatibles con servidores anteriores. El contador usa ese máximo o la primera salud disponible, con verde por encima del 50 %, ámbar entre 20–50 % y rojo por debajo del 20 %.
+
+La primera factura citada lleva una ficha releída del puente GET `/ficheros/:file_id`, con decisión, proveedor, importe, motivo y enlace a la traza. El resto son enlaces. En modo mock la ficha avisa que son datos de ejemplo. Las respuestas se presentan como texto plano: el prompt pide decisión primero, unas 60 palabras por factura o 90 para preguntas globales y confianza como banda y causa. Es una instrucción al modelo, no un límite garantizado; la interfaz ofrece «Ver más» después de cinco líneas.
 
 ## Herramientas y límites
 
@@ -69,17 +86,45 @@ Mostrar «Consulta de sólo lectura · la norma decide», el estado degradado si
 | `pagos` | `semana` ISO, `proveedor` | Bonus en sólo lectura, suma completa, hasta 20 ejemplos y advertencia de borrador |
 | `confianza` | `file_id` | Sólo se ofrece si K3 expone `/confianza/fichero`; no pide revisión LLM |
 
-Cinco ejecuciones de herramientas por pregunta y como máximo seis peticiones al modelo, sin reintentos automáticos. Presupuesto temporal por pregunta de 60 s: cada petición usa el tiempo restante como timeout de red. Breaker tras tres fallos consecutivos, pausa 60 s. Se ocultan errores HTTP y configuración sensible en las respuestas.
+Cinco ejecuciones de herramientas por pregunta y como máximo seis vueltas al modelo. Presupuesto temporal por pregunta de 60 s; cada petición HTTP espera como mucho `ALBERTITOS_CHAT_TIMEOUT_S` (25 s) y, si el principal falla, se prueba una vez el respaldo en el tiempo que quede (PLAN-13, B4). Breaker tras tres fallos consecutivos, pausa 60 s. Se ocultan errores HTTP y configuración sensible en las respuestas.
 
 El modelo no recibe `texto_sospechoso`, conceptos de líneas ni el PDF. Si un motivo contiene evidencia de instrucción, se sustituye por una explicación de anomalía y un enlace mediante su cita; la evidencia literal sigue disponible en la traza local. Los datos se encapsulan como `DATOS_NO_INSTRUCCIONES`; esto reduce exposición y no pretende probar inmunidad universal a inyecciones. No existe herramienta de escritura y cada conexión de consulta es `mode=ro`, independientemente de lo que produzca el modelo.
 
 La búsqueda está dimensionada para los 540 documentos del reto (lectura limitada a los primeros 1000 del listado); no es un buscador de millones de registros. La suma de pagos corresponde al calendario de decisiones persistidas, no al saldo bancario ni a pagos ejecutados. El calendario usa el corte guardado, no el reloj.
 
-## Configuración y tope PLAN-11
+## Configuración (PLAN-13)
 
-El código carga dotenv sin mostrar secretos. Variables: `ALBERTITOS_LLM_API_KEY`, `ALBERTITOS_LLM_BASE_URL` (defecto `https://api.helmcode.com/v1`), `ALBERTITOS_MODELO_CHAT` (defecto modelo de texto configurado o `deepseek-v4-flash`). No se modifica `.env`.
+El código carga dotenv sin mostrar secretos y nunca modifica `.env`.
 
-Contador persistente compartido por CLI y servidor: `dist/ensayo/k2/llamadas.db`. Reserva antes de cada intento HTTP, también si falla. Máximo **60**; no se reinicia entre ensayos. Cierre del gateway fijado al **19/09/2026 17:30 Europe/Madrid**, también tras reiniciar el proceso. Después sigue funcionando salud y la negativa de escritura; las preguntas al modelo se degradan. Reabrir para otra demo requiere una decisión posterior del equipo y un cambio explícito: no borrar el contador para saltarse el tope.
+| Variable | Por defecto | Qué hace |
+|---|---|---|
+| `ALBERTITOS_LLM_API_KEY` · `ALBERTITOS_LLM_BASE_URL` | — · `https://api.helmcode.com/v1` | la clave y el gateway |
+| `ALBERTITOS_MODELO_CHAT` | el de texto, o `deepseek-v4-flash` | modelo principal |
+| `ALBERTITOS_MODELO_CHAT_FALLBACK` | `glm5.3-flash` (vacío = sin respaldo) | se prueba UNA vez si el principal da timeout o 5xx, o si su respuesta final no cumple el esquema |
+| `ALBERTITOS_CHAT_TIMEOUT_S` | 25 | espera máxima por petición HTTP, para que el respaldo quepa en los 60 s de cada pregunta |
+| `ALBERTITOS_CHAT_DESDE` · `ALBERTITOS_CHAT_HASTA` | sin límite | ventana horaria (ISO; sin zona, hora de Madrid). Fuera de ella: `degradado` con el motivo |
+| `ALBERTITOS_CHAT_MAX_LLAMADAS` | 100 (0 = cerrado) | llamadas HTTP al modelo (principal o respaldo) **dentro de la ventana** |
+| `ALBERTITOS_CHAT_CONTADOR` | `dist/chat/llamadas.db` | contador persistente, compartido por la CLI y el servidor, fuera de la BD de negocio |
+| `ALBERTITOS_CHAT_ORIGENES` | `http://localhost:3000,http://127.0.0.1:3000` | orígenes CORS permitidos |
+| `ALBERTITOS_CHAT_PUERTO` | 8001 | puerto del servidor |
+
+Cada intento HTTP reserva una llamada, también si falla. Las llamadas de fuera de la ventana no cuentan: las 59 del
+sábado (que estaban en `dist/ensayo/k2/llamadas.db`, un contador que ya no se usa) no cierran el domingo. El mensaje
+degradado dice el motivo («fuera de su horario», «sin clave», «agotado», «el proveedor está fallando»).
+
+**Para la defensa del domingo**, en el `.env` del portátil que presenta:
+```
+ALBERTITOS_CHAT_DESDE=2026-09-20T09:00
+ALBERTITOS_CHAT_HASTA=2026-09-20T12:00
+ALBERTITOS_CHAT_MAX_LLAMADAS=30
+```
+Antes del PLAN-13 el cierre estaba fijado en el código a las 17:30 del 19/09 y el tope a 60: el domingo habría
+respondido siempre `degradado`.
+
+**Instrucciones en el PDF (B5).** La herramienta `traza` devuelve `instruccion_en_pdf: true` y una nota («el PDF
+contiene una instrucción; la norma la trata como anomalía…») cuando la factura tiene `texto_instruccion`, sin pasar el
+texto literal. El prompt de sistema prohíbe atribuir al PDF frases que no vengan de una herramienta. Es la causa de la
+respuesta «parcial» del caso 13 de la evaluación; falta repetir ese caso en vivo.
 
 ## Evaluación
 

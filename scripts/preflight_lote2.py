@@ -21,6 +21,7 @@ import sqlite3
 import sys
 import time
 import urllib.request
+from collections.abc import Mapping
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -78,6 +79,37 @@ def respaldar(origen: Path, destino: Path) -> None:
         closing(sqlite3.connect(destino)) as dst,
     ):
         src.backup(dst)
+
+
+def comprobar_llm(entorno: Mapping[str, str]) -> Check:
+    """¿Podrá el lote 2 leer sus escaneadas? Clave presente, modelos que el gateway acepta y respaldo de visión."""
+    hay_clave = bool(entorno.get("ALBERTITOS_LLM_API_KEY") or entorno.get("ANTHROPIC_API_KEY"))
+    texto = entorno.get("ALBERTITOS_MODELO_TEXTO", "claude-sonnet-5")
+    vision = entorno.get("ALBERTITOS_MODELO_VISION", "claude-sonnet-5")
+    respaldo = entorno.get("ALBERTITOS_MODELO_VISION_FALLBACK", "").strip()
+    modelos = f"texto {texto} · visión {vision} · respaldo de visión {respaldo or 'NINGUNO'}"
+    if not hay_clave:
+        return Check(
+            "LLM",
+            AMBAR,
+            "no hay clave del LLM en el entorno ni en .env: las escaneadas del lote 2 quedarían PENDIENTE",
+            "copia el .env del equipo a la raíz del repo (la clave va en ALBERTITOS_LLM_API_KEY)",
+        )
+    if vision.startswith("claude-") and entorno.get("ALBERTITOS_LLM_API_KEY"):
+        return Check(
+            "LLM",
+            AMBAR,
+            f"{modelos}: el gateway rechaza los claude-* (402)",
+            "en .env: ALBERTITOS_MODELO_VISION=qwen3.6 y ALBERTITOS_MODELO_TEXTO=deepseek-v4-flash",
+        )
+    if not respaldo:
+        return Check(
+            "LLM",
+            AMBAR,
+            f"{modelos}: si {vision} se cae, las escaneadas no tienen a dónde ir",
+            "en .env: ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash   (medido por J3, RESPALDO-VISION.md)",
+        )
+    return Check("LLM", VERDE, modelos)
 
 
 def comprobar(args) -> list[Check]:
@@ -344,6 +376,11 @@ def comprobar(args) -> list[Check]:
             )
         )
 
+    # 13. el LLM, listo para las escaneadas del lote 2 (R1, PLAN-12: sin .env el modelo por defecto es
+    #     claude-*, que el gateway rechaza con 402, la caché no casa y las escaneadas quedan PENDIENTE).
+    #     Sólo se mira SI hay clave, nunca su valor.
+    checks.append(comprobar_llm(os.environ))
+
     # resumen informativo al final
     checks.append(
         Check(
@@ -375,6 +412,7 @@ def limpiar(ruta_db: Path, dir_lote1: str, dir_lote2: str) -> tuple[int, int]:
 
 
 def main() -> int:
+    load_dotenv()  # como la CLI: el .env de la raíz, sin pisar lo ya exportado
     load_dotenv()
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter

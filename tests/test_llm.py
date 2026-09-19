@@ -92,6 +92,8 @@ def bd(conn, caja, tmp_path, monkeypatch):
     monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
     monkeypatch.setenv("ALBERTITOS_MODELO_VISION", "qwen3.6")
     monkeypatch.setattr(etapa, "VISION_DOBLE", False)
+    # La tercera lectura (ADR-0017) sólo en los tests que la preparan: los demás dan dos respuestas.
+    monkeypatch.setattr(etapa, "TERCERA_LECTURA", False)
     # Las plantillas de A2 ya resuelven facturas reales sin LLM; aquí probamos el camino LLM, así que
     # se anulan por defecto (el test de plantilla las vuelve a activar con una falsa).
     monkeypatch.setattr(plantillas, "extraer_por_plantilla", lambda texto, *, file_id, sha256: None)
@@ -208,6 +210,7 @@ def test_api_simulada_extrae_cachea_y_segunda_pasada_gratis(bd, tmp_path, monkey
 
 def test_escaneada_va_por_vision_con_doble_lectura(bd, tmp_path, monkeypatch):
     monkeypatch.setattr(etapa, "VISION_DOBLE", True)
+    monkeypatch.setattr(etapa, "TERCERA_LECTURA", True)  # activa, pero sin desacuerdo no se usa
     Api = api_falsa({**RESPUESTA_P001, "pedido": "PO-2026-0001"})
     monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
     r = etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
@@ -344,15 +347,17 @@ def test_real_escaneada_por_vision(bd_real, tmp_path):
     assert h.total is not None and h.nif_emisor is not None
 
 
-def _dos_lecturas(monkeypatch, primera: dict, segunda: dict):
-    respuestas = iter([primera, segunda])
+def _lecturas(monkeypatch, *lecturas: dict | None):
+    """Una respuesta por llamada, en orden. `None` = respuesta sin tool_use (LLM-INVALID)."""
+    respuestas = iter(lecturas)
 
     class Msgs:
         llamadas = 0
 
         def create(self, **kw):
             Msgs.llamadas += 1
-            return api_falsa(next(respuestas)).messages.create(**kw)
+            r = next(respuestas, None)
+            return api_falsa(r or {}, tipo="tool_use" if r else "text").messages.create(**kw)
 
     class Api:
         messages = Msgs()
@@ -371,7 +376,7 @@ def test_reconciliacion_con_maestro_elige_la_lectura_respaldada(bd, tmp_path, mo
         bd, maestro
     )  # PO-2026-0001 → P001 (B46102331, ES2100491500051234567890)
     base = {**RESPUESTA_P001, "pedido": "PO-2026-0001"}
-    _dos_lecturas(
+    _lecturas(
         monkeypatch,
         {**base, "nif_emisor": "B45102331", "iban": "ES21 0049 1500 0512 3456 7890"},
         {**base, "nif_emisor": "B46102331", "iban": "ES21 0049 1500 0512 3456 7891"},
@@ -399,7 +404,7 @@ def test_reconciliacion_sin_evidencia_mantiene_discrepancia(bd, tmp_path, monkey
     monkeypatch.setattr(etapa, "RECONCILIAR_MAESTRO", True)
     snapshot.guardar_maestro(bd, maestro)
     base = {**RESPUESTA_P001, "pedido": "PO-2026-0001"}
-    _dos_lecturas(
+    _lecturas(
         monkeypatch, {**base, "nif_emisor": "B45102331"}, {**base, "nif_emisor": "B44102331"}
     )  # ninguna es la del maestro
     etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
@@ -409,6 +414,153 @@ def test_reconciliacion_sin_evidencia_mantiene_discrepancia(bd, tmp_path, monkey
         and h.nif_emisor == "B45102331"
         and h.confianza is None
     )
+
+
+# ------------------------------------------- escaneadas: tercera lectura e importes (ADR-0017)
+
+IBAN_P001 = "ES21 0049 1500 0512 3456 7890"  # el del maestro de conftest
+IBAN_OTRO = "ES21 0049 1500 0512 3456 7891"
+
+
+@pytest.fixture
+def escaneada(bd, monkeypatch, maestro):
+    from albertitos.sources import snapshot
+
+    monkeypatch.setattr(etapa, "VISION_DOBLE", True)
+    monkeypatch.setattr(etapa, "TERCERA_LECTURA", True)
+    monkeypatch.setattr(etapa, "RECONCILIAR_MAESTRO", True)
+    snapshot.guardar_maestro(bd, maestro)  # PO-2026-0001 → P001 (B46102331, IBAN_P001)
+    return {**RESPUESTA_P001, "pedido": "PO-2026-0001"}
+
+
+def _extraer_scan(bd, tmp_path):
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, SCAN))
+    assert r.ok == 1, r.texto()
+    ev = bd.execute("SELECT detalle FROM eventos WHERE etapa='extract' AND estado='ok'").fetchone()
+    return hechos_de(bd, SCAN), ev[0]
+
+
+NIF_OTRO = "B45102331"  # el de P001 es B46102331
+
+
+def test_tercera_lectura_desempata_por_mayoria(bd, escaneada, tmp_path, monkeypatch):
+    """scan_012: la principal leyó B88… donde pone B98…; la segunda y la tercera coinciden."""
+    Msgs = _lecturas(
+        monkeypatch,
+        {**escaneada, "nif_emisor": NIF_OTRO},
+        {**escaneada},
+        {**escaneada},
+    )
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 3
+    assert h.nif_emisor == "B46102331" and Aviso.DISCREPANCIA_EXTRACTORES not in h.avisos
+    # no se eligió mirando el maestro: la lectura es firme y la R1 decide con un dato independiente
+    assert h.confianza is None and "reconciliado=" not in detalle
+    assert "desempate=" in detalle and NIF_OTRO in detalle  # las tres lecturas, en la traza
+
+
+def test_la_mayoria_manda_aunque_no_sea_la_del_maestro(bd, escaneada, tmp_path, monkeypatch):
+    """Si dos lecturas repiten un NIF que no es el del maestro, se queda y la R1 escalará."""
+    _lecturas(
+        monkeypatch,
+        {**escaneada},
+        {**escaneada, "nif_emisor": NIF_OTRO},
+        {**escaneada, "nif_emisor": NIF_OTRO},
+    )
+    h, _ = _extraer_scan(bd, tmp_path)
+    assert h.nif_emisor == NIF_OTRO and h.confianza is None
+
+
+def test_el_iban_tambien_se_desempata_por_mayoria(bd, escaneada, tmp_path, monkeypatch):
+    """scan_009: la principal leyó 6998 donde pone 6888; la segunda y la tercera coinciden. Sin mayoría en el
+    IBAN escalaban 006 y 009, dos facturas limpias (ADR-0017)."""
+    Msgs = _lecturas(monkeypatch, {**escaneada, "iban": IBAN_OTRO}, {**escaneada}, {**escaneada})
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 3
+    assert h.iban == "ES2100491500051234567890" and h.confianza is None
+    assert "desempate=" in detalle and "reconciliado=" not in detalle
+
+
+def test_sin_mayoria_sigue_la_reconciliacion_con_el_maestro(bd, escaneada, tmp_path, monkeypatch):
+    """scan_017: tres NIF distintos. No se compone uno dígito a dígito: decide el camino de siempre."""
+    _lecturas(
+        monkeypatch,
+        {**escaneada, "nif_emisor": "S46102331"},
+        {**escaneada, "nif_emisor": "B46102331"},
+        {**escaneada, "nif_emisor": "B47102331"},
+    )
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert h.nif_emisor == "B46102331" and h.confianza == etapa.CONFIANZA_RECONCILIADA
+    assert "reconciliado=" in detalle and "desempate=" not in detalle
+
+
+def test_si_la_tercera_falla_decide_el_camino_de_siempre(bd, escaneada, tmp_path, monkeypatch):
+    Msgs = _lecturas(monkeypatch, {**escaneada, "nif_emisor": NIF_OTRO}, {**escaneada}, None)
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 5  # dos lecturas + tres intentos de la tercera
+    assert h.confianza == etapa.CONFIANZA_RECONCILIADA and "reconciliado=" in detalle
+
+
+def test_un_aviso_del_valor_mal_leido_no_sobrevive_al_desempate(
+    bd, escaneada, tmp_path, monkeypatch
+):
+    """La principal leyó un NIF de 8 caracteres (NIF_INVALIDO, que escala); las otras dos, el bueno."""
+    _lecturas(monkeypatch, {**escaneada, "nif_emisor": "B4610233"}, {**escaneada}, {**escaneada})
+    h, _ = _extraer_scan(bd, tmp_path)
+    assert h.nif_emisor == "B46102331" and Aviso.NIF_INVALIDO not in h.avisos
+
+
+LINEA_MAL_LEIDA = [{"concepto": "Servicio mensual", "importe": 2499.99}]  # impreso: 2.489,99
+TOTAL_MAL_LEIDO = 3012.99  # impreso: 3.012,89
+
+
+def test_importes_de_la_lectura_cuyas_cuentas_cuadran(bd, escaneada, tmp_path, monkeypatch):
+    """scan_012 (caché local): la principal leyó 4,51 donde pone 14,51; la segunda cuadra."""
+    Msgs = _lecturas(monkeypatch, {**escaneada, "lineas": LINEA_MAL_LEIDA}, {**escaneada})
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 2  # la segunda ya cuadra: no hace falta otra lectura
+    assert h.lineas[0].importe == Decimal("2489.99") and Aviso.IMPORTE_AMBIGUO not in h.avisos
+    # el criterio son las cuentas de la factura, no el maestro: la lectura sigue siendo firme
+    assert h.confianza is None and "importes_de=" in detalle and "2499.99" in detalle
+
+
+def test_si_las_dos_fallan_una_lectura_mas_de_la_pagina(bd, escaneada, tmp_path, monkeypatch):
+    """scan_001: la principal leyó 61,27 (pone 51,27) y la segunda 912,89 (pone 912,69). Ninguna cuadra."""
+    Msgs = _lecturas(
+        monkeypatch,
+        {**escaneada, "lineas": LINEA_MAL_LEIDA},
+        {**escaneada, "total": TOTAL_MAL_LEIDO},
+        {**escaneada},
+    )
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 3
+    assert h.lineas[0].importe == Decimal("2489.99") and h.total == Decimal("3012.89")
+    assert not {Aviso.IMPORTE_AMBIGUO, Aviso.TOTAL_NO_CUADRA} & set(h.avisos)
+    assert f"'lectura': '{etapa.VARIANTE_IMPORTES}'" in detalle
+
+
+def test_si_ninguna_lectura_cuadra_el_aviso_se_queda(bd, escaneada, tmp_path, monkeypatch):
+    """Puede ser el documento el que no cuadra: entonces escala, que es preguntar cuando no se sabe."""
+    mal = {**escaneada, "lineas": LINEA_MAL_LEIDA}
+    Msgs = _lecturas(monkeypatch, mal, {**mal}, {**mal})
+    h, detalle = _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 3
+    assert Aviso.IMPORTE_AMBIGUO in h.avisos and "importes_de=" not in detalle
+
+
+def test_una_lectura_sin_lineas_no_corrige_las_lineas(bd, escaneada, tmp_path, monkeypatch):
+    mal = {**escaneada, "lineas": LINEA_MAL_LEIDA}
+    _lecturas(monkeypatch, mal, {**escaneada, "lineas": []}, {**mal})
+    h, _ = _extraer_scan(bd, tmp_path)
+    assert Aviso.IMPORTE_AMBIGUO in h.avisos and h.lineas[0].importe == Decimal("2499.99")
+
+
+def test_sin_lineas_no_es_un_fallo_de_cuentas(bd, escaneada, tmp_path, monkeypatch):
+    """Que falte el detalle no pide otra lectura: sólo la pide una cuenta que no sale."""
+    sin = {**escaneada, "lineas": []}
+    Msgs = _lecturas(monkeypatch, sin, {**sin})
+    _extraer_scan(bd, tmp_path)
+    assert Msgs.llamadas == 2
 
 
 # --------------------------------------------------------------- precios por modelo (B2)
@@ -748,6 +900,29 @@ def test_texto_sospechoso_de_verdad_se_conserva(bd):
         metodo=MetodoExtraccion.LLM_VISION,
     )
     assert Aviso.TEXTO_INSTRUCCION in h.avisos and "nuevo numero de cuenta" in h.texto_sospechoso
+
+
+@pytest.mark.parametrize(
+    ("crudo", "esperado"),
+    [
+        (["RECIBIDO CONTABILIDAD", " ", "None", 3], ["RECIBIDO CONTABILIDAD"]),
+        (None, []),
+        ("OK", []),  # no es una lista: no se adivina
+    ],
+)
+def test_otras_marcas_se_limpian(crudo, esperado):
+    assert llm.otras_marcas({"otras_marcas": crudo}) == esperado
+
+
+def test_las_marcas_llegan_en_el_uso_tambien_desde_la_cache(bd, tmp_path, monkeypatch):
+    Api = api_falsa({**RESPUESTA_P001, "otras_marcas": ["RECIBIDO CONTABILIDAD"]})
+    monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
+    c = llm.ClienteLLM(bd)
+    png = b"\x89PNG"
+    _, uso = c.extraer(sha256="b" * 64, file_id="x.pdf", png=png)
+    _, uso_cache = c.extraer(sha256="b" * 64, file_id="x.pdf", png=png)
+    assert uso["otras_marcas"] == uso_cache["otras_marcas"] == ["RECIBIDO CONTABILIDAD"]
+    assert uso_cache["cache"] and Api.messages.llamadas == 1
 
 
 def test_el_caos_es_por_base_de_datos(tmp_path, monkeypatch):

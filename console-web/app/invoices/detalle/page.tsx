@@ -7,12 +7,15 @@ import { describirEvento, frase, loteNombre, motivoPrincipal, resumenReglas, tit
 import { COLORS } from '@/lib/theme'
 import { useFichero } from '@/hooks/useFicheros'
 import { useTraza } from '@/hooks/useTraza'
+import { useConfianzaFichero } from '@/hooks/useConfianza'
 import { ChainOfWork } from '@/components/audit/ChainOfWork'
 import { AvisoChip, ResultadoBadge } from '@/components/invoices/badges'
 import { ErpMatchPanel } from '@/components/invoices/ErpMatchPanel'
 import { ExtractedFields, type CampoHecho } from '@/components/invoices/ExtractedFields'
 import { InvoiceDocument } from '@/components/invoices/InvoiceDocument'
 import { Linaje } from '@/components/invoices/Linaje'
+import { ConfianzaChip } from '@/components/confianza/ConfianzaChip'
+import { ConfianzaTarjeta } from '@/components/confianza/ConfianzaTarjeta'
 import { BackLink } from '@/components/ui/BackLink'
 import { Card } from '@/components/ui/Card'
 import { EmptyState, ErrorCard, ErrorState, LoadingCard, LoadingState, Skeleton } from '@/components/ui/states'
@@ -35,6 +38,8 @@ function FicheroDetail() {
 
   const { data: fichero, error, loading, initialLoading, refresh } = useFichero(fileId)
   const traza = useTraza({ file_id: fileId }, { enabled: Boolean(fileId) })
+  // K3: null si no responde o si no hay decisión vigente (404); entonces ni chip ni tarjeta.
+  const { data: confianza } = useConfianzaFichero(fileId || null)
 
   const [zoom, setZoom] = useState(100)
   const [highlight, setHighlight] = useState(true)
@@ -55,11 +60,14 @@ function FicheroDetail() {
     <div className="mb-5 flex items-start justify-between gap-4">
       <title>{`${fileId} · ${BRAND}`}</title>
       <div className="min-w-0">
-        <h1 className="break-all ident text-[20px] text-ink">{fileId}</h1>
+        <h1 className="break-all text-[26px] font-semibold tracking-[-0.03em]">{fileId}</h1>
         {fichero && (
           <p className="mt-1.5 flex items-center gap-2 text-[13px] text-muted animate-in fade-in duration-200">
             Factura de {loteNombre(fichero.lote)}
             <ResultadoBadge estado={fichero.estado} />
+            {confianza && fichero.decision && (
+              <ConfianzaChip banda={confianza.banda} razon={confianza.razones[0]} />
+            )}
           </p>
         )}
       </div>
@@ -141,7 +149,7 @@ function FicheroDetail() {
       ) : recientes.length === 0 ? (
         <p className="mt-2 text-[13px] text-muted">Todavía no hay pasos registrados.</p>
       ) : (
-        <div className="mt-2 flex flex-col gap-4 border-l-2 border-accent pl-3 text-[14px]">
+        <div className="mt-2 flex flex-col gap-4 border-l-2 border-accent-line pl-3 text-[14px]">
           {recientes.map((paso) =>
             paso.tipo === 'evento' ? (
               <div key={paso.id} className="animate-in fade-in slide-in-from-left-1 duration-300">
@@ -177,7 +185,7 @@ function FicheroDetail() {
             activeField={activeField}
           />
           <aside className="min-w-0">
-            <Card className="h-full overflow-hidden border-line">
+            <Card className="h-full overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.06)]">
               <div className="flex border-b border-line bg-surface px-2" role="tablist" aria-label="Análisis del fichero">
                 {TABS.map((item, index) => (
                   <button
@@ -196,12 +204,12 @@ function FicheroDetail() {
                   >
                     {item}
                     {item === 'Traza' && traza.data && (
-                      <span className="text-[12px] text-accent cifra">
+                      <span className="rounded-full bg-accent-soft px-1.5 text-[11px] text-accent-dark tabular-nums">
                         {pasos.length}
                       </span>
                     )}
                     <span
-                      className={`absolute inset-x-3 bottom-0 h-0.5 bg-accent-dark transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
+                      className={`absolute inset-x-3 bottom-0 h-0.5 rounded bg-accent-dark transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
                     />
                   </button>
                 ))}
@@ -215,7 +223,7 @@ function FicheroDetail() {
               >
                 {tab === 'Decisión' && (
                   <>
-                    <div className="border border-line bg-raised p-4">
+                    <div className="rounded-xl border border-line bg-raised p-4">
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
                         <span className="text-[13px] text-muted">
@@ -237,13 +245,15 @@ function FicheroDetail() {
                       )}
                     </div>
 
+                    {decision && confianza && <ConfianzaTarjeta ficha={confianza} />}
+
                     {pendiente && pasosRecientes}
 
                     <Linaje decision={decision} />
 
                     {hechos?.texto_sospechoso && (
-                      <div className="mt-4 border border-dashed border-warn p-4">
-                        <p className="text-[11px] font-bold text-warn">
+                      <div className="mt-4 rounded-xl border border-dashed border-warn-line bg-warn-soft p-4">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-warn">
                           El documento intenta instruir
                         </p>
                         <p className="mt-1.5 text-[13px] italic leading-5 text-warn">“{hechos.texto_sospechoso}”</p>
@@ -255,7 +265,7 @@ function FicheroDetail() {
 
                     <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha comprobado la norma</h3>
                     {decision ? (
-                      <ul className="mt-2 overflow-hidden border border-line text-[13px] leading-5 text-ink-soft">
+                      <ul className="mt-2 overflow-hidden rounded-lg border border-line text-[13px] leading-5 text-ink-soft">
                         {decision.motivos.map((motivo) => (
                           <li
                             key={motivo.regla_id}
@@ -265,7 +275,7 @@ function FicheroDetail() {
                               aria-label={motivo.ok ? 'Cumple' : motivo.evidencia.no_pagar ? 'No pagar' : 'Escalar'}
                               className="mt-[6px] size-2 rounded-full"
                               style={{
-                                background: motivo.ok ? COLORS.mint : motivo.evidencia.no_pagar ? COLORS.dangerSoft : COLORS.lime,
+                                background: motivo.ok ? COLORS.mint : motivo.evidencia.no_pagar ? COLORS.danger : COLORS.lime,
                               }}
                             />
                             <span>

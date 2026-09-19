@@ -62,7 +62,7 @@ export function ExtractedFields({
 
   return (
     <>
-      <div className="mt-2 overflow-hidden border border-line text-[13px]">
+      <div className="mt-2 overflow-hidden rounded-lg border border-line text-[13px]">
         {CAMPOS.map((campo) => {
           const value = campoValor(hechos, campo.key)
           return (
@@ -70,7 +70,7 @@ export function ExtractedFields({
               key={campo.key}
               onClick={() => onSelect(campo.key)}
               aria-pressed={activeField === campo.key}
-              className={`flex w-full justify-between gap-3 border-b border-l-2 border-b-line-soft px-3 py-2 text-left transition-colors last:border-b-0 ${activeField === campo.key ? 'border-l-accent' : 'border-l-transparent bg-surface'}`}
+              className={`flex w-full justify-between gap-3 border-b border-l-2 border-b-line-soft px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-accent-soft ${activeField === campo.key ? 'border-l-accent-dark bg-accent-soft' : 'border-l-transparent bg-surface'}`}
             >
               <span className="shrink-0 text-muted">{campo.label}</span>
               <b className={`min-w-0 truncate text-right ${campo.mono ? 'font-mono text-[12px]' : ''} ${value ? '' : 'font-normal text-muted'}`}>

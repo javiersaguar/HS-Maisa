@@ -158,3 +158,34 @@ paso erp-8009-sigue-vivo curl --fail --silent --show-error http://127.0.0.1:8009
 echo
 echo "TIEMPOS ($TIEMPOS):"
 cat "$TIEMPOS"
+
+# Resumen de una pantalla (R1): total, exits ≠ 0 y huellas. Esperados: package se niega en rojo.
+python3 - "$TIEMPOS" "$J1/huellas-antes.txt" "$J1/huellas-despues.txt" <<'PY'
+import sys
+from pathlib import Path
+
+tiempos, antes, despues = (Path(p) for p in sys.argv[1:4])
+esperados = {"desvio-rojo-package-niega"}
+total = 0.0
+malos: list[tuple[str, str, str, bool]] = []
+for i, linea in enumerate(tiempos.read_text(encoding="utf-8").splitlines()):
+    if i == 0 or not linea.strip():
+        continue
+    paso, segs, rc = linea.split("\t")
+    total += float(segs)
+    if rc != "0":
+        malos.append((paso, segs, rc, paso in esperados))
+iguales = antes.exists() and despues.exists() and antes.read_bytes() == despues.read_bytes()
+print()
+print("======== RESUMEN ENSAYO LOTE 2 ========")
+print(f"total: {total:.3f} s")
+if malos:
+    print("pasos con exit ≠ 0:")
+    for paso, segs, rc, ok in malos:
+        marca = "esperado" if ok else "NO esperado"
+        print(f"  {paso}  {segs}s  exit={rc}  ({marca})")
+else:
+    print("pasos con exit ≠ 0: ninguno")
+print(f"huellas iguales: {'sí' if iguales else 'no'}")
+print("=======================================")
+PY

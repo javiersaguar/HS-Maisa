@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react'
 import type { EstadoFichero } from '@/lib/types'
 import { ESTADOS_FICHERO } from '@/lib/format'
 import { LOTE_BANDEJA } from '@/lib/api/inbox'
+import { Card } from '@/components/ui/Card'
 import { Select } from '@/components/ui/Select'
 import { Spinner } from '@/components/ui/Spinner'
 
@@ -27,7 +28,8 @@ export const REGLAS: Array<{ value: string; label: string }> = [
   { value: 'R6', label: 'R6 · Anomalías para humano' },
 ]
 
-/** Una sola fila compacta: sin tarjeta que la envuelva y sin títulos que repitan lo evidente. */
+const labelClass = 'text-[11px] font-bold uppercase tracking-[0.12em] text-muted'
+
 export function FilterBar({
   filters,
   onChange,
@@ -53,75 +55,108 @@ export function FilterBar({
     onChange({ ...filters, [key]: value })
 
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-2">
-      <div className="relative min-w-[240px] flex-1">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-faint" />
-        <input
-          value={filters.q}
-          onChange={(event) => set('q', event.target.value)}
-          placeholder="Buscar por file_id, proveedor, nº de factura, pedido o NIF…"
-          aria-label="Buscar ficheros"
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') set('q', '')
-          }}
-          className="h-9 w-full border border-line bg-surface pl-8 pr-16 text-[13px] outline-none transition placeholder:text-faint focus:border-accent"
-        />
-        <span className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 text-faint">
-          {searching && <Spinner className="size-3.5" />}
-          {filters.q && (
-            <button
-              onClick={() => set('q', '')}
-              aria-label="Borrar búsqueda"
-              className="flex size-5 min-h-0 items-center justify-center transition hover:text-ink"
-            >
-              <X className="size-3.5" />
-            </button>
+    <Card className="mt-4 overflow-hidden rounded-2xl border-line shadow-[0_8px_28px_rgba(43,55,51,0.05)]">
+      <div className="border-b border-line-soft bg-surface px-5 py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Cola de ficheros</p>
+            <h2 className="mt-1 text-[16px] font-semibold">Buscar y filtrar ficheros</h2>
+          </div>
+          {matching !== null && (
+            <span className="self-start rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-dark tabular-nums transition-all">
+              {matching} coinciden
+            </span>
           )}
-        </span>
+        </div>
       </div>
-
-      <Select
-        aria-label="Filtrar por resultado"
-        value={filters.estado}
-        onChange={(estado) => set('estado', estado)}
-        className="w-[170px]"
-        options={[
-          { value: 'all' as const, label: 'Todos los resultados' },
-          ...ESTADOS_FICHERO.map((estado) => ({ value: estado, label: estado })),
-        ]}
-      />
-      <Select
-        aria-label="Filtrar por regla incumplida"
-        value={filters.regla}
-        onChange={(regla) => set('regla', regla)}
-        className="w-[210px]"
-        options={[{ value: 'all', label: 'Cualquier regla' }, ...REGLAS]}
-      />
-      <Select
-        aria-label="Filtrar por lote"
-        value={String(filters.lote)}
-        onChange={(lote) => set('lote', lote === 'all' ? 'all' : Number(lote))}
-        className="w-[150px]"
-        options={[
-          { value: 'all', label: 'Todos los lotes' },
-          { value: '1', label: 'Lote 1 · Caja' },
-          { value: '2', label: 'Lote 2' },
-          { value: String(LOTE_BANDEJA), label: `Lote ${LOTE_BANDEJA} · Bandeja` },
-        ]}
-      />
-
-      {active > 0 && (
-        <button
-          onClick={onReset}
-          className="h-9 px-2 text-[13px] text-muted transition hover:text-ink"
-        >
-          Quitar filtros ({active})
-        </button>
-      )}
-
-      <span className="ml-auto text-[13px] text-muted cifra">
-        {matching !== null && total !== null ? `${matching} de ${total} coinciden` : 'Cargando…'}
-      </span>
-    </div>
+      <div className="p-5">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <input
+            value={filters.q}
+            onChange={(event) => set('q', event.target.value)}
+            placeholder="Buscar por file_id, proveedor, nº de factura, pedido o NIF…"
+            aria-label="Buscar ficheros"
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') set('q', '')
+            }}
+            className="h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-20 text-[14px] outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-line-soft"
+          />
+          <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-muted">
+            {searching && <Spinner className="size-4" />}
+            {filters.q && (
+              <button
+                onClick={() => set('q', '')}
+                aria-label="Borrar búsqueda"
+                className="flex size-6 min-h-0 items-center justify-center rounded-md transition hover:bg-accent-soft hover:text-accent-dark animate-in fade-in zoom-in-90 duration-150"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className={labelClass}>
+            Resultado
+            <Select
+              aria-label="Filtrar por resultado"
+              value={filters.estado}
+              onChange={(estado) => set('estado', estado)}
+              radius="xl"
+              className="mt-1.5 h-10 py-0"
+              options={[
+                { value: 'all' as const, label: 'Todos los resultados' },
+                ...ESTADOS_FICHERO.map((estado) => ({ value: estado, label: estado })),
+              ]}
+            />
+          </div>
+          <div className={labelClass}>
+            Regla incumplida
+            <Select
+              aria-label="Filtrar por regla incumplida"
+              value={filters.regla}
+              onChange={(regla) => set('regla', regla)}
+              radius="xl"
+              className="mt-1.5 h-10 py-0"
+              options={[{ value: 'all', label: 'Cualquier regla' }, ...REGLAS]}
+            />
+          </div>
+          <div className={labelClass}>
+            Lote
+            <Select
+              aria-label="Filtrar por lote"
+              value={String(filters.lote)}
+              onChange={(lote) => set('lote', lote === 'all' ? 'all' : Number(lote))}
+              radius="xl"
+              className="mt-1.5 h-10 py-0"
+              options={[
+                { value: 'all', label: 'Todos los lotes' },
+                { value: '1', label: 'Lote 1 · Caja' },
+                { value: '2', label: 'Lote 2' },
+                { value: String(LOTE_BANDEJA), label: `Lote ${LOTE_BANDEJA} · Bandeja` },
+              ]}
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-4 text-[13px]">
+          <span className="font-medium text-ink-soft">
+            {matching !== null && total !== null ? (
+              <>
+                Mostrando <strong className="text-ink">{matching}</strong> de {total} ficheros
+              </>
+            ) : (
+              'Cargando ficheros…'
+            )}
+          </span>
+          <button
+            onClick={onReset}
+            disabled={active === 0}
+            className="rounded-lg px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:opacity-40 disabled:hover:bg-transparent"
+          >
+            Quitar filtros{active > 0 ? ` (${active})` : ''}
+          </button>
+        </div>
+      </div>
+    </Card>
   )
 }
