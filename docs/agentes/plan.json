@@ -43,7 +43,12 @@
       "docs/agentes/partes/PARTE-09.md",
       "scripts/ensayo/*",
       "docs/agentes/RESILIENCIA-Y-COSTE.md",
-      "docs/agentes/ANALISIS-JEV.md"
+      "docs/agentes/ANALISIS-JEV.md",
+      ".github/workflows/windows.yml",
+      "Makefile",
+      "tests/test_erp.py",
+      "tests/test_hooks.py",
+      "src/albertitos/sources/estado_bd.py"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -68,10 +73,13 @@
       "docs/ANALISIS-DATOS.md"
     ],
     "Alejandro": [
-      "console-web/*"
+      "console-web/*",
+      "src/albertitos/console/*",
+      "tests/test_console.py"
     ],
     "Alfonso": [
-      "docs/plan/*"
+      "docs/plan/*",
+      "presentaciones/*"
     ]
   }
 }
