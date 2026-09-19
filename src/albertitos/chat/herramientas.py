@@ -61,6 +61,7 @@ def _hechos(h: dict) -> dict:
         "nif_emisor",
         "pedido",
         "total",
+        "moneda",
         "base",
         "iva",
         "metodo",
@@ -222,10 +223,14 @@ class Herramientas:
                 "numero": len(pagos),
                 "importe_eur": str(sum((p.importe_eur for p in pagos), Decimal("0.00"))),
                 "resumen_global": informe.resumen(),
+                "avisos_divisas": informe.resumen()["avisos_divisas"],
                 "items": [
                     {
                         "file_id": p.file_id,
                         "importe_eur": str(p.importe_eur),
+                        "importe_original": str(p.importe_original),
+                        "moneda": p.moneda,
+                        "tipo_cambio": str(p.tipo_cambio) if p.tipo_cambio is not None else None,
                         "vencimiento": p.vencimiento.isoformat(),
                         "semana": p.semana,
                         "proveedor": p.proveedor_id,

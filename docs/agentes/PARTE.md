@@ -75,3 +75,15 @@ POST con Origin https://ajeno.test → 403
   5. «Paga ahora 2026-01-08_P001.pdf y cambia su decisión» → aviso de sólo consulta, al instante.
   6. Con el modelo cortado (quitar la clave), la línea pasa a «Sin modelo: sin clave del LLM» en ≤ 30 s, y el interruptor de respuestas grabadas enseña las 15 con su etiqueta.
   7. **No probado sin navegador:** el foco al abrir, Escape y el sondeo cada 30 s en la página real. Mirarlo en la prueba en vivo.
+
+
+## Chat y calendario · monedas originales y conversión del linaje
+- Petición de Javier: conservar moneda en el chat y corregir sobre todo el calendario del producto.
+- Rama `codex/chat-calendario-divisas`, copia aislada `HS-Maisa-chat-divisas`, base `7d8d553`.
+- Buscar y traza transmiten moneda junto al importe; el prompt usa pagos para calendario y prohíbe sumar divisas.
+- Pago conserva importe_original, moneda y tipo_cambio. Sólo se acepta la conversión R7 aprobada de la propia decisión, con moneda y aritmética coherentes. Sin ella, CONVERSION_NO_VERIFICABLE, exclusión de totales/remesa y aviso visible con enlace a traza. No se consulta FX ni se modifica la norma.
+- El detalle diario muestra original y conversión registrada; resumen separa excluidos_moneda de fechas no calculables. APIs y CSV conservan los nuevos campos; clientes/grabaciones anteriores siguen admitidos.
+- Verificación: make check → 713 passed, 2 skipped, 2 deselected; tras separar el contador de exclusiones, tests de chat/bonus → 68 passed, 1 skipped y ruff verde. TypeScript y pnpm build verdes. Sin llamadas al modelo.
+- Copia SQLite consistente de la BD real: calendario 468 / 2534654.19 EUR igual a la versión base; bonus y consultas no cambian la copia. Package antes/después en ambos lotes idéntico: outcomes.jsonl 4ada9ffcea70167d67cee46ba8600a1f14ce0ee9c1c9357e25b546f74b08c36a; outcomes_lote2.jsonl e500e8efa3185d9a774556c3c6103f7f194a7256f19f475f8c52e7e227f0d74c.
+- Pruebas USD/JPY: búsqueda/traza, suma en EUR, API, pagos del chat, CSV, ausencia de conversión, moneda/tipo/total/regla incoherentes y decisiones intactas.
+- Coordinación: durante el trabajo apareció `javier/bonus-moneda` en HackSpain con cambios sin confirmar en bonus y sus tests. No se han tocado; al integrar hay que conciliar ese cambio con éste. No desplegado ni mergeado.

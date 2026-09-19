@@ -580,3 +580,23 @@ def test_salud_maximo_sin_gastar(reloj, monkeypatch, tmp_path):
     g = Gateway(presupuesto=Presupuesto(tmp_path / "contador.db", maximo=37))
     assert g.salud()["max_llamadas"] == 37
     assert not (tmp_path / "contador.db").exists()
+
+
+@pytest.mark.parametrize("moneda,total", [("USD", "2450.00"), ("JPY", "10000")])
+def test_busqueda_y_traza_conservan_la_moneda(datos, conn, moneda, total):
+    from decimal import Decimal
+
+    h = InvoiceFacts.model_validate_json(
+        conn.execute("SELECT hechos_json FROM hechos").fetchone()[0]
+    )
+    h.moneda, h.total = moneda, Decimal(total)
+    db.guardar_hechos(conn, h)
+    conn.commit()
+    herramientas = Herramientas(datos)
+    for datos_h in (
+        herramientas.ejecutar("buscar_facturas", {"texto": "trampa.pdf"})["items"][0]["hechos"],
+        herramientas.ejecutar("traza", {"file_id": "trampa.pdf"})["hechos"],
+    ):
+        assert datos_h["moneda"] == moneda
+        assert Decimal(datos_h["total"]) == Decimal(total)
+    assert "No sumes monedas distintas" in agente.SISTEMA

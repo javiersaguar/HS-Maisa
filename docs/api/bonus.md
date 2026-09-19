@@ -5,6 +5,24 @@ escriben en la BD ni cambian ninguna decisión (hay un test que lo comprueba con
 ~0,02 s con las 438 PAGAR de la Caja. **No es una orden bancaria**: es un borrador, y los IBAN de la Caja son
 sintéticos (ver «Lo que la pantalla tiene que decir»).
 
+## Monedas y conversiones
+
+El calendario sigue proyectando sólo decisiones PAGAR. Cada pago conserva `moneda` e
+`importe_original` y, cuando procede, `tipo_cambio` (EUR por unidad de divisa).
+`importe_eur` es el importe que se suma en calendario, tesorería, proveedores, topes y remesa.
+
+Para una factura en otra moneda se exige la evidencia de la regla R7 aprobada de su propia decisión:
+moneda coincidente, tipo positivo y total en EUR que cuadre con el original, redondeado a céntimos.
+No se consulta una cotización actual ni se deduce el tipo del pedido. Una factura sin moneda mantiene
+la compatibilidad con la Caja original, en EUR.
+
+Si falta esa evidencia o no cuadra, la decisión se conserva y el bonus emite
+`CONVERSION_NO_VERIFICABLE`: el pago no entra en los totales ni en la remesa.
+`/bonus/resumen` añade `avisos_divisas` (file_id, código y detalle); el calendario los muestra
+con enlaces a la traza. `excluidos_moneda` cuenta esas exclusiones por separado, sin confundirlas
+con fechas de vencimiento ausentes. El detalle diario enseña el importe original y, debajo, su conversión registrada.
+Los campos nuevos del cliente son opcionales para seguir leyendo servidores y grabaciones anteriores.
+
 ## Cómo se registra (Alejandro, una línea en `src/albertitos/console/api.py`)
 ```python
 from albertitos import bonus

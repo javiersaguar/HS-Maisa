@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { ficheroHref } from '@/lib/routes'
 import { BRAND } from '@/lib/config'
 import { fetchBonusResumen, fetchCalendario } from '@/lib/api/bonus'
 import { useAsync } from '@/hooks/useAsync'
@@ -36,6 +38,22 @@ export default function PagosPage() {
   return (
     <div className="flex h-full min-h-0 flex-col px-3 pb-0.5 sm:pr-4 sm:pl-5">
       <title>{`Calendario · ${BRAND}`}</title>
+      {!!resumen.data?.avisos_divisas?.length && (
+        <details className="my-2 shrink-0 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <summary className="cursor-pointer font-medium">
+            {resumen.data.avisos_divisas.length} facturas pendientes de conversión a euros
+          </summary>
+          <p className="mt-2">Estos importes no están incluidos en los totales ni en la remesa.</p>
+          <ul className="mt-2 space-y-2">
+            {resumen.data.avisos_divisas.map(aviso => (
+              <li key={aviso.file_id}>
+                <Link href={ficheroHref(aviso.file_id)} className="font-medium underline">{aviso.file_id}</Link>
+                {' · '}{aviso.detalle}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {error && !calendario.data ? (
         <ErrorCard
           error={error}
@@ -48,7 +66,7 @@ export default function PagosPage() {
       ) : !calendario.data ? (
         <LoadingCard label="Cargando el calendario" />
       ) : !mes ? (
-        <EmptyState title="No hay pagos que programar" description="Ninguna decisión PAGAR vigente." />
+        <EmptyState title="No hay pagos que programar" description={resumen.data?.decisiones_pagar ? "Hay decisiones PAGAR que requieren revisión antes de programarse. Consulta los avisos." : "Ninguna decisión PAGAR vigente."} />
       ) : (
         <CalendarioMes
           mes={mes}

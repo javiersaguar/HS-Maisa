@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronRight, Search, X } from 'lucide-react'
-import { formatDate, formatImporte, formatNumber, initials } from '@/lib/format'
+import { formatAmount, formatDate, formatImporte, formatNumber, initials } from '@/lib/format'
 import { ficheroHref } from '@/lib/routes'
 import { useRowLink } from '@/hooks/useRowLink'
 import { LETRA, aCentimos, deCentimos, type DiaPagos } from './CalendarioMes'
@@ -109,7 +109,7 @@ export function ListaDia({
           <div className="mt-4 flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
             <div className="flex flex-wrap gap-x-10 gap-y-3">
               <Dato etiqueta="Facturas" valor={formatNumber(dia.pagos.length)} />
-              <Dato etiqueta="Importe" valor={formatImporte(deCentimos(dia.centimos))} />
+              <Dato etiqueta="Total en EUR" valor={formatImporte(deCentimos(dia.centimos))} />
               <Dato etiqueta="Vencidas" valor={vencidas ? formatNumber(vencidas) : 'Ninguna'} />
             </div>
             <label className="relative w-full sm:w-[300px]">
@@ -168,7 +168,14 @@ export function ListaDia({
                   <p className="text-[14px] text-ink">{formatDate(pago.vencimiento)}</p>
                   <p className="text-[12px] text-muted">{pago.vencido ? 'Vencida' : 'En plazo'}</p>
                 </div>
-                <p className="text-right text-[15px] font-semibold text-ink">{formatImporte(pago.importe_eur)}</p>
+                <div className="text-right">
+                  {pago.moneda && pago.moneda !== 'EUR' && pago.importe_original != null ? (
+                    <>
+                      <p className="text-[15px] font-semibold text-ink">{formatAmount(Number(pago.importe_original), pago.moneda)}</p>
+                      <p className="text-[12px] text-muted">{formatImporte(pago.importe_eur)} · conversión registrada</p>
+                    </>
+                  ) : <p className="text-[15px] font-semibold text-ink">{formatImporte(pago.importe_eur)}</p>}
+                </div>
                 <ChevronRight
                   aria-hidden
                   className="hidden size-4 text-muted/60 transition group-hover:translate-x-0.5 group-hover:text-accent-dark sm:block"
