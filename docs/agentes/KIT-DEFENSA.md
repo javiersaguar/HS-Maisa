@@ -66,6 +66,34 @@ no cambian (mismas huellas antes y después):
 El hito de `docs/hitos.md` pedía < 30 s; sale **por debajo de un segundo**. Hay que volver a cronometrarlo en el portátil
 de Alfonso, que puede ser más lento.
 
+**19/09, 20:30 · arreglado tras el ADR-0021.** Desde que cada lote se decide en su contexto, `reprocess` con `--norma`
+y sin `--lote` se niega, y **`dato_en_vivo.py` dejaba de funcionar** («el reproceso falló (exit 2)»). Ahora lleva
+`--lote` (1 por defecto), y hay un test que corre la demo entera contra una copia de la BD real. Si el tribunal cambia
+un dato del lote 2: `--lote 2 --norma v4`, una vez integrado el lote 2.
+
+### Si nos dan el fichero de la Caja ya cambiado
+La web dice «el domingo Alberto **podrá cambiar un dato de la Caja**»: puede que no nos pidan un cambio, sino que nos
+den el Excel (o un CSV) ya tocado. Entonces el camino es el de verdad: el fichero entra como un maestro nuevo, versionado
+por contenido, y el linaje redecide lo que depende de él. Ensayado con `scripts/ensayo/dato-cambiado.sh`, que hace
+eso mismo sobre una copia (cambia el dato en una copia del Excel, `albertitos maestro --ruta`, `reprocess --impacted
+--lote 1`, la lista completa de las que cambian y la traza de la primera):
+
+| Ensayo (19/09 20:26, copia de la BD real) | Qué pasa | Tarda (entero) |
+|---|---|---|
+| `bash scripts/ensayo/dato-cambiado.sh` (IBAN de P006) | **50 de 500 recalculadas** (todas las de P006), **43 cambian** PAGAR → ESCALAR por `v3.R1` | 1,4 s |
+| `bash scripts/ensayo/dato-cambiado.sh importe PO-2026-0096 2500.00` | 1 de 500: `2026-01-08_P001.pdf` PAGAR → ESCALAR por `v3.R2` (3012.89 frente a 2500.00) | 1,3 s |
+
+En la sala, con el fichero que nos den (sobre una copia, nunca sobre la BD de la entrega):
+```bash
+ALBERTITOS_DB=dist/vivo.db uv run albertitos maestro --ruta <el Excel que nos den>
+ALBERTITOS_DB=dist/vivo.db uv run albertitos reprocess --impacted --lote 1 --fecha-corte 2026-09-18
+ALBERTITOS_DB=dist/vivo.db uv run albertitos trace <una de las que cambian>
+```
+La traza lo cuenta sola: en MAESTRO, el Excel nuevo; en RESULTADO, «por: maestro 80911e429c6c→f8521fc22430:
+PO-2026-0096», y debajo **«entregado 19/09: outcomes.jsonl → PAGAR»**. Es decir, lo que entregamos y lo que diríamos
+hoy, sin tocar la entrega. **Límite que hay que decir:** si cambian un CSV del lote 2, el comando es `maestro --lote2
+<carpeta>` y `reprocess --impacted --lote 2 --norma v4 --erp v2`.
+
 ## Si algo falla
 - **La demo no arranca:** enseña `docs/demo/transcripcion-demo-caos.txt` (la misma demo con red, 104 s, tokens incluidos).
 - **La consola no abre:** `uv run albertitos status` y `uv run albertitos trace F26-2201_transportes.pdf` en la terminal.
