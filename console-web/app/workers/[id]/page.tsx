@@ -23,6 +23,7 @@ import { EtapaIcon, saludEtapa } from '@/components/workers/EtapaIcon'
 import { EventosTable } from '@/components/workers/EventosTable'
 import { WorkerKpi } from '@/components/workers/WorkerKpi'
 import { BackLink } from '@/components/ui/BackLink'
+import { Activity, Clock, Euro, RotateCw, Target } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorCard, ErrorState, LoadingCard, LoadingState } from '@/components/ui/states'
@@ -103,14 +104,20 @@ export default function EtapaDetailPage() {
 
       <section className={`mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 ${hasCost ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
         <WorkerKpi
-          icon="●"
+          icon={<Target className="size-4" />}
           label={ETAPA_GRANO[etapaId] === 'lote' ? 'Peticiones OK' : 'Cobertura'}
           value={ETAPA_GRANO[etapaId] === 'lote' ? formatNumber(etapa.eventos) : formatPercent(salud.cobertura)}
           {...TONE_STYLE[salud.tone]}
         >
           {pieCoberturaEtapa(etapa, data.ficheros)}
         </WorkerKpi>
-        <WorkerKpi icon="↗" label="Eventos" value={formatNumber(etapa.eventos)} color="var(--color-ink-soft)" tint="var(--color-raised)">
+        <WorkerKpi
+          icon={<Activity className="size-4" />}
+          label="Eventos"
+          value={formatNumber(etapa.eventos)}
+          color="var(--color-ink-soft)"
+          tint="var(--color-raised)"
+        >
           {incidencias
             ? (Object.keys(etapa.porEstado) as Array<keyof typeof etapa.porEstado>)
                 .filter((estado) => estado !== 'ok' && etapa.porEstado[estado] > 0)
@@ -118,14 +125,32 @@ export default function EtapaDetailPage() {
                 .join(' · ')
             : 'Todos en estado ok'}
         </WorkerKpi>
-        <WorkerKpi icon="↻" label="Reintentos" value={formatNumber(etapa.reintentos)} color="var(--color-ok)" tint="var(--color-ok-soft)">
+        <WorkerKpi
+          icon={<RotateCw className="size-4" />}
+          label="Reintentos"
+          value={formatNumber(etapa.reintentos)}
+          color="var(--color-ok)"
+          tint="var(--color-ok-soft)"
+        >
           Eventos con intento &gt; 1
         </WorkerKpi>
-        <WorkerKpi icon="◷" label="Latencia media" value={formatMs(etapa.latenciaMediaMs)} color="var(--color-warn)" tint="var(--color-warn-soft)">
+        <WorkerKpi
+          icon={<Clock className="size-4" />}
+          label="Latencia media"
+          value={formatMs(etapa.latenciaMediaMs)}
+          color="var(--color-warn)"
+          tint="var(--color-warn-soft)"
+        >
           Por evento
         </WorkerKpi>
         {hasCost && (
-          <WorkerKpi icon="€" label="Coste" value={formatEur(etapa.costeEur, 2)} color="var(--color-accent-dark)" tint="var(--color-accent-soft)">
+          <WorkerKpi
+            icon={<Euro className="size-4" />}
+            label="Coste"
+            value={formatEur(etapa.costeEur, 2)}
+            color="var(--color-accent-dark)"
+            tint="var(--color-accent-soft)"
+          >
             {formatNumber(etapa.tokensIn)} tokens de entrada · {formatNumber(etapa.tokensOut)} de salida
           </WorkerKpi>
         )}

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, FileSearch } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, FileSearch } from 'lucide-react'
 import { useConfianzaFichero } from '@/hooks/useConfianza'
 import { useFichero } from '@/hooks/useFicheros'
 import type { Fichero, Motivo } from '@/lib/types'
@@ -115,9 +115,11 @@ function Contenido({ fichero }: { fichero: Fichero }) {
 
         {decision ? (
           <>
-            <p className="mt-5 rounded-lg bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
-              {resumenReglas(decision)}
-            </p>
+            {resumenReglas(decision) ? (
+              <p className="mt-5 rounded-lg bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
+                {resumenReglas(decision)}
+              </p>
+            ) : null}
 
             {fallan.length > 0 && (
               <Seccion titulo={fallan.length === 1 ? 'Qué ha fallado' : `Qué ha fallado (${fallan.length})`}>
@@ -196,8 +198,86 @@ function Contenido({ fichero }: { fichero: Fichero }) {
   )
 }
 
+/** Con más de un PDF la tarjeta es un carrusel: flechas, «n de N» y un punto por factura. */
+function Carrusel({
+  fileId,
+  fileIds,
+  onSelect,
+}: {
+  fileId: string
+  fileIds: string[]
+  onSelect: (fileId: string) => void
+}) {
+  const indice = fileIds.indexOf(fileId)
+  const ir = (delta: number) => {
+    const base = indice < 0 ? 0 : indice
+    onSelect(fileIds[(base + delta + fileIds.length) % fileIds.length])
+  }
+  const flecha =
+    'flex size-7 min-h-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition hover:border-accent hover:bg-accent-soft hover:text-accent-dark'
+
+  return (
+    <div
+      role="group"
+      aria-roledescription="carrusel"
+      aria-label="Facturas subidas"
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowLeft') ir(-1)
+        if (event.key === 'ArrowRight') ir(1)
+      }}
+      className="flex shrink-0 items-center gap-3 border-b border-line bg-canvas px-5 py-2"
+    >
+      <button type="button" onClick={() => ir(-1)} aria-label="Factura anterior" className={flecha}>
+        <ChevronLeft className="size-4" />
+      </button>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-1.5">
+        {fileIds.map((id, i) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelect(id)}
+            aria-label={`Factura ${i + 1}: ${id}`}
+            aria-current={id === fileId ? 'true' : undefined}
+            title={id}
+            className={`h-1.5 min-h-0 rounded-full transition-all ${id === fileId ? 'w-5 bg-accent-dark' : 'w-1.5 bg-line hover:bg-muted'}`}
+          />
+        ))}
+      </div>
+      <span className="shrink-0 text-[12px] text-muted tabular-nums">
+        {indice < 0 ? '—' : indice + 1} de {fileIds.length}
+      </span>
+      <button type="button" onClick={() => ir(1)} aria-label="Factura siguiente" className={flecha}>
+        <ChevronRight className="size-4" />
+      </button>
+    </div>
+  )
+}
+
 /** Tarjeta derecha de la portada: por qué esa factura sale PAGAR, NO_PAGAR, ESCALAR o PENDIENTE. */
-export function Analisis({ fileId }: { fileId: string | null }) {
+export function Analisis({
+  fileId,
+  fileIds = [],
+  onSelect,
+}: {
+  fileId: string | null
+  /** Las facturas subidas y decididas; con más de una se recorren como cartas. */
+  fileIds?: string[]
+  onSelect?: (fileId: string) => void
+}) {
+  if (fileId && onSelect && fileIds.length > 1) {
+    return (
+      <>
+        <Carrusel fileId={fileId} fileIds={fileIds} onSelect={onSelect} />
+        <div key={fileId} className="flex min-h-0 flex-1 flex-col animate-in fade-in slide-in-from-right-2 duration-200">
+          <Carta fileId={fileId} />
+        </div>
+      </>
+    )
+  }
+  return <Carta fileId={fileId} />
+}
+
+function Carta({ fileId }: { fileId: string | null }) {
   const { data, error, initialLoading, refresh, loading } = useFichero(fileId ?? '')
 
   if (!fileId) {

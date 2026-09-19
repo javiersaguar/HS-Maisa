@@ -155,7 +155,7 @@ export function CalendarioMes({
         ))}
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-xl border border-line bg-raised">
+      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-[repeat(6,minmax(0,1fr))] gap-px overflow-hidden rounded-xl border border-line bg-raised">
         {celdas(mes).map(({ fecha, fuera }, index) => {
           const numero = Number(fecha.slice(8))
           const dia = fuera ? undefined : dias.get(fecha)
@@ -164,9 +164,9 @@ export function CalendarioMes({
           const fondo = fuera ? 'bg-canvas' : index % 7 > 4 ? 'bg-canvas/60' : 'bg-surface'
 
           const cabecera = (
-            <span className="flex items-center gap-2">
+            <span className="flex shrink-0 items-center gap-1.5">
               <span
-                className={`inline-flex size-7 items-center justify-center rounded-full text-[13px] ${
+                className={`inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[12px] ${
                   corte
                     ? 'bg-accent-dark font-semibold text-canvas'
                     : fuera
@@ -178,13 +178,17 @@ export function CalendarioMes({
               >
                 {numero}
               </span>
-              {corte && <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-dark">Corte</span>}
+              {corte && (
+                <span className="truncate text-[10px] font-semibold uppercase tracking-[0.08em] text-accent-dark">
+                  Corte
+                </span>
+              )}
             </span>
           )
 
           if (!dia) {
             return (
-              <div key={fecha} className={`flex min-h-[84px] flex-col p-2 ${fondo}`}>
+              <div key={fecha} className={`flex min-h-0 flex-col overflow-hidden p-1.5 ${fondo}`}>
                 {cabecera}
               </div>
             )
@@ -198,17 +202,18 @@ export function CalendarioMes({
               aria-haspopup="dialog"
               aria-expanded={activo}
               aria-label={`${numero} de ${nombreMes(mes)}: ${dia.pagos.length} factura${dia.pagos.length === 1 ? '' : 's'}, ${formatImporte(deCentimos(dia.centimos))}${corte ? ', día de corte' : ''}`}
-              className={`group relative flex min-h-[84px] flex-col justify-between gap-2 p-2 text-left transition-colors hover:bg-accent-soft focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-dark/40 ${fondo} ${activo ? 'z-10 ring-2 ring-inset ring-accent-dark' : ''}`}
+              className={`group relative flex min-h-0 min-w-0 flex-col gap-1 overflow-hidden p-1.5 text-left transition-colors hover:bg-accent-soft focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-dark/40 ${fondo} ${activo ? 'z-10 ring-2 ring-inset ring-accent-dark' : ''}`}
             >
               {cabecera}
-              <span
-                className={`flex w-full flex-col rounded-lg px-2.5 py-1.5 transition group-hover:shadow-[0_2px_8px_rgba(43,55,51,0.14)] ${caja}`}
-              >
-                <span className="text-[14px] leading-5 font-semibold">
+              <span className={`mt-auto min-w-0 overflow-hidden rounded-md px-2 py-1 ${caja}`}>
+                <span className="block truncate text-[13px] leading-4 font-semibold">
                   {formatNumber(dia.pagos.length)}
-                  <span className="hidden font-normal sm:inline"> {dia.pagos.length === 1 ? 'factura' : 'facturas'}</span>
+                  <span className="hidden font-normal sm:inline">
+                    {' '}
+                    {dia.pagos.length === 1 ? 'factura' : 'facturas'}
+                  </span>
                 </span>
-                <span className={`hidden truncate text-[12px] leading-4 md:block ${sub}`}>
+                <span className={`mt-0.5 hidden truncate text-[11px] leading-4 whitespace-nowrap md:block ${sub}`}>
                   {formatImporte(deCentimos(dia.centimos))}
                 </span>
               </span>
@@ -217,7 +222,7 @@ export function CalendarioMes({
         })}
       </div>
 
-      <footer className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-[12px] text-muted">
+      <footer className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 pb-16 text-[12px] text-muted sm:pb-2 sm:pr-44">
         <span className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
           <span className="flex items-center gap-2">
             <span aria-hidden className="inline-flex size-3.5 rounded-full bg-accent-dark" />

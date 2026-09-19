@@ -186,6 +186,14 @@ function FicherosScreen() {
     }
   }
 
+  /** Un chip por resultado: tono del badge, con cantidad. Pinchar filtra; pinchar el activo quita el filtro. */
+  const CHIP_TONE: Record<EstadoFichero, { on: string; off: string }> = {
+    PAGAR: { on: 'border-ok bg-ok-soft text-ok', off: 'border-line bg-surface text-ok hover:bg-ok-soft' },
+    ESCALAR: { on: 'border-warn bg-warn-soft text-warn', off: 'border-warn-line bg-surface text-warn hover:bg-warn-soft' },
+    NO_PAGAR: { on: 'border-bad bg-bad-soft text-bad', off: 'border-bad-line bg-surface text-bad hover:bg-bad-soft' },
+    PENDIENTE: { on: 'border-ink-soft bg-raised text-ink-soft', off: 'border-line bg-canvas text-ink-soft hover:bg-raised' },
+  }
+
   const pagerButton =
     'inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:border-line disabled:bg-transparent disabled:font-normal disabled:text-muted'
 
@@ -243,6 +251,25 @@ function FicherosScreen() {
             </button>
           </div>
         </header>
+
+        {summary && (
+          <div role="group" aria-label="Filtrar por resultado" className="mt-5 flex flex-wrap gap-2 animate-in fade-in duration-300">
+            {ESTADOS_FICHERO.map((estado) => {
+              const activo = !revisando && filters.estado === estado
+              return (
+                <button
+                  key={estado}
+                  onClick={() => changeFilters({ ...filters, estado: activo ? 'all' : estado })}
+                  aria-pressed={activo}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition ${CHIP_TONE[estado][activo ? 'on' : 'off']}`}
+                >
+                  {estado}
+                  <span className="tabular-nums opacity-80">{formatNumber(summary.porEstado[estado])}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         <FilterBar
           filters={filters}

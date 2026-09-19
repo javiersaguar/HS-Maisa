@@ -13,7 +13,7 @@ import { etapaConIncidencia, saludEtapa } from '@/components/workers/EtapaIcon'
 
 const ITEMS = [
   { label: 'Panel', href: '/', icon: LayoutDashboard },
-  { label: 'Pagos', href: '/pagos', icon: CalendarDays },
+  { label: 'Calendario', href: '/pagos', icon: CalendarDays },
   { label: 'Ficheros', href: '/invoices', icon: FileText },
   { label: 'Etapas', href: '/workers', icon: Workflow },
   { label: 'Traza', href: '/audit', icon: Activity },
@@ -164,19 +164,27 @@ function EstadoPipeline() {
   return <div>{inner}</div>
 }
 
-export function Sidebar() {
+export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname() ?? '/'
 
   return (
-    <aside className="flex h-full w-[220px] shrink-0 flex-col overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_8px_24px_rgba(43,55,51,0.06)]">
-      <Link href="/" className="flex h-[84px] shrink-0 items-center gap-3 border-b border-line px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-accent-dark text-canvas">
+    <aside
+      className={`flex h-full shrink-0 flex-col overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_8px_24px_rgba(43,55,51,0.06)] transition-[width] duration-200 ${collapsed ? 'w-[72px]' : 'w-[220px]'}`}
+    >
+      <Link
+        href="/"
+        title={collapsed ? BRAND : undefined}
+        className={`flex h-[84px] shrink-0 items-center gap-3 border-b border-line ${collapsed ? 'justify-center px-0' : 'px-5'}`}
+      >
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-dark text-canvas">
           <Sparkles className="size-4" />
         </div>
-        <div>
-          <p className="text-[14px] font-semibold tracking-tight text-ink">{BRAND}</p>
-          <p className="text-[14px] text-muted">Cuentas a pagar</p>
-        </div>
+        {!collapsed && (
+          <div className="whitespace-nowrap">
+            <p className="text-[14px] font-semibold tracking-tight text-ink">{BRAND}</p>
+            <p className="text-[14px] text-muted">Cuentas a pagar</p>
+          </div>
+        )}
       </Link>
 
       <nav className="flex min-h-0 flex-col gap-1 overflow-y-auto px-3 py-3">
@@ -185,22 +193,26 @@ export function Sidebar() {
             key={href}
             href={href}
             aria-current={isActive(pathname, href) ? 'page' : undefined}
-            className={`flex h-9 items-center gap-3 rounded-lg px-3 text-left text-[14px] transition-colors ${
+            aria-label={collapsed ? label : undefined}
+            title={collapsed ? label : undefined}
+            className={`flex h-9 items-center gap-3 rounded-lg text-left text-[14px] transition-colors ${collapsed ? 'justify-center px-0' : 'px-3'} ${
               isActive(pathname, href)
                 ? 'bg-accent-dark font-semibold text-canvas shadow-sm'
                 : 'text-ink-soft hover:bg-raised hover:text-accent-dark'
             }`}
           >
-            <Icon className="size-[17px]" />
-            {label}
+            <Icon className="size-[17px] shrink-0" />
+            {!collapsed && <span className="whitespace-nowrap">{label}</span>}
           </Link>
         ))}
       </nav>
 
-      <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-line p-4">
-        <OrigenDatos />
-        <EstadoPipeline />
-      </div>
+      {!collapsed && (
+        <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-line p-4">
+          <OrigenDatos />
+          <EstadoPipeline />
+        </div>
+      )}
     </aside>
   )
 }
