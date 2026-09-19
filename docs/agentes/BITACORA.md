@@ -647,3 +647,20 @@ Plantilla (cópiala tal cual):
 - **No mergeado, a propósito:** `miguel/p0-5-nombre-repetido`, que Miguel lo dejó para las 18:00 y sólo si hace falta. Tampoco `alfonso/presentaciones-y-pdf`: un .pptx de 13,5 MB en git; que decida Alfonso con Miguel si va a `main`. Ensayado: las dos mezclan sin conflictos.
 - **PLAN-10** (`docs/agentes/PLAN-10.md`): J1 hace el ensayo general del lote 2 con `main`; J2, el Excel y el ERP con otra forma; J3, el respaldo de visión (hoy vacío); J4, el kit, la defensa y el dato en vivo del domingo; J5, el bonus (remesa + calendario). Cinco listas de ficheros sin solapes.
 - **Para Alfonso:** I1 corrigió la línea 98 de tu `albertitos_plan.md` (la cifra falsa del reprocesado, 0,04 s). Ya está en `main`; revísala.
+
+### 19/09 · J5 · inicio bonus PLAN-10
+- Trabajo sólo en bonus, tests, ADR-0012 y BONUS.md. Copia SQLite backup en dist/ensayo/j5/bonus.db; sin red ni LLM.
+- Huellas iniciales BD / outcomes: c66d00e45be3 / 1ec4be206089. Calendario y CSV de remesa desde PAGAR, con validación IBAN y exclusiones explícitas.
+
+### 19/09 · J5 · bonus medido sobre copia
+- Calendario: 438 PAGAR, 2.428.159,06 EUR, 431 vencidos y 2 vencen en semana del corte 2026-09-18. Remesa: 0 pagos, 438 exclusiones individuales por IBAN_INVALIDO (los 11 IBAN sintéticos del maestro fallan mod-97). No se corrigen ni se alteran decisiones.
+- 16 tests propios pasan; CLI medida en 0.184 s, copia intacta. Artefactos en dist/ensayo/j5/bonus/.
+- PIDO A Alejandro: leer resumen.json (remesa_numero/total_eur, calendario_numero/total_eur, semanas y avisos_por_codigo), calendario.csv y avisos.csv; enlace a calendario.html. Remesa.csv es borrador, nunca ejecutar pagos desde la consola.
+- PIDO A J4: make check se detiene por formato de scripts/dato_en_vivo.py; salida en dist/ensayo/j5/check.log. Mis ficheros pasan formato/lint. Repetiré al cierre si ya está formateado.
+
+### 19/09 · J5 · cierre bonus PLAN-10
+- Implementado y commiteado: 8e8301d. Calendario HTML/CSV, remesa CSV, avisos y controles JSON; ADR-0012 y receta de defensa en docs/BONUS.md.
+- 438 vencimientos / 2.428.159,06 EUR; 431 vencidos, 2 en semana del corte. Remesa 0 / 0,00 EUR; exactamente 438 exclusiones por IBAN_INVALIDO, una por fichero. CLI 0,184 s sobre copia.
+- Tests propios 16 passed; batería completa ejecutada 459 passed, 2 deselected, 1 xfailed (39,33 s). Formato/lint propios verdes; agentes-check OK.
+- make check final todavía se detiene en formato ajeno: src/albertitos/sources/excel.py, en edición por J2 (antes J4). PIDO A J2/Javier: repetir al cerrar sus cambios; log dist/ensayo/j5/check-final.log. No declaro make check verde.
+- Huellas finales BD / outcomes: c66d00e45be3 / 1ec4be206089, idénticas al inicio. También intacta la copia del ensayo. Sin push.
