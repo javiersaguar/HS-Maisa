@@ -6,6 +6,10 @@ allowed-tools: Bash(make *) Bash(uv run *) Bash(git *) Bash(gh *) Bash(ls *) Bas
 ---
 # Entrega
 
+> **Hecho de verdad el 20/09 a las 00:17** (entrega `d2ade3f`): los dos lotes, 500 líneas (445/46/9) + 40 (23/16/1),
+> auditoría VERDE, publicado desde el portátil de Javier. La receta que sigue es la que se usó, con lo aprendido
+> anotado en «Lo que salió distinto» al final. Se puede volver a publicar encima hasta las 11:00.
+
 ## 1. Preparar
 
 La BD debe tener las decisiones vigentes y el PDF del plan debe estar actualizado en `dist/entrega/albertitos_plan.pdf` (`make plan-pdf` cuando cambie el plan). El script genera los JSONL desde la BD; nunca se editan a mano.
@@ -44,7 +48,10 @@ make publicar ARGS='--publicar --aceptar-rojo "<el mismo motivo>"'
 
 El motivo no puede estar vacío y queda íntegro en el mensaje del commit y en el registro (escapado como JSON si contiene saltos de línea). Se acepta el informe rojo completo: leer todos sus hallazgos. No permite saltarse package, validate, un fallo técnico de la auditoría, el horario ni archivos extra. `make publicar` se lo pasa a `package` (`429552a`), que también audita antes de escribir: el rojo aceptado queda en un evento `AUDITORIA-ROJA-ACEPTADA` con el motivo.
 
-Ensayo F1, 19/09 (antes de las decisiones de Mónica): `make publicar` **0,685 s**, package/validate APTO (500, entonces 443/48/9; la referencia hoy es 438/53/9, entrega `232bb76`), rojo sólo por la evidencia falsa de scan_025. BD, dist/entrega y archivos del clon real con hashes idénticos antes/después. Publicaciones ensayadas exclusivamente contra remotos bare locales.
+Ensayo F1, 19/09 (antes de las decisiones de Mónica): `make publicar` **0,685 s**, package/validate APTO (500, entonces 443/48/9), rojo sólo por la evidencia falsa de scan_025. BD, dist/entrega y archivos del clon real con hashes idénticos antes/después. Publicaciones ensayadas exclusivamente contra remotos bare locales.
+
+**La referencia hoy es la entrega `d2ade3f`** (20/09 00:17): 500 líneas 445/46/9 con norma v3 y ERP v1, más 40 líneas
+23/16/1 con norma v4 y ERP v2. La anterior, `232bb76` (438/53/9, sólo lote 1), queda como histórico.
 
 ## Si el script falla: comandos manuales de diagnóstico y recuperación
 
@@ -93,8 +100,32 @@ correctos. El JSONL sale **byte a byte idéntico** si la BD no ha cambiado (sha2
 ### Registrar
 Anota en `docs/entregas.log` (en este repo): fecha, commit del repo de entrega, nº de líneas de cada JSONL, versión de norma/ERP usada. Avisa en el canal con el commit.
 
+## Lo que salió distinto al publicar los dos lotes (20/09 00:17)
+
+1. **El lote 2 no se publica solo:** antes de `package` hay que integrarlo en la BD, y son seis comandos en este
+   orden (con el ERP del lote 2 escuchando en `:8011`):
+   `maestro --lote2 data/lote2` · `erp pull --tag v2` · `ingest --dir data/lote2/facturas --lote 2` ·
+   `hechos import data/fixtures/hechos_lote2.jsonl` · `reprocess --impacted --lote 2 --norma v4 --erp v2` ·
+   `reprocess --impacted --lote 1` (este último sólo si cambian los hechos del lote 1, como con el ADR-0017).
+   **Ensáyalo antes sobre una copia** (`sqlite3.Connection.backup` a `dist/ensayo/entrega/`): así salió VERDE a la
+   primera en la BD real.
+2. **Respaldo antes de tocar la BD real:** `uv run python scripts/preflight_lote2.py --respaldar`. Deja
+   `dist/albertitos.db.bak`, que es lo que te permite volver atrás sin drama.
+3. **La auditoría sale VERDE con un ámbar esperado:** «lote 2: ESCALAR 16/40 > 15 %». No es un error: son las 8
+   facturas en divisa más las trampas del lote. Léelo, no lo aceptes a ciegas.
+4. **El modo seco enseña el mensaje del commit** con los recuentos y las versiones («lote1 500 (445/46/9) · lote2 40
+   · norma v3,v4 · erp v1,v2»). Es la mejor comprobación de que vas a publicar lo que crees.
+5. **El registro se escribe solo** en `docs/entregas.log` con el sha256 de cada JSONL. No hay que añadirlo a mano.
+6. **Después de publicar, la demo pública se queda vieja.** Un paso más, fuera de este runbook pero parte de la
+   entrega de cara al jurado:
+   ```bash
+   uv run python scripts/exportar_demo_db.py --origen dist/albertitos.db
+   git add deploy/demo.db && git commit -m "deploy: la demo pública sirve la entrega <commit>" && git push
+   ```
+   Render redespliega solo en unos 3 minutos (ADR-0023).
+
 ### Antes del domingo 08:00 comprueba además
-- `outcomes_lote2.jsonl` existe aunque el lote 2 no haya ido bien: 40 líneas, una por fichero. Un ESCALAR honesto vale; una línea ausente = NO APTO.
+- `outcomes_lote2.jsonl` existe aunque el lote 2 no haya ido bien: 40 líneas, una por fichero. Un ESCALAR honesto vale; una línea ausente = NO APTO. **Ya está publicado con sus 40 líneas desde las 00:17.**
 - El PDF abre y tiene las dos secciones (Arquitectura, ADRs).
 - El repo es público: `gh repo view javiersaguar/HS-Maisa-Entrega --json visibility`.
 - La organización clona y registra el commit a las **11:00** (cierre interno 10:30): nada de pushes después.
