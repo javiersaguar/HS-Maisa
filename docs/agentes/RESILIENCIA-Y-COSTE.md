@@ -216,6 +216,45 @@ Detalles de diseño, por si preguntan:
 
 ---
 
+### (f) La demo entera de una tacada, y por qué en la sala va **sin red** *(medido por E1, 19/09 03:10)*
+
+`make demo-caos` cuenta la historia completa sobre una copia de la BD (`dist/demo.db`, entrega aparte en
+`dist/demo_entrega/`): 3 facturas que ninguna plantilla reconoce "llegan nuevas", el proveedor está caído,
+quedan PENDIENTE, `package` se niega a entregar; vuelve el proveedor, se reanudan; y una tercera pasada no
+llama a nadie. Termina comparando su JSONL con el oficial: **0 resultados distintos**.
+
+Dos ejecuciones seguidas, mismo comando, misma máquina:
+
+| Paso | 1.ª vez | 2.ª vez |
+|---|---|---|
+| 1. Proveedor caído → 3 PENDIENTE, `run` sale 1, no escribe entrega | 9,2 s | 9,2 s |
+| 2. Vuelve el proveedor → 3 lecturas reales | **12,9 s** | **74,7 s** |
+| 3. Idempotente (caché por sha256) | 10,4 s | 10,3 s |
+| **Total** | **42,5 s** | **104,0 s** |
+
+Los pasos 1 y 3 no tocan la red y son estables al décimo de segundo. El paso 2 son 3 llamadas al gateway y
+**osciló 6×** entre dos ejecuciones separadas por veinte minutos. En un bloque de 4 minutos que además hay
+que narrar, eso es demasiado margen para jugárselo.
+
+Por eso la demo de la defensa se hace con `--sin-red`:
+
+```
+uv run python scripts/demo_caos.py --sin-red     # 39,5 s, sin una sola llamada al proveedor
+```
+
+Guarda las 3 lecturas de la caché antes de borrarlas y las devuelve entre el paso 1 y el 2, así que la
+reanudación se sirve de la caché. El JSONL final sale con el mismo sha256 que el oficial (`5ec17aaa5045`).
+**Se dice en voz alta**: prueba que el pipeline reanuda y que la entrega sale idéntica, no que el proveedor
+conteste. Lo que de verdad puntúa —que con el LLM caído nada se paga a ciegas y `package` se niega— es el
+paso 1, y ese es offline de todas formas.
+
+Si el wifi de la sala va bien, el mismo comando sin la bandera hace las 3 lecturas de verdad. Y si falla
+hasta el portátil, `docs/demo/transcripcion-demo-caos.txt` es la ejecución literal con red, tokens incluidos.
+
+**Lo que hay que preparar antes**: la demo necesita `dist/albertitos.db` con las 500 ingeridas y su caché,
+y esa BD está gitignorada: sólo vive en el portátil donde se corrió el pipeline. Si presenta Alfonso desde
+el suyo, hay que copiársela (7,7 MB) **antes** del ensayo de las 15:00, no en la sala.
+
 ## 4. Capacidad medida: 1, 2, 4 y 8 hilos
 
 `uv run python scripts/bench_llm.py --texto 16 --vision 8 --workers 1,2,4,8 --sufijo m2`

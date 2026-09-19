@@ -11,6 +11,11 @@ Preparación: en la copia, 3 facturas con texto que ninguna plantilla reconoce (
 
 Uso: uv run python scripts/demo_caos.py [--fecha-corte 2026-09-18] [--origen dist/albertitos.db]
 Necesita red y la key del LLM en .env (3 lecturas de texto).
+
+`--sin-red` hace la misma demo sin tocar el proveedor: guarda las 3 lecturas de la caché antes de
+borrarlas y las devuelve entre el paso 1 y el 2, así que la reanudación se sirve de la caché. Prueba
+que el pipeline se recupera y que el JSONL sale idéntico, pero NO que el proveedor conteste. Es el
+repliegue para la defensa si el wifi de la sala falla; se dice en voz alta, no se disimula.
 """
 
 from __future__ import annotations
@@ -29,7 +34,9 @@ NUEVAS = ["2026-03-19_P008.pdf", "FA-1123_construcciones.pdf", "FA-2967_segurida
 DB, CAOS, ENTREGA = Path("dist/demo.db"), Path("dist/demo_chaos.json"), Path("dist/demo_entrega")
 
 
-def preparar(origen: Path) -> None:
+def preparar(origen: Path) -> list[tuple]:
+    """Deja la copia como si las 3 facturas acabaran de llegar. Devuelve su caché del LLM, que
+    `--sin-red` reinyecta después para simular la vuelta del proveedor sin salir a internet."""
     for p in (DB, DB.with_name(DB.name + "-wal"), DB.with_name(DB.name + "-shm"), CAOS):
         p.unlink(missing_ok=True)
     src = sqlite3.connect(f"file:{origen}?mode=ro", uri=True)
@@ -43,9 +50,11 @@ def preparar(origen: Path) -> None:
     ]
     if len(shas) != len(NUEVAS):
         sys.exit(f"{origen} no tiene las {len(NUEVAS)} facturas de la demo: ¿ingest hecho?")
+    guardadas: list[tuple] = []
     for sha in shas:
         for tabla in ("eventos", "decisiones", "hechos"):
             dst.execute(f"DELETE FROM {tabla} WHERE sha256=?", (sha,))
+        guardadas += list(dst.execute("SELECT * FROM cache_llm WHERE clave LIKE ?", (sha + "|%",)))
         dst.execute("DELETE FROM cache_llm WHERE clave LIKE ?", (sha + "|%",))
         dst.execute("DELETE FROM ficheros WHERE sha256=?", (sha,))
     dst.execute(f"DELETE FROM eventos WHERE file_id IN ({marcas})", NUEVAS)
@@ -54,6 +63,19 @@ def preparar(origen: Path) -> None:
     ENTREGA.mkdir(parents=True, exist_ok=True)
     for f in ENTREGA.glob("*.jsonl"):
         f.unlink()
+    return guardadas
+
+
+def devolver_cache(filas: list[tuple]) -> int:
+    """Reinyecta las lecturas guardadas: el siguiente `run` las encuentra antes de llamar a nadie."""
+    if not filas:
+        return 0
+    c = sqlite3.connect(DB)
+    marcas = ",".join("?" * len(filas[0]))
+    c.executemany(f"INSERT OR REPLACE INTO cache_llm VALUES ({marcas})", filas)
+    c.commit()
+    c.close()
+    return len(filas)
 
 
 def albertitos(*args: str, corte: str) -> int:
@@ -62,7 +84,7 @@ def albertitos(*args: str, corte: str) -> int:
         "ALBERTITOS_DB": str(DB),
         "ALBERTITOS_CHAOS": str(CAOS),
         "ALBERTITOS_FECHA_CORTE": corte,
-        "ALBERTITOS_WORKERS": "3",
+        "ALBERTITOS_WORKERS": os.environ.get("ALBERTITOS_WORKERS", "3"),
         "PYTHONUTF8": "1",
     }
     print(f"\n$ albertitos {' '.join(args)}", flush=True)
@@ -98,10 +120,26 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--origen", type=Path, default=Path("dist/albertitos.db"))
     ap.add_argument("--fecha-corte", default=os.environ.get("ALBERTITOS_FECHA_CORTE", "2026-09-18"))
+    ap.add_argument(
+        "--sin-red",
+        action="store_true",
+        help="la reanudación se sirve de la caché guardada: misma demo sin llamar al proveedor",
+    )
     a = ap.parse_args()
 
-    preparar(a.origen)
+    cache = preparar(a.origen)
     print(f"Copia de {a.origen} en {DB}; llegan {len(NUEVAS)} facturas nuevas que sólo lee el LLM.")
+    if a.sin_red:
+        if len(cache) < len(NUEVAS):
+            sys.exit(
+                f"--sin-red necesita las {len(NUEVAS)} lecturas en la caché de {a.origen} y sólo hay "
+                f"{len(cache)}. Corre la demo normal una vez con red y vuelve a intentarlo."
+            )
+        print(
+            f"Modo sin red: {len(cache)} lecturas guardadas de la caché; el paso 2 las devuelve en "
+            "lugar de llamar al proveedor. Dilo en voz alta: prueba que el pipeline reanuda, no que "
+            "el LLM conteste."
+        )
     salida = ENTREGA / "outcomes.jsonl"
     t0 = time.perf_counter()
 
@@ -114,6 +152,8 @@ def main() -> None:
 
     print("\n== 2. Vuelve el LLM: el mismo run reanuda")
     albertitos("chaos", "--off", corte=a.fecha_corte)
+    if a.sin_red:
+        print(f"   (sin red: devueltas {devolver_cache(cache)} lecturas a la caché)")
     codigo2 = albertitos("run", "--salida", str(ENTREGA), corte=a.fecha_corte)
     rastro()
     primera = sha(salida)
