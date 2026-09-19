@@ -1,5 +1,11 @@
 # Escala medida a 10.000 facturas · D1 · ciclo 4 (sábado 19/09/2026, 00:50-01:15)
 
+**Referencia para la defensa:** [CIFRAS.md](../CIFRAS.md) reúne fuente, fecha, comando y vigencia.
+Este documento conserva la medida en `95808e2`: sus «hoy» describen aquel commit. El PR #1 de Miguel
+ya incorporó el índice de decisiones al esquema; las cifras sin índice son históricas. No se ha repetido
+el banco completo después de ese cambio en G2. El tiempo con índice de §2 es una suma de etapas, no
+una pasada completa medida de nuevo. No trasladar los tiempos de Javier al portátil de Alfonso.
+
 Qué es esto: el pipeline real (el código de `src/` tal cual, sin tocarlo) sobre **10.000 facturas sintéticas** en
 una BD aparte, etapa por etapa, con tiempo y RAM. Los caminos de LLM se miden por separado, con llamadas reales
 que la caché del gateway no puede contestar. Todo sale de `scripts/bench_escala.py`. Los JSON crudos están en

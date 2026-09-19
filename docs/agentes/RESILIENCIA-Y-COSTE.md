@@ -1,5 +1,11 @@
 # Resiliencia y coste · evidencia medida
 
+**Referencia para la defensa:** [CIFRAS.md](../CIFRAS.md) es el catálogo único de cifras, fuentes,
+comandos y vigencia. Aquí se conserva la evidencia histórica. En particular, §4 midió visión de una
+lectura: su recomendación de hilos y su extrapolación no describen la doble lectura de producción.
+Para ella manda ESCALA-10K §4/§7, enlazado en el catálogo. Las tarifas son las consultadas por B2
+el 18/09; G2 no ha vuelto a verificar la facturación del proveedor.
+
 > Ciclo 2, agente B2 · viernes 18/09/2026, 22:45-01:30 · rama `javier/ingesta`
 > Hardware de todas las medidas: **AMD Ryzen 9 8940HX, 24 CPUs, 43 GB RAM, WSL2 sobre Windows**.
 > Proveedor: **Helmcode** (`https://api.helmcode.com/v1`, `openai_compat`), modelos `deepseek-v4-flash`
@@ -260,7 +266,7 @@ hasta el portátil, `docs/demo/transcripcion-demo-caos.txt` es la ejecución lit
 y esa BD está gitignorada: sólo vive en el portátil donde se corrió el pipeline. Si presenta Alfonso desde
 el suyo, hay que copiársela (7,7 MB) **antes** del ensayo de las 15:00, no en la sala.
 
-## 4. Capacidad medida: 1, 2, 4 y 8 hilos
+## 4. Capacidad medida: 1, 2, 4 y 8 hilos (histórico: una lectura de visión)
 
 `uv run python scripts/bench_llm.py --texto 16 --vision 8 --workers 1,2,4,8 --sufijo m2`
 (16 facturas de texto y 8 escaneadas por tanda, **llamadas reales**, caché aparte por tanda).
