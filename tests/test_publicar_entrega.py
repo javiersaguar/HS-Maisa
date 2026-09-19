@@ -39,6 +39,16 @@ def caso(tmp_path, monkeypatch):
     # Identidad sólo de estos subprocesos, ni configuración global ni red.
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    # El entorno de quien lanza los tests no puede colarse: con ALBERTITOS_DB exportada (como en el
+    # runbook /lote2 o en los ensayos), publicar_entrega leía ESA BD y no la del caso, y 8 tests
+    # fallaban justo al pasar make check tras mergear P0-5 a las 18:00 (ensayo J1, 13:20).
+    for var in (
+        "ALBERTITOS_DB",
+        "ALBERTITOS_CHAOS",
+        "ALBERTITOS_FECHA_CORTE",
+        "ALBERTITOS_DIR_LOTE2",
+    ):
+        monkeypatch.delenv(var, raising=False)
     raiz = tmp_path / "solucion"
     raiz.mkdir()
     git(raiz, "init", "-q", "-b", "javier/ingesta")
