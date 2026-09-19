@@ -1,7 +1,12 @@
 # Análisis de los datos de la Caja · qué hay dentro del material
 
-**19/09/2026, 11:30 · Mónica (rules/)** · complementa [CIFRAS.md](CIFRAS.md), que cataloga las cifras de
-rendimiento del sistema. Este documento va de lo contrario: **qué contiene el material** que hay que juzgar.
+**19/09/2026, 11:30 · Mónica (rules/)**, ampliado con el lote 2 el **20/09 a las 02:00 · Javier** (sección 12) ·
+complementa [CIFRAS.md](CIFRAS.md), que cataloga las cifras de rendimiento del sistema. Este documento va de lo
+contrario: **qué contiene el material** que hay que juzgar.
+
+**Las secciones 1 a 11 son del lote 1** (las 500 de la Caja del viernes) y siguen valiendo tal cual: ese material
+no ha cambiado. **El lote 2 está en la sección 12**, porque trae cosas que el lote 1 no tenía: divisas, siete
+idiomas, proveedores extranjeros y facturas escritas a mano.
 
 Todas las cifras salen de tres fuentes y se reproducen con el bloque del final:
 `data/caja/FINAL_v7_DEFINITIVO_ahorasi.xlsx` (maestro y pedidos), el bridge ERP local (516 asientos,
@@ -193,9 +198,15 @@ Vale tanto como lo anterior, porque evita perder tiempo:
 
 ## 10 · Las cifras que conviene llevar sabidas
 
-**11** proveedores · **516** pedidos, todos abiertos, **2,64 M €** · **516** asientos que encajan 1 a 1 con
-el Excel y **9** marcados PAGADA · **500** facturas, **471** legibles y **29** escaneadas · **31** facturas
-con texto que intenta mandar · **1** pedido facturado dos veces · **3** pedidos inexistentes · **438/53/9**.
+**Lote 1:** **11** proveedores · **516** pedidos, todos abiertos, **2,64 M €** · **516** asientos que encajan 1 a 1
+con el Excel y **9** marcados PAGADA · **500** facturas, **471** legibles y **29** escaneadas · **31** facturas
+con texto que intenta mandar · **1** pedido facturado dos veces · **3** pedidos inexistentes · **445/46/9** tras el
+ADR-0017 (era 438/53/9 en la entrega del sábado por la mañana).
+
+**Lote 2:** **4** proveedores más (15) · **39** pedidos más (555) · **40** asientos más (556) · **40** facturas,
+**todas con capa de texto** · **8** en divisa · **3** escritas a mano · **23/16/1**.
+
+**Los dos juntos, que es lo entregado:** 540 facturas, **468 PAGAR · 62 ESCALAR · 10 NO_PAGAR** (entrega `d2ade3f`).
 
 ## 11 · Cómo se reproduce
 
@@ -208,6 +219,44 @@ entrega: todo es lectura.
 
 Los recuentos del maestro y de los pedidos salen de `openpyxl` sobre las hojas `Proveedores` y
 `Pedidos_2026`; los del cruce, de comparar el campo `pedido` de los hechos con esas dos tablas.
+
+## 12 · El lote 2: 40 facturas que traen lo que el lote 1 no tenía
+
+Material: commit `f831e34` del repo de participantes (19/09 17:57). Las cifras salen de
+[`agentes/lote2/EXTRACCION.md`](agentes/lote2/EXTRACCION.md), que las midió PDF a PDF.
+
+**Las fuentes crecen, y en otro formato.** Los proveedores y pedidos nuevos vienen en **CSV**, no en el Excel:
+`proveedores_nuevos.csv` (P012 alemán, P013 francés, P014 brasileño, P015 japonés) y `pedidos_nuevos.csv` (39).
+El maestro pasa a 15 proveedores y 555 pedidos. El ERP suma 40 asientos (556) y uno de ellos, `AS-90001`, deja
+**PAGADA** a `PO-2026-0071`, que es un pedido **del lote 1**.
+
+**Ninguna escaneada.** Las 40 tienen capa de texto: 23 se resuelven por plantilla y 17 por LLM de texto. Es la
+diferencia más grande con el lote 1, donde 29 iban por visión.
+
+**Lo que sí es nuevo y cuesta:**
+- **Divisas: 8 facturas** en USD, GBP, CHF, BRL, MXN y JPY, contra pedidos en euros. Siete declaran **IVA 0 %** de
+  exportación. El Excel y el ERP no tienen columna de moneda: todo lo suyo es en euros. Los tipos implícitos son
+  fijos por moneda (el mismo en fechas distintas) y, convertidos, cuadran al céntimo con el pedido.
+- **Siete idiomas** (castellano, inglés, catalán, portugués, francés, italiano y alemán) y **15 fechas escritas en
+  letra**, del tipo «am siebten März zweitausendsechsundzwanzig».
+- **Tres facturas a mano:** `e16` sólo la fecha, `e17` entera, y `e18` con el total tachado y corregido
+  («15.000,00 / 18.150,00 corregido A.»). `e18` es la peligrosa: el texto impreso cuadra con el ERP.
+- **Identificadores extranjeros:** IVA alemán y francés, CNPJ brasileño y número corporativo japonés. Ninguno es un
+  NIF español, y el «IBAN» japonés no existe como tal.
+
+**Las trampas del lote 2, una por tipo:** un pedido del lote 1 ya PAGADO que se vuelve a facturar
+(`2026-08-22_P010`), dos IBAN cambiados con nota de «nueva cuenta» (`FA-3955`, `FA-7532`), un total que no coincide
+con su pedido (`factura_6932`), una razón social con el NIF de otro proveedor (`e05`), un IBAN británico donde el
+maestro dice español (`e11`), unas cuentas que no suman (`e14`: 45.800 + 9.160 ≠ 48.800) y un IVA que no cuadra con
+su propia base (`e09`).
+
+**Lo que parece trampa y no lo es:** las «facturas sin divisa» de las que hablaban otros equipos. De los 540 PDF,
+216 imprimen los importes sin símbolo: son las plantillas de la Caja con el número a secas, no facturas en otra
+moneda. Sólo 8 nombran una divisa, y las 8 son del lote 2.
+
+**Lo que la norma decide hoy (v4, ERP v2):** 23 PAGAR · 16 ESCALAR · 1 NO_PAGAR. De los 16 escalados, 8 son las de
+divisa: sin tabla de cambio oficial no convertimos, y queda como pregunta para los mentores
+([`hitos.md`](hitos.md)).
 
 ---
 
