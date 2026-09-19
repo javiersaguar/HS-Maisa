@@ -13,8 +13,9 @@ import {
   type Bandeja,
   type EstadoBandeja,
 } from '@/lib/api/inbox'
+import type { EstadoFichero } from '@/lib/types'
 import { Card } from '@/components/ui/Card'
-import { ResultadoMarca } from '@/components/ui/Resultado'
+import { RecuentoResultados, ResultadoMarca } from '@/components/ui/Resultado'
 import { Spinner } from '@/components/ui/Spinner'
 
 const MAX_FICHEROS = 20
@@ -150,6 +151,12 @@ export function InvoiceDropzone({
       : bandeja.fileIds.map((fileId) => ({ fileId, nombre: fileId, estado: null }))
     : []
   const hayPendientes = fase === 'hecho' && filas.some((f) => f.estado === 'PENDIENTE' || f.estado === null)
+  // El recuento es el de ESTE envío, no el de la BD: si mañana llega otra Caja, la portada habla de ella.
+  const porEstado = filas.reduce<Partial<Record<EstadoFichero, number>>>((acc, f) => {
+    if (f.estado) acc[f.estado] = (acc[f.estado] ?? 0) + 1
+    return acc
+  }, {})
+  const sinLeer = filas.filter((f) => !f.estado).length
 
   return (
     <Card className="flex flex-col overflow-hidden">
@@ -247,6 +254,12 @@ export function InvoiceDropzone({
                 )
               })}
             </ol>
+            <div className="shrink-0 border-t border-[#edf0ec] pt-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa39e]">
+                Este envío · {filas.length} {filas.length === 1 ? 'factura' : 'facturas'}
+              </p>
+              <RecuentoResultados porEstado={porEstado} sinLeer={sinLeer} />
+            </div>
             <ul className="min-h-0 flex-1 divide-y divide-[#edf0ec] overflow-y-auto border-t border-[#edf0ec]">
               {filas.map((f) => {
                 const activa = seleccionado === f.fileId
