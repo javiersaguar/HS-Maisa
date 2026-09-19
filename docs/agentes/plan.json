@@ -59,7 +59,6 @@
       "docs/adr/0012-*",
       "docs/api/bonus.md",
       "docs/api/ejemplos/bonus-*",
-      "docs/api/ejemplos/chat-*",
       "src/albertitos/confianza/*",
       "tests/test_confianza.py",
       "scripts/calibrar_confianza.py",
@@ -69,7 +68,8 @@
       "src/albertitos/extract/etapa.py",
       "scripts/agentes_check.py",
       "docs/agentes/PLAN-13.md",
-      "docs/agentes/partes/PARTE-11.md"
+      "docs/agentes/partes/PARTE-11.md",
+      "docs/api/ejemplos/chat-[01]*"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -94,7 +94,6 @@
       "docs/ANALISIS-DATOS.md"
     ],
     "Alejandro": [
-      "console-web/*",
       "src/albertitos/console/*",
       "tests/test_console.py",
       "docs/agentes/FASE-3-UNION.md",
