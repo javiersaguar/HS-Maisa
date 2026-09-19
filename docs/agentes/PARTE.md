@@ -72,6 +72,10 @@ una copia de la BD real. `make check`: **497 passed, 2 deselected, 1 xfailed** (
   recalcula su factura (`F26-9865_ofimática.pdf`) y **se queda en PAGAR**. La v3 sólo mira el estado del asiento del
   ERP (`norma_v3.py:183-198`); `Pedido.estado` del Excel no lo lee ninguna regla. Hoy es inocuo (las 516 filas dicen
   `ABIERTO`), pero si el sábado llegan pedidos anulados los pagaríamos. Es la otra cara de tu Q2.
+- **PIDO A Miguel (`cli.py` es tuyo, 4 líneas):** cuando el Excel no se puede cargar, el mensaje es el correcto pero
+  sale detrás de 60 líneas de traceback de rich. Mismo caso que arreglaste en `erp pull` (`cli.py:320`). Parche y salida
+  literal en `dist/ensayo/j2/pido-a-miguel-cli-maestro.patch`, reproducible con `bash dist/ensayo/j2/ver_error_cli.sh`.
+  No bloquea el lote 2: el mensaje está, sólo hay que leer la última línea.
 - **Para Javier a las 18:00:** si el Excel trae una hoja nueva, sale en `albertitos maestro` como `REGLA NUEVA?` con su
   nombre; y `make erp-lote2` espera el CSV en `data/lote2/erp_export_lote2.csv` (hoy sólo hay un `.gitkeep`), si llega
   con otro nombre: `make -C data/caja erp-lote2 LOTE2_ERP=<ruta>`.
