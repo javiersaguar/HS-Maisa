@@ -47,6 +47,21 @@ from albertitos.core import db
 logger = logging.getLogger(__name__)
 
 PUERTO_DEFECTO = 8000
+
+
+def host_escucha() -> str:
+    """127.0.0.1 en el portátil; `ALBERTITOS_HOST=0.0.0.0` en el servidor de la demo pública (ADR-0023)."""
+    return os.environ.get("ALBERTITOS_HOST", "127.0.0.1")
+
+
+def puerto_defecto() -> int:
+    """`PORT` lo pone el servicio de la demo pública (Render); en el portátil, 8000."""
+    try:
+        return int(os.environ.get("PORT") or PUERTO_DEFECTO)
+    except ValueError:
+        return PUERTO_DEFECTO
+
+
 RUTA_BD = Path(os.environ.get("ALBERTITOS_DB", "dist/albertitos.db"))
 CABECERA_API = "X-Albertitos-Api"
 
@@ -366,7 +381,7 @@ def servir(
         )
     try:
         httpd = ThreadingHTTPServer(
-            ("127.0.0.1", puerto), hacer_handler(ruta, bandeja_activa=bandeja)
+            (host_escucha(), puerto), hacer_handler(ruta, bandeja_activa=bandeja)
         )
     except OSError as exc:
         if exc.errno in (48, 98, 10048):  # dirección en uso: macOS, Linux, Windows
@@ -384,7 +399,7 @@ def servir(
     )
     print(
         f"Albertitos consola API v{lecturas.API_VERSION} · {modo} · "
-        f"http://127.0.0.1:{puerto}  (BD {ruta})"
+        f"http://{host_escucha()}:{puerto}  (BD {ruta})"
     )
     print(
         "Rutas: /salud /panel /ficheros /ficheros/:id /traza /etapas /eventos /inbox"
@@ -400,7 +415,7 @@ def servir(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Puente HTTP de sólo lectura para console-web")
-    parser.add_argument("--puerto", type=int, default=PUERTO_DEFECTO)
+    parser.add_argument("--puerto", type=int, default=puerto_defecto())
     parser.add_argument("--db", type=Path, default=None, help="ruta SQLite (defecto ALBERTITOS_DB)")
     parser.add_argument(
         "--bandeja",

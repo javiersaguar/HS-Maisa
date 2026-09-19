@@ -123,7 +123,8 @@ PUERTO_DEFECTO = 8001
 
 def puerto_defecto() -> int:
     try:
-        return int(os.getenv("ALBERTITOS_CHAT_PUERTO") or PUERTO_DEFECTO)
+        # PORT lo pone el servicio de la demo pública (Render); en el portátil manda ALBERTITOS_CHAT_PUERTO.
+        return int(os.getenv("ALBERTITOS_CHAT_PUERTO") or os.getenv("PORT") or PUERTO_DEFECTO)
     except ValueError:
         return PUERTO_DEFECTO
 
@@ -147,7 +148,9 @@ def puerto_libre(ocupado: int, intentos: int = 50) -> int | None:
 def servir(ruta: Path, puerto: int | None = None):
     puerto = puerto or puerto_defecto()
     try:
-        servidor = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta))
+        # ALBERTITOS_HOST=0.0.0.0 sólo en el servidor de la demo pública (ADR-0023).
+        host = os.getenv("ALBERTITOS_HOST", "127.0.0.1")
+        servidor = ThreadingHTTPServer((host, puerto), hacer_handler(ruta))
     except OSError as exc:
         # dirección en uso: macOS, Linux, Windows. En Windows, un puerto ocupado (o reservado por el sistema)
         # también puede dar WinError 10013 "acceso denegado"; el remedio es el mismo: otro puerto.
