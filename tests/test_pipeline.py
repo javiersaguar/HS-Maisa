@@ -272,6 +272,46 @@ def test_package_no_entrega_un_pagar_incoherente_y_no_pisa_la_anterior(conn, caj
     assert salida.read_bytes() != anterior
 
 
+def test_package_entrega_un_rojo_aceptado_y_deja_el_motivo(conn, caja, erp, tmp_path):
+    """La salida de una puerta roja a las 07:55: se entrega, pero el motivo queda en la traza."""
+    caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA)
+    entrega = tmp_path / "entrega"
+    auditar = _auditor_doble([])
+    assert _correr(conn, caja_tmp, caja, entrega, auditar=auditar).ok
+    fallo = Motivo(regla_id="v3.R5", ok=False, detalle="el asiento del ERP ya está PAGADA")
+    _forzar_pagar(conn, MUESTRA[2], [fallo])
+
+    with pytest.raises(ValueError, match="motivo"):
+        package.empaquetar(conn, entrega, caja_tmp, None, auditar=auditar, aceptar_rojo="  ")
+    package.empaquetar(
+        conn, entrega, caja_tmp, None, auditar=auditar, aceptar_rojo="lo revisó Mónica"
+    )
+    lineas = [json.loads(x) for x in (entrega / "outcomes.jsonl").read_text("utf-8").splitlines()]
+    assert {"file_id": MUESTRA[2], "result": "PAGAR"} in lineas
+    aceptado = next(e for e in _emit(conn, "ok") if e["error_codigo"])
+    assert aceptado["error_codigo"] == "AUDITORIA-ROJA-ACEPTADA"
+    detalle = json.loads(aceptado["detalle"])
+    assert detalle["motivo"] == "lo revisó Mónica"
+    assert detalle["rojos"] == {"PAGAR con una regla incumplida": [MUESTRA[2]]}
+    por_lote = [e for e in _emit(conn, "ok") if e["file_id"] is None and not e["error_codigo"]]
+    assert json.loads(por_lote[-1]["detalle"])["auditoria"] == "roja aceptada: lo revisó Mónica"
+    assert not _emit(conn, "error")
+
+
+def test_package_no_acepta_una_auditoria_que_falla(conn, caja, erp, tmp_path):
+    caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA[:1])
+    assert _correr(conn, caja_tmp, caja, tmp_path / "entrega").ok
+
+    def rota(conn, lotes):
+        raise RuntimeError("sin maestro")
+
+    with pytest.raises(package.EntregaInvalida, match="sin maestro"):
+        package.empaquetar(
+            conn, tmp_path / "otra", caja_tmp, None, auditar=rota, aceptar_rojo="da igual"
+        )
+    assert not (tmp_path / "otra" / "outcomes.jsonl").exists()
+
+
 def test_package_se_niega_si_la_auditoria_falla(conn, caja, erp, tmp_path):
     caja_tmp = _preparar(conn, caja, tmp_path, erp, MUESTRA[:1])
     assert _correr(conn, caja_tmp, caja, tmp_path / "entrega").ok

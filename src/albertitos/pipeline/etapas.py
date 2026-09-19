@@ -35,21 +35,56 @@ log = logging.getLogger(__name__)
 
 def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
     """Registra cada PDF por sha256 y devuelve cuántos son nuevos o cambiaron (nombre, lote).
-    Repetir no duplica filas ni eventos: lo ya registrado sólo se hashea. Renombrar actualiza el file_id."""
+    Repetir no duplica filas ni eventos: lo ya registrado sólo se hashea.
+
+    Un PDF idéntico a otro ya registrado (misma sha256) con otro nombre o en otro lote es una COPIA:
+    su nombre va a `identidades` y el original no se toca (P0-1: si no, el lote del original perdía su
+    línea). Sólo si el nombre anterior ya no está en este directorio del mismo lote es un renombrado, y
+    entonces se actualiza el file_id como antes."""
     from albertitos.extract import pdf  # import tardío: pymupdf tarda en cargar
 
     conocidos = {
         r["sha256"]: (r["file_id"], r["lote"])
         for r in conn.execute("SELECT sha256, file_id, lote FROM ficheros")
     }
+    extras = (
+        {
+            (r["file_id"], r["lote"]): r["sha256"]
+            for r in conn.execute("SELECT file_id, lote, sha256 FROM identidades")
+        }
+        if db.hay_identidades(conn)
+        else {}
+    )
+    rutas = sorted(Path(directorio).glob("*.pdf"))
+    presentes = {unicodedata.normalize("NFC", r.name) for r in rutas}
     n = 0
-    for ruta in sorted(Path(directorio).glob("*.pdf")):
+    for ruta in rutas:
         t0 = time.perf_counter()
         file_id = unicodedata.normalize("NFC", ruta.name)
         sha = sha256_fichero(ruta)
-        if conocidos.get(sha) == (file_id, lote):
+        if conocidos.get(sha) == (file_id, lote) or extras.get((file_id, lote)) == sha:
+            continue
+        original = conocidos.get(sha)
+        if original is not None and (original[1] != lote or original[0] in presentes):
+            db.guardar_identidad(conn, file_id=file_id, lote=lote, sha256=sha)
+            extras[(file_id, lote)] = sha
+            db.registrar_evento(
+                conn,
+                Event(
+                    file_id=file_id,
+                    sha256=sha,
+                    etapa=Etapa.INGEST,
+                    estado=EstadoEvento.OK,
+                    latencia_ms=int((time.perf_counter() - t0) * 1000),
+                    detalle=f"lote={lote} copia exacta de {original[0]} (lote {original[1]})",
+                ),
+            )
+            n += 1
             continue
         try:
+            if (file_id, lote) in extras:  # ese nombre era una copia y ahora trae otro contenido
+                db.quitar_identidad(conn, file_id=file_id, lote=lote)
+                del extras[(file_id, lote)]
             paginas, tiene_texto = pdf.info(ruta)
             db.guardar_fichero(
                 conn,
@@ -60,6 +95,7 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
                 paginas=paginas,
                 tiene_texto=tiene_texto,
             )
+            conocidos[sha] = (file_id, lote)  # otro PDF igual más abajo en este directorio es copia
             db.registrar_evento(
                 conn,
                 Event(
@@ -117,27 +153,54 @@ def registrar_transicion(conn: sqlite3.Connection, ev: Event) -> bool:
     return True
 
 
+def grupos_duplicados(
+    hechos: list[InvoiceFacts], copias: dict[str, list[tuple[str, int]]] | None = None
+) -> dict[str, dict[str, str]]:
+    """sha256 → {file_id de otro PDF de su grupo: qué comparten}. Grupo = mismo pedido o mismo
+    (NIF, nº de factura) en más de un PDF, o el mismo PDF con más de un nombre (`copias`, de
+    `db.nombres_por_sha`: el hecho es uno por contenido, así que sin esto la copia no tiene grupo).
+    Lo usan `marcar_duplicados` y la traza."""
+    grupos: dict[tuple[str, ...], list[InvoiceFacts]] = {}
+    for h in hechos:
+        if h.pedido:
+            grupos.setdefault(("pedido", h.pedido), []).append(h)
+        if h.nif_emisor and h.num_factura:
+            grupos.setdefault(("factura", h.nif_emisor, h.num_factura), []).append(h)
+    con: dict[str, dict[str, str]] = {}
+    for clave, grupo in grupos.items():
+        if len(grupo) < 2:
+            continue
+        que = f"pedido {clave[1]}" if clave[0] == "pedido" else f"factura {clave[2]} de {clave[1]}"
+        for h in grupo:
+            otros = con.setdefault(h.sha256, {})
+            for o in grupo:
+                if o is not h:
+                    otros[o.file_id] = f"{otros[o.file_id]} y {que}" if o.file_id in otros else que
+    propio = {h.sha256: h.file_id for h in hechos}
+    for sha, nombres in (copias or {}).items():
+        if sha not in propio:
+            continue
+        otros = con.setdefault(sha, {})
+        for fid, lote in nombres[1:]:  # el primero es el de `ficheros`, el de los hechos
+            clave = fid if fid != propio[sha] else f"{fid} (lote {lote})"
+            otros[clave] = f"el mismo PDF (copia exacta, lote {lote})"
+    return con
+
+
+def hechos_vigentes(conn: sqlite3.Connection) -> list[InvoiceFacts]:
+    filas = conn.execute(
+        "SELECT hechos_json FROM hechos WHERE extractor_version=?", (EXTRACTOR_VERSION,)
+    ).fetchall()
+    return [InvoiceFacts.model_validate_json(f["hechos_json"]) for f in filas]
+
+
 def marcar_duplicados(conn: sqlite3.Connection) -> tuple[int, int]:
     """Segunda pasada sobre los hechos: mismo pedido o mismo (NIF, nº factura) en más de un PDF →
     Aviso.DUPLICADO_SOSPECHOSO en todos ellos. La marca se recalcula entera: se pone donde hay grupo y
     se quita donde ya no lo hay (p. ej. tras borrar los `L2-*` de un ensayo). Sólo esta función pone
     ese aviso. Cambia hechos_hash, así que el linaje los reprocesa. Devuelve (puestos, quitados)."""
-    filas = conn.execute(
-        "SELECT sha256, hechos_json FROM hechos WHERE extractor_version=?", (EXTRACTOR_VERSION,)
-    ).fetchall()
-    hechos = [InvoiceFacts.model_validate_json(f["hechos_json"]) for f in filas]
-    por_pedido: dict[str, list[InvoiceFacts]] = {}
-    por_factura: dict[tuple[str, str], list[InvoiceFacts]] = {}
-    for h in hechos:
-        if h.pedido:
-            por_pedido.setdefault(h.pedido, []).append(h)
-        if h.nif_emisor and h.num_factura:
-            por_factura.setdefault((h.nif_emisor, h.num_factura), []).append(h)
-    con: dict[str, set[str]] = {}  # sha256 → file_id de los otros PDFs de sus grupos
-    for grupo in list(por_pedido.values()) + list(por_factura.values()):
-        if len(grupo) > 1:
-            for h in grupo:
-                con.setdefault(h.sha256, set()).update(o.file_id for o in grupo if o is not h)
+    hechos = hechos_vigentes(conn)
+    con = grupos_duplicados(hechos, db.nombres_por_sha(conn))  # sha256 → los otros PDFs del grupo
     puestos = quitados = 0
     for h in hechos:
         marcado = Aviso.DUPLICADO_SOSPECHOSO in h.avisos
@@ -181,9 +244,11 @@ def decide(
     erp: ErpSnapshot,
     solo: list[str] | None = None,
     por: dict[str, str] | None = None,
+    por_defecto: str | None = None,
 ) -> int:
     """Aplica la norma a los hechos de cada fichero (o sólo a `solo`) y guarda la decisión vigente.
-    `por` (file_id → motivo del linaje) va al evento: la traza dice por qué se recalculó."""
+    `por` (file_id → motivo del linaje; `por_defecto` para los demás) va al evento: la traza dice por
+    qué se recalculó."""
     from albertitos.rules import REGISTRO
 
     norma = REGISTRO[norma_version]
@@ -204,6 +269,7 @@ def decide(
         hechos = InvoiceFacts.model_validate_json(fila["hechos_json"])
         decision = norma.decidir(hechos, maestro, erp, ctx)
         db.guardar_decision(conn, decision)
+        porque = (por or {}).get(fila["file_id"], por_defecto)
         db.registrar_evento(
             conn,
             Event(
@@ -218,7 +284,7 @@ def decide(
                         "resultado": decision.resultado.value,
                         "reglas_ko": decision.reglas_incumplidas,
                     }
-                    | ({"por": por[fila["file_id"]]} if por and fila["file_id"] in por else {}),
+                    | ({"por": porque} if porque else {}),
                     ensure_ascii=False,
                 ),
             ),
