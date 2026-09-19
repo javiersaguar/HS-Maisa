@@ -1,6 +1,7 @@
 """Persistencia de fuentes y pedidos afectados por una actualización contable."""
 
-from datetime import UTC, date, datetime
+import json
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -12,6 +13,7 @@ from albertitos.sources.snapshot import (
     diff_erp,
     guardar_erp,
     guardar_maestro,
+    resumen_erp,
 )
 
 
@@ -145,3 +147,89 @@ def test_diff_vacio_y_todos_eliminados(erp):
     delta = diff_erp(erp, vacio)
     assert delta["eliminados"] == sorted(erp.asientos)
     assert delta["pedidos_afectados"] == sorted(erp.por_pedido())
+
+
+def _evento_erp(conn, ts, detalle, estado="ok", error=None, latencia=10):
+    return conn.execute(
+        "INSERT INTO eventos(ts,etapa,estado,error_codigo,latencia_ms,detalle) VALUES (?,'enrich',?,?,?,?)",
+        (ts.isoformat(), estado, error, latencia, detalle),
+    ).lastrowid
+
+
+def test_resumen_historico_no_suma_otras_descargas(conn, erp):
+    fin = datetime(2026, 9, 18, 19, 55, 36, 500000, tzinfo=UTC)
+    s = erp.model_copy(update={"descargado_en": fin, "consultas": 4, "reintentos": 1})
+    guardar_erp(conn, s)
+    _evento_erp(conn, fin - timedelta(minutes=3), "GET /erp/estado", "retry", "ERP-429", 999)
+    ids = [
+        _evento_erp(conn, fin - timedelta(seconds=3), "POST /erp/login"),
+        _evento_erp(
+            conn,
+            fin - timedelta(seconds=2),
+            "GET /erp/asientos {'pagina': '1'}",
+            "retry",
+            "ORA-00600",
+        ),
+        _evento_erp(conn, fin - timedelta(seconds=1), "GET /erp/asientos {'pagina': '1'}"),
+        _evento_erp(conn, fin - timedelta(milliseconds=1), "GET /erp/estado"),
+    ]
+    _evento_erp(conn, fin + timedelta(seconds=1), "POST /erp/login", "retry", "SES-401", 999)
+    conn.commit()
+    cambios = conn.total_changes
+    conn.execute("PRAGMA query_only=ON")
+    r = resumen_erp(conn, s.version)
+    assert r == {
+        "version": s.version,
+        "descargado_en": fin.isoformat(),
+        "asientos": len(s.asientos),
+        "consultas": 4,
+        "reintentos": 1,
+        "errores_por_codigo": {"ORA-00600": 1},
+        "latencia_total_ms": 40,
+        "atribucion": "inferida_por_ventana",
+        "eventos": ids,
+    }
+    assert conn.total_changes == cambios
+
+
+def test_resumen_explicito_excluye_eventos_intercalados(conn, erp):
+    s = erp.model_copy(update={"consultas": 2, "reintentos": 1})
+    guardar_erp(conn, s)
+    a = _evento_erp(conn, s.descargado_en, "GET /erp/estado", "retry", "ERP-429", 2)
+    _evento_erp(conn, s.descargado_en, "POST /erp/login", "retry", "SES-401", 777)
+    b = _evento_erp(conn, s.descargado_en, "GET /erp/estado", latencia=3)
+    _evento_erp(
+        conn,
+        s.descargado_en,
+        json.dumps(
+            {
+                "tipo": "erp_descarga",
+                "version": s.version,
+                "descargado_en": s.descargado_en.isoformat(),
+                "eventos": [a, b],
+            }
+        ),
+    )
+    r = resumen_erp(conn, s.version)
+    assert r["atribucion"] == "explicita"
+    assert r["errores_por_codigo"] == {"ERP-429": 1}
+    assert r["latencia_total_ms"] == 5 and r["eventos"] == [a, b]
+
+
+def test_resumen_sin_eventos_no_inventa_ceros(conn, erp):
+    guardar_erp(conn, erp)
+    r = resumen_erp(conn, erp.version)
+    assert r["errores_por_codigo"] is None and r["latencia_total_ms"] is None
+    assert r["atribucion"] == "no_disponible"
+
+
+def test_resumen_no_atribuye_ventana_incompleta(conn, erp):
+    s = erp.model_copy(update={"consultas": 1})
+    guardar_erp(conn, s)
+    _evento_erp(conn, s.descargado_en, "GET /erp/estado")
+    assert resumen_erp(conn, s.version)["atribucion"] == "no_disponible"
+
+
+def test_resumen_version_inexistente_informa(conn):
+    with pytest.raises(LookupError, match="no hay snapshot"):
+        resumen_erp(conn, "inexistente")
