@@ -1,4 +1,4 @@
-# Prompt · rediseño del chat «Albertitos AI» (sábado 19/09, tras el lote 2)
+# Prompt · rediseño del chat «AlbertitosAI» (sábado 19/09, tras el lote 2)
 
 Para un agente en `/home/javier/proyectos/HS-Maisa-chat`, rama `javier/chat` (hoy igual que `main`, `11c8b99`).
 Incluye lo que merece la pena de las mejoras de Alejandro (`docs/agentes/chat-mejoras/`), con estas decisiones de Javier:
@@ -29,8 +29,8 @@ data/ o src/albertitos/{core,pipeline,rules,extract}/. Prueba con las respuestas
 Sin dependencias nuevas: animaciones con CSS/Tailwind (keyframes en globals.css), nada de framer-motion.
 Respeta prefers-reduced-motion (sin animación, mismo resultado). Nunca renderices HTML del modelo.
 
-1 · Nombre. El chat se llama "Albertitos AI": cabecera del panel, botón flotante (aria-label y tooltip), texto de
-    ayuda, docs/api/chat.md y console-web/README.md. El prompt del sistema también: "Eres Albertitos AI, el
+1 · Nombre. El chat se llama "AlbertitosAI": cabecera del panel, botón flotante (aria-label y tooltip), texto de
+    ayuda, docs/api/chat.md y console-web/README.md. El prompt del sistema también: "Eres AlbertitosAI, el
     asistente de consulta de Alberto…".
 
 2 · Sin modelo ni herramientas a la vista.

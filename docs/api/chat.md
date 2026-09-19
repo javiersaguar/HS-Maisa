@@ -1,4 +1,4 @@
-# Chat con Alberto · contrato K2, actualizado en el PLAN-13 (C1)
+# AlbertitosAI · contrato K2, actualizado en el PLAN-13 (C1)
 
 Proceso independiente, sólo consulta; no hay que registrar POST en `console.api`. Stack existente: httpx, pydantic y servidor HTTP stdlib. ADR: [0013](../adr/0013-chat-consulta-con-herramientas.md).
 
@@ -32,7 +32,7 @@ pregunta llegaría al modelo:
 {"ok":true,"api":2,"solo_lectura":true,"bd_disponible":true,
  "modelo_disponible":false,"motivo":"fuera_de_ventana",
  "modelo":"deepseek-v4-flash","respaldo":"glm5.3-flash",
- "llamadas_restantes":30,
+ "llamadas_restantes":30,"max_llamadas":100,
  "ventana":{"desde":"2026-09-20T09:00:00+02:00","hasta":"2026-09-20T12:00:00+02:00"}}
 ```
 `motivo`: `null` (disponible) · `"sin_clave"` · `"fuera_de_ventana"` · `"presupuesto_agotado"` · `"breaker"`, en ese
@@ -57,6 +57,7 @@ Respuesta 200, tanto para éxito como degradación controlada:
   "modelo":"deepseek-v4-flash",
   "respaldo":false,
   "latencia_ms":4500,
+  "llamadas_restantes":97,
   "estado":"ok"
 }
 ```
@@ -69,7 +70,11 @@ Errores HTTP: 400 petición inválida, 403 origen no autorizado, 404 ruta descon
 
 Panel lateral contra `http://127.0.0.1:8001/chat` (no contra `:8000`). CORS autoriza los orígenes de `ALBERTITOS_CHAT_ORIGENES` (por defecto `http://localhost:3000` y `http://127.0.0.1:3000`) y devuelve el origen que pide, nunca `*`; el servidor rechaza con 403 los demás `Origin` en POST. OPTIONS soportado. Usar `fetch` con JSON, botón bloqueado durante la petición y timeout de interfaz algo mayor de 60 s. Renderizar `respuesta` como texto/Markdown seguro, nunca HTML sin sanitizar. Convertir cada `citas[]` en enlace interno a la traza usando `encodeURIComponent(file_id)`.
 
-Mostrar «Consulta de sólo lectura · la norma decide», el estado degradado sin ocultarlo, el modelo y la latencia. No convertir frases del modelo en botones de ejecución. El modelo puede errar en la explicación: la decisión persistida y la traza siguen siendo la fuente de verdad.
+Mostrar «AlbertitosAI», «Consulta de sólo lectura · la norma decide», la latencia y los estados degradado, sólo lectura o respuesta grabada sin ocultarlos. El nombre del modelo, el respaldo y las herramientas se conservan en el contrato, pero no se muestran en la interfaz ni en sus ayudas. No convertir frases del modelo en botones de ejecución. El modelo puede errar en la explicación: la decisión persistida y la traza siguen siendo la fuente de verdad.
+
+El campo aditivo `llamadas_restantes` de POST es un entero o `null`: se lee del contador existente después de contestar, sin llamadas adicionales. Una negativa local sin gateway devuelve `null`. Salud incorpora `max_llamadas`; ambos campos son opcionales para clientes compatibles con servidores anteriores. El contador usa ese máximo o la primera salud disponible, con verde por encima del 50 %, ámbar entre 20–50 % y rojo por debajo del 20 %.
+
+La primera factura citada lleva una ficha releída del puente GET `/ficheros/:file_id`, con decisión, proveedor, importe, motivo y enlace a la traza. El resto son enlaces. En modo mock la ficha avisa que son datos de ejemplo. Las respuestas se presentan como texto plano: el prompt pide decisión primero, unas 60 palabras por factura o 90 para preguntas globales y confianza como banda y causa. Es una instrucción al modelo, no un límite garantizado; la interfaz ofrece «Ver más» después de cinco líneas.
 
 ## Herramientas y límites
 
