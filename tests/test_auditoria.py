@@ -427,3 +427,35 @@ def test_package_entrega_con_la_contingencia_en_ambar(bd):
     }
     assert lineas["scan_002.pdf"]["result"] == "ESCALAR"
     assert lineas["scan_002.pdf"]["regla"] == "contingencia.C1"
+
+
+def _fila_dup(fid: str, lote: int, avisos: list[Aviso], resultado: str) -> aud.Fila:
+    h = InvoiceFacts(
+        file_id=fid,
+        sha256=f"sha-{fid}",
+        pedido="PO-2026-0071",
+        metodo=MetodoExtraccion.PLANTILLA,
+        extractor_version=etapas.EXTRACTOR_VERSION,
+        avisos=avisos,
+    )
+    return aud.Fila(fid, h.sha256, lote, True, h, h.hash(), None, {"resultado": resultado})
+
+
+def test_duplicado_entre_lotes_sin_marca_en_el_anterior_no_es_rojo():
+    """ADR-0021: factura_4635 (lote 1, PAGAR, entregada) y 2026-08-22_P010 (lote 2, el mismo pedido,
+    marcada y NO_PAGAR). La del lote 1 no se marca: no hay nada que corregir."""
+    filas = [
+        _fila_dup("factura_4635.pdf", 1, [], "PAGAR"),
+        _fila_dup("2026-08-22_P010.pdf", 2, [Aviso.DUPLICADO_SOSPECHOSO], "NO_PAGAR"),
+    ]
+    niveles = {c.clave: c.nivel for c in aud.comprobar_duplicados(filas)}
+    assert set(niveles.values()) == {aud.OK}, niveles
+
+
+def test_duplicado_entre_lotes_pagado_dos_veces_sigue_siendo_rojo():
+    filas = [
+        _fila_dup("factura_4635.pdf", 1, [], "PAGAR"),
+        _fila_dup("2026-08-22_P010.pdf", 2, [], "PAGAR"),
+    ]
+    niveles = {c.clave: c.nivel for c in aud.comprobar_duplicados(filas)}
+    assert niveles["pago_doble"] == aud.ROJO and niveles["duplicado_sin_marcar_pagar"] == aud.ROJO

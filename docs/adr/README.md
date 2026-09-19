@@ -21,6 +21,8 @@
 | 0018 | En una escaneada, una instrucción sólo se cita si la ven dos lecturas (B'); el prompt nuevo (D) se midió y se descartó | aceptado (B') / descartado (D) | Miguel |
 | 0019 | Los importes llevan su moneda (ISO 4217) y el hash de lo ya guardado no cambia | aceptado | Miguel |
 | 0020 | Lo escrito o tachado a mano en un PDF con texto lo mira una persona | aceptado | Miguel |
+| 0021 | Cada lote se decide en su contexto y el lote 2 no reabre el lote 1 (P0-2, duplicados entre lotes) | aceptado; P0-2 abierta al mentor | Miguel |
+| 0022 | La norma v4 es la v3 más R7 (moneda): la divisa escala hasta que haya tipo de cambio | propuesto; revisa Mónica | Miguel |
 
 Cada ADR termina con un **Resumen para el plan (5 líneas)** listo para pegar en
 `docs/plan/albertitos_plan.md` § ADRs (lo hace Alfonso; los dueños no tocan el plan).

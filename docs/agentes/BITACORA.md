@@ -891,3 +891,22 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
   1. `pipeline/run.py:142` recarga siempre solo el Excel (`excel.cargar_maestro`) y lo guarda como último maestro: un `albertitos run` **pisaría el maestro del lote 2** y los CSV no contarían. Propuesta: si `lote2/proveedores_nuevos.csv` o `lote2/pedidos_nuevos.csv` existen, `sources.lote2.cargar_maestro_lote2(caja / MAESTRO_XLSX, lote2)`.
   2. **Con el material en `data/lote2/facturas`, `albertitos package` y `make publicar` se niegan hasta que los 40 estén decididos** (es lo correcto). Pero la republicación del lote 1 en 445/46/9 (J3) no puede salir de una carpeta con el material. O se publica antes de mergear esta rama, o hace falta un `package` solo del lote 1 (tuyo, en `cli.py`/`pipeline/package.py`). Los dos tests que lo notaron (bonus y confianza) ya empaquetan solo el lote 1 (`8dcc600`).
 - **PARA B:** el material en `data/lote2` es el mismo commit `f831e34`; `caja verify --lote 2` → OK.
+### 20:10 · Miguel · lote 2: M1, M2 y M4 en `main`; M3 (norma v4) en PR
+- **M1 · moneda** (`5efd55c`, ADR-0019): `InvoiceFacts.moneda`; el lote 1 conserva su hash (500/500).
+- **M2 · anotación a mano** (`65fc0a0`, ADR-0020): `Aviso.ANOTACION_A_MANO` si un PDF con texto trae tipografías manuscritas o trazos curvos → R6 escala. Barrido de 540 PDF: sólo e16, e17 y e18; en el lote 1, ninguno.
+- **M4 · P0-2 y duplicados entre lotes** (ADR-0021). **PARA todos, cambia cómo se reprocesa:**
+  - `reprocess` sin `--norma`/`--erp` reprocesa cada lote con lo suyo.
+  - Con ellas y sin `--lote`, **se niega** si cambiaría el lote 1. `run` y `decide` también.
+  - Para el lote 2: `reprocess --impacted --lote 2 --erp v2 --norma v4`. La chuleta ya está corregida.
+  - Un duplicado entre lotes marca sólo la factura del lote posterior: `2026-08-22_P010` sí, `factura_4635` no.
+- **M3 · norma v4** (ADR-0022, PR): v3 + R7 (moneda). Sin tipo de cambio, la divisa escala con su motivo ("factura en USD…"); si la regla trae tipos, se rellena `TIPOS_CAMBIO` en `norma_v4.py`. **PARA Mónica:** revisión, y si la regla aparece, literal en `docs/hitos.md`.
+- **Duda abierta (M2), PARA Mónica y L5:** hoy escalan e16 (fecha a mano), e17 (entera a mano) y e18 (total corregido a mano). `HIPOTESIS.md` daría por limpias e16 y e17 si se leen bien. ¿Escalamos las tres o sólo e18?
+
+### 20:15 · Miguel · M5 ensayado de punta a punta en una copia: lote 2 APTO y el lote 1 intacto
+- **Montaje (scratch, nada en `dist/`):** copia de `dist/albertitos.db`, material de `f831e34`, un maestro v2 **provisional** (Excel + los dos CSV; el de verdad es J1), ERP con `--lote2` en :8011 → `erp pull --tag v2` (556 asientos), `ingest --lote 2`, `extract`, `reprocess --impacted --lote 2 --norma v4 --erp v2 --fecha-corte 2026-09-18` y `package` con auditoría.
+- **Extracción:** 40/40 en 18 s (23 por plantilla y 17 por LLM de texto), 0 pendientes. Moneda leída en las 8 en divisa.
+- **Lote 2: 22 PAGAR · 1 NO_PAGAR · 17 ESCALAR, APTO.** Como en `HIPOTESIS.md`: 2026-08-22_P010 → NO_PAGAR (R5, AS-90001); FA-3955 y FA-7532 → R1 (IBAN); factura_6932 → R2; las 8 en divisa → R7 (e11 por R1, IBAN GB); e05 y e06 → R1; e18 → anotación a mano.
+- **Lote 1:** `reprocess --lote 1` → 0 de 500 recalculadas; `outcomes.jsonl` **idéntico byte a byte** al de `dist/entrega` (445/46/9).
+- **PARA Javier (J4):** e08_P012 (alemana, en EUR, limpia) escala sólo por `nif_invalido` e `iban_invalido`: faltan los validadores de NIF-IVA e IBAN extranjeros. Con eso pasa a PAGAR (23/1/16).
+- **PARA Mónica y L5 (decisión):** e16 (fecha a mano) y e17 (factura entera a mano) escalan por `anotacion_a_mano`, pero sus hechos se leen bien y, si no, pagarían. ¿Escalamos las tres o sólo e18 (el total corregido a mano)? Con sólo e18: 25/1/14.
+- **Cuando J1/J2 estén en `main`**, el M5 de verdad es lo mismo sobre la BD real, en este orden: `maestro` v2, `erp pull --tag v2`, `ingest --lote 2`, `extract`, `reprocess --impacted --lote 2 --norma v4 --erp v2 --fecha-corte 2026-09-18`, `package`.

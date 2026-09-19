@@ -369,6 +369,15 @@ def decide(
     conn = _conn()
     m = snapshot.cargar_maestro_bd(conn)
     e = snapshot.cargar_erp_bd(conn, erp)
+    from albertitos.pipeline import linaje
+
+    if solo is None and (choques := linaje.choques_de_contexto(conn, norma=norma, erp=e.version)):
+        rprint(
+            "[red]decide aplica la norma a todos los lotes y cambiaría uno ya decidido:[/red] "
+            + "; ".join(choques)
+            + ". Usa `reprocess --lote N` (ADR-0021)."
+        )
+        raise typer.Exit(2)
     por, por_defecto = porques(
         conn, norma_version=norma, fecha_corte=corte, maestro=m, erp=e, origen="decide"
     )
@@ -391,28 +400,55 @@ def reprocess(
         True, "--impacted/--no-impacted", help="sólo lo impactado (por defecto)"
     ),
     todo: bool = typer.Option(False, "--todo", help="recalcula todo sin mirar el linaje"),
-    norma: str = "v3",
+    norma: str | None = typer.Option(
+        None, help="norma; sin ella, cada lote con la suya (la de sus decisiones; v3 si no tiene)"
+    ),
     fecha_corte: str | None = None,
-    erp: str | None = None,
+    erp: str | None = typer.Option(
+        None, help="snapshot del ERP; sin él, cada lote con el suyo (el último si no tiene)"
+    ),
     lote: int | None = None,
 ) -> None:
     """Recalcula sólo lo impactado (hechos, norma, fecha de corte, o el diff de maestro/ERP toca su
-    pedido o su NIF) y muestra qué cambia en esta pasada."""
+    pedido o su NIF) y muestra qué cambia en esta pasada.
+
+    Cada lote se reprocesa en su contexto (ADR-0021): el lote 1 con la norma y el ERP con que se entregó,
+    el lote 2 con los suyos. Para cambiar la norma o el ERP de un lote ya decidido, dilo con --lote."""
+    from albertitos.core.versions import NORMA_VERSION_POR_DEFECTO
+    from albertitos.pipeline import linaje
     from albertitos.pipeline.run import reprocesar
     from albertitos.sources import snapshot
 
     corte = _fecha_corte(fecha_corte)
     conn = _conn()
-    r = reprocesar(
-        conn,
-        norma_version=norma,
-        fecha_corte=corte,
-        maestro=snapshot.cargar_maestro_bd(conn),
-        erp=snapshot.cargar_erp_bd(conn, erp),
-        lote=lote,
-        todo=todo or not impacted,
+    if lote is None and (choques := linaje.choques_de_contexto(conn, norma=norma, erp=erp)):
+        rprint(
+            "[red]No reproceso todos los lotes con esa norma o ese ERP:[/red] "
+            + "; ".join(choques)
+            + ". Cada lote se decide en su contexto (ADR-0021): usa --lote N (p. ej. --lote 2)."
+        )
+        raise typer.Exit(2)
+    contextos = linaje.contextos_vigentes(conn)
+    lotes = (
+        [lote]
+        if lote is not None
+        else sorted(
+            {int(r["lote"] or 1) for r in conn.execute("SELECT DISTINCT lote FROM ficheros")}
+        )
     )
-    rprint(r.texto())
+    maestro = snapshot.cargar_maestro_bd(conn)
+    for n_lote in lotes:
+        norma_l, erp_l = contextos.get(n_lote, (NORMA_VERSION_POR_DEFECTO, None))
+        r = reprocesar(
+            conn,
+            norma_version=norma or norma_l,
+            fecha_corte=corte,
+            maestro=maestro,
+            erp=snapshot.cargar_erp_bd(conn, erp or erp_l),
+            lote=n_lote,
+            todo=todo or not impacted,
+        )
+        rprint(f"[bold]lote {n_lote}[/bold] · " + r.texto())
 
 
 @app.command()
@@ -446,20 +482,26 @@ def run(
         except LookupError as e:
             rprint(f"[red]{e}[/red]")
             raise typer.Exit(1) from None
-    r = correr(
-        _conn(),
-        caja=CAJA,
-        lote2=LOTE2,
-        entrega=salida,
-        norma_version=norma,
-        fecha_corte=corte,
-        extraer=extraer,
-        workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")),
-        con_traza=con_traza,
-        auditar=_auditor(sin_auditoria),
-        aceptar_rojo=aceptar_rojo,
-        erp_version=erp,
-    )
+    from albertitos.pipeline.run import ContextoDeLote
+
+    try:
+        r = correr(
+            _conn(),
+            caja=CAJA,
+            lote2=LOTE2,
+            entrega=salida,
+            norma_version=norma,
+            fecha_corte=corte,
+            extraer=extraer,
+            workers=int(os.environ.get("ALBERTITOS_WORKERS", "1")),
+            con_traza=con_traza,
+            auditar=_auditor(sin_auditoria),
+            aceptar_rojo=aceptar_rojo,
+            erp_version=erp,
+        )
+    except ContextoDeLote as exc:
+        rprint(f"[red]No ejecuto run:[/red] {exc}")
+        raise typer.Exit(2) from None
     rprint(r.texto())
     if not r.ok:
         raise typer.Exit(1)
