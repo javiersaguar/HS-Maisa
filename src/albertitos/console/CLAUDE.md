@@ -41,6 +41,19 @@ añadir campos no la sube (`mappers.ts` ignora lo que no conoce).
 | `/eventos?etapa&limit` | `Event[]` | últimas filas |
 | `/inbox` | `{ estado: idle\|ingiriendo\|extrayendo\|decidiendo\|listo\|error, file_ids, subidos[], ficheros[{file_id, nombre, estado}], log[], error, lote: 99, disponible, bd }` | memoria del puente + `lecturas.estados` |
 
+**Rutas del bonus, registradas, no escritas aquí.** `api.py` hace `RUTAS.update(bonus.rutas())` y
+`RUTAS.update(confianza.rutas())` en un import perezoso: si falta el módulo, el puente arranca igual y la consola
+oculta esa parte. Contratos: `docs/api/bonus.md` y `docs/api/confianza.md` (no se duplican aquí). No suben `API_VERSION`.
+
+| GET | Para qué en Next |
+|---|---|
+| `/bonus/resumen` · `/bonus/calendario?limite=1000` | `/pagos` (`components/pagos/`): el mes por fecha de ejecución, el día de corte y, al pinchar un día, sus facturas |
+| `/confianza/resumen` | sondeo único al cargar: 200 enseña la confianza; 404 o red la ocultan |
+| `/confianza/ficheros?limite=1000` · `/confianza/fichero?file_id=` | columna de la lista de ficheros · tarjeta «¿Cuánto nos fiamos?» del detalle y banda en la portada |
+
+El chat (K2) no pasa por aquí: proceso aparte en `:8001` (`NEXT_PUBLIC_CHAT_URL`), panel flotante sólo si `/chat/salud`
+responde. Su CORS admite sólo `http://localhost:3000`: abre la consola por `localhost`. Decisión: ADR-0016.
+
 **La bandeja (`bandeja.py`), el único POST.** `POST /inbox` multipart (≤ 20 PDF, 10 MB cada uno) → guarda en
 `<carpeta de la BD>/inbox/`, `ingest --lote 99` síncrono y **202** `{ file_ids, lote: 99 }`; en un hilo
 `extract --fixture` + `decide --fixture` (CLI por subproceso, nunca `reprocess`). 400 sin PDF, 409 si hay un trabajo
@@ -73,4 +86,4 @@ Reglas del contrato:
 - Sin red: la demo corre en el portátil de Alfonso. Nada de CDN ni componentes externos (Analytics de Vercel fuera).
 - Tests en `tests/test_console.py` (`api.despachar(...)` sobre una BD de fixture; no levanta el servidor). Un test AST vigila que console/ no importe `rules/` ni `extract/`.
 - Cursor no ejecuta los hooks: antes de commitear, `make check` a mano y no toques nada fuera de `console/` y `console-web/` sin avisar.
-- Pendiente de Miguel (Makefile): `console-api: uv run python -m albertitos.console.api` · `console-web: cd console-web && pnpm dev`.
+- `make console` arranca puente + Next (Ctrl-C para los dos); `pnpm install` en `console-web/` antes, con red.
