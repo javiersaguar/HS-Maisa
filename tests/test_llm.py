@@ -773,3 +773,115 @@ def test_el_caos_es_por_base_de_datos(tmp_path, monkeypatch):
     monkeypatch.delenv("ALBERTITOS_CHAOS")
     assert chaos.modo() == "llm_down"  # y el de la BD de ensayo sigue donde estaba
     chaos.desactivar()
+
+
+# --------------------------------------------------------------------------- circuit breaker
+
+
+@pytest.fixture
+def bd_muchos(conn, caja, tmp_path, monkeypatch):
+    """Como `bd`, pero con 10 facturas: el breaker necesita más ficheros que fallos de umbral."""
+    d = tmp_path / "muchas"
+    d.mkdir()
+    for ruta in sorted((caja / "facturas").glob("2026-01-*.pdf"))[:10]:
+        shutil.copy(ruta, d / ruta.name)
+    etapas.ingest(conn, d, 1)
+    monkeypatch.setattr(chaos, "RUTA", tmp_path / "chaos.json")
+    monkeypatch.setattr(llm.time, "sleep", lambda s: None)
+    monkeypatch.setenv("ALBERTITOS_LLM_PROVEEDOR", "anthropic")
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.setattr(etapa, "VISION_DOBLE", False)
+    monkeypatch.setattr(plantillas, "extraer_por_plantilla", lambda texto, *, file_id, sha256: None)
+    monkeypatch.setattr(
+        llm.ClienteLLM,
+        "_api",
+        lambda self: pytest.fail("con el proveedor caído no se sale a la red"),
+    )
+    return conn
+
+
+def test_el_breaker_se_abre_con_el_proveedor_caido(bd_muchos, monkeypatch):
+    """Con el umbral por defecto (5): los 5 primeros salen LLM-DOWN y el resto ya ni lo intenta.
+
+    Antes, `llm_down` lanzaba el error ANTES de contar el fallo: el contador no subía y el breaker
+    no se abría nunca, aunque el guion de la defensa (min 8-10) lo promete.
+    """
+    chaos.activar("llm_down")
+    r = etapa.extraer(bd_muchos, workers=1)
+    assert r.candidatos == 10 and r.ok == 0 and r.pendientes == 10
+    assert r.errores == {"LLM-DOWN": 5, "LLM-CIRCUIT-OPEN": 5}
+    abiertos = bd_muchos.execute(
+        "SELECT count(*) FROM eventos WHERE etapa='extract' AND error_codigo='LLM-CIRCUIT-OPEN'"
+    ).fetchone()[0]
+    assert abiertos == 5
+    chaos.desactivar()
+
+
+def test_dos_ficheros_siguen_dando_dos_llm_down(bd, tmp_path):
+    """Compatibilidad: con menos ficheros que el umbral, el breaker no se abre (lo esperan los
+    tests de pipeline y del lote 2 simulado, que no son míos)."""
+    chaos.activar("llm_down")
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO, TRAMPA))
+    assert r.errores == {"LLM-DOWN": 2}
+    chaos.desactivar()
+
+
+def test_el_breaker_arranca_cerrado_en_cada_ejecucion(bd_muchos, monkeypatch):
+    """El estado es por proceso (`EstadoLLM` se crea en cada `extraer()`): tras `chaos --off`, la
+    siguiente pasada no arrastra el breaker abierto de la anterior."""
+    chaos.activar("llm_down")
+    etapa.extraer(bd_muchos, workers=1)
+    chaos.activar("llm_down")  # sigue caído: lo que se comprueba es que el contador empieza a 0
+    r = etapa.extraer(bd_muchos, workers=1)
+    assert r.errores["LLM-DOWN"] == 5, "si arrastrara el breaker, no habría ni un LLM-DOWN"
+    chaos.desactivar()
+
+
+def test_umbral_configurable_para_la_demo(bd_muchos, monkeypatch, tmp_path):
+    """`make demo-caos` usa 3 facturas: con umbral 5 el breaker no se vería. Con 2, sí."""
+    monkeypatch.setenv("ALBERTITOS_BREAKER_FALLOS", "2")
+    chaos.activar("llm_down")
+    ids = [r[0] for r in bd_muchos.execute("SELECT file_id FROM ficheros ORDER BY file_id LIMIT 3")]
+    r = etapa.extraer(bd_muchos, fixture=fixture_de(tmp_path, *ids))
+    assert r.errores == {"LLM-DOWN": 2, "LLM-CIRCUIT-OPEN": 1}
+    chaos.desactivar()
+
+
+def test_con_hilos_el_breaker_corta_a_todos(bd_muchos):
+    """Con 4 hilos, los que ya habían pasado la comprobación también cortan: se mira el breaker
+    antes de cada intento, no sólo al empezar el fichero."""
+    chaos.activar("llm_down")
+    r = etapa.extraer(bd_muchos, workers=4)
+    assert r.pendientes == 10 and sum(r.errores.values()) == 10
+    assert r.errores.get("LLM-CIRCUIT-OPEN", 0) >= 1, r.errores
+    assert r.errores.get("LLM-DOWN", 0) >= 5, "los primeros fallos siguen siendo LLM-DOWN"
+    chaos.desactivar()
+
+
+def test_el_respaldo_se_intenta_aunque_el_breaker_este_abierto(bd, tmp_path, monkeypatch):
+    """El breaker protege al proveedor que falla; el respaldo es OTRO modelo y existe para eso.
+
+    Antes de este arreglo, el principal agotaba sus 3 intentos, el breaker se abría por esos mismos
+    fallos y la llamada al respaldo moría en la comprobación: el respaldo no se usaba nunca.
+    """
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", "glm5.3-flash")
+    monkeypatch.setenv("ALBERTITOS_BREAKER_FALLOS", "2")  # el principal lo abre en sus 3 intentos
+    usados: list[str] = []
+
+    class Api:
+        class messages:
+            @staticmethod
+            def create(**kw):
+                usados.append(kw["model"])
+                if kw["model"] != "glm5.3-flash":
+                    raise RuntimeError("el principal está caído")
+                return api_falsa(RESPUESTA_P001).messages.create(**kw)
+
+    monkeypatch.setattr(llm.ClienteLLM, "_api", lambda self: Api())
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
+    assert r.ok == 1, r.errores
+    assert usados.count("glm5.3-flash") == 1 and usados[0] != "glm5.3-flash"
+    detalle = bd.execute(
+        "SELECT detalle FROM eventos WHERE etapa='extract' AND estado='ok'"
+    ).fetchone()[0]
+    assert "glm5.3-flash" in detalle  # la traza dice qué modelo respondió

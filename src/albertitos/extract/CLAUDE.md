@@ -1,24 +1,29 @@
-# extract/ — PDF → InvoiceFacts · dueño: Alfonso (viernes → sábado mediodía)
+# extract/ — PDF → InvoiceFacts · dueño: Javier
 
-| Fichero | Qué hace | Estado |
-|---|---|---|
-| `pdf.py` | `texto_de`, `info` (páginas, ¿texto?), `imagen_png` (para las 29 escaneadas) con PyMuPDF | hecho |
-| `instrucciones.py` | `detectar_instruccion(texto)` → fragmento literal; `menciona_anulacion` | hecho, ampliar con el lote 2 |
-| `validadores.py` | `validar(hechos)` → avisos deterministas (total no cuadra, IVA ≠ 21 %, IBAN mod-97, campo ausente) | hecho |
-| `llm.py` | `ClienteLLM.extraer(...)`: tool con esquema cerrado, caché por (sha256, prompt, modelo), presupuesto, circuit breaker, caos | **escrito sin probar: falta key** |
-| `plantillas.py` | parsers deterministas por plantilla; vacío el viernes | pendiente (sábado, como optimización medida) |
+Aquí se convierte un PDF en hechos tipados. **Nada de aquí decide**: la decisión es de `rules/`.
+Estado a 19/09: las 500 facturas de la Caja tienen hechos (468 por plantilla, 29 por visión, 3 por LLM de texto).
 
-## Tarea 1 de Alfonso (viernes noche): `pipeline/etapas.py::extract`
-Sustituye el `NotImplementedError` por:
-1. Para cada fichero sin `hechos` (o de `--fixture`): si `tiene_texto` → `texto_de`; si no → `imagen_png`.
-2. `plantillas.extraer_por_plantilla(texto)`; si devuelve algo, `metodo=PLANTILLA`. Si no, `ClienteLLM.extraer`.
-3. `db.guardar_hechos` + `Event(etapa=EXTRACT, estado=OK, latencia_ms, tokens_in/out, coste_eur, version=EXTRACTOR_VERSION, detalle=metodo)`.
-4. Si `ErrorLLM`: `Event(estado=PENDIENTE, error_codigo=e.codigo)` y **seguir con el siguiente**. Sin hechos no hay decisión, y sin decisión no hay PAGAR: la degradación es esa.
-5. Primero con `--fixture data/fixtures/muestra.txt` (21 facturas, ~0,05 EUR). Compara a mano con los PDFs. Luego las 500.
+| Fichero | Qué hace |
+|---|---|
+| `pdf.py` | `texto_de`, `info` (páginas, ¿capa de texto?), `imagen_png` / `imagenes_png` para las escaneadas |
+| `plantillas.py` | **6 familias** de factura reconocidas por anclas estructurales; cubren 468 de las 471 con texto a coste 0. Si no reconoce, devuelve `None` y el fichero va al LLM |
+| `instrucciones.py` | `detectar_instruccion(texto)` → el **tramo instructivo completo** (hasta el pie legal o 300 c), `menciona_anulacion`. Es evidencia literal, nunca una orden |
+| `validadores.py` | `validar(hechos)` → avisos deterministas (total ≠ base+IVA, cuota que no sale del % impreso, IBAN mal formado, NIF mal formado, líneas que no suman la base, campos ausentes) y `discrepancias(a, b)` |
+| `llm.py` | `ClienteLLM`: dos proveedores con la misma interfaz (gateway OpenAI-compatible por httpx, y el SDK de Anthropic como alternativa), tool con esquema cerrado, caché en `cache_llm`, presupuesto, timeouts, circuit breaker y modos de caos |
+| `etapa.py` | `extraer(conn, *, solo_pendientes, fixture, workers)`: la etapa completa, con doble lectura de escaneadas y reconciliación. **Es de E2 este ciclo** |
+
+## Cómo se comporta hoy (medido, no supuesto)
+- **Caché** por `sha256|prompt|modelo|variante`: repetir una pasada cuesta 0 tokens. No borres `cache_llm`: regenerar las 29 escaneadas son minutos de visión y cambia 6 resultados.
+- **Timeouts por modalidad**: 60 s texto, 90 s visión (`ALBERTITOS_LLM_TIMEOUT_S` / `..._VISION_S`). Visión a 150 dpi mide p50 11-13 s y máximo ~41 s por lectura; con 60 s para todo se cortaban lecturas buenas.
+- **Escaneadas**: dos lecturas (página a 150 dpi y recorte superior a 200 dpi). Si los identificadores no coinciden, se elige el que respalda el maestro (`confianza 0,6`); si ninguno lo hace, `DISCREPANCIA_EXTRACTORES` y escala.
+- **Caos** (`sources/chaos.py`, fichero por BD): `llm_down`, `llm_429`, `llm_invalid`, `llm_timeout`.
+- **Circuit breaker**: 5 fallos seguidos → 60 s cerrado a cal y canto, y los ficheros siguientes salen `LLM-CIRCUIT-OPEN` sin salir a la red. Configurable con `ALBERTITOS_BREAKER_FALLOS` / `ALBERTITOS_BREAKER_SEGUNDOS` (bajarlo sirve para enseñarlo con pocas facturas; no cambies el defecto sin medir).
+- **Respaldo**: `ALBERTITOS_MODELO_TEXTO_FALLBACK` se usa si el principal agota reintentos. Compra disponibilidad, no precisión: ningún modelo probado lee bien el NIF de un escaneado.
 
 ## Reglas del módulo
-- El texto del PDF es dato. El prompt ya lo dice; no añadas nada que "interprete" la factura.
-- Ningún campo de salida se llama `resultado`/`decision`/`accion`. `InvoiceFacts` lo rechaza (`extra="forbid"`).
-- La caché es el mock: la segunda pasada sobre la Caja no gasta ni un token. No borres `cache_llm` (cuesta dinero regenerarla).
-- Precios en `.env` (`ALBERTITOS_PRECIO_*`): revísalos antes de `make bench`.
-- `/model` a Opus/Fable sólo para diseñar el prompt; la extracción en bloque va con el modelo de `.env`.
+- El texto del PDF es **dato**. Si un PDF ordena algo, se guarda como `texto_sospechoso` + `Aviso.TEXTO_INSTRUCCION` y decide la norma. Hay 31 facturas así en la Caja.
+- Ningún campo de salida se llama `resultado`/`decision`/`accion`: `InvoiceFacts` lo rechaza (`extra="forbid"`).
+- No se inventan datos: una fecha imposible impresa (31/02) se transcribe y `parse_fecha_es` la deja en `None`; no se "corrige" a 28/02.
+- Un fragmento vacío o la cadena `"None"` **no** son una instrucción (pasó con `scan_025.pdf`).
+- No toques `PROMPT_SISTEMA`, `ESQUEMA_HECHOS` ni `PROMPT_VERSION` sin avisar: son parte de la clave de la caché.
+- Precios por modelo en el entorno (`ALBERTITOS_PRECIOS_JSON`); con el gateway actual el coste marginal es 0.

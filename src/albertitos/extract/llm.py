@@ -226,6 +226,15 @@ class EstadoLLM:
     gastado: Decimal = Decimal("0")
     fallos_seguidos: int = 0
     abierto_hasta: float = 0.0
+    # Umbral y ventana del circuit breaker. Los valores por defecto son los de siempre (5 fallos
+    # seguidos, 60 s abierto); se pueden bajar por entorno para ENSEÑARLO en la defensa sin tener
+    # que tirar 5 facturas (`make demo-caos` usa 3). No cambiar el defecto sin medirlo.
+    umbral_fallos: int = field(
+        default_factory=lambda: int(os.environ.get("ALBERTITOS_BREAKER_FALLOS", "5"))
+    )
+    segundos_abierto: float = field(
+        default_factory=lambda: float(os.environ.get("ALBERTITOS_BREAKER_SEGUNDOS", "60"))
+    )
     lock: threading.Lock = field(default_factory=threading.Lock)
     api: Any = None  # anthropic.Anthropic
     http: httpx.Client | None = None  # openai_compat
@@ -331,10 +340,17 @@ class ClienteLLM:
         pin, pout = self.precios.get(modelo, (self.precio_in, self.precio_out))
         return (Decimal(tin) * pin + Decimal(tout) * pout) / Decimal(1_000_000)
 
-    def _comprobar_disponible(self) -> None:
-        modo = chaos.modo()
-        if modo == "llm_down":
-            raise ErrorLLM("LLM-DOWN", "caos: proveedor caído")
+    def _comprobar_breaker(self, saltar: bool = False) -> None:
+        """Si el breaker está abierto, ni se sale a la red. Se comprueba antes de cada intento, no
+        sólo al empezar: con varios hilos, los que ya habían pasado la comprobación también cortan.
+
+        `saltar=True` sólo para el modelo de RESPALDO: el breaker protege al proveedor que está
+        fallando, y el respaldo existe justo para esa situación. Si no, el respaldo no llegaba a
+        intentarse nunca (el principal agota 3 intentos, el breaker se abre, y la llamada al
+        respaldo moría en esta comprobación).
+        """
+        if saltar:
+            return
         e = self.estado
         with e.lock:
             if time.time() < e.abierto_hasta:
@@ -342,10 +358,21 @@ class ClienteLLM:
                     "LLM-CIRCUIT-OPEN",
                     f"{e.fallos_seguidos} fallos seguidos; reabre en {e.abierto_hasta - time.time():.0f}s",
                 )
+
+    def _comprobar_disponible(self) -> None:
+        self._comprobar_breaker()
+        e = self.estado
+        with e.lock:
             if e.gastado >= e.presupuesto:
                 raise ErrorLLM(
                     "LLM-PRESUPUESTO", f"gastados {e.gastado:.4f} EUR de {e.presupuesto}"
                 )
+        if chaos.modo() == "llm_down":
+            # Una caída simulada cuenta como fallo igual que una real: si no, el contador nunca sube
+            # y el breaker no se abre nunca, aunque el guion de la defensa lo prometa (min 8-10).
+            # Sigue siendo instantáneo: sin backoff, porque lo usan bench_escala.py y demo_caos.py.
+            self._registrar_fallo()
+            raise ErrorLLM("LLM-DOWN", "caos: proveedor caído")
 
     def _registrar_exito(self, tin: int, tout: int, modelo: str = "") -> Decimal:
         eur = self.coste(tin, tout, modelo)
@@ -357,8 +384,8 @@ class ClienteLLM:
     def _registrar_fallo(self) -> None:
         with self.estado.lock:
             self.estado.fallos_seguidos += 1
-            if self.estado.fallos_seguidos >= 5:
-                self.estado.abierto_hasta = time.time() + 60
+            if self.estado.fallos_seguidos >= self.estado.umbral_fallos:
+                self.estado.abierto_hasta = time.time() + self.estado.segundos_abierto
 
     # ------------------------------------------------------------------ API pública
 
@@ -420,7 +447,9 @@ class ClienteLLM:
                     "modelo": respaldo,
                     "respaldo": True,
                 }
-            respuesta = self._llamar(respaldo, texto=texto, png=png, intentos=1, marca=marca)
+            respuesta = self._llamar(
+                respaldo, texto=texto, png=png, intentos=1, marca=marca, saltar_breaker=True
+            )
             modelo = respaldo
             respuesta["uso"]["respaldo"] = True
         uso = respuesta["uso"]
@@ -460,10 +489,13 @@ class ClienteLLM:
         png: bytes | None,
         intentos: int = 3,
         marca: str = "",
+        saltar_breaker: bool = False,
     ) -> dict[str, Any]:
         ultimo: Exception | None = None
         for intento in range(1, intentos + 1):
             try:
+                # otro hilo puede haberlo abierto mientras esperábamos (salvo en el respaldo)
+                self._comprobar_breaker(saltar_breaker)
                 if chaos.modo() == "llm_429" and intento == 1:
                     raise ErrorLLM("LLM-429", "caos: rate limit")
                 if chaos.modo() == "llm_timeout":

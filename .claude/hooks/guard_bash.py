@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from pathlib import Path
 
 from _common import decidir, es_dueno, leer_entrada, raiz_proyecto, rama_actual
 
@@ -38,7 +39,49 @@ def sin_heredocs(texto: str) -> str:
     return "\n".join(salida)
 
 
+RE_GIT_C = re.compile(r"\bgit\s+-C\s+(\"[^\"]*\"|'[^']*'|\S+)")
+
+
+def repo_objetivo(texto: str, raiz: Path) -> tuple[Path, bool]:
+    """Sobre qué repositorio actúa este comando y si es el repo de la solución.
+
+    `git -C <ruta> push` actúa sobre otro repo: sin esto, el runbook de entrega
+    (`git -C ../HS-Maisa-Entrega push -u origin HEAD:main`) quedaría bloqueado por la regla de
+    "main es de Miguel", que sólo habla de ESTE repo, y además `git -C . push --force` se saltaría
+    la regla 1 por la forma del patrón.
+    """
+    m = RE_GIT_C.search(texto)
+    if m is None:
+        return raiz, True
+    ruta = m.group(1).strip("\"'")
+    if (
+        "$" in ruta or "`" in ruta
+    ):  # variable sin expandir: no arriesgamos, tratamos como el nuestro
+        return raiz, True
+    destino = (raiz / ruta).resolve()
+    if not destino.is_dir():
+        return raiz, True
+    try:
+        top = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=destino,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        ).stdout.strip()
+    except Exception:
+        return destino, True
+    if not top:
+        return destino, True
+    return Path(top), Path(top) == raiz
+
+
 cmd = sin_heredocs(cmd_original)
+objetivo, es_solucion = repo_objetivo(cmd, raiz)
+if not es_solucion:
+    rama = rama_actual(objetivo)
+# `git -C <ruta> push` tiene que casar con los mismos patrones que `git push`.
+cmd = RE_GIT_C.sub("git", cmd)
 
 # Cada trozo separado por operadores de shell se evalúa por separado y también el comando entero.
 trozos = [t.strip() for t in re.split(r"&&|\|\||;|\||\n", cmd) if t.strip()] + [cmd]
@@ -59,7 +102,7 @@ if alguno(r"\bgit\s+push\b.*(\s--force(-with-lease)?\b|\s-f\b|\s\+\S+)"):
 
 # 2. main es de Miguel: ni commit, ni merge hacia main, ni push a main.
 en_main = rama in ("main", "master")
-if not dueno_merge:
+if not dueno_merge and es_solucion:
     if en_main and alguno(r"\bgit\s+(commit|merge)\b"):
         decidir(
             "deny",
@@ -125,7 +168,7 @@ if alguno(r"\bgit\s+commit\b"):
     try:
         staged = subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            cwd=raiz,
+            cwd=objetivo,
             capture_output=True,
             text=True,
             timeout=5,

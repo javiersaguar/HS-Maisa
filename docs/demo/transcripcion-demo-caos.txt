@@ -1,0 +1,55 @@
+Copia de dist/albertitos.db en dist/demo.db; llegan 3 facturas nuevas que sólo lee el LLM.
+
+== 1. El proveedor del LLM se cae
+
+$ albertitos chaos --llm-down
+modo caos: llm_down
+
+$ albertitos run --salida dist/demo_entrega
+ingest: 3 nuevos de 500 · maestro 80911e429c6c · erp v1
+extract: 0 extraídos · sin hechos: 3 → ['2026-03-19_P008.pdf', 
+'FA-1123_construcciones.pdf', 'FA-2967_seguridad.pdf']
+duplicados: +0 −0 · decisiones: 497
+NO se escribe la entrega (la anterior, si había, sigue intacta):
+NO APTO · dist/demo_entrega/outcomes.jsonl · lote 1 · 497 líneas · {'PAGAR': 
+443, 'ESCALAR': 45, 'NO_PAGAR': 9}
+  ✗ falta '2026-03-19_P008.pdf'
+  ✗ falta 'FA-1123_construcciones.pdf'
+  ✗ falta 'FA-2967_seguridad.pdf'
+tiempo: 9.2 s · 500 ficheros · 54.4 ficheros/s
+   2026-03-19_P008.pdf: extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA
+   FA-1123_construcciones.pdf: extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA
+   FA-2967_seguridad.pdf: extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA
+   run → exit 1 · entrega escrita: no
+
+== 2. Vuelve el LLM: el mismo run reanuda
+
+$ albertitos chaos --off
+modo caos: ninguno
+
+$ albertitos run --salida dist/demo_entrega
+LLM deepseek-v4-flash intento 1/3: LLM-TIMEOUT: sin respuesta en 60 s (ReadTimeout)
+ingest: 0 nuevos de 500 · maestro 80911e429c6c · erp v1
+extract: 3 extraídos · sin hechos: 0
+duplicados: +0 −0 · decisiones: 500
+APTO · dist/demo_entrega/outcomes.jsonl · lote 1 · 500 líneas · {'PAGAR': 443, 
+'ESCALAR': 48, 'NO_PAGAR': 9} → dist/demo_entrega/outcomes.jsonl
+tiempo: 74.7 s · 500 ficheros · 6.7 ficheros/s
+   2026-03-19_P008.pdf: extract ok (1062/532 tokens) → decide ok → emit ok · decisión: ESCALAR
+   FA-1123_construcciones.pdf: extract ok (1175/688 tokens) → decide ok → emit ok · decisión: ESCALAR
+   FA-2967_seguridad.pdf: extract ok (1151/590 tokens) → decide ok → emit ok · decisión: ESCALAR
+   run → exit 0 · outcomes.jsonl 5ec17aaa5045
+
+== 3. Otra vez: idempotente (caché por sha256, sin duplicados)
+
+$ albertitos run --salida dist/demo_entrega
+ingest: 0 nuevos de 500 · maestro 80911e429c6c · erp v1
+extract: 0 extraídos · sin hechos: 0
+duplicados: +0 −0 · decisiones: 500
+APTO · dist/demo_entrega/outcomes.jsonl · lote 1 · 500 líneas · {'PAGAR': 443, 
+'ESCALAR': 48, 'NO_PAGAR': 9} → dist/demo_entrega/outcomes.jsonl
+tiempo: 10.3 s · 500 ficheros · 48.7 ficheros/s
+   run → exit 0 · outcomes.jsonl 5ec17aaa5045 (igual: True)
+   frente a dist/entrega/outcomes.jsonl: 0 resultados distintos []
+
+Demo: 104.0 s

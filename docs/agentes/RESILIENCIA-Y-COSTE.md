@@ -120,6 +120,38 @@ Los 5 salen en **`intento=2`**, visible en `eventos`:
 **Mejora de este ciclo:** el gateway manda `Retry-After` en el 429 y `llm.py` lo tiraba, esperando a
 ciegas 1/2/4 s. Ahora se respeta lo que pide el proveedor (tope de 60 s para no colgar el lote).
 
+### (b bis) Con el proveedor caído, el breaker también salta — 0,8 s  *(corregido por E1, 19/09)*
+
+Hasta este ciclo, `llm_down` lanzaba el error **antes** de contar el fallo: el contador no subía y con
+una caída el breaker no se abría nunca, aunque el guion lo prometiera. Ya cuenta igual que un fallo real.
+Comando reproducible, sobre una BD de ensayo (nunca la real) y sin salir a la red:
+
+```bash
+export ALBERTITOS_DB=dist/ensayo/breaker.db ALBERTITOS_CHAOS=dist/ensayo/breaker.chaos.json
+uv run albertitos db init && uv run albertitos ingest --dir data/caja/facturas
+ls data/caja/facturas/scan_0*.pdf | head -8 | xargs -n1 basename > dist/ensayo/ocho_escaneadas.txt
+uv run albertitos chaos --llm-down
+uv run albertitos extract --fixture dist/ensayo/ocho_escaneadas.txt --workers 1
+```
+
+```
+extract: 0/8 ok · 8 pendientes · 0 pdf ilegibles · métodos {} · errores
+{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3} · tokens 0/0 · 0.0000 EUR · 0.5 s (16.21 ficheros/s)
+
+  scan_001.pdf   pendiente  LLM-DOWN           LLM-DOWN: caos: proveedor caído
+  …
+  scan_006.pdf   pendiente  LLM-CIRCUIT-OPEN   LLM-CIRCUIT-OPEN: 5 fallos seguidos; reabre en 60s
+  scan_007.pdf   pendiente  LLM-CIRCUIT-OPEN   LLM-CIRCUIT-OPEN: 5 fallos seguidos; reabre en 60s
+  scan_008.pdf   pendiente  LLM-CIRCUIT-OPEN   LLM-CIRCUIT-OPEN: 5 fallos seguidos; reabre en 60s
+```
+
+Lo que se enseña: **a partir del quinto fallo dejamos de castigar al proveedor**, y lo pendiente sigue
+pendiente (nada se paga a ciegas). Con hilos también corta: el breaker se comprueba antes de cada
+intento, no sólo al empezar cada fichero.
+
+`make demo-caos` usa 3 facturas y 3 hilos, así que ahí el breaker **no** llega a verse con el umbral de
+5: los tres entran antes de que ninguno falle. Para enseñarlo en esa demo, `ALBERTITOS_BREAKER_FALLOS=2`.
+
 ### (c) El modelo devuelve basura — 23,2 s, y salta el circuit breaker
 
 ```
@@ -176,8 +208,52 @@ Detalles de diseño, por si preguntan:
   presupuesto agotado, el respaldo del mismo gateway tampoco va a funcionar.
 - Cachea con **clave propia por modelo**: la lectura del respaldo no se hace pasar por la del principal.
 - Si no se configura respaldo, la degradación sigue siendo `PENDIENTE`. Es lo que hay por defecto.
+- **Arreglado por E1 (19/09 02:45):** la llamada al respaldo pasaba por la comprobación del circuit
+  breaker, así que en cuanto el principal agotaba sus 3 intentos el breaker se abría por esos mismos
+  fallos y el respaldo **moría ahí**: no se usaba nunca, justo en el escenario para el que existe.
+  Ahora esa llamada se salta el breaker (el breaker protege al proveedor que falla, no al alternativo);
+  los fallos del respaldo sí siguen contando. Test: `test_el_respaldo_se_intenta_aunque_el_breaker_este_abierto`.
 
 ---
+
+### (f) La demo entera de una tacada, y por qué en la sala va **sin red** *(medido por E1, 19/09 03:10)*
+
+`make demo-caos` cuenta la historia completa sobre una copia de la BD (`dist/demo.db`, entrega aparte en
+`dist/demo_entrega/`): 3 facturas que ninguna plantilla reconoce "llegan nuevas", el proveedor está caído,
+quedan PENDIENTE, `package` se niega a entregar; vuelve el proveedor, se reanudan; y una tercera pasada no
+llama a nadie. Termina comparando su JSONL con el oficial: **0 resultados distintos**.
+
+Dos ejecuciones seguidas, mismo comando, misma máquina:
+
+| Paso | 1.ª vez | 2.ª vez |
+|---|---|---|
+| 1. Proveedor caído → 3 PENDIENTE, `run` sale 1, no escribe entrega | 9,2 s | 9,2 s |
+| 2. Vuelve el proveedor → 3 lecturas reales | **12,9 s** | **74,7 s** |
+| 3. Idempotente (caché por sha256) | 10,4 s | 10,3 s |
+| **Total** | **42,5 s** | **104,0 s** |
+
+Los pasos 1 y 3 no tocan la red y son estables al décimo de segundo. El paso 2 son 3 llamadas al gateway y
+**osciló 6×** entre dos ejecuciones separadas por veinte minutos. En un bloque de 4 minutos que además hay
+que narrar, eso es demasiado margen para jugárselo.
+
+Por eso la demo de la defensa se hace con `--sin-red`:
+
+```
+uv run python scripts/demo_caos.py --sin-red     # 39,5 s, sin una sola llamada al proveedor
+```
+
+Guarda las 3 lecturas de la caché antes de borrarlas y las devuelve entre el paso 1 y el 2, así que la
+reanudación se sirve de la caché. El JSONL final sale con el mismo sha256 que el oficial (`5ec17aaa5045`).
+**Se dice en voz alta**: prueba que el pipeline reanuda y que la entrega sale idéntica, no que el proveedor
+conteste. Lo que de verdad puntúa —que con el LLM caído nada se paga a ciegas y `package` se niega— es el
+paso 1, y ese es offline de todas formas.
+
+Si el wifi de la sala va bien, el mismo comando sin la bandera hace las 3 lecturas de verdad. Y si falla
+hasta el portátil, `docs/demo/transcripcion-demo-caos.txt` es la ejecución literal con red, tokens incluidos.
+
+**Lo que hay que preparar antes**: la demo necesita `dist/albertitos.db` con las 500 ingeridas y su caché,
+y esa BD está gitignorada: sólo vive en el portátil donde se corrió el pipeline. Si presenta Alfonso desde
+el suyo, hay que copiársela (7,7 MB) **antes** del ensayo de las 15:00, no en la sala.
 
 ## 4. Capacidad medida: 1, 2, 4 y 8 hilos
 
@@ -196,6 +272,12 @@ Detalles de diseño, por si preguntan:
 | visión | 8 | 0,22 | 14,5 s | 35,8 s | 0 |
 
 **Qué dice esto:**
+
+> **Corrección (E1, 19/09 02:10).** Las cifras de visión de esta sección miden **una sola lectura** por
+> escaneada. El pipeline hace **dos** (la segunda sobre el recorte superior, para reconciliar identificadores):
+> la visión real va a **0,065 f/s con 4 hilos y 0,106 con 8**, medido por D1 sobre 24 escaneadas
+> (`ESCALA-10K.md` §4). Con eso, «10.000 facturas en ~45 min» es optimista entre 2 y 3 veces: la estimación
+> buena es **1,5–2,5 h con una clave**. El resto de la sección (latencias, 429, saturación) sigue valiendo.
 
 - **Visión satura en 4 hilos.** De 4 a 8 no gana nada (0,22 → 0,22 f/s). Encaja con el límite
   publicado: **5 peticiones concurrentes por modelo** para `qwen3.6`. Poner 8 hilos en visión no
