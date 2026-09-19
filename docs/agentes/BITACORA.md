@@ -879,3 +879,18 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Lo de Javier en tres agentes: **J1** fuentes (material, maestro v2, ERP v2, validadores extranjeros, impacto en el lote 1), **J2** ingesta y extracción de los 40 (ya sobre M1), **J3** lote 1 a 445/46/9 como entrega de seguro y ensayo del dato cambiado el domingo. **L5** (Alfonso o Alejandro) etiqueta a ciegas. **Mónica** acompaña la v4: políticas, mentores y regla nueva.
 - **PARA Miguel:** ¿visto bueno a que J3 publique ya el lote 1 en 445/46/9 (ADR-0017)? Y para M2: la trampa es `e18`, que la capa de texto da por limpia (total impreso 1.815 = ERP; a mano, 18.150).
 - **PARA todos:** la regla nueva no está publicada (ni en la web ni en el repo). Quien la vea en el canal, literal y con hora en `docs/hitos.md`. P0-2 al mentor ya.
+
+### 20:05 · B (J2 + J1.5) · arranco ingesta y extracción de los 40, y validadores extranjeros
+- rama `javier/lote2-extract`, carpeta `HS-Maisa-lote2`, BD de esta carpeta (copia; respaldo en `dist/ensayo/lote2/j2/antes.db`).
+- toco: `src/albertitos/formatos.py`, `tests/test_formatos.py`, `data/fixtures/hechos_lote2.jsonl`, `docs/agentes/lote2/EXTRACCION.md` y un ADR si decido algo; `extract/validadores.py` sólo si hace falta para los NIF extranjeros, y lo aviso aquí. Nada de los ficheros de Miguel.
+- gateway: sólo los 40 del lote 2 y siempre con `--fixture` (el `PROMPT_VERSION` p-0.4 no tiene caché del lote 1).
+- **PARA A:** los validadores de IBAN y NIF extranjeros (punto 5 de J1) los hago yo, en `formatos.py`. No los toques.
+
+### 20:13 · B · validadores extranjeros en `javier/lote2-extract` (`7e4d94c`); ingesta hecha, extracción a medias
+- **Hecho (J1.5):** `formatos.py`: IBAN por país con longitud y mod-97 (DE, FR, GB, BR con su alfanumérico; JP da inválido, no un error) y `identificador_extranjero` (IVA europeo, CNPJ, número corporativo JP). `normalizar_nif` quita la barra del CNPJ.
+- **He tocado `extract/validadores.py`** (lo aviso, como estaba acordado): un identificador extranjero ya **no da `NIF_INVALIDO`**, que escala por R6. Si no, `e08_P012` (alemana, cuadra en todo) saldría ESCALAR. El IBAN se valida por país: uno DE bien formado ya no avisa; el «IBAN» japonés de P015, sí.
+- **Sin efecto en el lote 1:** los avisos de los 523 hechos ya extraídos (500 del lote 1 y 23 del lote 2) salen idénticos antes y después.
+- `make check`: **676 passed**, en un worktree con la BD de antes de la ingesta.
+- **PARA Miguel:** `test_bonus.py::test_el_bonus_no_cambia_la_entrega_ni_la_bd` falla en cualquier carpeta con el lote 2 ingerido y sin decidir: hace `package` sobre la `dist/albertitos.db` real y la auditoría sale ROJA (lote 2 sin decisión, duplicados que mezclan lotes). Es del estado de la BD, no del código. Rama lista para mergear.
+- **PARA A:** si el maestro v2 lee los NIF de `proveedores_nuevos.csv`, que pase por `formatos.normalizar_nif`: el CNPJ de P014 queda `12345678000195`, igual que el que saca el PDF.
+- **Ingesta:** 40 en el lote 2 (lista en `dist/ensayo/lote2/j2/lote2.txt`). **Extracción:** 23 por plantilla, bien, incluidas las dos de «Suma y sigue» con el total de la última página y `e18` con `anotacion_a_mano`. Las 17 `e01`–`e17` necesitan el LLM: **falta el `.env` en `HS-Maisa-lote2`**.
