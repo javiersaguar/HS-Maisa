@@ -36,7 +36,7 @@ export function AvisoChip({ aviso }: { aviso: Aviso }) {
   return (
     <span
       title={aviso}
-      className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] ${grave ? 'border-warn-line bg-warn-soft text-warn' : 'border-line bg-canvas text-ink-soft'}`}
+      className={`inline-flex items-center border px-1.5 py-0.5 text-[11px] ${grave ? 'border-warn-line bg-warn-soft text-warn' : 'border-line bg-canvas text-ink-soft'}`}
     >
       {AVISO_LABELS[aviso]}
     </span>

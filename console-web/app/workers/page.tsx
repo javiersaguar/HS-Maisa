@@ -59,11 +59,11 @@ export default function EtapasPage() {
                 return (
                   <Card
                     key={label}
-                    className="overflow-hidden rounded-2xl border-line bg-surface p-5 shadow-[0_7px_24px_rgba(43,55,51,0.045)]"
+                    className="overflow-hidden border-line bg-surface p-5 shadow-[0_7px_24px_rgba(43,55,51,0.045)]"
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[18px] font-semibold"
+                        className="flex size-9 shrink-0 items-center justify-center text-[18px] font-semibold"
                         style={{ color: style.color, backgroundColor: style.iconBg }}
                       >
                         {style.icon}
@@ -75,7 +75,7 @@ export default function EtapasPage() {
                         {value}
                       </p>
                       <span
-                        className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                        className="shrink-0 px-2.5 py-1 text-[11px] font-semibold"
                         style={{ color: style.color, backgroundColor: style.iconBg }}
                       >
                         {style.pill}

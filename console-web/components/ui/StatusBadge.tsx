@@ -19,7 +19,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[13px] font-medium ${TONES[tone]} ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 text-[13px] font-medium ${TONES[tone]} ${className}`}
     >
       {children}
     </span>

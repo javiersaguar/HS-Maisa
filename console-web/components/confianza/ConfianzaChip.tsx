@@ -24,7 +24,7 @@ export function ConfianzaChip({
     <span
       title={razon ? `Confianza ${banda}: ${razon}` : `Confianza ${banda}`}
       aria-label={`Confianza ${banda}${razon ? `: ${razon}` : ''}`}
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap ${TONO[banda]}`}
+      className={`inline-flex items-center px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap ${TONO[banda]}`}
     >
       {banda}
     </span>

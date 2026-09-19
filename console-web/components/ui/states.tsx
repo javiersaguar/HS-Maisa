@@ -8,7 +8,7 @@ import { Spinner } from './Spinner'
 
 /** Grey block used while data is in flight. */
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <span className={`block animate-pulse rounded-lg bg-raised ${className}`} />
+  return <span className={`block animate-pulse bg-raised ${className}`} />
 }
 
 export function LoadingState({
@@ -52,7 +52,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center animate-in fade-in duration-300">
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-raised text-muted">
+      <span className="flex size-11 items-center justify-center bg-raised text-muted">
         {icon ?? <Inbox className="size-5" />}
       </span>
       <h3 className="mt-4 text-[15px] font-semibold text-ink">{title}</h3>
@@ -106,7 +106,7 @@ export function ErrorState({
       className="flex flex-col items-center justify-center px-6 py-14 text-center animate-in fade-in duration-300"
       role="alert"
     >
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-bad-soft text-bad">
+      <span className="flex size-11 items-center justify-center bg-bad-soft text-bad">
         {isUnauthorized ? (
           <Lock className="size-5" />
         ) : isNetwork ? (
@@ -121,7 +121,7 @@ export function ErrorState({
         <button
           onClick={onRetry}
           disabled={retrying}
-          className="mt-5 inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:border-accent-dark hover:bg-accent-soft disabled:opacity-60"
+          className="mt-5 inline-flex items-center gap-2 border border-line bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:border-accent-dark hover:bg-accent-soft disabled:opacity-60"
         >
           {retrying ? <Spinner /> : <RefreshCw className="size-3.5" />}
           {retrying ? 'Reintentando…' : 'Reintentar'}

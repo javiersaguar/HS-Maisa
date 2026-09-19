@@ -22,10 +22,10 @@ export function WorkerKpi({
   children?: ReactNode
 }) {
   return (
-    <Card className="rounded-2xl border-line bg-surface p-4 shadow-[0_7px_24px_rgba(43,55,51,0.045)]">
+    <Card className=" border-line bg-surface p-4 shadow-[0_7px_24px_rgba(43,55,51,0.045)]">
       <div className="flex items-center justify-between gap-3">
         <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[16px] font-semibold"
+          className="flex size-9 shrink-0 items-center justify-center text-[16px] font-semibold"
           style={{ color, backgroundColor: tint }}
         >
           {icon}

@@ -71,7 +71,7 @@ function Linea({
     <p
       role="status"
       aria-live="polite"
-      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium ${TONOS[tono]}`}
+      className={`flex items-center gap-2 border px-2.5 py-1.5 text-[12px] font-medium ${TONOS[tono]}`}
     >
       {icono}
       <span>{children}</span>

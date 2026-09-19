@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
-import { BRAND, USE_MOCK } from '@/lib/config'
+import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Workflow } from 'lucide-react'
+import { USE_MOCK } from '@/lib/config'
 import { ORIGEN_DATOS } from '@/lib/api/salud'
 import type { Etapa } from '@/lib/types'
 import { formatNumber, formatRelative } from '@/lib/format'
@@ -42,17 +44,31 @@ const ETAPA_EN_FRASE: Record<Etapa, string> = {
 
 /**
  * De dónde salen los datos. Se enseña siempre: en la defensa nadie debe confundir el mock con la Caja.
- *  - mock: datos de ejemplo (`NEXT_PUBLIC_USE_MOCK=true`).
- *  - http: Caja de Alberto, puente sin Caja (503) o sin conexión (red).
+ * - mock: datos de ejemplo (`NEXT_PUBLIC_USE_MOCK=true`).
+ * - http: Caja de Alberto, puente sin Caja (503) o sin conexión (red).
  */
-function OrigenDatos() {
+export function OrigenDatos({ franja = false }: { franja?: boolean } = {}) {
   const { data, error } = useSalud({ live: !USE_MOCK })
+
+  if (USE_MOCK && franja) {
+    return (
+      <div
+        title="NEXT_PUBLIC_USE_MOCK=true: 510 ficheros inventados. No es la Caja."
+        className="flex h-7 shrink-0 items-center gap-2 border-b border-line px-6 text-[12px] text-warn"
+      >
+        <FlaskConical className="size-3.5 shrink-0" />
+        <span className="font-medium">Datos de ejemplo</span>
+        <span className="text-muted">·</span>
+        <span>No es la Caja de Alberto</span>
+      </div>
+    )
+  }
 
   if (USE_MOCK) {
     return (
       <div
         title="NEXT_PUBLIC_USE_MOCK=true: 510 ficheros inventados. No es la Caja."
-        className="rounded-lg border border-warn-line bg-warn-soft px-2.5 py-1.5 text-[12px] text-warn"
+        className=" border border-warn-line bg-warn-soft px-2.5 py-1.5 text-[12px] text-warn"
       >
         <div className="flex items-center gap-2 font-semibold">
           <FlaskConical className="size-3.5 shrink-0" />
@@ -87,8 +103,22 @@ function OrigenDatos() {
       ? `${ORIGEN_DATOS} · último evento ${formatRelative(bd.ultimoEventoEn)}${bd.identidades ? ' · identidades (mismo PDF, dos nombres)' : ''}`
       : ORIGEN_DATOS
 
+  if (franja) {
+    return (
+      <div
+        title={title}
+        className={`flex h-7 shrink-0 items-center gap-2 border-b border-line px-6 text-[12px] ${error ? 'text-bad' : 'text-muted'}`}
+      >
+        <Database className="size-3.5 shrink-0" />
+        <span className="font-medium">{label}</span>
+        <span>·</span>
+        <span className="cifra truncate">{detail}</span>
+      </div>
+    )
+  }
+
   return (
-    <div title={title} className={`rounded-lg border px-2.5 py-1.5 text-[12px] ${tone}`}>
+    <div title={title} className={` border px-2.5 py-1.5 text-[12px] ${tone}`}>
       <div className="flex items-center gap-2 font-semibold">
         <Database className="size-3.5 shrink-0" />
         {label}
@@ -155,7 +185,7 @@ function EstadoPipeline() {
 
   if (irAEtapas) {
     return (
-      <Link href="/workers" className="rounded-lg outline-none hover:text-accent-dark focus-visible:ring-2 focus-visible:ring-accent-dark/30">
+      <Link href="/workers" className=" outline-none hover:text-accent-dark focus-visible:ring-2 focus-visible:ring-accent-dark/30">
         {inner}
       </Link>
     )
@@ -166,41 +196,60 @@ function EstadoPipeline() {
 
 export function Sidebar() {
   const pathname = usePathname() ?? '/'
+  const [abierto, setAbierto] = useState(true)
 
   return (
-    <aside className="flex h-full w-[220px] shrink-0 flex-col overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_8px_24px_rgba(43,55,51,0.06)]">
-      <Link href="/" className="flex h-[84px] shrink-0 items-center gap-3 border-b border-line px-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-accent-dark text-canvas">
-          <Sparkles className="size-4" />
-        </div>
-        <div>
-          <p className="text-[14px] font-semibold tracking-tight text-ink">{BRAND}</p>
-          <p className="text-[14px] text-muted">Cuentas a pagar</p>
-        </div>
-      </Link>
-
-      <nav className="flex min-h-0 flex-col gap-1 overflow-y-auto px-3 py-3">
-        {ITEMS.map(({ label, href, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            aria-current={isActive(pathname, href) ? 'page' : undefined}
-            className={`flex h-9 items-center gap-3 rounded-lg px-3 text-left text-[14px] transition-colors ${
-              isActive(pathname, href)
-                ? 'bg-accent-dark font-semibold text-canvas shadow-sm'
-                : 'text-ink-soft hover:bg-raised hover:text-accent-dark'
-            }`}
-          >
-            <Icon className="size-[17px]" />
-            {label}
+    <aside
+      className={`flex h-full shrink-0 flex-col overflow-hidden border-r border-line bg-surface transition-[width] duration-150 ease-out ${
+        abierto ? 'w-[200px]' : 'w-[52px]'
+      }`}
+    >
+      <div
+        className={`flex h-12 shrink-0 items-center border-b border-line ${
+          abierto ? 'justify-between px-3' : 'justify-center px-0'
+        }`}
+      >
+        {abierto && (
+          <Link href="/" className="text-[14px] font-semibold tracking-[-0.01em] text-ink">
+            Albertito
           </Link>
-        ))}
+        )}
+        <button
+          type="button"
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          title={abierto ? 'Plegar el panel' : 'Desplegar el panel'}
+          className="flex size-8 shrink-0 items-center justify-center text-muted transition hover:text-ink"
+        >
+          {abierto ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
+        </button>
+      </div>
+
+      <nav className="flex min-h-0 flex-col overflow-y-auto py-1">
+        {ITEMS.map(({ label, href, icon: Icon }) => {
+          const activo = isActive(pathname, href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              title={abierto ? undefined : label}
+              aria-current={activo ? 'page' : undefined}
+              className={`flex h-9 items-center border-l-2 text-[13px] transition-colors ${
+                abierto ? 'gap-2.5 px-3' : 'justify-center'
+              } ${activo ? 'border-accent font-semibold text-accent-dark' : 'border-transparent text-muted hover:text-ink'}`}
+            >
+              <Icon className="size-4 shrink-0" />
+              {abierto && <span className="truncate">{label}</span>}
+            </Link>
+          )
+        })}
       </nav>
 
-      <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-line p-4">
-        <OrigenDatos />
-        <EstadoPipeline />
-      </div>
+      {abierto && (
+        <div className="mt-auto shrink-0 border-t border-line p-3">
+          <EstadoPipeline />
+        </div>
+      )}
     </aside>
   )
 }

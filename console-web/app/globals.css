@@ -67,7 +67,7 @@
   --chart-3: #6b8279;
   --chart-4: #506c63;
   --chart-5: #2b3733;
-  --radius: 0.625rem;
+  --radius: 0;
   --sidebar: #f8f8f1;
   --sidebar-foreground: #2b3733;
   --sidebar-primary: #6b8279;
@@ -118,6 +118,14 @@
 
 
 @layer base {
+  /* Ninguna esquina redondeada: las cajas se definen con un borde de 1px. En la capa base,
+     así que lo circular por función (los puntos de estado) lo pide por utilidad y gana. */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

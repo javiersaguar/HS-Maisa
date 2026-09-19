@@ -238,7 +238,7 @@ export function InvoiceDropzone({
             Ver la bandeja
           </Link>
         ) : (
-          <span className="shrink-0 whitespace-nowrap rounded-full bg-raised px-2 py-0.5 text-[12px] font-medium text-muted">
+          <span className="shrink-0 whitespace-nowrap bg-raised px-2 py-0.5 text-[12px] font-medium text-muted">
             Lote {LOTE_BANDEJA}
           </span>
         )}
@@ -260,7 +260,7 @@ export function InvoiceDropzone({
           disabled={ocupado}
           aria-disabled={bloqueado}
           aria-describedby={noDisponible ? 'bandeja-como-activar' : undefined}
-          className={`flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition disabled:cursor-not-allowed ${
+          className={`flex w-full flex-col items-center gap-2 border-2 border-dashed px-4 text-center transition disabled:cursor-not-allowed ${
             conLista ? 'py-5' : 'py-10'
           } ${
             arrastrando
@@ -302,7 +302,7 @@ export function InvoiceDropzone({
         {noDisponible && (
           <div
             id="bandeja-como-activar"
-            className={`shrink-0 rounded-lg border border-warn-line bg-warn-soft px-3 py-2.5 text-[13px] text-ink-soft transition ${
+            className={`shrink-0 border border-warn-line bg-warn-soft px-3 py-2.5 text-[13px] text-ink-soft transition ${
               avisar ? 'ring-2 ring-warn' : ''
             }`}
           >
@@ -319,13 +319,13 @@ export function InvoiceDropzone({
               </p>
             )}
             <div className="mt-2 flex items-center gap-2">
-              <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
+              <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
                 {comando}
               </code>
               <button
                 type="button"
                 onClick={copiar}
-                className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
+                className="shrink-0 border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
               >
                 {copiado ? 'Copiado' : 'Copiar'}
               </button>
@@ -345,7 +345,7 @@ export function InvoiceDropzone({
             <ol className="mt-3 space-y-3">
               {PASOS.map((paso, i) => (
                 <li key={paso.estado} className="flex gap-3">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-raised text-[12px] font-semibold text-ink-soft">
+                  <span className="flex size-6 shrink-0 items-center justify-center bg-raised text-[12px] font-semibold text-ink-soft">
                     {i + 1}
                   </span>
                   <div>
@@ -372,7 +372,7 @@ export function InvoiceDropzone({
                     key={paso.estado}
                     aria-current={activo ? 'step' : undefined}
                     title={paso.detalle}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-semibold ${
+                    className={`flex items-center gap-2 border px-3 py-2 text-[12px] font-semibold ${
                       activo
                         ? 'border-accent bg-accent-soft text-accent-dark'
                         : hecho
@@ -402,7 +402,7 @@ export function InvoiceDropzone({
               </div>
             </div>
 
-            <ul className="min-h-[120px] flex-1 divide-y divide-line-soft overflow-y-auto rounded-xl border border-line">
+            <ul className="min-h-[120px] flex-1 divide-y divide-line-soft overflow-y-auto border border-line">
               {filas.map((f) => {
                 const activa = seleccionado === f.fileId
                 return (
@@ -440,18 +440,18 @@ export function InvoiceDropzone({
         )}
 
         {hayPendientes && (
-          <p className="shrink-0 rounded-lg border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink-soft">
+          <p className="shrink-0 border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink-soft">
             Alguna factura no se ha podido leer (el LLM no respondió o el PDF es ilegible). Queda PENDIENTE y sin
             decisión: no se inventa ninguna.
           </p>
         )}
         {bandeja?.estado === 'error' && bandeja.error && (
-          <p className="shrink-0 rounded-lg border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
+          <p className="shrink-0 border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
             {bandeja.error}
           </p>
         )}
         {error && (
-          <p role="alert" className="shrink-0 rounded-lg border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
+          <p role="alert" className="shrink-0 border border-bad-line bg-bad-soft px-3 py-2 text-[13px] text-bad">
             {error}
           </p>
         )}

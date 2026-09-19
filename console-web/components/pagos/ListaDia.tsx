@@ -85,7 +85,7 @@ export function ListaDia({
         aria-modal="true"
         aria-labelledby={titulo}
         onClick={(event) => event.stopPropagation()}
-        className="flex h-[min(88vh,920px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_32px_80px_rgba(43,55,51,0.28)] ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200"
+        className="flex h-[min(88vh,920px)] w-full max-w-5xl flex-col overflow-hidden bg-surface shadow-[0_32px_80px_rgba(43,55,51,0.28)] ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-200"
       >
         <header className="shrink-0 border-b border-line-soft px-6 pt-5 pb-4">
           <div className="flex items-start justify-between gap-4">
@@ -100,7 +100,7 @@ export function ListaDia({
             <button
               onClick={onCerrar}
               aria-label="Cerrar"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition hover:bg-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-dark/30"
+              className="inline-flex size-9 shrink-0 items-center justify-center text-ink-soft transition hover:bg-raised hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-dark/30"
             >
               <X className="size-5" />
             </button>
@@ -120,7 +120,7 @@ export function ListaDia({
                 value={texto}
                 onChange={(event) => setTexto(event.target.value)}
                 placeholder="Proveedor, factura o fichero"
-                className="h-10 w-full rounded-xl border border-line bg-surface pr-3 pl-9 text-[14px] text-ink outline-none transition placeholder:text-muted focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent-dark/15"
+                className="h-10 w-full border border-line bg-surface pr-3 pl-9 text-[14px] text-ink outline-none transition placeholder:text-muted focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent-dark/15"
               />
             </label>
           </div>
@@ -150,7 +150,7 @@ export function ListaDia({
                 className={`${COLUMNAS} group cursor-pointer border-b border-line-soft px-6 py-3 transition-colors hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none`}
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-raised text-[12px] font-semibold text-accent-dark">
+                  <span className="flex size-9 shrink-0 items-center justify-center bg-raised text-[12px] font-semibold text-accent-dark">
                     {initials(pago.beneficiario)}
                   </span>
                   <div className="min-w-0">

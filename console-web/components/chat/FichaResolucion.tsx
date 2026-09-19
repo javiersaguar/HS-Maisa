@@ -11,11 +11,11 @@ export function FichaResolucion({ fileId }: { fileId: string }) {
   const { data, error, loading } = useFichero(fileId)
   const enlace = <Link href={ficheroHref(fileId)} className="font-semibold text-[#176d59] underline underline-offset-2">Ver la traza</Link>
   if (loading) return <p className="text-xs text-[#68736d]">Consultando la decisión guardada…</p>
-  if (error || !data) return <div className="rounded-xl border border-[#e1e5df] p-3 text-xs"><p>No se pudo leer la decisión guardada.</p>{enlace}</div>
+  if (error || !data) return <div className=" border border-[#e1e5df] p-3 text-xs"><p>No se pudo leer la decisión guardada.</p>{enlace}</div>
   const resultado = data.decision?.resultado ?? 'PENDIENTE'
 
   return (
-    <section aria-label="Decisión guardada de la primera factura citada" className="chat-cita space-y-2 rounded-xl border border-[#dcefe6] bg-[#f7faf8] p-3">
+    <section aria-label="Decisión guardada de la primera factura citada" className="chat-cita space-y-2 border border-[#dcefe6] bg-[#f7faf8] p-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-[#68736d]">{USE_MOCK ? 'Datos de ejemplo · no es la BD' : 'Decisión guardada · base de datos'}</p>
         <ResultadoBadge estado={resultado} withIcon={false} />

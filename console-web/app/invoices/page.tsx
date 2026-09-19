@@ -187,7 +187,7 @@ function FicherosScreen() {
   }
 
   const pagerButton =
-    'inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:border-line disabled:bg-transparent disabled:font-normal disabled:text-muted'
+    'inline-flex items-center gap-1.5 border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:border-line disabled:bg-transparent disabled:font-normal disabled:text-muted'
 
   return (
     <div className="px-5 py-6 sm:px-8">
@@ -198,13 +198,13 @@ function FicherosScreen() {
             <h1 className="text-[32px] font-semibold tracking-[-0.04em]">Ficheros</h1>
             {summary ? (
               <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold tabular-nums animate-in fade-in duration-300">
-                <span className="rounded-full border border-line bg-surface px-3 py-1 text-ink-soft">
+                <span className=" border border-line bg-surface px-3 py-1 text-ink-soft">
                   {formatNumber(summary.ficheros)} ficheros
                 </span>
                 <button
                   onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'ESCALAR' })}
                   aria-pressed={filters.estado === 'ESCALAR'}
-                  className={`rounded-full border px-3 py-1 text-warn transition hover:bg-warn-soft ${filters.estado === 'ESCALAR' ? 'border-warn bg-warn-soft' : 'border-warn-line bg-surface'}`}
+                  className={` border px-3 py-1 text-warn transition hover:bg-warn-soft ${filters.estado === 'ESCALAR' ? 'border-warn bg-warn-soft' : 'border-warn-line bg-surface'}`}
                 >
                   {formatNumber(summary.porEstado.ESCALAR)} escalados
                 </button>
@@ -213,7 +213,7 @@ function FicherosScreen() {
                     onClick={toggleRevisar}
                     aria-pressed={revisando}
                     title="Se escalan sólo porque no se leyeron con seguridad: si el original está limpio, lo correcto sería PAGAR."
-                    className={`rounded-full border px-3 py-1 text-bad transition hover:bg-bad-soft ${revisando ? 'border-bad bg-bad-soft' : 'border-bad-line bg-surface'}`}
+                    className={` border px-3 py-1 text-bad transition hover:bg-bad-soft ${revisando ? 'border-bad bg-bad-soft' : 'border-bad-line bg-surface'}`}
                   >
                     Revisar primero · {formatNumber(porRevisar)}
                   </button>
@@ -222,7 +222,7 @@ function FicherosScreen() {
                   <button
                     onClick={() => changeFilters({ ...EMPTY_FILTERS, estado: 'PENDIENTE' })}
                     aria-pressed={filters.estado === 'PENDIENTE'}
-                    className={`rounded-full border px-3 py-1 text-ink-soft transition hover:bg-raised ${filters.estado === 'PENDIENTE' ? 'border-line bg-raised' : 'border-line bg-canvas'}`}
+                    className={` border px-3 py-1 text-ink-soft transition hover:bg-raised ${filters.estado === 'PENDIENTE' ? 'border-line bg-raised' : 'border-line bg-canvas'}`}
                   >
                     {formatNumber(summary.porEstado.PENDIENTE)} pendiente{summary.porEstado.PENDIENTE === 1 ? '' : 's'}
                   </button>
@@ -236,7 +236,7 @@ function FicherosScreen() {
             <button
               onClick={exportFicheros}
               disabled={exporting || (!data?.total && !selectedIds.length)}
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-[14px] font-semibold transition hover:bg-accent-soft disabled:opacity-50"
+              className="inline-flex items-center gap-2 border border-line bg-surface px-4 py-2 text-[14px] font-semibold transition hover:bg-accent-soft disabled:opacity-50"
             >
               {exporting && <Spinner />}
               {exporting ? 'Exportando…' : selectedIds.length ? `Exportar ${selectedIds.length} seleccionados` : 'Exportar CSV'}
@@ -254,7 +254,7 @@ function FicherosScreen() {
         />
 
         <div ref={tableRef} className="scroll-mt-4">
-          <Card className="mt-7 overflow-hidden rounded-2xl border-line shadow-[0_8px_28px_rgba(43,55,51,0.045)]">
+          <Card className="mt-7 overflow-hidden border-line shadow-[0_8px_28px_rgba(43,55,51,0.045)]">
             {revisando && (
               <p className="border-b border-bad-line bg-bad-soft px-5 py-3 text-[13px] text-bad">
                 <strong>Revisar primero:</strong> se escalan sólo porque no se leyeron con seguridad. De menor a mayor
@@ -291,7 +291,7 @@ function FicherosScreen() {
                 action={
                   <button
                     onClick={() => changeFilters(EMPTY_FILTERS)}
-                    className="rounded-lg border border-line bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:bg-accent-soft"
+                    className=" border border-line bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:bg-accent-soft"
                   >
                     Quitar filtros
                   </button>
@@ -319,7 +319,7 @@ function FicherosScreen() {
                   <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page <= 1 || loading} className={pagerButton}>
                     Anterior
                   </button>
-                  <span className="rounded-lg border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark tabular-nums">
+                  <span className=" border border-line bg-surface px-3 py-1.5 font-semibold text-accent-dark tabular-nums">
                     {page} / {pageCount}
                   </span>
                   <button
@@ -336,12 +336,12 @@ function FicherosScreen() {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-3 rounded-xl border border-accent bg-accent-soft px-5 py-3 text-[14px] font-semibold shadow-[0_10px_24px_rgba(43,55,51,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-3 border border-accent bg-accent-soft px-5 py-3 text-[14px] font-semibold shadow-[0_10px_24px_rgba(43,55,51,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-200">
             {selectedIds.length} fichero{selectedIds.length === 1 ? '' : 's'} seleccionado{selectedIds.length === 1 ? '' : 's'}
             <span className="flex items-center gap-3">
               <button
                 onClick={exportFicheros}
-                className="rounded-lg bg-accent-dark px-3 py-1.5 text-[13px] font-semibold text-canvas transition hover:bg-ink"
+                className=" bg-accent-dark px-3 py-1.5 text-[13px] font-semibold text-canvas transition hover:bg-ink"
               >
                 Exportar selección
               </button>

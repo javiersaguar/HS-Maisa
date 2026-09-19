@@ -45,7 +45,7 @@ export function InvoiceTable({
                 aria-label="Seleccionar todos los ficheros de esta página"
                 checked={allSelected}
                 onChange={onToggleAll}
-                className="size-4 rounded border-line"
+                className="size-4 border-line"
               />
             </th>
             <th className="px-3 py-4">file_id</th>
@@ -78,7 +78,7 @@ export function InvoiceTable({
                     onChange={() => onToggle(fichero.file_id)}
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
-                    className="size-4 rounded border-line"
+                    className="size-4 border-line"
                   />
                 </td>
                 <td className="max-w-[240px] px-3 py-4">
@@ -89,7 +89,7 @@ export function InvoiceTable({
                 </td>
                 <td className="px-3 py-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line bg-raised text-[11px] font-bold text-ink-soft">
+                    <span className="flex size-8 shrink-0 items-center justify-center border border-line bg-raised text-[11px] font-bold text-ink-soft">
                       {h?.razon_social ? initials(proveedor) : '?'}
                     </span>
                     <div>
@@ -119,7 +119,7 @@ export function InvoiceTable({
                     }}
                     aria-label={`Abrir ${fichero.file_id}`}
                     tabIndex={-1}
-                    className="inline-flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-[20px] text-accent-dark shadow-[0_2px_5px_rgba(43,55,51,0.05)] transition hover:translate-x-0.5 hover:border-accent hover:bg-accent-soft hover:text-accent-dark"
+                    className="inline-flex size-9 items-center justify-center border border-line bg-surface text-[20px] text-accent-dark shadow-[0_2px_5px_rgba(43,55,51,0.05)] transition hover:translate-x-0.5 hover:border-accent hover:bg-accent-soft hover:text-accent-dark"
                   >
                     ›
                   </button>

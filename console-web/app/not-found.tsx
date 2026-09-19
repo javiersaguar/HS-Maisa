@@ -14,7 +14,7 @@ export default function NotFound() {
           title="Esta página no existe"
           description="Puede que el enlace esté desactualizado. Vuelve al panel para seguir."
           action={
-            <Link href="/" className="rounded-lg bg-accent-dark px-4 py-2 text-[14px] font-semibold text-canvas hover:bg-ink">
+            <Link href="/" className=" bg-accent-dark px-4 py-2 text-[14px] font-semibold text-canvas hover:bg-ink">
               Volver al panel
             </Link>
           }

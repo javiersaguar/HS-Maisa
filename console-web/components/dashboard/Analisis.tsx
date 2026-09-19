@@ -95,7 +95,7 @@ function Contenido({ fichero }: { fichero: Fichero }) {
         </div>
         <Link
           href={ficheroHref(fichero.file_id)}
-          className="flex shrink-0 items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-[13px] font-medium text-accent-dark transition hover:border-accent hover:bg-accent-soft"
+          className="flex shrink-0 items-center gap-1 border border-line px-2.5 py-1.5 text-[13px] font-medium text-accent-dark transition hover:border-accent hover:bg-accent-soft"
         >
           Ficha completa
           <ArrowUpRight className="size-3.5" />
@@ -115,7 +115,7 @@ function Contenido({ fichero }: { fichero: Fichero }) {
 
         {decision ? (
           <>
-            <p className="mt-5 rounded-lg bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
+            <p className="mt-5 bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
               {resumenReglas(decision)}
             </p>
 
@@ -130,7 +130,7 @@ function Contenido({ fichero }: { fichero: Fichero }) {
             )}
 
             {hechos?.texto_sospechoso && (
-              <figure className="mt-5 rounded-lg border border-warn-line bg-warn-soft px-4 py-3">
+              <figure className="mt-5 border border-warn-line bg-warn-soft px-4 py-3">
                 <figcaption className="text-[13px] font-semibold text-warn">
                   El documento intenta decidir por su cuenta
                 </figcaption>
@@ -144,7 +144,7 @@ function Contenido({ fichero }: { fichero: Fichero }) {
             )}
           </>
         ) : (
-          <p className="mt-5 rounded-lg bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
+          <p className="mt-5 bg-canvas px-4 py-3 text-[14px] leading-relaxed text-ink-soft">
             No hay decisión vigente. El PDF no se ha podido leer, así que la norma no se ha aplicado: no se inventa un
             resultado.
           </p>
@@ -203,7 +203,7 @@ export function Analisis({ fileId }: { fileId: string | null }) {
   if (!fileId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
-        <span className="flex size-11 items-center justify-center rounded-2xl bg-accent-soft text-accent-dark">
+        <span className="flex size-11 items-center justify-center bg-accent-soft text-accent-dark">
           <FileSearch className="size-5" />
         </span>
         <p className="mt-4 max-w-[36ch] text-[15px] font-semibold text-ink">

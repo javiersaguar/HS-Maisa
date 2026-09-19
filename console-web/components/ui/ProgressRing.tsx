@@ -81,7 +81,7 @@ export function ProgressRing({ value, tooltip }: { value: number | null; tooltip
             <span
               id={tipId}
               role="tooltip"
-              className={`pointer-events-none fixed z-[80] w-max max-w-[260px] -translate-y-1/2 rounded-lg bg-ink px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-canvas shadow-[0_8px_24px_rgba(43,55,51,0.28)] ${
+              className={`pointer-events-none fixed z-[80] w-max max-w-[260px] -translate-y-1/2 bg-ink px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-canvas shadow-[0_8px_24px_rgba(43,55,51,0.28)] ${
                 tip.side === 'left' ? '-translate-x-full' : ''
               }`}
               style={{ top: tip.top, left: tip.left }}

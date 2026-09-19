@@ -55,7 +55,7 @@ export function FilterBar({
     onChange({ ...filters, [key]: value })
 
   return (
-    <Card className="mt-4 overflow-hidden rounded-2xl border-line shadow-[0_8px_28px_rgba(43,55,51,0.05)]">
+    <Card className="mt-4 overflow-hidden border-line shadow-[0_8px_28px_rgba(43,55,51,0.05)]">
       <div className="border-b border-line-soft bg-surface px-5 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -63,7 +63,7 @@ export function FilterBar({
             <h2 className="mt-1 text-[16px] font-semibold">Buscar y filtrar ficheros</h2>
           </div>
           {matching !== null && (
-            <span className="self-start rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-dark tabular-nums transition-all">
+            <span className="self-start bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-dark tabular-nums transition-all">
               {matching} coinciden
             </span>
           )}
@@ -80,7 +80,7 @@ export function FilterBar({
             onKeyDown={(event) => {
               if (event.key === 'Escape') set('q', '')
             }}
-            className="h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-20 text-[14px] outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-line-soft"
+            className="h-11 w-full border border-line bg-surface pl-10 pr-20 text-[14px] outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-line-soft"
           />
           <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-muted">
             {searching && <Spinner className="size-4" />}
@@ -88,7 +88,7 @@ export function FilterBar({
               <button
                 onClick={() => set('q', '')}
                 aria-label="Borrar búsqueda"
-                className="flex size-6 min-h-0 items-center justify-center rounded-md transition hover:bg-accent-soft hover:text-accent-dark animate-in fade-in zoom-in-90 duration-150"
+                className="flex size-6 min-h-0 items-center justify-center transition hover:bg-accent-soft hover:text-accent-dark animate-in fade-in zoom-in-90 duration-150"
               >
                 <X className="size-3.5" />
               </button>
@@ -151,7 +151,7 @@ export function FilterBar({
           <button
             onClick={onReset}
             disabled={active === 0}
-            className="rounded-lg px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:opacity-40 disabled:hover:bg-transparent"
+            className=" px-3 py-1.5 font-semibold text-accent-dark transition hover:bg-accent-soft disabled:opacity-40 disabled:hover:bg-transparent"
           >
             Quitar filtros{active > 0 ? ` (${active})` : ''}
           </button>

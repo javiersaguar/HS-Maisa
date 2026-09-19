@@ -44,14 +44,14 @@ export function ContadorLlamadas({ salud }: { salud: SaludChat | null }) {
   const ratio = tope > 0 ? Math.max(0, Math.min(1, restantes / tope)) : 0
   const tono = ratio > .5 ? '#176d59' : ratio >= .2 ? '#947000' : '#bd3434'
   return (
-    <div className="relative min-w-32 rounded-xl border border-[#e1e5df] bg-[#f7f8f5] px-2.5 py-1.5" style={{ color: tono }}>
+    <div className="relative min-w-32 border border-[#e1e5df] bg-[#f7f8f5] px-2.5 py-1.5" style={{ color: tono }}>
       <span className="sr-only" role="status">{restantes} llamadas restantes</span>
       <div aria-hidden="true" className="flex items-center gap-1.5 text-[11px]">
         <Gauge className="size-3.5" /><strong className="tabular-nums text-sm">{numero ?? restantes}</strong><span>restantes</span>
         {delta ? <span key={delta.id} className="chat-delta absolute right-2 top-0 font-semibold">−{delta.n}</span> : null}
       </div>
-      <div role="progressbar" aria-label="Llamadas disponibles" aria-valuenow={restantes} aria-valuemin={0} aria-valuemax={Math.max(restantes, tope)} className="mt-1 h-1 overflow-hidden rounded-full bg-[#e1e5df]">
-        <div className="chat-bar h-full origin-left rounded-full" style={{ background: tono, transform: 'scaleX(' + ratio + ')' }} />
+      <div role="progressbar" aria-label="Llamadas disponibles" aria-valuenow={restantes} aria-valuemin={0} aria-valuemax={Math.max(restantes, tope)} className="mt-1 h-1 overflow-hidden bg-[#e1e5df]">
+        <div className="chat-bar h-full origin-left" style={{ background: tono, transform: 'scaleX(' + ratio + ')' }} />
       </div>
       {salud.modelo_disponible === false ? <p className="mt-1 text-[10px]">{describirMotivo(salud)}</p> : null}
     </div>

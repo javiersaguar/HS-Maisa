@@ -30,8 +30,8 @@ export function Select<T extends string>({
   disabled?: boolean
   radius?: 'lg' | 'xl'
 }) {
-  const popupRadius = radius === 'xl' ? 'rounded-xl' : 'rounded-lg'
-  const itemRadius = radius === 'xl' ? 'rounded-lg' : 'rounded-md'
+  const popupRadius = radius === 'xl' ? '' : ''
+  const itemRadius = radius === 'xl' ? '' : ''
 
   return (
     <BaseSelect.Root
@@ -48,7 +48,7 @@ export function Select<T extends string>({
         aria-label={ariaLabel}
         className={cn(
           'inline-flex w-full min-w-0 items-center justify-between gap-2 border border-line bg-surface px-3 py-2.5 text-left text-[14px] font-medium normal-case tracking-normal text-ink outline-none transition hover:border-accent-line focus-visible:border-accent focus-visible:ring-4 focus-visible:ring-line-soft data-popup-open:border-accent data-popup-open:ring-4 data-popup-open:ring-line-soft disabled:opacity-60',
-          radius === 'xl' ? 'rounded-xl' : 'rounded-lg',
+          radius === 'xl' ? '' : '',
           className,
         )}
       >

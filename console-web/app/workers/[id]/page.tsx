@@ -85,7 +85,7 @@ export default function EtapaDetailPage() {
   return shell(
     <>
       <header className="flex items-center gap-4 border-b border-line pb-5">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent-dark">
+        <div className="flex size-12 items-center justify-center bg-accent-soft text-accent-dark">
           <EtapaIcon etapa={etapaId} className="size-6" />
         </div>
         <div>

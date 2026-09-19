@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
-import { Sidebar } from './Sidebar'
+import { OrigenDatos, Sidebar } from './Sidebar'
 
 /**
  * Persistent chrome: the sidebar is a fixed island and only the content area
  * scrolls, so the navigation never moves while reading a long screen.
  * Every console route renders inside this shell.
+ *
+ * De dónde salen los datos va arriba del todo, como franja fina: se enseña siempre porque en la
+ * defensa nadie debe confundir el mock con la Caja.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -19,11 +22,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname])
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-canvas py-3 pl-3 text-ink">
+    <div className="flex h-screen w-full overflow-hidden bg-canvas text-ink">
       <Sidebar />
-      <main ref={mainRef} className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-        {children}
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <OrigenDatos franja />
+        <main ref={mainRef} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

@@ -196,7 +196,7 @@ export function ChatPanel() {
           data-pulse={pulso}
           aria-expanded={false}
           aria-controls={idPanel}
-          className="chat-trigger chat-press fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-[#164f45] px-4 py-3 text-[14px] font-semibold text-white shadow-lg hover:bg-[#0d4037] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#164f45]"
+          className="chat-trigger chat-press fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 bg-[#164f45] px-4 py-3 text-[14px] font-semibold text-white shadow-lg hover:bg-[#0d4037] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#164f45]"
         >
           <MessageCircle className="size-4" aria-hidden="true" />
           AlbertitosAI
@@ -209,7 +209,7 @@ export function ChatPanel() {
           role="dialog"
           aria-modal="false"
           aria-labelledby={titulo}
-          className="chat-panel fixed inset-0 z-50 flex w-full flex-col overflow-hidden sm:inset-auto sm:top-3 sm:right-3 sm:bottom-3 sm:w-[440px] sm:max-w-[calc(100vw-24px)] sm:rounded-2xl border border-[#e1e5df] bg-[#f7f8f5] shadow-2xl"
+          className="chat-panel fixed inset-0 z-50 flex w-full flex-col overflow-hidden sm:inset-auto sm:top-3 sm:right-3 sm:bottom-3 sm:w-[440px] sm:max-w-[calc(100vw-24px)] sm: border border-[#e1e5df] bg-[#f7f8f5] shadow-2xl"
         >
           <header className="flex flex-col gap-2 border-b border-[#e1e5df] bg-white px-4 pt-3 pb-3">
             <div className="flex items-start justify-between gap-2">
@@ -224,7 +224,7 @@ export function ChatPanel() {
                 onClick={cerrar}
                 aria-label="Cerrar el chat (Escape)"
                 title="Cerrar (Escape)"
-                className="rounded-lg p-1.5 text-[#68736d] hover:bg-[#f3f4f1] focus-visible:outline-2 focus-visible:outline-[#164f45]"
+                className=" p-1.5 text-[#68736d] hover:bg-[#f3f4f1] focus-visible:outline-2 focus-visible:outline-[#164f45]"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
@@ -258,14 +258,14 @@ export function ChatPanel() {
                 facturas en que se apoya. No paga ni cambia decisiones: las toma la norma.
               </p>
               <div className="flex flex-col gap-2" aria-label="Preguntas sugeridas">
-                {SUGERENCIAS.map(s => <button type="button" key={s} onClick={() => void enviar(s)} className="chat-press rounded-xl border border-[#e1e5df] bg-white p-3 text-left text-xs text-[#164f45]">{s}</button>)}
+                {SUGERENCIAS.map(s => <button type="button" key={s} onClick={() => void enviar(s)} className="chat-press border border-[#e1e5df] bg-white p-3 text-left text-xs text-[#164f45]">{s}</button>)}
               </div></div>
             ) : null}
             {mensajes.map((m) => (
               <div key={m.id} className="chat-message"><MensajeChat mensaje={m} /></div>
             ))}
             {enviando ? (
-              <div role="status" className="chat-message flex w-fit items-center gap-3 rounded-2xl border border-[#e1e5df] bg-white px-4 py-3 text-xs text-[#68736d]">
+              <div role="status" className="chat-message flex w-fit items-center gap-3 border border-[#e1e5df] bg-white px-4 py-3 text-xs text-[#68736d]">
                 <span className="chat-thinking flex gap-1" aria-hidden="true"><i /><i /><i /></span>
                 AlbertitosAI está consultando…
               </div>
@@ -274,7 +274,7 @@ export function ChatPanel() {
 
           {grabadoActivo && mensajes.length > 0 ? <details className="border-t border-[#e1e5df] px-4 py-2 text-xs">
             <summary className="cursor-pointer text-[#68736d]">Más preguntas grabadas</summary>
-            <div className="mt-2 flex max-h-28 flex-col gap-1 overflow-y-auto">{sugerencias.map(s => <button type="button" key={s} onClick={() => void enviar(s)} className="rounded border border-[#e1e5df] p-2 text-left">{s}</button>)}</div>
+            <div className="mt-2 flex max-h-28 flex-col gap-1 overflow-y-auto">{sugerencias.map(s => <button type="button" key={s} onClick={() => void enviar(s)} className=" border border-[#e1e5df] p-2 text-left">{s}</button>)}</div>
           </details> : null}
           <ChatComposer entrada={entrada} cambiar={setEntrada} enviar={s => void enviar(s)} enviando={enviando} campo={campo} />
         </aside>

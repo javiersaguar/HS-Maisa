@@ -110,13 +110,13 @@ export function CalendarioMes({
   const maximo = Math.max(0, ...delMes.map((dia) => dia.centimos))
 
   const flecha =
-    'inline-flex size-10 items-center justify-center rounded-full border border-line bg-surface text-accent-dark shadow-[0_1px_2px_rgba(43,55,51,0.06)] transition hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-dark/30 disabled:cursor-default disabled:border-line-soft disabled:bg-transparent disabled:text-muted/60 disabled:shadow-none'
+    'inline-flex size-10 items-center justify-center border border-line bg-surface text-accent-dark shadow-[0_1px_2px_rgba(43,55,51,0.06)] transition hover:border-accent hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-dark/30 disabled:cursor-default disabled:border-line-soft disabled:bg-transparent disabled:text-muted/60 disabled:shadow-none'
 
   return (
     <section
       aria-label={`Pagos de ${nombreMes(mes)}`}
       style={LETRA}
-      className="flex h-full min-h-[600px] flex-col rounded-2xl border border-line bg-surface px-4 pt-5 pb-4 shadow-[0_8px_28px_rgba(43,55,51,0.05)] sm:px-6"
+      className="flex h-full min-h-[600px] flex-col border border-line bg-surface px-4 pt-5 pb-4 shadow-[0_8px_28px_rgba(43,55,51,0.05)] sm:px-6"
     >
       <header className="flex flex-col items-center gap-1.5">
         <div className="flex items-center gap-5">
@@ -155,7 +155,7 @@ export function CalendarioMes({
         ))}
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-xl border border-line bg-raised">
+      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px overflow-hidden border border-line bg-raised">
         {celdas(mes).map(({ fecha, fuera }, index) => {
           const numero = Number(fecha.slice(8))
           const dia = fuera ? undefined : dias.get(fecha)
@@ -166,7 +166,7 @@ export function CalendarioMes({
           const cabecera = (
             <span className="flex items-center gap-2">
               <span
-                className={`inline-flex size-7 items-center justify-center rounded-full text-[13px] ${
+                className={`inline-flex size-7 items-center justify-center text-[13px] ${
                   corte
                     ? 'bg-accent-dark font-semibold text-canvas'
                     : fuera
@@ -202,7 +202,7 @@ export function CalendarioMes({
             >
               {cabecera}
               <span
-                className={`flex w-full flex-col rounded-lg px-2.5 py-1.5 transition group-hover:shadow-[0_2px_8px_rgba(43,55,51,0.14)] ${caja}`}
+                className={`flex w-full flex-col px-2.5 py-1.5 transition group-hover:shadow-[0_2px_8px_rgba(43,55,51,0.14)] ${caja}`}
               >
                 <span className="text-[14px] leading-5 font-semibold">
                   {formatNumber(dia.pagos.length)}
@@ -225,7 +225,7 @@ export function CalendarioMes({
           </span>
           <span className="flex items-center gap-1">
             {TONOS.map(({ caja }) => (
-              <span key={caja} aria-hidden className={`size-3 rounded-sm ${caja}`} />
+              <span key={caja} aria-hidden className={`size-3 ${caja}`} />
             ))}
             <span className="ml-1.5">más importe, más intenso</span>
           </span>

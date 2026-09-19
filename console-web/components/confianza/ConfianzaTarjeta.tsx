@@ -54,7 +54,7 @@ function explicar(duda: ConfianzaDuda): { texto: string; pregunta: string | null
 
 /** «se escala por: anomalía…: texto_instruccion, discrepancia_extractores · el documento dice: "…"» → frase. */
 function respaldo(texto: string): string {
-  const [principal] = texto.split(' · el documento dice:')
+  const [principal] = texto.split(' · el documento')
   const legible = principal.replace(/\b[a-z]+(?:_[a-z]+)+\b/g, (codigo) =>
     codigo in AVISO_LABELS ? AVISO_LABELS[codigo as keyof typeof AVISO_LABELS].toLowerCase() : codigo.replace(/_/g, ' '),
   )
@@ -77,14 +77,14 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
   const opinion = ficha.fuentes.revisor?.opinion
 
   return (
-    <section className="mt-4 rounded-xl border border-line bg-surface p-4 animate-in fade-in duration-300">
+    <section className="mt-4 border border-line bg-surface p-4 animate-in fade-in duration-300">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-[13px] font-bold uppercase tracking-wide">¿Cuánto nos fiamos?</h3>
         <ConfianzaChip banda={ficha.banda} />
       </div>
       <p className="mt-1 text-[12px] text-muted">Confianza en la clasificación, no probabilidad de pago.</p>
 
-      <p className={`mt-3 rounded-lg border px-3 py-2 text-[13px] font-semibold leading-5 ${CALLOUT[ficha.banda]}`}>
+      <p className={`mt-3 border px-3 py-2 text-[13px] font-semibold leading-5 ${CALLOUT[ficha.banda]}`}>
         {frase(ficha.causa)}.
       </p>
 
@@ -99,9 +99,9 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
                 <li key={duda.id} className="flex flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2">
                     <Fuente clave={clave} />
-                    <span className={`rounded-full px-1.5 py-px text-[11px] font-semibold ${clase}`}>{cuanto}</span>
+                    <span className={` px-1.5 py-px text-[11px] font-semibold ${clase}`}>{cuanto}</span>
                     {pregunta && (
-                      <span className="rounded-full border border-line px-1.5 py-px text-[11px] font-semibold text-ink-soft">
+                      <span className=" border border-line px-1.5 py-px text-[11px] font-semibold text-ink-soft">
                         pendiente del mentor · {pregunta}
                       </span>
                     )}
@@ -151,7 +151,7 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
       )}
 
       {anotadas.length > 0 && (
-        <details className="group mt-4 rounded-lg border border-line-soft px-3 py-2 text-[12px] text-ink-soft">
+        <details className="group mt-4 border border-line-soft px-3 py-2 text-[12px] text-ink-soft">
           <summary className="cursor-pointer font-semibold text-ink-soft">
             También se anotó, pero no cambia la confianza ({anotadas.length})
           </summary>

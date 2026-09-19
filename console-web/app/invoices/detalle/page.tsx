@@ -204,12 +204,12 @@ function FicheroDetail() {
                   >
                     {item}
                     {item === 'Traza' && traza.data && (
-                      <span className="rounded-full bg-accent-soft px-1.5 text-[11px] text-accent-dark tabular-nums">
+                      <span className=" bg-accent-soft px-1.5 text-[11px] text-accent-dark tabular-nums">
                         {pasos.length}
                       </span>
                     )}
                     <span
-                      className={`absolute inset-x-3 bottom-0 h-0.5 rounded bg-accent-dark transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
+                      className={`absolute inset-x-3 bottom-0 h-0.5 bg-accent-dark transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
                     />
                   </button>
                 ))}
@@ -223,7 +223,7 @@ function FicheroDetail() {
               >
                 {tab === 'Decisión' && (
                   <>
-                    <div className="rounded-xl border border-line bg-raised p-4">
+                    <div className=" border border-line bg-raised p-4">
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
                         <span className="text-[13px] text-muted">
@@ -252,7 +252,7 @@ function FicheroDetail() {
                     <Linaje decision={decision} />
 
                     {hechos?.texto_sospechoso && (
-                      <div className="mt-4 rounded-xl border border-dashed border-warn-line bg-warn-soft p-4">
+                      <div className="mt-4 border border-dashed border-warn-line bg-warn-soft p-4">
                         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-warn">
                           El documento intenta instruir
                         </p>
@@ -265,7 +265,7 @@ function FicheroDetail() {
 
                     <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha comprobado la norma</h3>
                     {decision ? (
-                      <ul className="mt-2 overflow-hidden rounded-lg border border-line text-[13px] leading-5 text-ink-soft">
+                      <ul className="mt-2 overflow-hidden border border-line text-[13px] leading-5 text-ink-soft">
                         {decision.motivos.map((motivo) => (
                           <li
                             key={motivo.regla_id}
