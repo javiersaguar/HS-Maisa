@@ -126,7 +126,7 @@ de la línea): si la frase se reescribe, vuelve a saltar. El comprobador no deci
   {"formas": ["10.000 en ~45 min", "salen en ~45 min"], "vigente": "10.000: estimación 1,5–2,5 h con una key y mezcla de Caja", "fuente": "docs/agentes/ESCALA-10K.md §7; docs/CIFRAS.md"},
   {"formas": ["reprocesar 500 decisiones, 0,04 s"], "vigente": "2 de 500 en 0,04 s; total 500 depende del banco (7,06 s en ensayo de Javier)", "fuente": "docs/benchmark.md, Cifras; docs/agentes/ENSAYO-REPROCESADO.md, Qué salió"},
   {"formas": ["438/53/9", "438 PAGAR"], "vigente": "entrega d2ade3f (20/09 00:17): 540 = 468 PAGAR / 62 ESCALAR / 10 NO_PAGAR; lote 1 445/46/9 y lote 2 23/16/1", "fuente": "docs/CIFRAS.md; docs/entregas.log",
-   "historicas": [{"fichero": "docs/agentes/KIT-DEFENSA.md", "contiene": "**438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881"}]},
+   "historicas": [{"fichero": "docs/agentes/KIT-DEFENSA.md", "contiene": "Los del sábado (13:37 y 10:07) sólo llevan el lote 1 con 438/53/9"}]},
   {"formas": ["500 líneas", "las 500 facturas", "500 outcomes"], "vigente": "540 facturas entregadas: outcomes.jsonl 500 + outcomes_lote2.jsonl 40", "fuente": "docs/CIFRAS.md; docs/entregas.log"}
 ]
 -->

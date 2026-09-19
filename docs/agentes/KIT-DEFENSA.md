@@ -10,12 +10,14 @@ Antes de salir de casa: `bash scripts/smoke.sh` (6 pasos, 2,5 s aquí, `VEREDICT
 1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red. El merge de
    `miguel/pipeline` **ya está en `main` (`8935c3e`)**: trae el `trace` legible, el `status` nuevo y las copias exactas.
 2. Copia el kit que te pase Javier a `dist/kit/` e instálalo: `make kit-instalar KIT=dist/kit/albertitos-kit-<fecha>.tar.gz`.
-   Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881.
-   **Usa el kit `albertitos-kit-20260919-1337.tar.gz`** (1,4 MB, esquema v3 con `identidades`), el que te pasó Javier.
-   R4 hizo uno equivalente a las 15:55 en la carpeta de revisión, con los mismos recuentos (438/53/9). Los de las 13:17 y
-   las 10:07 sirven de repliegue; el de las 10:07 es de esquema v2.
+   **Usa el kit de los dos lotes: `albertitos-kit-20260920-0137.tar.gz`** (1,6 MB, hecho tras publicar la entrega
+   `d2ade3f`). Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500, '2': 40}`,
+   **468 PAGAR · 62 ESCALAR · 10 NO_PAGAR** y caché 881.
+   Los del sábado (13:37 y 10:07) sólo llevan el lote 1 con 438/53/9: sirven de repliegue, pero enseñan una entrega
+   que ya no es la nuestra.
    Si te pide `--forzar`, es que ya tenías una BD con datos: añade `ARGS=--forzar` (la anterior queda en `…antes-del-kit`).
-3. `uv run albertitos status` (los mismos recuentos) y `make console` una vez: tres pestañas, Panel con 500/438/53/9.
+3. `uv run albertitos status` (los mismos recuentos) y la consola una vez: Panel con **540 · 468/62/10**, y el
+   reparto por lote (500 con norma v3 y 40 con v4).
 4. `bash scripts/smoke.sh`: una línea por paso, acaba en `VEREDICTO: OK` (~3 s). Si FALLA, no salgas.
 5. Ensaya el bloque entero con cronómetro. El ERP no hace falta para nada de esto.
 
@@ -51,8 +53,9 @@ decisiones dependían de ese pedido: recalcula ésas y las demás conservan la v
 También admite `--importe PEDIDO=1234,56`, `--iban P003=ES…`, `--estado-pedido PEDIDO=ANULADO` y `--fecha-corte`.
 Nunca se cambia una decisión a mano: se cambia el dato, y vuelve a decidir la norma.
 
-Medido el 19/09 a las 13:17 en el portátil de Javier, sobre una copia de la BD real (438/53/9). La BD real y la entrega
-no cambian (mismas huellas antes y después):
+Medido el 19/09 a las 13:17 en el portátil de Javier, sobre una copia de la BD real de entonces (lote 1 solo). La BD
+real y la entrega no cambian (mismas huellas antes y después). Con los dos lotes dentro los tiempos son los mismos;
+lo que cambia es que ahora hay que decir el lote: `--lote 2 --norma v4` para tocar el lote 2:
 
 | Comando | Qué pasa | Tarda (entero / reproceso) |
 |---|---|---|
@@ -117,7 +120,9 @@ hoy, sin tocar la entrega. **Límite que hay que decir:** si cambian un CSV del 
   el maestro contrastan: las 468 de plantilla, contrastadas 468/468; las escaneadas, leídas dos veces y reconciliadas
   con el maestro, y si no cuadra, se escala. La auditoría de entrega caza evidencias falsas: encontró el «None» de
   `scan_025` (AUDITORIA-ENTREGA.md).
-- **¿Y el calendario de pagos?** → `uv run python -m albertitos.bonus --salida dist/bonus --tope-semanal 150000` (438 PAGAR, 2.428.159,06 EUR). Es un borrador; los IBAN de la Caja no tienen dígito de control.
+- **¿Y el calendario de pagos?** → `uv run python -m albertitos.bonus --salida dist/bonus --tope-semanal 150000`
+  (**468 PAGAR, 2.534.654,19 EUR**; a 150.000 €/semana, al día en 17 semanas). Es un borrador: de las 468, sólo una
+  tiene un IBAN que pasa el dígito de control, la alemana del lote 2 (`--estricto` deja esa, 3.775,20 €).
 - **¿Y si le pides al chat que pague?** → se niega en local (`estado: solo_lectura`, 0 ms, `sin_modelo`) y no llama al LLM.
 
 ## Grabar la demo en local (19/09, 21:45, probado 13/13 en Chromium)
