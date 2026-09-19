@@ -23,10 +23,12 @@ from typing import Any
 
 from albertitos.core import db
 from albertitos.core.contracts import (
+    Aviso,
     ErpSnapshot,
     EstadoEvento,
     Etapa,
     Event,
+    InvoiceFacts,
     MasterSnapshot,
 )
 from albertitos.sources import snapshot
@@ -110,6 +112,7 @@ def evaluar(
 
     out = Linaje(total=len(filas))
     corte = fecha_corte.isoformat()
+    copias = db.nombres_por_sha(conn)
     for f in filas:
         fid = str(f["file_id"])
         if f["h_hash"] is None:
@@ -122,7 +125,9 @@ def evaluar(
             out.impactados[fid] = "sin decisión"
             continue
         if f["d_hash"] != f["h_hash"]:
-            out.impactados[fid] = "hechos cambiados"
+            out.impactados[fid] = _por_hechos(
+                f["hechos_json"], f["d_hash"], copias.get(f["sha256"])
+            )
             continue
         if _posterior(f["h_en"], f["d_en"]):
             out.impactados[fid] = "hechos reescritos tras decidir (evidencia o confianza)"
@@ -160,6 +165,27 @@ def evaluar(
                 {"file_id": fid, "sha256": f["sha256"], "decision": f["decision"], **confirmado}
             )
     return out
+
+
+def _por_hechos(hechos_json: str, hash_decidido: str, nombres: list[tuple[str, int]] | None) -> str:
+    """Por qué cambiaron los hechos, cuando se puede decir: si lo único distinto es la marca de
+    duplicado (la pone o la quita `marcar_duplicados`), se dice, y si es por una copia exacta, con
+    todos sus nombres. Si no, «hechos cambiados»."""
+    h = InvoiceFacts.model_validate_json(hechos_json)
+    marcado = Aviso.DUPLICADO_SOSPECHOSO in h.avisos
+    h.avisos = (
+        [a for a in h.avisos if a != Aviso.DUPLICADO_SOSPECHOSO]
+        if marcado
+        else [*h.avisos, Aviso.DUPLICADO_SOSPECHOSO]
+    )
+    if h.hash() != hash_decidido:
+        return "hechos cambiados"
+    if not marcado:
+        return "duplicado quitado: ya no comparte pedido, factura ni PDF con otro"
+    if nombres:
+        todos = ", ".join(f"{fid} (lote {lote})" for fid, lote in nombres)
+        return f"copia exacta: el mismo PDF llega como {todos} → duplicado marcado"
+    return "duplicado marcado: comparte pedido o factura con otro PDF"
 
 
 def _posterior(a: str | None, b: str | None) -> bool:

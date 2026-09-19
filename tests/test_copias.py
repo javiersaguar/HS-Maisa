@@ -18,7 +18,7 @@ from albertitos.core import db
 from albertitos.core.contracts import InvoiceFacts, MetodoExtraccion
 from albertitos.core.hashing import sha256_fichero
 from albertitos.core.versions import EXTRACTOR_VERSION
-from albertitos.pipeline import etapas, package, traza
+from albertitos.pipeline import etapas, linaje, package, traza
 from albertitos.pipeline.validar import listar_pdfs, validar_jsonl
 from albertitos.sources import snapshot
 
@@ -106,6 +106,20 @@ def test_copia_del_lote_1_en_el_lote_2(conn, caja, maestro, erp, tmp_path, lote1
     # R1: el original sigue siendo del lote 1 con su nombre
     fila = conn.execute("SELECT file_id, lote FROM ficheros WHERE file_id=?", (X,)).fetchone()
     assert dict(fila) == antes == {"file_id": X, "lote": 1}
+    # el porqué del recálculo nombra la copia (no un «hechos cambiados» a secas)
+    etapas.marcar_duplicados(conn)
+    por = linaje.evaluar(
+        conn,
+        norma_version="v3",
+        fecha_corte=CORTE,
+        maestro=maestro,
+        erp=erp,
+        extractor_version=EXTRACTOR_VERSION,
+    ).impactados
+    assert por[X] == (
+        f"copia exacta: el mismo PDF llega como {X} (lote 1), copia_de_X.pdf (lote 2)"
+        " → duplicado marcado"
+    )
     # R3: ni el original ni la copia se pagan (antes de la copia, X salía PAGAR)
     resultados = _decidir(conn, maestro, erp)
     assert resultados[X] != "PAGAR" and resultados[Y] == "PAGAR"
