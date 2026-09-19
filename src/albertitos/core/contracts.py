@@ -72,6 +72,9 @@ class Aviso(StrEnum):
     DISCREPANCIA_EXTRACTORES = "discrepancia_extractores"  # plantilla y LLM no coinciden
     EXTRACCION_PARCIAL = "extraccion_parcial"
     DOCUMENTO_SUPERPUESTO = "documento_superpuesto"  # otro documento encima o transparentándose
+    ANOTACION_A_MANO = (
+        "anotacion_a_mano"  # letra o trazos a mano en un PDF con texto (lote 2, ADR-0020)
+    )
 
 
 # ----------------------------------------------------------------------------- hechos

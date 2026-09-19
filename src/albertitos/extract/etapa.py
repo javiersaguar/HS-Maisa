@@ -184,6 +184,11 @@ def _extraer_uno(
                 uso = _evidencia_de_lecturas(llm.conn, hechos, uso, [("principal", hechos)])
         # revalidar, no validar: la segunda lectura puede haber cambiado campos ya validados
         hechos.avisos = validadores.revalidar(hechos)
+        if texto is not None and (manuscrito := pdf.rasgos_manuscritos(ruta)):
+            # ADR-0020: lo escrito o tachado a mano no llega a los campos; que lo mire una persona
+            if Aviso.ANOTACION_A_MANO not in hechos.avisos:
+                hechos.avisos.append(Aviso.ANOTACION_A_MANO)
+            uso = {**uso, "manuscrito": manuscrito}
         db.guardar_hechos(conn, hechos)
         db.registrar_evento(
             conn,
@@ -210,7 +215,8 @@ def _extraer_uno(
                 + (f" superpuesto={uso['superpuesto']}" if uso.get("superpuesto") else "")
                 + (f" instruccion_de={uso['instruccion_de']}" if uso.get("instruccion_de") else "")
                 + (f" no_confirmado={uso['no_confirmado']}" if uso.get("no_confirmado") else "")
-                + (f" marcas={uso['marcas_vistas']}" if uso.get("marcas_vistas") else ""),
+                + (f" marcas={uso['marcas_vistas']}" if uso.get("marcas_vistas") else "")
+                + (f" manuscrito={uso['manuscrito']}" if uso.get("manuscrito") else ""),
             ),
         )
         conn.commit()

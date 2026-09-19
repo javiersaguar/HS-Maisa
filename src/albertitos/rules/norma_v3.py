@@ -42,6 +42,9 @@ ANOMALIAS_HUMANO = {
     Aviso.NIF_INVALIDO,  # NIF con forma imposible: hoy 0 facturas, pero el lote 2 puede traerlos
     Aviso.DOCUMENTO_SUPERPUESTO,  # otro proveedor asomando en el documento: lo mira una persona
     Aviso.IMPORTE_AMBIGUO,
+    # lote 2 (ADR-0020): algo escrito o tachado a mano no está en los campos; e18 corrige el total a mano y lo
+    # impreso cuadra con el ERP. En el lote 1 no salta en ninguna factura: no cambia ninguna decisión.
+    Aviso.ANOTACION_A_MANO,
 }
 
 
