@@ -3,6 +3,7 @@
 import { Search, X } from 'lucide-react'
 import type { EstadoFichero } from '@/lib/types'
 import { ESTADOS_FICHERO } from '@/lib/format'
+import { LOTE_BANDEJA } from '@/lib/api/inbox'
 import { Card } from '@/components/ui/Card'
 import { Select } from '@/components/ui/Select'
 import { Spinner } from '@/components/ui/Spinner'
@@ -132,6 +133,7 @@ export function FilterBar({
                 { value: 'all', label: 'Todos los lotes' },
                 { value: '1', label: 'Lote 1 · Caja' },
                 { value: '2', label: 'Lote 2' },
+                { value: String(LOTE_BANDEJA), label: `Lote ${LOTE_BANDEJA} · Bandeja` },
               ]}
             />
           </div>
