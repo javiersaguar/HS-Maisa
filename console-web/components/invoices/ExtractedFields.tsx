@@ -1,7 +1,7 @@
 'use client'
 
 import type { InvoiceFacts } from '@/lib/types'
-import { METODO_LABELS, formatAmount, formatDate, formatPercent } from '@/lib/format'
+import { describirExtraccion, formatAmount, formatDate } from '@/lib/format'
 
 /** Campos de `InvoiceFacts` que se pueden señalar en el documento. */
 export type CampoHecho =
@@ -80,23 +80,8 @@ export function ExtractedFields({
           )
         })}
       </div>
-      <dl className="mt-3 grid grid-cols-3 gap-3 text-[13px]">
-        {(
-          [
-            ['Método', METODO_LABELS[hechos.metodo]],
-            ['Versión', hechos.extractor_version || '—'],
-            ['Confianza', hechos.confianza === null ? '—' : formatPercent(hechos.confianza * 100, 0)],
-          ] as const
-        ).map(([label, value]) => (
-          <div key={label} className="min-w-0">
-            <dt className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#7b8981]">{label}</dt>
-            <dd className="truncate text-[#304d43] tabular-nums" title={value}>
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <p className="mt-2 text-[12px] text-[#9aa39e]">Pulsa un campo para verlo en el PDF.</p>
+      <p className="mt-3 text-[13px] leading-5 text-[#52605a]">{describirExtraccion(hechos)}</p>
+      <p className="mt-2 text-[12px] text-[#9aa39e]">Pulsa un campo para verlo señalado en el documento.</p>
     </>
   )
 }

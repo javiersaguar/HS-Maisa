@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { EtapaResumen } from '@/lib/types'
-import { ETAPA_DESCRIPCIONES, ETAPA_LABELS, formatEur, formatMs, formatNumber, formatRelative } from '@/lib/format'
+import { ETAPA_DESCRIPCIONES, ETAPA_GRANO, ETAPA_LABELS, formatEur, formatMs, formatNumber, formatRelative, tooltipCoberturaEtapa } from '@/lib/format'
 import { Card } from '@/components/ui/Card'
 import { ProgressRing } from '@/components/ui/ProgressRing'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -10,6 +10,12 @@ import { EtapaIcon, saludEtapa } from './EtapaIcon'
 export function EtapaCard({ etapa, ficheros }: { etapa: EtapaResumen; ficheros: number }) {
   const salud = saludEtapa(etapa, ficheros)
   const conCoste = etapa.costeEur > 0
+  const grano = ETAPA_GRANO[etapa.etapa]
+  const ficherosOk = etapa.etapa === 'emit' && etapa.eventos === 0 && ficheros > 0 ? ficheros : etapa.ficherosOk
+  const metrica =
+    grano === 'lote' ? 'Peticiones' : grano === 'cambio' ? 'Marcados' : 'Ficheros OK'
+  const valorMetrica =
+    grano === 'lote' ? formatNumber(etapa.eventos) : `${formatNumber(ficherosOk)} / ${formatNumber(ficheros)}`
   return (
     <Card className="group w-[min(390px,calc(100vw-64px))] shrink-0 p-5 transition hover:-translate-y-0.5 hover:border-[#b6d8c9] hover:shadow-[0_8px_24px_rgba(20,75,60,0.08)]">
       <div className="flex items-start justify-between">
@@ -26,15 +32,13 @@ export function EtapaCard({ etapa, ficheros }: { etapa: EtapaResumen; ficheros: 
             </div>
           </div>
         </div>
-        <ProgressRing value={salud.cobertura} />
+        <ProgressRing value={salud.cobertura} tooltip={tooltipCoberturaEtapa(etapa, ficheros, salud.cobertura)} />
       </div>
       <p className="mt-4 min-h-9 text-[14px] leading-5 text-[#68736d]">{ETAPA_DESCRIPCIONES[etapa.etapa]}</p>
       <div className="mt-5 grid grid-cols-2 gap-y-3 border-t border-[#edf0ec] pt-4 text-[13px]">
         <div>
-          <p className="text-[#9aa39e]">Ficheros OK</p>
-          <p className="mt-1 font-semibold">
-            {formatNumber(etapa.ficherosOk)} / {formatNumber(ficheros)}
-          </p>
+          <p className="text-[#9aa39e]">{metrica}</p>
+          <p className="mt-1 font-semibold">{valorMetrica}</p>
         </div>
         <div>
           <p className="text-[#9aa39e]">Reintentos</p>

@@ -8,12 +8,13 @@ import {
   ESTADO_EVENTO_LABELS,
   ETAPAS,
   ETAPA_DESCRIPCIONES,
+  ETAPA_GRANO,
   ETAPA_LABELS,
   formatEur,
   formatMs,
   formatNumber,
   formatPercent,
-  formatRelative,
+  pieCoberturaEtapa,
 } from '@/lib/format'
 import { useEtapas, useEventos } from '@/hooks/useEtapas'
 import { useTraza } from '@/hooks/useTraza'
@@ -101,8 +102,13 @@ export default function EtapaDetailPage() {
       </header>
 
       <section className={`mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 ${hasCost ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
-        <WorkerKpi icon="●" label="Cobertura" value={formatPercent(salud.cobertura)} {...TONE_STYLE[salud.tone]}>
-          {formatNumber(etapa.ficherosOk)} de {formatNumber(data.ficheros)} ficheros · {formatRelative(etapa.ultimoEventoEn)}
+        <WorkerKpi
+          icon="●"
+          label={ETAPA_GRANO[etapaId] === 'lote' ? 'Peticiones OK' : 'Cobertura'}
+          value={ETAPA_GRANO[etapaId] === 'lote' ? formatNumber(etapa.eventos) : formatPercent(salud.cobertura)}
+          {...TONE_STYLE[salud.tone]}
+        >
+          {pieCoberturaEtapa(etapa, data.ficheros)}
         </WorkerKpi>
         <WorkerKpi icon="↗" label="Eventos" value={formatNumber(etapa.eventos)} color="#6354a8" tint="#f0edff">
           {incidencias

@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 import { Activity, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
 import { BRAND, USE_MOCK } from '@/lib/config'
 import { ORIGEN_DATOS } from '@/lib/api/salud'
+import type { Etapa } from '@/lib/types'
 import { formatNumber, formatRelative } from '@/lib/format'
 import { useEtapas } from '@/hooks/useEtapas'
 import { useSalud } from '@/hooks/useSalud'
-import { saludEtapa } from '@/components/workers/EtapaIcon'
+import { etapaConIncidencia, saludEtapa } from '@/components/workers/EtapaIcon'
 
 const ITEMS = [
   { label: 'Panel', href: '/', icon: LayoutDashboard },
@@ -22,10 +23,26 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function listarNombres(nombres: string[]): string {
+  if (nombres.length <= 1) return nombres[0] ?? ''
+  if (nombres.length === 2) return `${nombres[0]} y ${nombres[1]}`
+  return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+}
+
+/** Nombres de etapa en minúscula, para caber en una frase del pie. */
+const ETAPA_EN_FRASE: Record<Etapa, string> = {
+  ingest: 'ingesta',
+  extract: 'extracción',
+  validate: 'validación',
+  enrich: 'maestro y ERP',
+  decide: 'la norma',
+  emit: 'entrega',
+}
+
 /**
  * De dónde salen los datos. Se enseña siempre: en la defensa nadie debe confundir el mock con la Caja.
  *  - mock: datos de ejemplo (`NEXT_PUBLIC_USE_MOCK=true`).
- *  - http: BD real (ficheros y último evento), puente sin BD (503) o puente apagado (red).
+ *  - http: Caja de Alberto, puente sin Caja (503) o sin conexión (red).
  */
 function OrigenDatos() {
   const { data, error } = useSalud({ live: !USE_MOCK })
@@ -34,10 +51,13 @@ function OrigenDatos() {
     return (
       <div
         title="NEXT_PUBLIC_USE_MOCK=true: 510 ficheros inventados. No es la Caja."
-        className="flex items-center gap-2 rounded-lg border border-[#eee8bd] bg-[#fffbe8] px-2.5 py-1.5 text-[12px] font-semibold text-[#8a7400]"
+        className="rounded-lg border border-[#eee8bd] bg-[#fffbe8] px-2.5 py-1.5 text-[12px] text-[#8a7400]"
       >
-        <FlaskConical className="size-3.5 shrink-0" />
-        Datos de ejemplo
+        <div className="flex items-center gap-2 font-semibold">
+          <FlaskConical className="size-3.5 shrink-0" />
+          Datos de ejemplo
+        </div>
+        <p className="mt-0.5 pl-[22px] font-medium opacity-80">No es la Caja</p>
       </div>
     )
   }
@@ -50,14 +70,16 @@ function OrigenDatos() {
       : bd
         ? 'border-[#dcefe6] bg-[#eff8f3] text-[#176d59]'
         : 'border-[#f1dada] bg-[#fff0f0] text-[#bd3434]'
-  const label = error ? 'Puente apagado' : !data ? 'Conectando…' : bd ? 'BD real' : 'Puente sin BD'
+  const label = error ? 'Sin conexión' : !data ? 'Conectando…' : bd ? 'Caja de Alberto' : 'Aún no hay Caja'
   const detail = error
-    ? ORIGEN_DATOS
+    ? 'El puente no responde'
     : !data
-      ? ORIGEN_DATOS
+      ? 'Comprobando la Caja…'
       : bd
-        ? `${formatNumber(bd.ficheros)} ficheros · ${bd.pendientes ? `${formatNumber(bd.pendientes)} pendientes` : `norma ${bd.versiones.norma ?? '—'}`}`
-        : 'make db && albertitos ingest'
+        ? bd.pendientes
+          ? `${formatNumber(bd.ficheros)} facturas · ${formatNumber(bd.pendientes)} sin decidir`
+          : `${formatNumber(bd.ficheros)} facturas`
+        : 'Falta ingest de la Caja'
   const title = error
     ? `${error.message}. Arranca: uv run python -m albertitos.console.api`
     : bd
@@ -70,17 +92,79 @@ function OrigenDatos() {
         <Database className="size-3.5 shrink-0" />
         {label}
       </div>
-      <p className="mt-0.5 truncate pl-[22px] font-mono text-[11px] opacity-80">{detail}</p>
+      <p className="mt-0.5 truncate pl-[22px] font-medium opacity-80">{detail}</p>
     </div>
   )
 }
 
+function EstadoPipeline() {
+  const { data, error } = useEtapas({ live: true })
+  const etapas = data?.etapas ?? []
+  const ficheros = data?.ficheros ?? 0
+  const conAvisos = etapas.filter((etapa) => etapaConIncidencia(etapa, ficheros))
+  const sinCorrer = etapas.length > 0 && etapas.every((etapa) => saludEtapa(etapa, ficheros).tone === 'gray')
+  const ultimo = data?.recientes.find((evento) => evento.ts)?.ts ?? null
+
+  let titulo: string
+  let detalle: string
+  let tone: 'red' | 'pulse' | 'yellow' | 'green' = 'green'
+  if (error) {
+    titulo = 'No llegan los eventos'
+    detalle = 'Reintentando en segundo plano'
+    tone = 'red'
+  } else if (!data) {
+    titulo = 'Conectando…'
+    detalle = 'Leyendo el pipeline'
+    tone = 'pulse'
+  } else if (conAvisos.length > 0) {
+    const nombres = conAvisos.map((etapa) => ETAPA_EN_FRASE[etapa.etapa])
+    titulo = `Mirar ${listarNombres(nombres)}`
+    detalle = ultimo ? `Última actividad ${formatRelative(ultimo)}` : 'Ábrelo en Etapas'
+    tone = 'yellow'
+  } else if (sinCorrer) {
+    titulo = 'Aún no ha corrido'
+    detalle = 'El pipeline no ha dejado eventos'
+    tone = 'yellow'
+  } else {
+    titulo = 'Etapas al día'
+    detalle = ultimo ? `Última actividad ${formatRelative(ultimo)}` : 'Las seis etapas, sin avisos'
+    tone = 'green'
+  }
+
+  const irAEtapas = Boolean(data && !error && (conAvisos.length > 0 || sinCorrer))
+
+  const dot =
+    tone === 'red'
+      ? 'bg-[#f05b5b]'
+      : tone === 'pulse'
+        ? 'animate-pulse bg-[#c9cec9]'
+        : tone === 'yellow'
+          ? 'bg-[#e0c95a]'
+          : 'bg-[#63d5aa]'
+
+  const inner = (
+    <>
+      <div className="flex items-center gap-2 text-[14px] font-medium text-[#46504b]">
+        <span className={`size-2 rounded-full transition-colors ${dot}`} />
+        {titulo}
+      </div>
+      <p className="mt-1 pl-4 text-[13px] text-[#a0a6a2]">{detalle}</p>
+    </>
+  )
+
+  if (irAEtapas) {
+    return (
+      <Link href="/workers" className="rounded-lg outline-none hover:text-[#164f45] focus-visible:ring-2 focus-visible:ring-[#164f45]/30">
+        {inner}
+      </Link>
+    )
+  }
+
+  return <div>{inner}</div>
+}
+
 export function Sidebar() {
   const pathname = usePathname() ?? '/'
-  const { data, error } = useEtapas({ live: true })
-
-  const etapas = data?.etapas ?? []
-  const conIncidencias = etapas.filter((etapa) => saludEtapa(etapa, data?.ficheros ?? 0).tone !== 'green').length
 
   return (
     <aside className="flex h-full w-[220px] shrink-0 flex-col overflow-hidden rounded-[28px] border border-[#e2e5df] bg-white shadow-[0_8px_24px_rgba(20,55,45,0.06)]">
@@ -114,25 +198,7 @@ export function Sidebar() {
 
       <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-[#e2e5df] p-4">
         <OrigenDatos />
-        <div>
-          <div className="flex items-center gap-2 text-[14px] font-medium text-[#46504b]">
-            <span
-              className={`size-2 rounded-full transition-colors ${
-                error ? 'bg-[#f05b5b]' : !data ? 'animate-pulse bg-[#c9cec9]' : conIncidencias ? 'bg-[#e0c95a]' : 'bg-[#63d5aa]'
-              }`}
-            />
-            {error
-              ? 'Sin datos del pipeline'
-              : !data
-                ? 'Conectando…'
-                : conIncidencias
-                  ? `${conIncidencias} ${conIncidencias === 1 ? 'etapa' : 'etapas'} con incidencias`
-                  : 'Pipeline al día'}
-          </div>
-          <p className="mt-1 pl-4 text-[14px] text-[#a0a6a2]">
-            {error ? 'Reintentando en segundo plano' : !data ? 'Leyendo eventos…' : `${formatNumber(data.ficheros)} ficheros · sólo lectura`}
-          </p>
-        </div>
+        <EstadoPipeline />
       </div>
     </aside>
   )
