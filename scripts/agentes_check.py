@@ -19,12 +19,14 @@ PLAN = Path("docs/agentes/plan.json")
 def cambiados(base: str) -> set[str]:
     ficheros: set[str] = set()
     for cmd in (
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
-        ["git", "status", "--porcelain", "--untracked-files=all"],
+        ["git", "-c", "core.quotepath=false", "diff", "--name-only", f"{base}...HEAD"],
+        ["git", "-c", "core.quotepath=false", "status", "--porcelain", "--untracked-files=all"],
     ):
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        # Sin core.quotepath=false, git escapa en octal los nombres con «ñ» o tildes
+        # ("a\303\261adir_…") y ningún patrón de plan.json casa con ellos.
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
         for linea in r.stdout.splitlines():
-            ruta = linea[3:] if cmd[1] == "status" else linea
+            ruta = linea[3:] if "status" in cmd else linea
             ruta = ruta.strip().strip('"')
             if " -> " in ruta:
                 ruta = ruta.split(" -> ")[1]

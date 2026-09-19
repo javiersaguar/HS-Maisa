@@ -100,7 +100,8 @@
     "revisor": {
       "penalizacion": 0,
       "dudas": [],
-      "a_favor": []
+      "a_favor": [],
+      "opinion": null
     }
   },
   "version": "confianza-1",

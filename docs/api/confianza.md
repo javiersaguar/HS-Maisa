@@ -21,6 +21,10 @@ Los handlers tienen la firma del puente, `(conn, query) -> (status, body)`, con 
 Todas las respuestas llevan `api: 1`: sube si cambia un nombre o un tipo que la consola ya lee.
 
 ## Rutas
+> **Parámetros (visto por R3 en la revisión):** a diferencia de `/bonus/*`, que responde 400 a un parámetro mal
+> formado, aquí se **recortan al rango**: `limite=-1` o `limite=abc` dan 200 con el límite por defecto (50) o el
+> máximo (1000). No es un error, pero la consola no debería contar con un 400.
+
 | Ruta | Parámetros | Devuelve | Ejemplo real |
 |---|---|---|---|
 | `GET /confianza/resumen` | `lote` | `{api, version, total, bandas{alta,media,baja}, por_resultado{PAGAR:{…}}, por_lote{"1":{…}}, media, umbrales, escala, segundos}` | `ejemplos/confianza-resumen.json` |
