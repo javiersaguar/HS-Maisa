@@ -27,7 +27,10 @@ PUBLICO_CHAT="${PUBLICO_CHAT:-https://albertitos-chat.onrender.com}"
 PIDS="$RAIZ/dist/demo"
 mkdir -p "$PIDS"
 
-pid_en_puerto() { ss -ltnp 2>/dev/null | grep -F "127.0.0.1:$1 " | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2; }
+# Cualquier dirección: Next escucha en *:3002 y el puente en 127.0.0.1:8000
+pid_en_puerto() {
+  ss -ltnp 2>/dev/null | awk -v p=":$1" '$4 ~ p"$" {print}' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2
+}
 espera() {  # espera <url> <segundos>
   for _ in $(seq $(( ${2:-20} * 2 ))); do curl -fs -m 1 -o /dev/null "$1" && return 0; sleep 0.5; done
   return 1
