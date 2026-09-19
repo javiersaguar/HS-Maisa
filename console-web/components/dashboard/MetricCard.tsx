@@ -6,17 +6,17 @@ export type MetricGlow = 'mint' | 'lime' | 'rose' | 'fog'
 export type MetricTone = 'up' | 'down' | 'warn' | 'neutral'
 
 const GLOW: Record<MetricGlow, string> = {
-  mint: 'bg-[radial-gradient(120%_90%_at_100%_0%,rgba(214,245,42,0.42),rgba(103,212,173,0.16)_42%,transparent_72%)]',
-  lime: 'bg-[radial-gradient(120%_90%_at_100%_0%,rgba(214,245,42,0.55),rgba(255,246,201,0.4)_45%,transparent_72%)]',
-  rose: 'bg-[radial-gradient(120%_90%_at_100%_0%,rgba(240,91,91,0.22),rgba(255,240,240,0.6)_45%,transparent_72%)]',
-  fog: 'bg-[radial-gradient(120%_90%_at_100%_0%,rgba(103,212,173,0.2),rgba(247,248,245,0.85)_45%,transparent_72%)]',
+  mint: '',
+  lime: '',
+  rose: '',
+  fog: '',
 }
 
 const PILL: Record<MetricTone, string> = {
-  up: 'border-[#b7e8d2] bg-[#eefbf5] text-[#176d59]',
-  down: 'border-[#f1c4c4] text-[#bd3434]',
-  warn: 'border-[#e8d36a] text-[#8a7400]',
-  neutral: 'border-[#e1e7e2] bg-[var(--color-raised)] text-[#5a655f]',
+  up: 'border-accent bg-raised text-accent-dark',
+  down: 'border-bad text-bad',
+  warn: 'border-warn text-warn',
+  neutral: 'border-line bg-[var(--color-raised)] text-ink-soft',
 }
 
 function ToneIcon({ tone }: { tone: MetricTone }) {
@@ -44,7 +44,7 @@ export function PercentPill({
         <ToneIcon tone={tone} />
         {formatPercent(value)}
       </span>
-      {caption ? <span className="text-[12px] leading-4 text-[#8b9790]">{caption}</span> : null}
+      {caption ? <span className="text-[12px] leading-4 text-muted">{caption}</span> : null}
     </div>
   )
 }
@@ -76,8 +76,8 @@ export function MetricCard({
         className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 ${GLOW[glow]}`}
       />
       <div className="relative flex items-baseline justify-between gap-3">
-        <p className="text-[13px] font-semibold text-[#5a655f]">{label}</p>
-        <p className="text-[28px] font-semibold leading-none tracking-[-0.05em] text-[#17211e] tabular-nums">
+        <p className="text-[13px] font-semibold text-ink-soft">{label}</p>
+        <p className="text-[28px] font-semibold leading-none tracking-[-0.05em] text-ink tabular-nums">
           {value}
         </p>
       </div>
@@ -85,14 +85,14 @@ export function MetricCard({
         {percent ? (
           <PercentPill value={percent.value} tone={percent.tone} caption={percent.caption} />
         ) : caption ? (
-          <p className="text-[12px] leading-4 text-[#8b9790]">{caption}</p>
+          <p className="text-[12px] leading-4 text-muted">{caption}</p>
         ) : null}
       </div>
     </>
   )
 
   const shell =
-    'relative block overflow-hidden border border-[#e6ebe6] bg-white px-4 py-3.5 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[#d5e2da] group-hover:'
+    'relative block overflow-hidden border border-line bg-surface px-4 py-3.5 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-line'
 
   return (
     <div className="group relative z-0 hover:z-20 focus-within:z-20">
@@ -106,12 +106,12 @@ export function MetricCard({
       {tooltip ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[240px] -translate-x-1/2 bg-[#17211e] px-3 py-1.5 text-center text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[240px] -translate-x-1/2 bg-accent-dark px-3 py-1.5 text-center text-[12px] font-medium leading-snug text-canvas opacity-0 transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
         >
           {tooltip}
           <i
             aria-hidden
-            className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#17211e]"
+            className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-ink"
           />
         </span>
       ) : null}

@@ -101,7 +101,7 @@ export function InvoiceTable({
                 <td className="px-3 text-right">
                   <ChevronRight
                     aria-hidden
-                    className="size-4 text-line opacity-0 transition group-hover:opacity-100 group-hover:text-faint"
+                    className="size-4 text-muted opacity-0 transition group-hover:opacity-100 group-hover:text-faint"
                   />
                 </td>
               </tr>

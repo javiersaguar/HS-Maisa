@@ -45,7 +45,7 @@ export function ProgressRing({ value, tooltip }: { value: number | null; tooltip
       {tooltip ? (
         <Info
           aria-hidden
-          className="absolute right-0.5 top-0 size-3.5 text-[#9aa39e] transition-colors duration-150 group-hover/ring:text-[#176d59]"
+          className="absolute right-0.5 top-0 size-3.5 text-muted transition-colors duration-150 group-hover/ring:text-accent-dark"
         />
       ) : null}
       <svg className="h-full w-full" viewBox="0 0 116 76" aria-hidden="true">
@@ -81,7 +81,7 @@ export function ProgressRing({ value, tooltip }: { value: number | null; tooltip
             <span
               id={tipId}
               role="tooltip"
-              className={`pointer-events-none fixed z-[80] w-max max-w-[260px] -translate-y-1/2 bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white ${
+              className={`pointer-events-none fixed z-[80] w-max max-w-[260px] -translate-y-1/2 bg-accent-dark px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-canvas ${
                 tip.side === 'left' ? '-translate-x-full' : ''
               }`}
               style={{ top: tip.top, left: tip.left }}
@@ -90,7 +90,7 @@ export function ProgressRing({ value, tooltip }: { value: number | null; tooltip
               <i
                 aria-hidden
                 className={`absolute top-1/2 -translate-y-1/2 border-4 border-transparent ${
-                  tip.side === 'left' ? 'left-full border-l-[#17211e]' : 'right-full border-r-[#17211e]'
+                  tip.side === 'left' ? 'left-full border-l-ink' : 'right-full border-r-ink'
                 }`}
               />
             </span>,

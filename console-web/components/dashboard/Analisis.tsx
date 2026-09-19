@@ -177,7 +177,7 @@ export function Analisis({ fileId }: { fileId: string | null }) {
   if (!fileId) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-16 text-center">
-        <FileSearch className="size-7 text-line" />
+        <FileSearch className="size-7 text-muted" />
         <p className="mt-4 max-w-[34ch] text-[14px] text-ink-soft">
           Elige una factura de la bandeja y aquí verás qué decide la norma y con qué argumentos.
         </p>

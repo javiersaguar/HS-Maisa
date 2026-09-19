@@ -23,10 +23,10 @@ type Nivel = 'pass' | 'warning' | 'fail' | 'info'
 
 /** El color del nodo sigue al paso, para que un fallo destaque en una cadena larga. */
 const NODE_CLASSES: Record<Nivel, string> = {
-  pass: 'border-[#b8dfcf] text-[#176d59]',
-  info: 'border-[#dfe4de] text-[#68736d]',
-  warning: 'border-[#eee8bd] text-[#a87000]',
-  fail: 'border-[#f1dada] text-[#bd3434]',
+  pass: 'border-accent text-accent-dark',
+  info: 'border-line text-ink-soft',
+  warning: 'border-warn text-warn',
+  fail: 'border-bad text-bad',
 }
 
 function nivel(paso: PasoTraza): Nivel {
@@ -92,12 +92,12 @@ export function ChainOfWork({
         {header ? <div className="min-w-0 flex-1">{header}</div> : null}
         <button
           onClick={() => setExpanded(allOpen ? new Set() : new Set(shown.map((paso) => paso.id)))}
-          className="shrink-0 px-2 py-1 text-[13px] font-semibold text-[#315d53] transition"
+          className="shrink-0 px-2 py-1 text-[13px] font-semibold text-accent-dark transition"
         >
           {allOpen ? 'Plegar todo' : 'Desplegar evidencia'}
         </button>
       </div>
-      <ol className="relative flex flex-col gap-3 before:absolute before:bottom-5 before:left-4 before:top-5 before:w-px before:bg-[#c8e3d6]">
+      <ol className="relative flex flex-col gap-3 before:absolute before:bottom-5 before:left-4 before:top-5 before:w-px before:bg-accent">
         {shown.map((paso) => {
           const isOpen = expanded.has(paso.id)
           const Icon = paso.tipo === 'motivo' ? Scale : ETAPA_ICONS[paso.evento.etapa]
@@ -134,7 +134,7 @@ export function ChainOfWork({
               >
                 <Icon className="size-3.5" />
               </span>
-              <div className="border border-[#e1e8e2] bg-white transition hover:-translate-y-0.5 hover:border-[#b8dcca] hover:">
+              <div className="border border-line bg-surface transition hover:-translate-y-0.5 hover:border-accent">
                 <button onClick={() => toggle(paso.id)} aria-expanded={isOpen} className="w-full p-4 text-left">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -142,7 +142,7 @@ export function ChainOfWork({
                         <h3 className="text-[14px] font-semibold">{title}</h3>
                         {badge}
                       </div>
-                      <p className="mt-1 text-[13px] text-[#8a958e]">
+                      <p className="mt-1 text-[13px] text-muted">
                         {meta.join(' · ')}
                         {showFile && paso.file_id ? (
                           <>
@@ -154,14 +154,14 @@ export function ChainOfWork({
                     </div>
                     <ChevronDown
                       aria-hidden="true"
-                      className={`mt-1 size-4 shrink-0 text-[#789087] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                      className={`mt-1 size-4 shrink-0 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                     />
                   </div>
-                  {body && <p className="mt-2 text-[13px] leading-5 text-[#68736d]">{body}</p>}
+                  {body && <p className="mt-2 text-[13px] leading-5 text-ink-soft">{body}</p>}
                 </button>
 
                 {isOpen && (paso.tipo === 'motivo' || (showFile && paso.file_id)) && (
-                  <div className="mx-4 mb-4 flex flex-col gap-2 border-t border-[#edf0ec] pt-3 text-[13px] leading-5 text-[#52605a] animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="mx-4 mb-4 flex flex-col gap-2 border-t border-line-soft pt-3 text-[13px] leading-5 text-ink-soft animate-in fade-in slide-in-from-top-1 duration-200">
                     {paso.tipo === 'motivo' && (
                       <>
                         {extra.length > 0 ? extra.map((linea) => <p key={linea}>{linea}</p>) : <p>No hay más detalle que el de la propia regla.</p>}
@@ -171,7 +171,7 @@ export function ChainOfWork({
                     {showFile && paso.file_id && (
                       <p>
                         Corresponde a{' '}
-                        <Link href={ficheroHref(paso.file_id)} className="font-medium text-[#315d53] underline underline-offset-2">
+                        <Link href={ficheroHref(paso.file_id)} className="font-medium text-accent-dark underline underline-offset-2">
                           {paso.file_id}
                         </Link>
                         .
@@ -188,7 +188,7 @@ export function ChainOfWork({
         <div className="mt-4 flex justify-center">
           <button
             onClick={() => setVisible((value) => value + PAGE_SIZE)}
-            className="border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45]"
+            className="border border-line-soft bg-surface px-4 py-2 text-[14px] font-semibold text-accent-dark transition hover:border-accent-dark"
           >
             Ver {Math.min(PAGE_SIZE, pasos.length - visible)} más de {pasos.length - visible} restantes
           </button>

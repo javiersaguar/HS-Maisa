@@ -2,8 +2,6 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -47,140 +45,74 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --background: #f2f2e8;
+  --foreground: #2b3733;
+  --card: #f8f8f1;
+  --card-foreground: #2b3733;
+  --popover: #f8f8f1;
+  --popover-foreground: #2b3733;
+  --primary: #6b8279;
+  --primary-foreground: #f2f2e8;
+  --secondary: #eaeade;
+  --secondary-foreground: #2b3733;
+  --muted: #eaeade;
+  --muted-foreground: #6f7772;
+  --accent: #e4e8e4;
+  --accent-foreground: #506c63;
+  --destructive: #a4483e;
+  --border: #ddddd1;
+  --input: #ddddd1;
+  --ring: #6b8279;
+  --chart-1: #ddddd1;
+  --chart-2: #6f7772;
+  --chart-3: #6b8279;
+  --chart-4: #506c63;
+  --chart-5: #2b3733;
   --radius: 0;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f8f8f1;
+  --sidebar-foreground: #2b3733;
+  --sidebar-primary: #6b8279;
+  --sidebar-primary-foreground: #f2f2e8;
+  --sidebar-accent: #e4e8e4;
+  --sidebar-accent-foreground: #506c63;
+  --sidebar-border: #ddddd1;
+  --sidebar-ring: #6b8279;
 }
-
-.dark {
-  color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    color-scheme: dark;
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
-}
-
 
 /* ---------------------------------------------------------------- Albertitos
  * Un solo sitio para los valores de diseño. La dirección es herramienta de trabajo
  * densa y sobria: neutros, un acento, bordes de 1px y nada de sombras.
  */
 @theme {
-  --color-ink: #16191c;
-  --color-ink-soft: #3d4449;
-  --color-muted: #6b7378;
-  --color-faint: #9aa1a6;
-  --color-line: #e3e6e8;
-  --color-line-soft: #eef0f1;
-  --color-surface: #ffffff;
-  --color-canvas: #fafafa;
-  --color-raised: #f5f6f7;
+  /* Fondo y superficies: beige cálido, separadas sólo por bordes. */
+  --color-canvas: #f2f2e8;
+  --color-surface: #f8f8f1;
+  --color-raised: #eaeade;
 
-  /* Un único acento. Los colores de estado viven sólo en el punto y el texto del resultado. */
-  --color-accent: #1f6f5c;
-  --color-accent-soft: #e8f0ee;
+  /* Texto. Dos niveles y no un tercero más claro: sobre el beige no se leería. */
+  --color-ink: #2b3733;
+  --color-ink-soft: #414d48;
+  --color-muted: #6f7772;
+  --color-faint: #6f7772;
 
-  --color-ok: #2f7d55;
-  --color-warn: #9a6b0f;
-  --color-bad: #a83f3a;
+  --color-line: #ddddd1;
+  --color-line-soft: #e6e6db;
+
+  /* Un solo acento. */
+  --color-accent: #6b8279;
+  --color-accent-dark: #506c63;
+  --color-accent-soft: #e4e8e4;
+
+  /* Estados del resultado: sólo punto y texto, nunca fondo. */
+  --color-ok: #506c63;
+  --color-warn: #a87a1e;
+  --color-bad: #a4483e;
 
   --radius-ui: 0;
   --radius-card: 0;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: ui-serif, Georgia, 'Iowan Old Style', 'Times New Roman', serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
@@ -217,6 +149,13 @@
 
   .cifra {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Serif sólo para el título de cada pantalla. Del sistema: la demo corre sin red. */
+  .titulo {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 
   /* Casillas: check fino del sistema con el acento, nunca un cuadrado negro relleno. */

@@ -112,10 +112,10 @@ export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
           )}
         </div>
         <p className="leading-none">
-          <span className="text-[34px] font-semibold tracking-[-0.06em] text-[#176d59] tabular-nums">
+          <span className="text-[34px] font-semibold tracking-[-0.06em] text-accent-dark tabular-nums">
             {formatNumber(decididos)}
           </span>
-          <span className="text-[16px] font-medium text-[#9aa39e] tabular-nums">
+          <span className="text-[16px] font-medium text-muted tabular-nums">
             {' '}
             / {formatNumber(panel.ficheros)}
           </span>
@@ -143,19 +143,19 @@ export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
           })}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 border-t border-[#edf0ec] pt-3.5 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 border-t border-line-soft pt-3.5 sm:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label} className="group relative z-0 min-w-0 hover:z-20">
-              <p className="text-[12px] text-[#8b9790]">{stat.label}</p>
-              <p className="mt-1 flex items-baseline gap-1.5 text-[#17211e]">
+              <p className="text-[12px] text-muted">{stat.label}</p>
+              <p className="mt-1 flex items-baseline gap-1.5 text-ink">
                 <span className="text-[18px] font-semibold leading-none tracking-[-0.03em] tabular-nums">
                   {stat.value}
                 </span>
-                {stat.unit ? <span className="text-[12px] text-[#8b9790]">{stat.unit}</span> : null}
+                {stat.unit ? <span className="text-[12px] text-muted">{stat.unit}</span> : null}
               </p>
               <span
                 role="tooltip"
-                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100"
+                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] bg-accent-dark px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-canvas opacity-0 transition duration-150 group-hover:opacity-100"
               >
                 {stat.tooltip}
               </span>

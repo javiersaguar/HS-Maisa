@@ -12,11 +12,11 @@ export function WorkflowOverview({ etapas, ficheros }: { etapas: EtapaResumen[];
 
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-[#e5e8e3] bg-[var(--color-raised)] px-5 py-4">
+      <div className="border-b border-line bg-[var(--color-raised)] px-5 py-4">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
             <h2 className="text-[15px] font-semibold">Secuencia del pipeline</h2>
-            <p className="mt-1 text-[14px] text-[#8a958e]">Lo que hace albertitos run con cada PDF</p>
+            <p className="mt-1 text-[14px] text-muted">Lo que hace albertitos run con cada PDF</p>
           </div>
           <StatusBadge tone={incidencias ? 'yellow' : 'green'} className="shrink-0 whitespace-nowrap">
             {incidencias ? `${incidencias} incidencia${incidencias === 1 ? '' : 's'}` : 'Al día'}
@@ -24,7 +24,7 @@ export function WorkflowOverview({ etapas, ficheros }: { etapas: EtapaResumen[];
         </div>
       </div>
       <div className="p-5">
-        <div className="mb-5 flex items-center justify-between text-[14px] font-semibold uppercase tracking-wide text-[#8a958e]">
+        <div className="mb-5 flex items-center justify-between text-[14px] font-semibold uppercase tracking-wide text-muted">
           <span>Entrada</span>
           <span className="font-mono normal-case">outcomes.jsonl</span>
         </div>
@@ -33,11 +33,11 @@ export function WorkflowOverview({ etapas, ficheros }: { etapas: EtapaResumen[];
             <div key={step} className="flex items-center gap-3">
               <div className="flex flex-col items-center">
                 <span
-                  className={`flex size-7 items-center justify-center text-[12px] font-medium ${index === 0 ? 'bg-[#164f45] text-white' : 'bg-[#eff8f4] text-[#176d59]'}`}
+                  className={`flex size-7 items-center justify-center text-[12px] font-medium ${index === 0 ? 'bg-accent-dark text-canvas' : 'bg-raised text-accent-dark'}`}
                 >
                   {index === 0 ? <FileText className="size-3.5" /> : index}
                 </span>
-                {index < steps.length - 1 && <span className="h-7 w-px bg-[#cfe0d7]" />}
+                {index < steps.length - 1 && <span className="h-7 w-px bg-raised" />}
               </div>
               <p className="text-[14px] font-medium">{step}</p>
             </div>

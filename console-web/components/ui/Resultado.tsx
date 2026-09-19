@@ -63,7 +63,7 @@ export function RecuentoResultados({
         const e = ESTILOS[estado]
         return (
           <span key={estado} className="flex items-center gap-2">
-            {i > 0 && <span className="text-line">·</span>}
+            {i > 0 && <span className="text-muted">·</span>}
             <span aria-hidden className={`size-2 shrink-0 rounded-full ${e.punto}`} />
             <span className={e.texto}>
               {porEstado[estado]} {estado}
@@ -73,7 +73,7 @@ export function RecuentoResultados({
       })}
       {sinLeer > 0 && (
         <span className="flex items-center gap-2">
-          {visibles.length > 0 && <span className="text-line">·</span>}
+          {visibles.length > 0 && <span className="text-muted">·</span>}
           {sinLeer} leyendo
         </span>
       )}

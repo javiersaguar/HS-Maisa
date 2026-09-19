@@ -20,8 +20,8 @@ export default function TrazaPage() {
       <Card className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-[22px] font-semibold tracking-[-0.025em]">Traza</h1>
-            <p className="mt-1 text-[13px] text-[#8a958e]">
+            <h1 className="titulo text-[24px] text-ink">Traza</h1>
+            <p className="mt-1 text-[13px] text-muted">
               Chain of Work del pipeline: eventos de cada etapa (latencia, reintentos, tokens, coste) y cada regla de
               la norma con su evidencia. Lo más reciente primero.
             </p>
@@ -40,7 +40,7 @@ export default function TrazaPage() {
               emptyTitle="Ningún paso con este filtro"
               emptyDescription="Prueba con otro filtro."
               header={
-                <p className="flex items-center gap-2 text-[13px] font-semibold text-[#68736d]" aria-live="polite">
+                <p className="flex items-center gap-2 text-[13px] font-semibold text-ink-soft" aria-live="polite">
                   {loading && <Spinner className="size-3" />}
                   {data.length} {data.length === 1 ? 'paso' : 'pasos'}
                   {data.length >= 200 ? ' (los 200 más recientes)' : ''}

@@ -63,7 +63,7 @@ export function Sidebar() {
               aria-current={activo ? 'page' : undefined}
               className={`flex h-9 items-center border-l-2 text-[13px] transition-colors ${
                 abierto ? 'gap-2.5 pl-3 pr-3' : 'justify-center'
-              } ${activo ? 'border-accent font-semibold text-ink' : 'border-transparent text-muted hover:text-ink'}`}
+              } ${activo ? 'border-accent font-semibold text-accent-dark' : 'border-transparent text-muted hover:text-ink'}`}
             >
               <Icon className="size-4 shrink-0" />
               {abierto && <span className="truncate">{label}</span>}

@@ -31,7 +31,7 @@ export default function PortadaPage() {
       <title>{`${BRAND} · Cuentas a pagar`}</title>
 
       <header className="shrink-0 text-center">
-        <h1 className="text-[34px] font-semibold leading-none tracking-[-0.03em] text-ink">{BRAND}</h1>
+        <h1 className="titulo text-[38px] leading-none text-ink">{BRAND}</h1>
         <p className="mx-auto mt-3 max-w-[58ch] text-[14px] leading-relaxed text-muted">
           Suelta una factura y la norma dice qué hacer con ella y por qué.
         </p>
