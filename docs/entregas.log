@@ -1,2 +1,3 @@
 # Registro de entregas al repo público
 # fecha | commit entrega | outcomes.jsonl líneas | outcomes_lote2.jsonl líneas | norma | erp | quién
+2026-09-19 07:10 | fdc76e8 | 500 (443/48/9, sha256 5ec17aaa5045) | — | v3 | v1 | Javier · entrega de seguro; auditoría ROJA sólo por la evidencia 'None' de scan_025 (resultado ESCALAR correcto), se repite tras la decisión de Mónica
