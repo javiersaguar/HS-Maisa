@@ -20,6 +20,8 @@ Rutas:
     GET /eventos?etapa&limit                     Event[]
     GET /inbox                                   estado del trabajo de la bandeja + resultado por fichero
     POST /inbox  (multipart, uno o varios PDF)   202 { file_ids, lote: 99 }; 409 con la BD de la entrega
+    GET /bonus/{resumen,calendario,proveedores,remesa,avisos,tesoreria}   docs/api/bonus.md (si está)
+    GET /confianza/{resumen,ficheros,fichero}    docs/api/confianza.md (si está)
 
 Cada respuesta lleva `X-Albertitos-Api: <versión del contrato>`; las colecciones también `api` en el JSON.
 """
@@ -164,6 +166,20 @@ RUTAS: dict[str, Callable[[sqlite3.Connection, Query], Respuesta]] = {
     "/traza": _r_traza,
     "/ficheros": _r_ficheros,
 }
+# El bonus (K1) y la confianza (K3) traen sus propios GET con la firma del puente. Import perezoso:
+# si un módulo no está, el puente arranca igual y la consola oculta esa parte.
+try:
+    from albertitos import bonus
+
+    RUTAS.update(bonus.rutas())
+except ImportError:
+    logger.warning("sin rutas del bonus")
+try:
+    from albertitos import confianza
+
+    RUTAS.update(confianza.rutas())
+except ImportError:
+    logger.warning("sin rutas de confianza")
 RUTAS_SIN_BD = ("/", "/salud")
 
 
@@ -318,7 +334,11 @@ def servir(ruta: Path | None = None, puerto: int = PUERTO_DEFECTO) -> None:
         f"Albertitos consola API v{lecturas.API_VERSION} · {modo} · "
         f"http://127.0.0.1:{puerto}  (BD {ruta})"
     )
-    print("Rutas: /salud /panel /ficheros /ficheros/:id /traza /etapas /eventos /inbox")
+    print(
+        "Rutas: /salud /panel /ficheros /ficheros/:id /traza /etapas /eventos /inbox"
+        + (" /bonus/*" if "/bonus/resumen" in RUTAS else "")
+        + (" /confianza/*" if "/confianza/resumen" in RUTAS else "")
+    )
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

@@ -10,6 +10,8 @@ from decimal import Decimal
 from pathlib import Path
 from urllib.parse import quote
 
+import pytest
+
 from albertitos.console import api, bandeja, lecturas
 from albertitos.core import db
 from albertitos.core.contracts import (
@@ -455,6 +457,23 @@ def test_despachar_rutas_y_tilde(conn, maestro, erp):
     status, body = api.despachar("GET", "/eventos", {"limit": ["5"]}, conn)
     assert status == 200 and 1 <= len(body) <= 5
     assert {"file_id", "etapa", "estado", "ts"} <= body[0].keys()
+
+
+def test_rutas_del_bonus_y_confianza_registradas_y_solo_get(conn, maestro, erp):
+    """El puente sirve los GET del bonus (K1) y de la confianza (K3); un POST sigue siendo 405."""
+    pytest.importorskip("albertitos.bonus")
+    _semilla(conn, maestro, erp)
+    status, body = api.despachar("GET", "/bonus/resumen", {}, conn)
+    assert status == 200, body
+    assert body["calendario_numero"] == body["decisiones_pagar"]
+    status, body = api.despachar("GET", "/bonus/tesoreria", {"tope": ["-1"]}, conn)
+    assert status == 400 and body["error"]
+    status, body = api.despachar("POST", "/bonus/resumen", {}, conn)
+    assert status == 405
+
+    pytest.importorskip("albertitos.confianza")
+    status, body = api.despachar("GET", "/confianza/resumen", {}, conn)
+    assert status == 200 and body["total"] == 4  # las que tienen decisión vigente
 
 
 def test_console_no_usa_fecha_de_hoy():
