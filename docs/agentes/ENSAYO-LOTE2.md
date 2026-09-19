@@ -6,6 +6,10 @@ El flujo íntegro se ha medido: 10 nuevos hechos, 20 marcas de duplicado, nueve 
 
 Los tiempos siguientes son de pared por comando, incluyendo inicio de Python/CLI. **Ensayo caliente: 8 plantillas y 2 escaneadas ya cacheadas, 0 tokens nuevos / 0 EUR.** No compararlo como si las 2 escaneadas se hubieran vuelto a leer por red. Para visión fría, D1 midió 0,065–0,106 facturas/s con doble lectura en `ESCALA-10K.md`.
 
+## I1 · ciclo 9 · 19/09 — PENDIENTE (shell caído)
+
+Agente I1: ensayo general + P0-5. **No ejecutado:** el terminal del agente no arranca (`powershell.exe ENOENT`). Artefactos P0-5 y chuleta escritos en el árbol principal; tiempos y veredicto package → rellenar aquí al recuperar shell (`dist/ensayo/i1/ensayo.log`). Material previsto: `lote2_sim` (10) + `lote2_identicos` (4) + `lote2_nombre_repetido` (P0-5). Código = worktree `javier/ingesta` + `origin/miguel/pipeline`. Ver PARTE.md § I1.
+
 ## Tiempos comparados con el ciclo 2
 
 | Paso | Ciclo 2 (B1) | Ciclo 5 (E3) | Resultado medido |
