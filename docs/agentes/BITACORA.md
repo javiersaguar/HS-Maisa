@@ -863,3 +863,8 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Nadie llama al modelo hasta que el lote 2 esté publicado; después, prueba en vivo y merge a `main`.
 
 - **18:42 · Javier (sesión principal)** · rediseño de AlbertitosAI commiteado desde la sesión principal (backend, consola, docs), merge de `main` con el PR #7 de Alejandro sin conflictos. 601 tests, tsc y `next build` en verde. Pendiente: probar el tono con el modelo cuando el gateway quede libre.
+
+### 19:26 · Miguel · lote 2, mi parte (M1-M5), rama `miguel/lote2`
+- **Reparto con Javier.** Javier: material en `data/lote2/`, maestro v2 con `proveedores_nuevos.csv` y `pedidos_nuevos.csv`, ERP v2, validadores de IBAN/NIF extranjeros, ingesta y extracción. Miguel: moneda en `InvoiceFacts` (M1), señal de anotación a mano (M2), norma v4 (M3), P0-2 y duplicados entre lotes (M4), decidir y entregar el lote 2 (M5).
+- **Ficheros que toco** (avisad antes de tocarlos): `core/contracts.py`, `core/versions.py`, `docs/contratos.md`, `tests/test_contracts.py`, `extract/llm.py` (sólo el campo `moneda` del esquema y `_a_hechos`), `extract/plantillas.py` (sólo `moneda="EUR"`), `extract/pdf.py` (función nueva de marcas gráficas), `extract/etapa.py` (sólo el aviso de anotación), `rules/` (v4 nueva; en v3, sólo añadir el aviso nuevo a `ANOMALIAS_HUMANO`), `pipeline/` (duplicados entre lotes).
+- **PARA Javier:** la extracción de las `e*` tiene que ir **después** de M1: si no, se quedan sin moneda. Te aviso aquí cuando esté en `main`.

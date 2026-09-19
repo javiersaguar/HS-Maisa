@@ -68,6 +68,10 @@ ESQUEMA_HECHOS: dict[str, Any] = {
         "iva_pct": {"type": ["number", "null"]},
         "iva": {"type": ["number", "null"]},
         "total": {"type": ["number", "null"]},
+        "moneda": {
+            "type": ["string", "null"],
+            "description": "código ISO 4217 de la moneda de los importes (EUR, USD, GBP, CHF...); null si no consta",
+        },
         "lineas": {
             "type": "array",
             "items": {
@@ -160,6 +164,28 @@ def _fragmento_valido(crudo: object) -> str | None:
         return None
     limpio = crudo.strip()
     return limpio if limpio and limpio.lower().strip(".") not in _NO_ES_FRAGMENTO else None
+
+
+# Lo que el modelo puede devolver en vez del código: sólo símbolos sin ambigüedad ("$" puede ser USD o MXN).
+_SIMBOLOS_MONEDA = {
+    "€": "EUR",
+    "EURO": "EUR",
+    "EUROS": "EUR",
+    "£": "GBP",
+    "R$": "BRL",
+    "MX$": "MXN",
+    "US$": "USD",
+}
+
+
+def moneda_iso(crudo: object) -> str | None:
+    """Código ISO 4217 en mayúsculas, o None si no se reconoce: mejor sin moneda que con una inventada."""
+    if not isinstance(crudo, str):
+        return None
+    s = crudo.strip()
+    if s.upper() in _SIMBOLOS_MONEDA or s in _SIMBOLOS_MONEDA:
+        return _SIMBOLOS_MONEDA.get(s, _SIMBOLOS_MONEDA.get(s.upper()))
+    return s.upper() if len(s) == 3 and s.isascii() and s.isalpha() else None
 
 
 def otras_marcas(datos: dict[str, Any]) -> list[str]:
@@ -728,6 +754,7 @@ class ClienteLLM:
                 iva_pct=parse_importe_es(datos.get("iva_pct")),
                 iva=parse_importe_es(datos.get("iva")),
                 total=parse_importe_es(datos.get("total")),
+                moneda=moneda_iso(datos.get("moneda")),
                 lineas=[
                     {
                         "concepto": str(x.get("concepto", "")),
