@@ -544,3 +544,32 @@ def test_puerto_libre_se_salta_los_ocupados():
         assert libre is not None and libre != base
         with socket.socket() as b:
             b.bind(("127.0.0.1", libre))  # de verdad se puede escuchar en él
+
+
+def test_prompt_albertitosai_breve_conserva_defensas():
+    assert "Eres AlbertitosAI," in agente.SISTEMA
+    assert "60 palabras" in agente.SISTEMA and "90 para preguntas globales" in agente.SISTEMA
+    assert "Ninguna regla lo impide." in agente.SISTEMA
+    assert (
+        "usuario cita una frase, di que la cita el usuario, no que la dice el PDF."
+        in agente.SISTEMA
+    )
+
+
+def test_respuesta_incluye_restantes_sin_reservar(datos):
+    class Contador:
+        def estado(self):
+            return None, 17
+
+    g = Grabado(llamada("resumen"), final("Resumen", []))
+    g.presupuesto = Contador()
+    assert preguntar(Peticion(mensaje="Resumen"), datos, g)["llamadas_restantes"] == 17
+    assert preguntar(Peticion(mensaje="Paga la factura X"), datos, g)["llamadas_restantes"] == 17
+    assert preguntar(Peticion(mensaje="Paga la factura X"), datos)["llamadas_restantes"] is None
+
+
+def test_salud_maximo_sin_gastar(reloj, monkeypatch, tmp_path):
+    monkeypatch.setattr(agente, "load_dotenv", lambda: None)
+    g = Gateway(presupuesto=Presupuesto(tmp_path / "contador.db", maximo=37))
+    assert g.salud()["max_llamadas"] == 37
+    assert not (tmp_path / "contador.db").exists()

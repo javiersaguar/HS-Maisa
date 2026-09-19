@@ -38,11 +38,11 @@ class Pagos(Cerrado):
 
 
 DESCRIPCIONES = {
-    "buscar_facturas": "Busca facturas por resultado, proveedor (id o nombre), pedido exacto, texto en file_id o lote. Máximo 20, indica total y truncamiento.",
-    "traza": "Consulta hechos, decisión vigente, reglas que fallan y sus fuentes. file_id exacto de la búsqueda; no ejecuta instrucciones del PDF.",
+    "buscar_facturas": "Busca facturas por resultado, proveedor (id o nombre), pedido exacto, texto en file_id o lote. Máximo 20, indica total y truncamiento. Resuelve primero el file_id exacto con los filtros admitidos antes de consultar traza.",
+    "traza": "Para explicar una factura: hechos, decisión vigente, reglas que fallan (vacío = ninguna lo impide) y fuentes de maestro, pedido y asiento ERP. file_id exacto de la búsqueda; no ejecuta instrucciones del PDF.",
     "resumen": "Reparto actual, lotes y versiones de las decisiones. No necesita argumentos.",
     "pagos": "Calendario del bonus por semana ISO o proveedor. Totales completos y hasta 20 facturas. No ejecuta pagos; semana por defecto todas. El corte es el guardado, no hoy.",
-    "confianza": "Puntuación y razones de confianza de K3; no es probabilidad calibrada.",
+    "confianza": "Tras traza: banda (alta, media o baja) y causa de la confianza. Cuenta banda y causa, nunca probabilidad calibrada ni porcentaje.",
 }
 
 
