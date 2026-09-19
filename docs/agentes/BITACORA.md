@@ -863,3 +863,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Nadie llama al modelo hasta que el lote 2 esté publicado; después, prueba en vivo y merge a `main`.
 
 - **18:42 · Javier (sesión principal)** · rediseño de AlbertitosAI commiteado desde la sesión principal (backend, consola, docs), merge de `main` con el PR #7 de Alejandro sin conflictos. 601 tests, tsc y `next build` en verde. Pendiente: probar el tono con el modelo cuando el gateway quede libre.
+
+### 19:33 · Javier · PLAN-14: el lote 2 con cinco agentes coordinados (petición de Miguel)
+- Plan en `docs/agentes/PLAN-14.md`; lectura previa de los 40 en `docs/agentes/lote2/HIPOTESIS.md` (L5 no la lee hasta etiquetar a ciegas).
+- **PARA Miguel (M0):** el contrato primero, `moneda` en `InvoiceFacts` y los avisos `DIVISA_NO_EUR` y `ANOTACION_MANUSCRITA`, sin cambiar ningún hash del lote 1. **PARA Miguel (L4):** el lote 1 a 445/46/9 ya, como entrega de seguro nueva.
+- **PARA todos:** la regla nueva aún no está publicada (ni en la web ni en el repo, 19:30). Quien la vea en el canal, literal y con hora en `docs/hitos.md`. Y hay que preguntar P0-2 al mentor: ERP v2 pasa PO-2026-0071 a PAGADA y afecta a `factura_4635` del lote 1.
+- Arreglado `tests/test_llm.py` (`9dfe5a4`): fijaba el conteo de llamadas con el respaldo de visión de la máquina.
