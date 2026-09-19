@@ -7,28 +7,44 @@ Implementado por J5 (PLAN-10); tesorería, proveedores, programa con tope y ruta
   (`tesoreria.json` y la sección «Tesorería» de `calendario.html`).
 - **Por proveedor**: facturas, importe, vencidas y la primera y última fecha de pago (`proveedores.csv`).
 - **Programa con tope** (`--tope-semanal 150000`): reparte la remesa por semanas desde la del corte, sin pasar del
-  tope, y dice cuánto se tarda. Con la Caja: **al día con lo vencido en 16 semanas**, todo pagado en 17.
+  tope, y dice cuánto se tarda. Con los dos lotes: **al día con lo vencido en 17 semanas**, y todo pagado en 17
+  (con sólo el lote 1 eran 16 y 17).
 - **Cada pago lleva su lote**: el calendario incluye los PAGAR de todos los lotes vigentes.
 - **Rutas GET para la consola**: `bonus.rutas()` → `/bonus/{resumen,calendario,proveedores,remesa,avisos,tesoreria}`.
   Contrato, ejemplos reales y propuesta de pantalla en [`docs/api/bonus.md`](api/bonus.md). Alejandro las registra
   con una línea.
 
-Frase añadida para la defensa: «Si Alberto sólo puede pagar 150.000 € a la semana, en 16 semanas está al día con lo
+Frase añadida para la defensa: «Si Alberto sólo puede pagar 150.000 € a la semana, en 17 semanas está al día con lo
 vencido. Es un cálculo sobre las decisiones, no una decisión nueva».
 
 ## Defensa en 30 segundos
 
-Desde la raíz del repo, con la copia del ensayo ya preparada:
+Desde la raíz del repo, sobre la BD de la entrega (sólo lectura, no la toca):
 
 ```bash
-uv run python -m albertitos.bonus --db dist/ensayo/j5/bonus.db --salida dist/ensayo/j5/bonus/
+uv run python -m albertitos.bonus --salida dist/ensayo/bonus-lote2 --tope-semanal 150000
 ```
 
-Abrir `dist/ensayo/j5/bonus/calendario.html`. El comando tardó **0,184 s** en este portátil con WSL/Ubuntu, Python 3.12, 438 PAGAR y sin red (19/09/2026). La apertura y la explicación no están cronometradas.
+Abrir `dist/ensayo/bonus-lote2/calendario.html`. El comando tardó **0,20 s** en el portátil de Javier
+(WSL/Ubuntu, Python 3.12), con los dos lotes ya entregados y sin red (20/09/2026 01:40). La apertura y la
+explicación no están cronometradas.
 
-Frase para la defensa: «Hay 438 facturas PAGAR por 2.428.159,06 euros. Al corte del 18 de septiembre, 431 están vencidas y 2 vencen esa semana. El calendario aplica los plazos del maestro. La remesa lleva las 438, pero marcadas: los once IBAN de esta Caja son sintéticos y no pasan el dígito de control, así que un banco las rechazaría. En modo estricto la remesa sale vacía, y lo decimos. No hemos cambiado ninguna decisión ni ninguna cuenta».
+Frase para la defensa: «Hay **468 facturas PAGAR por 2.534.654,19 euros**. Al corte del 18 de septiembre, 444 están
+vencidas y 3 vencen esa semana. El calendario aplica los plazos del maestro. La remesa lleva las 468, pero marcadas:
+los IBAN de esta Caja son sintéticos y no pasan el dígito de control, así que un banco las rechazaría. En modo
+estricto la remesa sale vacía, y lo decimos. No hemos cambiado ninguna decisión ni ninguna cuenta».
 
-Enseñar el calendario, abrir `avisos.csv` (11 avisos `IBAN_SIN_CONTROL`, uno por proveedor) y señalar en `resumen.json` `remesa_numero: 438` junto a `remesa_iban_sin_control: 438`. **No decir “438 transferencias listas”**: es un borrador con las cuentas marcadas. `--estricto` da lo que aceptaría un banco: 0. La generación con IBAN válido se demuestra con `uv run pytest -q tests/test_bonus.py`, sin sustituir los IBAN reales de la Caja.
+Enseñar el calendario, abrir `avisos.csv` (**11 avisos `IBAN_SIN_CONTROL`, uno por proveedor**) y señalar en
+`resumen.json` `remesa_numero: 468` junto a `remesa_iban_sin_control: 467`. **No decir «468 transferencias listas»**:
+es un borrador con las cuentas marcadas. `--estricto` da lo que aceptaría un banco: **1 factura, 3.775,20 €** (comprobado el 20/09 a las 01:45).
+
+**Ese 1 es del lote 2 y da juego:** `e08_P012.pdf`, de Müller & Partner GmbH, con IBAN alemán **real y válido**, la
+única factura de las 468 cuya cuenta pasa el dígito de control. Es la prueba de que el aviso no es un adorno: marca
+lo que un banco rechazaría y deja pasar lo que aceptaría. La generación con IBAN válido se comprueba además con
+`uv run pytest -q tests/test_bonus.py`, sin sustituir los IBAN reales de la Caja.
+
+**Con el lote 2, respecto a ayer:** 438 → 468 pagos y 2.428.159,06 € → 2.534.654,19 €; vencidos 431 → 444; el
+programa a 150.000 €/semana pasa de 16 a 17 semanas para ponerse al día.
 
 El comando general solicitado también está disponible:
 
