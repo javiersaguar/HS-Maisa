@@ -972,3 +972,11 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Repo de entrega:** `outcomes.jsonl` (500), `outcomes_lote2.jsonl` (40) y `albertitos_plan.pdf`, nada más. Registrado en `docs/entregas.log`.
 - **Demos al día:** la pública (`albertitos.vercel.app`) y la local sirven ya esa entrega (540, 468/62/10).
 - **PARA Miguel y Mónica:** esto es reversible y se puede volver a publicar hasta las 11:00. Si la revisión de la v4 o la regla nueva cambian algo, se reprocesa y se publica otra vez. La BD anterior está en `dist/albertitos.db.bak`.
+
+### 00:46 · Javier · cierre de noche: entrega publicada, demo pública en pie para que Alfonso grabe
+- **Entrega `d2ade3f`** (repo de entrega): `outcomes.jsonl` 500 (445/46/9) + `outcomes_lote2.jsonl` 40 (23/16/1) + `albertitos_plan.pdf`. Auditoría VERDE. Se puede publicar encima hasta las 11:00.
+- **Demo pública al día y probada:** `https://albertitos.vercel.app` sirve esas 540 (468/62/10). Prueba de jurado en Chromium limpio: **12/12**, chat incluido. Subir facturas está apagado a propósito.
+- **No se duerme:** el workflow `despertar-demo.yml` la llama cada 10 min **esta noche (23:00-02:00) y mañana de 02:00 a 16:00** (Madrid), desde GitHub, sin depender de ningún portátil. Probado a mano: 200 en los dos servicios.
+- **Chat público:** tope subido a **200 llamadas**, ventana hasta el domingo a las 14:00. Si Render reinicia el servicio, el contador vuelve a 200.
+- **PARA Alfonso:** graba contra `https://albertitos.vercel.app`. Si al abrirla dice «Sin conexión», espera 40 s y recarga: es Render despertando. Las preguntas al chat que están probadas: «¿Por qué no se paga F26-2201_transportes.pdf?» y «¿Qué pasa con e18_P001.pdf?».
+- **PARA Mónica y Miguel, lo primero de mañana:** preguntar a los mentores (1) si hay tabla oficial de tipos de cambio, (2) si una factura de exportación con IVA 0 % que, convertida, cuadra con pedido y ERP es PAGAR o ESCALAR, y (3) si la regla 3 es «IVA bien calculado» o «siempre 21 %». De eso dependen 5 de las 540. Lo publicado hoy escala esas 5, que es lo conservador (norma, regla 6).
