@@ -80,6 +80,7 @@ def test_dos_facturas_reales_por_plantilla(caja, fila):
     assert len(h.lineas) == n_lineas
     assert h.metodo is MetodoExtraccion.PLANTILLA
     assert h.extractor_version
+    assert h.moneda == "EUR"  # las 6 familias imprimen € o EUR (ADR-0019)
 
 
 @pytest.mark.parametrize("fila", ESPERADO, ids=[f[0] for f in ESPERADO])

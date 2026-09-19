@@ -1091,3 +1091,37 @@ def test_si_falla_tambien_el_respaldo_lo_dice(bd, monkeypatch):
     assert "[respaldo glm5.3-flash tras" in str(e.value)
     assert "del principal deepseek-v4-flash]" in str(e.value)
     assert Http.peticiones == ["deepseek-v4-flash"] * 3 + ["glm5.3-flash"]
+
+
+# --------------------------------------------------------------- moneda (ADR-0019, lote 2)
+
+
+@pytest.mark.parametrize(
+    ("crudo", "esperado"),
+    [
+        ("USD", "USD"),
+        ("chf", "CHF"),
+        ("€", "EUR"),
+        ("Euros", "EUR"),
+        ("R$", "BRL"),
+        ("MX$", "MXN"),
+        ("$", None),  # USD o MXN: no se adivina
+        ("dólares", None),
+        (None, None),
+        (3, None),
+    ],
+)
+def test_moneda_iso(crudo, esperado):
+    assert llm.moneda_iso(crudo) == esperado
+
+
+def test_la_moneda_del_llm_llega_a_los_hechos(bd):
+    c = llm.ClienteLLM(bd)
+    h = c._a_hechos(
+        {**RESPUESTA_P001, "moneda": "usd"},
+        sha256="a" * 64,
+        file_id="e02.pdf",
+        texto=None,
+        metodo=MetodoExtraccion.LLM_VISION,
+    )
+    assert h.moneda == "USD" and "moneda" in llm.ESQUEMA_HECHOS["properties"]

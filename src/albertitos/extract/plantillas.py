@@ -239,6 +239,7 @@ def _parsear(p: Plantilla, rx: dict[str, re.Pattern[str]], texto: str, file_id: 
         iva_pct=iva_pct,
         iva=iva,
         total=total,
+        moneda="EUR",  # las 6 familias imprimen € o EUR
         lineas=lineas,
         metodo=MetodoExtraccion.PLANTILLA,
         extractor_version=EXTRACTOR_VERSION,

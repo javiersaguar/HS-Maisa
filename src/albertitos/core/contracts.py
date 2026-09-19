@@ -104,6 +104,9 @@ class InvoiceFacts(BaseModel):
     iva_pct: Decimal | None = None
     iva: Decimal | None = None
     total: Decimal | None = None
+    # ISO 4217 de los importes (EUR, USD, GBP…), 19/09 lote 2: hay facturas en divisa contra pedidos en EUR.
+    # None = no consta (los hechos anteriores a este campo). Las plantillas de la Caja ponen EUR.
+    moneda: str | None = None
     lineas: list[LineaFactura] = Field(default_factory=list)
     metodo: MetodoExtraccion
     extractor_version: str
@@ -118,10 +121,12 @@ class InvoiceFacts(BaseModel):
 
     def hash(self) -> str:
         """Hash canónico de los hechos de negocio: si cambia, la decisión hay que recalcularla."""
-        campos = self.model_dump(
-            mode="json", exclude={"metodo", "confianza", "extractor_version", "texto_sospechoso"}
-        )
-        return hash_canonico(campos)
+        excluidos = {"metodo", "confianza", "extractor_version", "texto_sospechoso"}
+        if self.moneda is None:
+            # Campo nuevo (19/09): sin moneda, el hash es el de siempre. Si no, los 500 hechos ya guardados
+            # cambiarían de hash sin haber cambiado nada, y el linaje los redecidiría todos.
+            excluidos.add("moneda")
+        return hash_canonico(self.model_dump(mode="json", exclude=excluidos))
 
 
 # ----------------------------------------------------------------------------- fuentes
