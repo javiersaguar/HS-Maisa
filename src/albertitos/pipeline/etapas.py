@@ -174,12 +174,18 @@ def registrar_transicion(conn: sqlite3.Connection, ev: Event) -> bool:
 
 
 def grupos_duplicados(
-    hechos: list[InvoiceFacts], copias: dict[str, list[tuple[str, int]]] | None = None
+    hechos: list[InvoiceFacts],
+    copias: dict[str, list[tuple[str, int]]] | None = None,
+    lotes: dict[str, int] | None = None,
 ) -> dict[str, dict[str, str]]:
     """sha256 → {file_id de otro PDF de su grupo: qué comparten}. Grupo = mismo pedido o mismo
     (NIF, nº de factura) en más de un PDF, o el mismo PDF con más de un nombre (`copias`, de
     `db.nombres_por_sha`: el hecho es uno por contenido, así que sin esto la copia no tiene grupo).
-    Lo usan `marcar_duplicados` y la traza."""
+    Lo usan `marcar_duplicados` y la traza.
+
+    Con `lotes` (sha256 → lote), una factura sólo tiene grupo por otra de su lote o de uno anterior
+    (ADR-0021): la del lote 1 ya se decidió y se entregó con lo que había; la del lote 2 es la que repite
+    el pedido (2026-08-22_P010 repite el de factura_4635). Sin `lotes`, todas con todas, como antes."""
     grupos: dict[tuple[str, ...], list[InvoiceFacts]] = {}
     for h in hechos:
         if h.pedido:
@@ -192,10 +198,13 @@ def grupos_duplicados(
             continue
         que = f"pedido {clave[1]}" if clave[0] == "pedido" else f"factura {clave[2]} de {clave[1]}"
         for h in grupo:
+            lote = (lotes or {}).get(h.sha256, 1)
+            pares = [o for o in grupo if o is not h and (lotes or {}).get(o.sha256, 1) <= lote]
+            if not pares:
+                continue
             otros = con.setdefault(h.sha256, {})
-            for o in grupo:
-                if o is not h:
-                    otros[o.file_id] = f"{otros[o.file_id]} y {que}" if o.file_id in otros else que
+            for o in pares:
+                otros[o.file_id] = f"{otros[o.file_id]} y {que}" if o.file_id in otros else que
     propio = {h.sha256: h.file_id for h in hechos}
     for sha, nombres in (copias or {}).items():
         if sha not in propio:
@@ -220,7 +229,10 @@ def marcar_duplicados(conn: sqlite3.Connection) -> tuple[int, int]:
     se quita donde ya no lo hay (p. ej. tras borrar los `L2-*` de un ensayo). Sólo esta función pone
     ese aviso. Cambia hechos_hash, así que el linaje los reprocesa. Devuelve (puestos, quitados)."""
     hechos = hechos_vigentes(conn)
-    con = grupos_duplicados(hechos, db.nombres_por_sha(conn))  # sha256 → los otros PDFs del grupo
+    lotes = {
+        r["sha256"]: int(r["lote"] or 1) for r in conn.execute("SELECT sha256, lote FROM ficheros")
+    }
+    con = grupos_duplicados(hechos, db.nombres_por_sha(conn), lotes)  # sha256 → los otros del grupo
     puestos = quitados = 0
     for h in hechos:
         marcado = Aviso.DUPLICADO_SOSPECHOSO in h.avisos

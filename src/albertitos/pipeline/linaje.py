@@ -256,3 +256,40 @@ def diff_decisiones(conn: sqlite3.Connection, desde_id: int | None = None) -> li
         (desde_id or 0,),
     ).fetchall()
     return [dict(r) for r in filas]
+
+
+# ----------------------------------------------------------------------------- contexto por lote (ADR-0021)
+
+
+def contextos_vigentes(conn: sqlite3.Connection) -> dict[int, tuple[str, str]]:
+    """lote → (norma, ERP) con que están decididas sus facturas (el más frecuente). Sin decisiones, no sale.
+
+    Cada lote se decide y se entrega en su contexto: el lote 1 con la norma v3 y el ERP v1; el lote 2 con los
+    del sábado. Reprocesar el lote 1 con el ERP v2 cambiaría `factura_4635` (el ERP v2 registra como PAGADA
+    justo el pago que decidimos en el lote 1) y la entrega del lote 1 dejaría de ser la que se validó."""
+    filas = conn.execute(
+        """SELECT f.lote, d.norma_version, d.erp_version, count(*) AS n
+           FROM decisiones d JOIN ficheros f ON f.sha256 = d.sha256
+           WHERE d.vigente = 1 GROUP BY f.lote, d.norma_version, d.erp_version ORDER BY n DESC"""
+    ).fetchall()
+    out: dict[int, tuple[str, str]] = {}
+    for r in filas:
+        out.setdefault(int(r["lote"] or 1), (r["norma_version"], r["erp_version"]))
+    return out
+
+
+def choques_de_contexto(
+    conn: sqlite3.Connection,
+    *,
+    norma: str | None,
+    erp: str | None,
+    lotes: list[int] | None = None,
+) -> list[str]:
+    """Qué lotes ya decididos cambiarían de norma o de ERP con esta orden. Vacío = no cambia nada decidido."""
+    choques = []
+    for lote, (n, e) in sorted(contextos_vigentes(conn).items()):
+        if lotes is not None and lote not in lotes:
+            continue
+        if (norma and norma != n) or (erp and erp != e):
+            choques.append(f"el lote {lote} está decidido con la norma {n} y el ERP {e}")
+    return choques
