@@ -4,7 +4,7 @@ ERP_URL ?= http://127.0.0.1:8009
 LOTE ?= 1
 
 .DEFAULT_GOAL := help
-.PHONY: agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench demo-caos worktree clean
+.PHONY: kit-demo kit-instalar publicar agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench demo-caos worktree clean
 
 help: ## Lista estos comandos
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  make %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -37,7 +37,7 @@ erp-lote2-fast: ## Igual, sin latencia
 	$(MAKE) -C $(CAJA) erp-lote2-fast LOTE2_ERP=../lote2/erp_export_lote2.csv
 
 erp-status: ## ¿Está vivo el ERP?
-	@curl --fail --silent --show-error $(ERP_URL)/erp/estado; echo
+	@curl --fail --silent --show-error $(ERP_URL)/erp/estado && echo
 
 caja-verify: ## Comprueba que data/caja coincide con el manifiesto (500 PDFs, NFC, hashes)
 	$(UV) run albertitos caja verify
@@ -59,6 +59,16 @@ console: ## Consola Streamlit (sólo lectura sobre la BD)
 
 package: ## Genera y valida dist/entrega/*.jsonl (nunca a mano)
 	$(UV) run albertitos package
+
+publicar: ## Ensaya paquete, validación y auditoría; ARGS=--publicar sube la entrega
+	$(UV) run python scripts/publicar_entrega.py $(ARGS)
+
+kit-demo: ## Empaqueta la BD de la demo para otro portátil (dist/kit/)
+	$(UV) run python scripts/kit_demo.py empaquetar
+
+kit-instalar: ## Instala un kit: make kit-instalar KIT=<kit.tar.gz> [ARGS=--forzar]
+	@test -n "$(KIT)" || (echo 'uso: make kit-instalar KIT=<kit.tar.gz>'; exit 1)
+	$(UV) run python scripts/kit_demo.py instalar "$(KIT)" $(ARGS)
 
 validate: ## Valida un JSONL: make validate FILE=dist/entrega/outcomes.jsonl LOTE=1
 	$(UV) run albertitos validate "$(FILE)" --lote $(LOTE)
