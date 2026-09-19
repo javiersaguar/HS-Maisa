@@ -63,7 +63,9 @@ function resumenEtapa(etapa: Etapa): EtapaResumen {
   return {
     etapa,
     eventos: events.length,
-    ficherosOk: new Set(events.filter((event) => event.estado === 'ok').map((event) => event.file_id)).size,
+    ficherosOk: new Set(
+      events.filter((event) => event.estado === 'ok' && event.file_id).map((event) => event.file_id),
+    ).size,
     porEstado,
     latenciaMediaMs: latencias.length ? Math.round(latencias.reduce((sum, value) => sum + value, 0) / latencias.length) : null,
     reintentos: events.filter((event) => event.intento > 1).length,

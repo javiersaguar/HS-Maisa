@@ -1,182 +1,164 @@
-import Link from 'next/link'
-import type { EstadoFichero, PanelResumen } from '@/lib/types'
-import { ERP_NOMBRE } from '@/lib/config'
-import { formatDateTime, formatEur, formatNumber, formatPercent, formatSeconds, shortHash } from '@/lib/format'
+import type { EstadoFichero, PanelResumen, VentanaPasada } from '@/lib/types'
+import {
+  formatDate,
+  formatDateTime,
+  formatEur,
+  formatNumber,
+  formatPercent,
+  formatSeconds,
+  formatTime,
+} from '@/lib/format'
 import { Card } from '@/components/ui/Card'
+import { MetricCard, type MetricGlow, type MetricTone } from '@/components/dashboard/MetricCard'
 
 const TILES: Array<{
   estado: EstadoFichero
   label: string
-  icon: string
-  pill: string
-  border: string
-  iconClass: string
-  valueClass: string
-  labelClass: string
-  shadow: string
+  hint: string
+  glow: MetricGlow
+  tone: MetricTone
 }> = [
-  {
-    estado: 'PAGAR',
-    label: 'Se pagan',
-    icon: '✓',
-    pill: 'PAGAR',
-    border: 'border-[#dcefe6]',
-    iconClass: 'bg-[#e4f8ef] text-[#16825f]',
-    valueClass: 'text-[#176e5a]',
-    labelClass: 'text-[#415f55]',
-    shadow: 'shadow-[0_5px_18px_rgba(30,80,60,0.05)]',
-  },
-  {
-    estado: 'ESCALAR',
-    label: 'Los ve una persona',
-    icon: '!',
-    pill: 'ESCALAR',
-    border: 'border-[#eee8bd]',
-    iconClass: 'bg-[#fff6c9] text-[#a08400]',
-    valueClass: 'text-[#927b00]',
-    labelClass: 'text-[#5f5b2e]',
-    shadow: 'shadow-[0_5px_18px_rgba(130,120,30,0.04)]',
-  },
-  {
-    estado: 'NO_PAGAR',
-    label: 'No se pagan',
-    icon: '×',
-    pill: 'NO_PAGAR',
-    border: 'border-[#f1dada]',
-    iconClass: 'bg-[#fff0f0] text-[#c94343]',
-    valueClass: 'text-[#bd3434]',
-    labelClass: 'text-[#713d3d]',
-    shadow: 'shadow-[0_5px_18px_rgba(150,50,50,0.04)]',
-  },
-  {
-    estado: 'PENDIENTE',
-    label: 'Sin decisión vigente',
-    icon: '◷',
-    pill: 'PENDIENTE',
-    border: 'border-[#e3e9e5]',
-    iconClass: 'bg-[#eef3f1] text-[#315d53]',
-    valueClass: 'text-[#164f45]',
-    labelClass: 'text-[#415f55]',
-    shadow: 'shadow-[0_5px_18px_rgba(30,80,60,0.04)]',
-  },
+  { estado: 'PAGAR', label: 'PAGAR', hint: 'Se pagan', glow: 'mint', tone: 'up' },
+  { estado: 'ESCALAR', label: 'ESCALAR', hint: 'Los ve una persona', glow: 'lime', tone: 'warn' },
+  { estado: 'NO_PAGAR', label: 'NO_PAGAR', hint: 'No se pagan', glow: 'rose', tone: 'down' },
+  { estado: 'PENDIENTE', label: 'PENDIENTE', hint: 'Sin decisión vigente', glow: 'fog', tone: 'neutral' },
 ]
+
+function shareOf(count: number, total: number): number {
+  return total > 0 ? (count / total) * 100 : 0
+}
+
+/** Coste LLM: 2 decimales salvo importes < 1 céntimo, que si no se ven como 0,00 €. */
+function formatCosteLlm(value: number): string {
+  const digits = value > 0 && value < 0.01 ? 4 : 2
+  return formatEur(value, digits)
+}
+
+/** La ventana suele caber en el mismo minuto: no repetir la misma hora a ambos lados. */
+function formatVentana(ventana: VentanaPasada): string {
+  const resumen = `${formatNumber(ventana.ficheros)} ficheros en ${formatSeconds(ventana.segundos)}`
+  if (!ventana.desde || !ventana.hasta) return resumen
+  const mismoDia = formatDate(ventana.desde) === formatDate(ventana.hasta)
+  const mismaHora = formatDateTime(ventana.desde) === formatDateTime(ventana.hasta)
+  if (mismaHora) return `${resumen} · ${formatDateTime(ventana.desde)}`
+  if (mismoDia) return `${resumen} · ${formatTime(ventana.desde)} – ${formatTime(ventana.hasta)}`
+  return `${resumen} · ${formatDateTime(ventana.desde)} → ${formatDateTime(ventana.hasta)}`
+}
+
+function formatRitmo(value: number | null): string {
+  if (value === null || Number.isNaN(value)) return '—'
+  return value.toFixed(2).replace('.', ',')
+}
 
 /** Tarjeta "Ficheros": decisiones vigentes por resultado. Cada casilla abre la cola filtrada. */
 export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
   const decididos = panel.ficheros - panel.porEstado.PENDIENTE
-  const { operacion, versiones } = panel
+  const { operacion } = panel
   const { ventana } = operacion
   /** El histórico sólo se menciona si difiere: lo gastado en runs anteriores no es el coste de esta decisión. */
   const historico =
     operacion.costeEurHistorico !== null && Math.abs(operacion.costeEurHistorico - operacion.costeEur) >= 0.005
       ? operacion.costeEurHistorico
       : null
-  const stats: Array<{ label: string; value: string; hint: string; title?: string }> = [
+  const costeTooltip =
+    historico === null
+      ? operacion.costeEur === 0
+        ? 'Extracción vigente a 0 €: plantilla, caché o modelos sin coste marginal.'
+        : 'Coste de la extracción vigente: los hechos que deciden hoy.'
+      : `Vigente ${formatCosteLlm(operacion.costeEur)}. Histórico ${formatEur(historico, 2)} (runs anteriores y relecturas).`
+
+  const stats: Array<{ label: string; value: string; unit?: string; tooltip: string }> = [
     {
       label: 'Ritmo',
-      value:
-        operacion.ficherosPorSegundo === null ? '—' : `${String(operacion.ficherosPorSegundo).replace('.', ',')} ficheros/s`,
-      hint: ventana
-        ? `${formatNumber(ventana.ficheros)} ficheros en ${formatSeconds(ventana.segundos)} (última pasada)`
-        : 'velocidad de la última pasada',
-      title: ventana ? `Ingest/extract desde ${formatDateTime(ventana.desde)} hasta ${formatDateTime(ventana.hasta)}` : undefined,
+      value: formatRitmo(operacion.ficherosPorSegundo),
+      unit: 'ficheros/s',
+      tooltip: ventana ? formatVentana(ventana) : 'Velocidad de la última pasada de ingest/extract.',
     },
     {
       label: 'Coste LLM',
-      value: formatEur(operacion.costeEur, 2),
-      hint: historico === null ? 'extracción vigente' : `extracción vigente · ${formatEur(historico, 2)} acumulado`,
-      title: historico === null ? undefined : 'El acumulado incluye runs anteriores y relecturas; no es el coste de las decisiones de hoy.',
+      value: formatCosteLlm(operacion.costeEur),
+      tooltip: costeTooltip,
     },
-    { label: 'Con LLM', value: formatPercent(operacion.pctLlm), hint: 'el resto salió de plantilla o caché' },
-    { label: 'Reintentos', value: formatNumber(operacion.reintentos), hint: 'ERP u otras etapas que tuvieron que repetir' },
+    {
+      label: 'Con LLM',
+      value: operacion.pctLlm === null ? '—' : formatPercent(operacion.pctLlm),
+      tooltip: 'Ficheros cuya extracción tocó el LLM (texto o visión). El resto salió de plantilla o caché.',
+    },
+    {
+      label: 'Reintentos',
+      value: formatNumber(operacion.reintentos),
+      tooltip: 'Eventos con intento > 1: ORA-00600, 429 u otras etapas que tuvieron que repetir.',
+    },
   ]
   /** Sólo se enseña el reparto por lote cuando hay más de uno: con la Caja sola el total ya lo dice. */
   const lotes = panel.porLote.length > 1 || panel.porLote.some((lote) => lote.lote !== 1) ? panel.porLote : []
-  /** Si conviven dos normas (v3 y v4 el sábado), el chip lo dice y el tooltip reparte. */
-  const normas = versiones.normas.length > 1 ? versiones.normas : []
-  const versionChips: Array<{ label: string; title?: string }> = [
-    {
-      label: normas.length ? `Norma ${normas.map((item) => item.norma).join(' + ')}` : `Norma ${versiones.norma ?? '—'}`,
-      title: normas.length ? normas.map((item) => `${item.norma}: ${formatNumber(item.ficheros)} ficheros`).join(' · ') : undefined,
-    },
-    { label: 'Excel proveedores', title: `Maestro ${shortHash(versiones.maestro, 12)}` },
-    { label: `${ERP_NOMBRE} · ${versiones.erp ?? '—'}` },
-  ]
 
   return (
-    <Card className="overflow-hidden">
-      <div className="border-b border-[#e5e8e3] bg-[#fbfcfa] px-5 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-[17px] font-semibold tracking-[-0.015em]">Ficheros</h2>
-          <div className="flex items-center gap-4">
-            {lotes.length > 0 && (
-              <div className="hidden flex-wrap justify-end gap-1.5 sm:flex">
-                {lotes.map((lote) => (
-                  <span
-                    key={lote.lote}
-                    className="rounded-full border border-[#e1e7e2] bg-white px-2 py-0.5 text-[12px] text-[#68736d] tabular-nums"
-                  >
-                    {lote.lote === 1 ? 'Caja' : `Lote ${lote.lote} ·`} {formatNumber(lote.ficheros)}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="text-right">
-              <p className="text-[30px] font-bold leading-none tracking-[-0.06em] tabular-nums">
-                {formatNumber(decididos)}
-                <span className="text-[18px] text-[#9aa39e]">/{formatNumber(panel.ficheros)}</span>
-              </p>
-              <p className="mt-1 text-[12px] text-[#89928c]">con decisión vigente</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[13px] font-semibold text-[#64736b]">Resultado de la norma</p>
-          <div className="flex flex-wrap gap-1.5">
-            {versionChips.map((chip) => (
-              <span
-                key={chip.label}
-                title={chip.title}
-                className="rounded-md bg-[#f3f5f1] px-1.5 py-0.5 text-[12px] text-[#68736d]"
-              >
-                {chip.label}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {TILES.map((tile) => (
-            <Link
-              key={tile.estado}
-              href={`/invoices?estado=${tile.estado}`}
-              aria-label={`${tile.pill}: ${panel.porEstado[tile.estado]} ficheros. Abrir la cola filtrada.`}
-              className={`rounded-2xl border ${tile.border} bg-white p-4 ${tile.shadow} transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(30,80,60,0.09)] active:translate-y-0`}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${tile.iconClass}`}>
-                  {tile.icon}
-                </span>
-                <p
-                  className={`min-w-0 flex-1 truncate text-[20px] font-bold leading-none tracking-[-0.04em] tabular-nums transition-colors ${tile.valueClass}`}
+    <Card className="overflow-visible">
+      <div className="flex items-center justify-between gap-4 px-5 pt-5">
+        <div>
+          <h2 className="text-[17px] font-semibold tracking-[-0.02em]">Ficheros</h2>
+          {lotes.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {lotes.map((lote) => (
+                <span
+                  key={lote.lote}
+                  className="rounded-full border border-[#e1e7e2] bg-[#fbfcfa] px-2 py-0.5 text-[12px] text-[#68736d] tabular-nums"
                 >
-                  {formatNumber(panel.porEstado[tile.estado])}
-                </p>
-                <span className={`shrink-0 rounded-full px-2 py-1 font-mono text-[11px] font-semibold ${tile.iconClass}`}>
-                  {tile.pill}
+                  {lote.lote === 1 ? 'Caja' : `Lote ${lote.lote}`} · {formatNumber(lote.ficheros)}
                 </span>
-              </div>
-              <p className={`mt-3 text-[13px] font-semibold ${tile.labelClass}`}>{tile.label}</p>
-            </Link>
-          ))}
+              ))}
+            </div>
+          )}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-[#edf0ec] pt-4 sm:grid-cols-4">
+        <p className="leading-none">
+          <span className="text-[34px] font-semibold tracking-[-0.06em] text-[#176d59] tabular-nums">
+            {formatNumber(decididos)}
+          </span>
+          <span className="text-[16px] font-medium text-[#9aa39e] tabular-nums">
+            {' '}
+            / {formatNumber(panel.ficheros)}
+          </span>
+        </p>
+      </div>
+
+      <div className="px-5 pb-5 pt-4">
+        <div className="grid grid-cols-2 gap-3">
+          {TILES.map((tile) => {
+            const count = panel.porEstado[tile.estado]
+            const share = shareOf(count, panel.ficheros)
+            const tone = tile.estado === 'PENDIENTE' && count > 0 ? 'warn' : tile.tone
+            return (
+              <MetricCard
+                key={tile.estado}
+                href={`/invoices?estado=${tile.estado}`}
+                label={tile.label}
+                value={formatNumber(count)}
+                glow={tile.glow}
+                percent={{ value: share, tone, caption: 'del total' }}
+                tooltip={`${tile.hint} · ${formatNumber(count)} de ${formatNumber(panel.ficheros)}. Abrir la cola filtrada.`}
+                ariaLabel={`${tile.label}: ${formatNumber(count)} ficheros (${formatPercent(share)} del total). Abrir la cola filtrada.`}
+              />
+            )
+          })}
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 border-t border-[#edf0ec] pt-3.5 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="min-w-0" title={stat.title}>
+            <div key={stat.label} className="group relative z-0 min-w-0 hover:z-20">
               <p className="text-[12px] text-[#8b9790]">{stat.label}</p>
-              <p className="mt-0.5 text-[16px] font-bold tracking-[-0.03em] text-[#233f35] tabular-nums">{stat.value}</p>
-              <p className="mt-0.5 text-[12px] leading-4 text-[#9aa39e]">{stat.hint}</p>
+              <p className="mt-1 flex items-baseline gap-1.5 text-[#17211e]">
+                <span className="text-[18px] font-semibold leading-none tracking-[-0.03em] tabular-nums">
+                  {stat.value}
+                </span>
+                {stat.unit ? <span className="text-[12px] text-[#8b9790]">{stat.unit}</span> : null}
+              </p>
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] rounded-lg bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white opacity-0 shadow-[0_8px_24px_rgba(23,33,30,0.28)] transition duration-150 group-hover:opacity-100"
+              >
+                {stat.tooltip}
+              </span>
             </div>
           ))}
         </div>

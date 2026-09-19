@@ -4,11 +4,11 @@ import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronDown, Database, FileInput, Scale, ScanText, Send, ShieldCheck } from 'lucide-react'
 import type { Etapa, PasoTraza } from '@/lib/types'
-import { ETAPA_LABELS, formatDateTime, formatEur, formatMs, formatTime } from '@/lib/format'
+import { describirEvidencia, describirPasoEvento, frase, formatDateTime, formatTime, resultadoFrase, tituloEvento, tituloRegla } from '@/lib/format'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { EmptyState } from '@/components/ui/states'
 import { EventoBadge } from '@/components/invoices/badges'
-import { ficheroHref } from '@/components/invoices/InvoiceTable'
+import { ficheroHref } from '@/lib/routes'
 
 const ETAPA_ICONS: Record<Etapa, typeof FileInput> = {
   ingest: FileInput,
@@ -39,23 +39,6 @@ function nivel(paso: PasoTraza): Nivel {
 }
 
 const PAGE_SIZE = 20
-
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  if (value === null || value === undefined || value === '') return null
-  return (
-    <div className="grid gap-1 sm:grid-cols-[120px_1fr] sm:gap-3">
-      <dt className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#7b8981]">{label}</dt>
-      <dd className="text-[13px] leading-5 break-words text-[#52605a]">{value}</dd>
-    </div>
-  )
-}
-
-function evidenciaValue(value: unknown): string {
-  if (value === null || value === undefined) return '—'
-  if (Array.isArray(value)) return value.length ? value.join(', ') : '—'
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
 
 /**
  * La Chain of Work de Albertitos: cada paso es un evento de una etapa del pipeline (con latencia,
@@ -123,27 +106,25 @@ export function ChainOfWork({
           let badge: ReactNode
           let meta: string[]
           let body: string | null
+          let extra: string[] = []
 
           if (paso.tipo === 'motivo') {
             const { motivo } = paso
-            title = `${motivo.regla_id} · ${motivo.ok ? 'se cumple' : 'no se cumple'}`
+            title = `${tituloRegla(motivo.regla_id)} ${motivo.ok ? 'se cumple' : 'no se cumple'}`
             badge = (
               <StatusBadge tone={motivo.ok ? 'green' : motivo.evidencia.no_pagar ? 'red' : 'yellow'}>
                 {motivo.ok ? 'Cumple' : 'Incumple'}
               </StatusBadge>
             )
             meta = [when(paso.ts), `Norma ${paso.norma_version}`]
-            body = motivo.detalle
+            body = frase(motivo.detalle)
+            extra = describirEvidencia(motivo.evidencia)
           } else {
             const { evento } = paso
-            title = `${ETAPA_LABELS[evento.etapa]}${evento.intento > 1 ? ` · intento ${evento.intento}` : ''}`
+            title = tituloEvento(evento)
             badge = <EventoBadge estado={evento.estado} />
-            meta = [
-              when(paso.ts),
-              evento.latencia_ms !== null ? formatMs(evento.latencia_ms) : '',
-              evento.error_codigo ?? '',
-            ].filter(Boolean)
-            body = evento.detalle
+            meta = [when(paso.ts)].filter(Boolean)
+            body = describirPasoEvento(evento)
           }
 
           return (
@@ -158,7 +139,7 @@ export function ChainOfWork({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-mono text-[14px] font-semibold">{title}</h3>
+                        <h3 className="text-[14px] font-semibold">{title}</h3>
                         {badge}
                       </div>
                       <p className="mt-1 text-[13px] text-[#8a958e]">
@@ -179,41 +160,24 @@ export function ChainOfWork({
                   {body && <p className="mt-2 text-[13px] leading-5 text-[#68736d]">{body}</p>}
                 </button>
 
-                {isOpen && (
-                  <dl className="mx-4 mb-4 flex flex-col gap-2.5 border-t border-[#edf0ec] pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                    {paso.tipo === 'motivo' ? (
+                {isOpen && (paso.tipo === 'motivo' || (showFile && paso.file_id)) && (
+                  <div className="mx-4 mb-4 flex flex-col gap-2 border-t border-[#edf0ec] pt-3 text-[13px] leading-5 text-[#52605a] animate-in fade-in slide-in-from-top-1 duration-200">
+                    {paso.tipo === 'motivo' && (
                       <>
-                        {Object.entries(paso.motivo.evidencia).map(([key, value]) => (
-                          <DetailRow key={key} label={key.replace(/_/g, ' ')} value={<span className="font-mono">{evidenciaValue(value)}</span>} />
-                        ))}
-                        {Object.keys(paso.motivo.evidencia).length === 0 && <DetailRow label="Evidencia" value="—" />}
-                        <DetailRow label="Resultado" value={`${paso.resultado} (decisión vigente)`} />
-                      </>
-                    ) : (
-                      <>
-                        <DetailRow label="Etapa" value={<span className="font-mono">{paso.evento.etapa}</span>} />
-                        <DetailRow label="Estado" value={<span className="font-mono">{paso.evento.estado}</span>} />
-                        <DetailRow label="Intento" value={String(paso.evento.intento)} />
-                        <DetailRow label="Latencia" value={formatMs(paso.evento.latencia_ms)} />
-                        {(paso.evento.tokens_in !== null || paso.evento.tokens_out !== null) && (
-                          <DetailRow label="Tokens" value={`${paso.evento.tokens_in ?? 0} entrada · ${paso.evento.tokens_out ?? 0} salida`} />
-                        )}
-                        {paso.evento.coste_eur !== null && <DetailRow label="Coste" value={formatEur(paso.evento.coste_eur, 5)} />}
-                        <DetailRow label="Error" value={paso.evento.error_codigo} />
-                        <DetailRow label="Versión" value={paso.evento.version} />
+                        {extra.length > 0 ? extra.map((linea) => <p key={linea}>{linea}</p>) : <p>No hay más detalle que el de la propia regla.</p>}
+                        <p>La decisión vigente es {resultadoFrase(paso.resultado)}.</p>
                       </>
                     )}
                     {showFile && paso.file_id && (
-                      <DetailRow
-                        label="Fichero"
-                        value={
-                          <Link href={ficheroHref(paso.file_id)} className="font-mono text-[#315d53] underline underline-offset-2">
-                            {paso.file_id}
-                          </Link>
-                        }
-                      />
+                      <p>
+                        Corresponde a{' '}
+                        <Link href={ficheroHref(paso.file_id)} className="font-medium text-[#315d53] underline underline-offset-2">
+                          {paso.file_id}
+                        </Link>
+                        .
+                      </p>
                     )}
-                  </dl>
+                  </div>
                 )}
               </div>
             </li>

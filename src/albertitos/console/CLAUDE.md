@@ -15,7 +15,7 @@ uv run python -m albertitos.console.api  # http://127.0.0.1:8000  (sin BD sólo 
 cd console-web && pnpm dev               # http://localhost:3000
 ```
 `console-web/.env.local`: `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` y `NEXT_PUBLIC_USE_MOCK=false` (hacen falta las dos).
-La barra lateral dice siempre de dónde salen los datos: *Datos de ejemplo* (mock) · *BD real · N ficheros* · *Puente sin BD* · *Puente apagado*.
+La barra lateral dice siempre de dónde salen los datos: *Datos de ejemplo* (mock) · *Caja de Alberto · N facturas* · *Aún no hay Caja* · *Sin conexión*.
 
 BD realista sin LLM (así se probó el puente el sábado; la BD queda en `dist/`, gitignored):
 ```

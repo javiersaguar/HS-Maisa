@@ -28,6 +28,3 @@ export const ERP_NOMBRE = 'ERP 2009'
 
 /** Refresco en segundo plano de las superficies "en vivo": panel y etapas. */
 export const LIVE_POLL_INTERVAL_MS = 10_000
-
-/** Comando que recalcula decisiones cuando cambia norma, maestro o ERP. La consola no decide. */
-export const REPROCESS_COMMAND = 'albertitos reprocess --impacted'

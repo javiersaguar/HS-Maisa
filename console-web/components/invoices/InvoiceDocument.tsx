@@ -80,10 +80,12 @@ export function InvoiceDocument({
             +
           </button>
         </div>
-        <span className="min-w-0 truncate font-mono text-[12px] text-[#8a958e]" title={fichero.file_id}>
+        <span className="min-w-0 truncate text-[12px] text-[#8a958e]" title={fichero.file_id}>
           {fichero.file_id}
-          {fichero.paginas ? ` · ${fichero.paginas} pág.` : ''}
-          {fichero.tiene_texto === false ? ' · escaneada' : ''}
+          {fichero.paginas
+            ? ` · ${fichero.paginas === 1 ? '1 página' : `${fichero.paginas} páginas`}`
+            : ''}
+          {fichero.tiene_texto === false ? ', escaneada' : fichero.tiene_texto ? ', con texto' : ''}
         </span>
         <button
           onClick={onToggleHighlight}

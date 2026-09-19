@@ -3,11 +3,11 @@ import type { EtapaResumen } from '@/lib/types'
 import { ETAPAS, ETAPA_LABELS } from '@/lib/format'
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { saludEtapa } from './EtapaIcon'
+import { etapaConIncidencia } from './EtapaIcon'
 
 /** El pipeline fijo: PDF → ingest → extract → validate → enrich → decide → emit → outcomes.jsonl. */
 export function WorkflowOverview({ etapas, ficheros }: { etapas: EtapaResumen[]; ficheros: number }) {
-  const incidencias = etapas.filter((etapa) => saludEtapa(etapa, ficheros).tone !== 'green').length
+  const incidencias = etapas.filter((etapa) => etapaConIncidencia(etapa, ficheros)).length
   const steps = ['PDF de la Caja', ...ETAPAS.map((etapa) => `${ETAPA_LABELS[etapa]} · ${etapa}`)]
 
   return (

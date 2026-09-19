@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef, useState, type KeyboardEvent } from 'react'
-import { useParams } from 'next/navigation'
+import { Suspense, useRef, useState, type KeyboardEvent } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { BRAND } from '@/lib/config'
-import { formatTime, motivoPrincipal } from '@/lib/format'
+import { describirEvento, frase, loteNombre, motivoPrincipal, resumenReglas, tituloEvento, tituloRegla } from '@/lib/format'
 import { COLORS } from '@/lib/theme'
 import { useFichero } from '@/hooks/useFicheros'
 import { useTraza } from '@/hooks/useTraza'
@@ -15,24 +15,23 @@ import { InvoiceDocument } from '@/components/invoices/InvoiceDocument'
 import { Linaje } from '@/components/invoices/Linaje'
 import { BackLink } from '@/components/ui/BackLink'
 import { Card } from '@/components/ui/Card'
-import { ErrorCard, ErrorState, LoadingCard, LoadingState, Skeleton } from '@/components/ui/states'
+import { EmptyState, ErrorCard, ErrorState, LoadingCard, LoadingState, Skeleton } from '@/components/ui/states'
 
 const TABS = ['Decisión', 'Maestro y ERP', 'Traza'] as const
 type Tab = (typeof TABS)[number]
 
-/** El segmento de la URL es el file_id codificado; el contrato lo quiere en NFC. */
-function fileIdFrom(param: string | undefined): string {
-  if (!param) return ''
-  try {
-    return decodeURIComponent(param).normalize('NFC')
-  } catch {
-    return param.normalize('NFC')
-  }
+/** `useSearchParams` exige un Suspense para que Next pueda prerenderizar la ruta. */
+export default function FicheroDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <FicheroDetail />
+    </Suspense>
+  )
 }
 
-export default function FicheroDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const fileId = fileIdFrom(id)
+function FicheroDetail() {
+  // `?file=` ya llega decodificado (ver lib/routes.ts); el contrato lo quiere en NFC.
+  const fileId = (useSearchParams().get('file') ?? '').normalize('NFC')
 
   const { data: fichero, error, loading, initialLoading, refresh } = useFichero(fileId)
   const traza = useTraza({ file_id: fileId }, { enabled: Boolean(fileId) })
@@ -53,18 +52,38 @@ export default function FicheroDetailPage() {
   }
 
   const header = (
-    <div className="mb-5">
+    <div className="mb-5 flex items-start justify-between gap-4">
       <title>{`${fileId} · ${BRAND}`}</title>
-      <BackLink href="/invoices">Volver a ficheros</BackLink>
-      <h1 className="mt-2 break-all text-[26px] font-semibold tracking-[-0.03em]">{fileId}</h1>
-      {fichero && (
-        <p className="mt-1.5 flex items-center gap-2 text-[13px] text-[#8a958e] animate-in fade-in duration-200">
-          Lote {fichero.lote}
-          <ResultadoBadge estado={fichero.estado} />
-        </p>
-      )}
+      <div className="min-w-0">
+        <h1 className="break-all text-[26px] font-semibold tracking-[-0.03em]">{fileId}</h1>
+        {fichero && (
+          <p className="mt-1.5 flex items-center gap-2 text-[13px] text-[#8a958e] animate-in fade-in duration-200">
+            Factura de {loteNombre(fichero.lote)}
+            <ResultadoBadge estado={fichero.estado} />
+          </p>
+        )}
+      </div>
+      <div className="shrink-0">
+        <BackLink href="/invoices">Volver a ficheros</BackLink>
+      </div>
     </div>
   )
+
+  if (!fileId) {
+    return (
+      <div className="px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-[1540px]">
+          {header}
+          <Card>
+            <EmptyState
+              title="Falta el fichero"
+              description="El enlace no dice qué fichero abrir (?file=). Vuelve a la lista y elige uno."
+            />
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   if (error) {
     return (
@@ -98,14 +117,48 @@ export default function FicheroDetailPage() {
 
   const { hechos, decision } = fichero
   const pasos = traza.data ?? []
-  /** Últimos eventos, del más antiguo al más nuevo, para el resumen de la pestaña Decisión. */
-  const recientes = pasos.filter((paso) => paso.tipo === 'evento').slice(-3)
+  /** Sin decisión vigente el fichero está PENDIENTE: la traza es lo único que explica por qué. */
+  const pendiente = !decision
+  /** Eventos, del más antiguo al más nuevo: los 3 últimos o, si está PENDIENTE, todos. */
+  const eventos = pasos.filter((paso) => paso.tipo === 'evento')
+  const recientes = pendiente ? eventos : eventos.slice(-3)
   const incidencia = [...pasos].reverse().find((paso) => paso.tipo === 'evento' && paso.evento.estado !== 'ok')
+  const pasosRecientes = (
+    <>
+      <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha pasado con este fichero</h3>
+      {traza.error ? (
+        <p className="mt-2 text-[13px] text-[#bd3434]">
+          No se han podido cargar los pasos.{' '}
+          <button onClick={traza.refresh} className="min-h-0 font-semibold underline">
+            Reintentar
+          </button>
+        </p>
+      ) : !traza.data ? (
+        <div className="mt-2 flex flex-col gap-3 border-l-2 border-[#e7e9e5] pl-3">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-8 w-2/3" />
+        </div>
+      ) : recientes.length === 0 ? (
+        <p className="mt-2 text-[13px] text-[#9aa39e]">Todavía no hay pasos registrados.</p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-4 border-l-2 border-[#b9dfd0] pl-3 text-[14px]">
+          {recientes.map((paso) =>
+            paso.tipo === 'evento' ? (
+              <div key={paso.id} className="animate-in fade-in slide-in-from-left-1 duration-300">
+                <b className="font-semibold text-[#17211e]">{tituloEvento(paso.evento)}</b>
+                <p className="mt-0.5 text-[13px] leading-5 text-[#68736d]">{describirEvento(paso.evento)}</p>
+              </div>
+            ) : null,
+          )}
+        </div>
+      )}
+    </>
+  )
   const chainHeading = (
     <div>
       <h2 className="text-[22px] font-semibold tracking-[-0.025em]">Traza</h2>
       <p className="mt-1 text-[13px] text-[#8a958e]">
-        Hechos → maestro → asiento ERP → reglas con evidencia → resultado. Con latencias, reintentos, tokens y coste.
+        Cómo se ha leído, cruzado y decidido este fichero, paso a paso.
       </p>
     </div>
   )
@@ -166,17 +219,25 @@ export default function FicheroDetailPage() {
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
                         <span className="text-[13px] text-[#7d8580]">
-                          {decision ? `${decision.motivos.filter((motivo) => !motivo.ok).length} de ${decision.motivos.length} reglas incumplidas` : 'sin decisión vigente'}
+                          {decision ? resumenReglas(decision) : 'Todavía no hay decisión'}
                         </span>
                       </div>
                       <p className="mt-3 text-[13px] leading-5 text-[#52605a]">
                         {decision
                           ? motivoPrincipal(fichero)
                           : incidencia?.tipo === 'evento'
-                            ? `${incidencia.evento.error_codigo ?? incidencia.evento.estado}: ${incidencia.evento.detalle ?? ''}`
-                            : 'El fichero no tiene decisión vigente.'}
+                            ? describirEvento(incidencia.evento)
+                            : 'Este fichero todavía no tiene una decisión.'}
                       </p>
+                      {pendiente && (
+                        <p className="mt-2 text-[12px] leading-5 text-[#7d8580]">
+                          Está <b className="font-semibold">PENDIENTE</b>: no hay hechos validados, así que la norma no
+                          se ha aplicado y nunca se paga. Abajo, lo que sí ha pasado.
+                        </p>
+                      )}
                     </div>
+
+                    {pendiente && pasosRecientes}
 
                     <Linaje decision={decision} />
 
@@ -192,13 +253,13 @@ export default function FicheroDetailPage() {
                       </div>
                     )}
 
-                    <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Reglas de la norma</h3>
+                    <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha comprobado la norma</h3>
                     {decision ? (
                       <ul className="mt-2 overflow-hidden rounded-lg border border-[#dfe4de] text-[13px] leading-5 text-[#68736d]">
                         {decision.motivos.map((motivo) => (
                           <li
                             key={motivo.regla_id}
-                            className="grid grid-cols-[10px_52px_minmax(0,1fr)] items-start gap-2 border-b border-[#edf0ec] bg-[#fafbf9] px-3 py-2 last:border-b-0"
+                            className="grid grid-cols-[10px_minmax(0,1fr)] items-start gap-2 border-b border-[#edf0ec] bg-[#fafbf9] px-3 py-2 last:border-b-0"
                           >
                             <span
                               aria-label={motivo.ok ? 'Cumple' : motivo.evidencia.no_pagar ? 'No pagar' : 'Escalar'}
@@ -207,8 +268,10 @@ export default function FicheroDetailPage() {
                                 background: motivo.ok ? COLORS.mint : motivo.evidencia.no_pagar ? COLORS.dangerSoft : '#c9a800',
                               }}
                             />
-                            <b className="font-mono text-[12px] text-[#17211e]">{motivo.regla_id}</b>
-                            <span>{motivo.detalle}</span>
+                            <span>
+                              <b className="font-semibold text-[#17211e]">{tituloRegla(motivo.regla_id)}.</b>{' '}
+                              {frase(motivo.detalle)}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -223,7 +286,7 @@ export default function FicheroDetailPage() {
 
                     {hechos && hechos.avisos.length > 0 && (
                       <>
-                        <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Avisos al leer el PDF</h3>
+                        <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Al leer el PDF se vio</h3>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {hechos.avisos.map((aviso) => (
                             <AvisoChip key={aviso} aviso={aviso} />
@@ -232,41 +295,14 @@ export default function FicheroDetailPage() {
                       </>
                     )}
 
-                    <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Hechos extraídos</h3>
+                    <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Datos leídos del PDF</h3>
                     <ExtractedFields
                       hechos={hechos}
                       activeField={activeField}
                       onSelect={(key) => setActiveField(activeField === key ? null : key)}
                     />
 
-                    <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Últimos eventos</h3>
-                    {traza.error ? (
-                      <p className="mt-2 text-[13px] text-[#bd3434]">
-                        Traza no disponible: {traza.error.message}{' '}
-                        <button onClick={traza.refresh} className="min-h-0 font-semibold underline">
-                          Reintentar
-                        </button>
-                      </p>
-                    ) : !traza.data ? (
-                      <div className="mt-2 flex flex-col gap-3 border-l-2 border-[#e7e9e5] pl-3">
-                        <Skeleton className="h-8 w-3/4" />
-                        <Skeleton className="h-8 w-2/3" />
-                      </div>
-                    ) : recientes.length === 0 ? (
-                      <p className="mt-2 text-[13px] text-[#9aa39e]">Sin eventos registrados todavía.</p>
-                    ) : (
-                      <div className="mt-2 flex flex-col gap-4 border-l-2 border-[#b9dfd0] pl-3 text-[14px]">
-                        {recientes.map((paso) =>
-                          paso.tipo === 'evento' ? (
-                            <div key={paso.id} className="animate-in fade-in slide-in-from-left-1 duration-300">
-                              <b className="font-mono">{paso.evento.etapa}</b>
-                              <span className="ml-2 text-[#a0a7a2]">{formatTime(paso.ts)}</span>
-                              <p className="text-[#9aa39e]">{paso.evento.detalle ?? paso.evento.estado}</p>
-                            </div>
-                          ) : null,
-                        )}
-                      </div>
-                    )}
+                    {!pendiente && pasosRecientes}
                   </>
                 )}
 

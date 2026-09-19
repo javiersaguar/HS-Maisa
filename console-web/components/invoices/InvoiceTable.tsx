@@ -4,10 +4,9 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Fichero } from '@/lib/types'
 import { formatAmount, initials, motivoPrincipal } from '@/lib/format'
+import { ficheroHref } from '@/lib/routes'
 import { useRowLink } from '@/hooks/useRowLink'
 import { ResultadoBadge } from './badges'
-
-export const ficheroHref = (fileId: string) => `/invoices/${encodeURIComponent(fileId)}`
 
 export function InvoiceTable({
   ficheros,
