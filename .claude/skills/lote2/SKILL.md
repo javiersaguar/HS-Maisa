@@ -120,6 +120,27 @@ Sólo con ambas auditorías sin rojo, ejecutar `/entrega`. La primera controla h
 
 El rojo heredado de `scan_025.pdf` requiere reextracción cacheada y reprocesado. Si cambia el resultado, Mónica debe resolver la política antes de la entrega real. No corregir JSONL a mano ni silenciar la auditoría.
 
+**Mientras `package` no ejecute la auditoría por sí mismo** (hoy sólo valida el JSONL: la puerta de G1 espera a que la auditoría real salga verde o a un `--aceptar-rojo` en `package`), quien entrega pasa **obligatoriamente** `make publicar` en seco o `uv run python scripts/auditoria_entrega.py` antes de `/entrega`.
+
+## 6. Si a las 07:30 del domingo queda algún PENDIENTE (último recurso, ADR-0009)
+
+Un solo PDF del lote 2 sin decisión y `package` se niega: no hay `outcomes_lote2.jsonl` y la entrega entera es NO APTA (540 de 540 o nada). La salida prevista es la contingencia: **ESCALAR explícito, registrado y reversible**. No es un atajo: antes se intenta de verdad.
+
+1. **Reintentar de verdad.** `uv run albertitos chaos --off` (con `ALBERTITOS_DB` de la BD real) · `uv run albertitos extract --workers 4` (sólo los pendientes) · con el modelo de respaldo configurado si el principal no contesta (`ALBERTITOS_MODELO_TEXTO_FALLBACK`; el de visión no existe a propósito, ADR-0004) · `uv run albertitos reprocess --impacted --erp <v> --norma <n> --fecha-corte 2026-09-18`. Si con eso entran, no hay contingencia.
+2. **En seco:** `uv run python scripts/contingencia.py --lote 2`. Dice qué ficheros quedan, su último evento, cuántos intentos tuvieron y cuáles fueron reales o simulados. Sale 1 si queda alguno.
+3. **Aplicar, con el porqué:** `uv run python scripts/contingencia.py --lote 2 --aplicar --motivo "<qué falló, desde cuándo y qué se reintentó>" --fecha-corte 2026-09-18` (y `--erp`/`--norma` si no son los de por defecto).
+4. **Auditoría:** `uv run python scripts/auditoria_entrega.py …` → la contingencia sale en ÁMBAR con su motivo; ningún rojo nuevo.
+5. **`make publicar` en seco**, leerlo, y `make publicar ARGS=--publicar`. Las líneas llevan `"regla":"contingencia.C1"`.
+6. Si el proveedor vuelve **antes** de la entrega: `extract --workers 4` + `reprocess --impacted` la deshacen solos (la contingencia queda con `vigente=0`), y otra vez auditoría y `make publicar`. Si los hechos llegan y no se reprocesa, la auditoría sale ROJA (`decision_vieja`): no se entrega así.
+
+Las cuatro condiciones de Miguel (19/09, 09:10), tal cual; el script las hace cumplir:
+- **C1 · Manual y último recurso.** Ni `run` ni `package` la aplican nunca. Sólo `--aplicar --motivo`, después de reintentar de verdad (caos apagado, extract de los pendientes, modelo de respaldo). Se niega con el caos encendido en esa BD y con cualquier fichero sin ningún intento real de extracción, y dice qué comando lanzar antes. Enseña los intentos de cada fichero.
+- **C2 · Sólo ESCALAR, sólo ficheros SIN decisión vigente y nunca en el lote 1** (con `--lote 1` se niega siempre: si ahí falta algo, es otro problema).
+- **C3 · Reversión probada por los dos caminos**, `reprocess --impacted` y `run` entero: al llegar los hechos, la contingencia queda con `vigente=0` y la vigente es la de la norma.
+- **C4 · Que se vea** en tres sitios: `"regla":"contingencia.C1"` en la línea entregada, un evento `decide` con `"contingencia": true` y ÁMBAR en la auditoría.
+
+**Mientras ADR-0009 esté en *propuesto* (falta el sí de Mónica), nadie la aplica a la BD real.** Ensayo de punta a punta, medido: `docs/adr/0009-contingencia-escalar-sin-hechos.md` (Evidencia).
+
 ## Ensayo aislado (receta completa en ENSAYO-LOTE2.md)
 
 - Backup SQLite desde origen sólo lectura a `dist/ensayo/ensayo.db`; no sobrescribir un ensayo ajeno.
