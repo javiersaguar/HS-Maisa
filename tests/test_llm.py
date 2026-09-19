@@ -885,3 +885,34 @@ def test_el_respaldo_se_intenta_aunque_el_breaker_este_abierto(bd, tmp_path, mon
         "SELECT detalle FROM eventos WHERE etapa='extract' AND estado='ok'"
     ).fetchone()[0]
     assert "glm5.3-flash" in detalle  # la traza dice qué modelo respondió
+
+
+def test_el_fallo_dice_que_modelo_fallo_y_que_no_hay_respaldo(bd, monkeypatch):
+    """La contingencia (ADR-0009, C1) tiene que poder enseñar qué se intentó: va delante del detalle."""
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.delenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", raising=False)
+    monkeypatch.setattr(llm.time, "sleep", lambda _s: None)
+    Http = _http_falso([("deepseek-v4-flash", _respuesta_rota())])
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat")
+    with pytest.raises(llm.ErrorLLM) as e:
+        c.extraer(sha256="e" * 64, file_id=TEXTO, texto="factura de prueba")
+    assert str(e.value).startswith(
+        f"{e.value.codigo}: [modelo deepseek-v4-flash · sin respaldo configurado]"
+    )
+
+
+def test_si_falla_tambien_el_respaldo_lo_dice(bd, monkeypatch):
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO", "deepseek-v4-flash")
+    monkeypatch.setenv("ALBERTITOS_MODELO_TEXTO_FALLBACK", "glm5.3-flash")
+    monkeypatch.setattr(llm.time, "sleep", lambda _s: None)
+    Http = _http_falso(
+        [("deepseek-v4-flash", _respuesta_rota()), ("glm5.3-flash", _respuesta_rota())]
+    )
+    monkeypatch.setattr(llm.ClienteLLM, "_http", lambda self: Http())
+    c = llm.ClienteLLM(bd, proveedor="openai_compat")
+    with pytest.raises(llm.ErrorLLM) as e:
+        c.extraer(sha256="f" * 64, file_id=TEXTO, texto="factura de prueba")
+    assert "[respaldo glm5.3-flash tras" in str(e.value)
+    assert "del principal deepseek-v4-flash]" in str(e.value)
+    assert Http.peticiones == ["deepseek-v4-flash"] * 3 + ["glm5.3-flash"]

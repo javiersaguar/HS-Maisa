@@ -317,3 +317,24 @@ def test_c3_se_revierte_con_run_entero(bd, monkeypatch):
     assert r.extraidos == 2 and r.ok, r.texto()
     for fid in ("L2-scan_002.pdf", "L2-scan_004.pdf"):
         _revertida(bd["conn"], fid)
+
+
+def test_describe_que_modelo_fallo_si_el_evento_lo_dice():
+    """Los fallos nuevos llevan "[modelo … · …]" delante (llm.py); los viejos no, y se dice sin suponer."""
+    anotado = cont.Pendiente("L2-x.pdf", "a" * 64, 2, True)
+    anotado.intentos.append(
+        cont.Intento(
+            "2026-09-19T18:10:00",
+            "pendiente",
+            "LLM-HTTP-503",
+            "LLM-HTTP-503: [respaldo glm5.3-flash tras LLM-HTTP-503 del principal deepseek-v4-flash] caído",
+        )
+    )
+    texto = "\n".join(cont.describir(anotado))
+    assert "respaldo glm5.3-flash tras LLM-HTTP-503 del principal deepseek-v4-flash" in texto
+
+    viejo = cont.Pendiente("L2-y.pdf", "b" * 64, 2, True)
+    viejo.intentos.append(
+        cont.Intento("2026-09-18T19:07", "pendiente", "LLM-RED", "LLM-RED: sin red")
+    )
+    assert "estos eventos no lo dicen" in "\n".join(cont.describir(viejo))

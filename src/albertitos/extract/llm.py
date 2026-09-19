@@ -244,8 +244,21 @@ class ErrorLLM(Exception):
     def __init__(self, codigo: str, detalle: str = "", espera: float | None = None) -> None:
         super().__init__(f"{codigo}: {detalle}")
         self.codigo = codigo
+        self.detalle = detalle
         self.espera = espera  # segundos pedidos por el proveedor (cabecera Retry-After), si los dio
         self.intentos = 1  # intentos consumidos antes de rendirse (lo fija _llamar): va al evento
+
+
+def _con_modelos(e: ErrorLLM, contexto: str) -> ErrorLLM:
+    """El mismo fallo, con qué modelo falló y si se probó el respaldo DELANTE del detalle.
+
+    Va delante porque el evento de extract recorta el detalle a 200 caracteres. Sin esto, un PENDIENTE
+    no decía si el respaldo se había intentado, y la contingencia (ADR-0009, condición C1 de Miguel:
+    "después de reintentar de verdad, con el modelo de respaldo") no podía demostrarlo.
+    """
+    nuevo = ErrorLLM(e.codigo, f"[{contexto}] {e.detalle}", espera=e.espera)
+    nuevo.intentos = e.intentos
+    return nuevo
 
 
 class ClienteLLM:
@@ -425,7 +438,11 @@ class ClienteLLM:
         except ErrorLLM as e:
             respaldo = self._modelo_respaldo(png is not None)
             if respaldo is None or e.codigo in ("LLM-CONFIG", "LLM-AUTH", "LLM-PRESUPUESTO"):
-                raise  # sin respaldo configurado, o un fallo que el respaldo tampoco arregla
+                # sin respaldo configurado, o un fallo que el respaldo tampoco arregla
+                por = (
+                    "sin respaldo configurado" if respaldo is None else "el respaldo no lo arregla"
+                )
+                raise _con_modelos(e, f"modelo {modelo} · {por}") from e
             log.warning(
                 "%s agotó reintentos (%s); pruebo el respaldo %s", modelo, e.codigo, respaldo
             )
@@ -447,9 +464,13 @@ class ClienteLLM:
                     "modelo": respaldo,
                     "respaldo": True,
                 }
-            respuesta = self._llamar(
-                respaldo, texto=texto, png=png, intentos=1, marca=marca, saltar_breaker=True
-            )
+            try:
+                respuesta = self._llamar(
+                    respaldo, texto=texto, png=png, intentos=1, marca=marca, saltar_breaker=True
+                )
+            except ErrorLLM as e2:
+                contexto = f"respaldo {respaldo} tras {e.codigo} del principal {modelo}"
+                raise _con_modelos(e2, contexto) from e2
             modelo = respaldo
             respuesta["uso"]["respaldo"] = True
         uso = respuesta["uso"]

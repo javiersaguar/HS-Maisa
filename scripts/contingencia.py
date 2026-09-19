@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sqlite3
 import sys
 from collections import Counter
@@ -248,10 +249,20 @@ def describir(p: Pendiente) -> list[str]:
         f"{sum(i.simulado for i in p.intentos)} · primero {p.intentos[0].ts[:16]} · último "
         f"{p.intentos[-1].ts[:16]} · " + ", ".join(f"{c}×{n}" for c, n in codigos.items())
     )
-    lineas.append(
-        "     modelo y respaldo: los eventos de fallo no dicen qué modelo falló ni si se probó el respaldo"
-        f" (respaldo configurado para este camino: {_respaldo_configurado(p)})"
-    )
+    # extract/llm.py pone delante del detalle "[modelo X · sin respaldo…]" o "[respaldo Y tras … del principal X]"
+    # (desde el 19/09 09:40). Los eventos anteriores no lo llevan: se dice, no se supone.
+    contextos = [
+        m.group(1)
+        for i in reales
+        if (m := re.search(r"\[([^\]]*(?:modelo|respaldo)[^\]]*)\]", i.detalle))
+    ]
+    if contextos:
+        lineas.append(f"     modelo y respaldo (último intento real): {contextos[-1]}")
+    else:
+        lineas.append(
+            "     modelo y respaldo: estos eventos no lo dicen (son anteriores a que llm.py lo anote)"
+            f" · respaldo configurado para este camino: {_respaldo_configurado(p)}"
+        )
     return lineas
 
 

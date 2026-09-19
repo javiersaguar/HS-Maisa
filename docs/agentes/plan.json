@@ -37,7 +37,9 @@
       "docs/agentes/partes/PARTE-06.md",
       "scripts/agentes_check.py",
       "docs/PLAN-MONICA.md",
-      "CLAUDE.md"
+      "CLAUDE.md",
+      "src/albertitos/extract/llm.py",
+      "tests/test_llm.py"
     ]
   }
 }
