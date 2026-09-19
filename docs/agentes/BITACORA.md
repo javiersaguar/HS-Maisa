@@ -491,3 +491,28 @@ Plantilla (cópiala tal cual):
 - **Consecuencias hechas ya:** regla 6 de `CLAUDE.md` actualizada con el texto que pidió Miguel.
 - **PIDO A G1:** escribe `docs/adr/0009-*.md` directamente en estado **aceptado** (Miguel y Mónica, 19/09 09:00), con las cuatro condiciones en «Decisión», y así en `docs/adr/README.md`. Lo demás de tu prompt no cambia. **Sigue sin aplicarse a la BD real**: sólo en el lote 2, a la hora de entregar y si hace falta.
 - **Sigue pendiente de Mónica:** la respuesta **A** (`DOCUMENTO_SUPERPUESTO` en `ANOMALIAS_HUMANO`), que desbloquea scan_025, y la **B** (los 5 PAGAR reconciliados).
+
+### G2 · ERP medido y parches listos para Miguel
+- Sin ERP, puerto reservado sin escuchar, valores por defecto: 8 consultas / 7 reintentos en 5,619 s. ErrorERP.codigo=ERP-NO-RESPONDE; mensaje en una línea con URL, make erp / make erp-fast, ALBERTITOS_ERP_URL y snapshot anterior disponible. Se conserva el backoff, no se promete fallo instantáneo. Test de 2 intentos <2 s y eventos ERP-RED conservados.
+- PIDO A Miguel (cli.py, erp_pull): sustituir la creación/descarga del cliente por este bloque; guardar_erp queda DESPUÉS, sólo si hubo éxito:
+
+```python
+    try:
+        with erp.ClienteERP(conn=conn) as cliente:
+            s = cliente.descargar_todo(tag)
+    except erp.ErrorERP as exc:
+        print(str(exc))
+        raise typer.Exit(1) from None
+    snapshot.guardar_erp(conn, s)
+```
+
+- resumen_erp(conn, version) listo en sources/snapshot.py. Sobre la BD real: v1, descargado_en=2026-09-18T19:55:36.795112+00:00, 516 asientos, 31 consultas, 3 reintentos, ORA-00600×3, latencia HTTP sumada 35 ms (no tiempo de pared). Eventos 3213..3243; atribución inferida_por_ventana, no explícita en el histórico. Las descargas nuevas guardan un enlace exacto a sus ids de evento sin cambiar ErpSnapshot; soporta descargas concurrentes.
+- PIDO A Miguel (trace): importar resumen_erp de albertitos.sources.snapshot y añadir tras obtener la decisión vigente: rprint(resumen_erp(conn, decision["erp_version"])). Versión humana equivalente: «ERP v1 · bajado 18/09 21:55 Madrid (19:55 UTC) · 516 asientos · 31 consultas · 3 reintentos (ORA-00600×3) · HTTP acumulado 35 ms · atribución histórica inferida». No usar el ejemplo ficticio 540/24 del prompt.
+- PIDO A Alfonso: hasta integrar esa línea, los reintentos se ven con uv run albertitos status o uv run albertitos bench: son el histórico (122 eventos enrich, 11 reintentos), NO todos de v1. El comando de resumen por versión estará en docs/CIFRAS.md; no consulta el ERP ni el LLM.
+
+
+### 09:40 · G2 (continuado por Javier) · cierre
+- hice: los cuatro commits de G2 (`645ecd5` ERP-NO-RESPONDE y enlace de eventos por descarga · `5c55a63` resumen_erp · `0860459` CIFRAS.md + cifras_check · `67451fe` documentos). `make check`: 389 en verde. BD real y `outcomes.jsonl` sin tocar (`5ec17aaa5045`).
+- añadido al cerrar: `cifras_check` acepta menciones históricas declaradas en CIFRAS.md (fichero + trozo literal de la línea). La de `docs/benchmark.md:44` («La cifra que usábamos antes, 0,22 ficheros/s…») es correcta: cuenta la cifra vieja como vieja. Si alguien reescribe esa frase, vuelve a saltar.
+- **PIDO A Alfonso** (`docs/plan/albertitos_plan.md:98`, resumen del ADR-0008 en el PDF que puntúa): dice «reprocesar 500 decisiones, 0,04 s». Es falso: 0,04 s fueron **2 de 500** (el diff de dos asientos, benchmark de Miguel); las **500 con índice tardan 0,11 s** (benchmark.md, Cifras). Texto propuesto: «reprocesar lo que un cambio toca (2 de 500) cuesta 0,04 s y las 500, 0,11 s». Comprueba con `uv run python scripts/cifras_check.py`: tiene que decir OK.
+- **Siguen en pie** (entrada «ERP medido» de arriba): PIDO A Miguel, el bloque de `erp pull` que captura ErrorERP (sin él sigue saliendo el traceback) y la línea de `resumen_erp` en `trace`. PIDO A Alfonso: hasta que Miguel la añada, los reintentos se enseñan con el comando C6 de CIFRAS.md, no con `status` (que suma todas las descargas).
