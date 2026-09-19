@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
+import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, Workflow } from 'lucide-react'
 import { BRAND, USE_MOCK } from '@/lib/config'
 import { ORIGEN_DATOS } from '@/lib/api/salud'
 import type { Etapa } from '@/lib/types'
@@ -176,9 +176,7 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
         title={collapsed ? BRAND : undefined}
         className={`flex h-[84px] shrink-0 items-center gap-3 border-b border-line ${collapsed ? 'justify-center px-0' : 'px-5'}`}
       >
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-dark text-canvas">
-          <Sparkles className="size-4" />
-        </div>
+        <img src="/logo.png" alt="" width={32} height={32} className="size-8 shrink-0" />
         {!collapsed && (
           <div className="whitespace-nowrap">
             <p className="text-[14px] font-semibold tracking-tight text-ink">{BRAND}</p>
