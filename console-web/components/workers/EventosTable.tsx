@@ -1,0 +1,58 @@
+'use client'
+
+import type { Event } from '@/lib/types'
+import { ETAPA_LABELS, formatMs, formatRelative } from '@/lib/format'
+import { useRowLink } from '@/hooks/useRowLink'
+import { EmptyState } from '@/components/ui/states'
+import { EventoBadge } from '@/components/invoices/badges'
+import { ficheroHref } from '@/components/invoices/InvoiceTable'
+
+/** Últimas filas de `eventos`. `showEtapa` añade la columna de etapa (vista general). */
+export function EventosTable({ eventos, showEtapa = false }: { eventos: Event[]; showEtapa?: boolean }) {
+  const rowLink = useRowLink()
+
+  if (!eventos.length) {
+    return <EmptyState title="Sin eventos todavía" description="Cada etapa deja al menos un evento por fichero." />
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[620px] text-left">
+        <thead>
+          <tr className="border-b border-[#e5e8e3] text-[14px] uppercase tracking-wide text-[#818b85]">
+            <th className="px-5 py-3 font-medium">Fichero</th>
+            {showEtapa && <th className="px-5 py-3 font-medium">Etapa</th>}
+            <th className="px-5 py-3 font-medium">Estado</th>
+            <th className="px-5 py-3 font-medium">Latencia</th>
+            <th className="px-5 py-3 font-medium">Detalle</th>
+            <th className="px-5 py-3 font-medium">Cuándo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {eventos.map((evento, index) => (
+            <tr
+              key={`${evento.file_id}-${evento.etapa}-${evento.intento}-${index}`}
+              {...rowLink(evento.file_id ? ficheroHref(evento.file_id) : null)}
+              className={`border-b border-[#edf0ec] text-[14px] transition-colors last:border-0 hover:bg-[#fbfcfa] ${evento.file_id ? 'cursor-pointer' : ''}`}
+            >
+              <td className="max-w-[220px] truncate px-5 py-3 font-mono text-[13px]" title={evento.file_id ?? undefined}>
+                {evento.file_id ?? '—'}
+              </td>
+              {showEtapa && <td className="px-5 py-3">{ETAPA_LABELS[evento.etapa]}</td>}
+              <td className="px-5 py-3 whitespace-nowrap">
+                <EventoBadge estado={evento.estado} />
+                {evento.intento > 1 && <span className="ml-1.5 text-[12px] text-[#9aa39e]">#{evento.intento}</span>}
+              </td>
+              <td className="px-5 py-3 text-[#64716a] tabular-nums">{formatMs(evento.latencia_ms)}</td>
+              <td className="max-w-[280px] truncate px-5 py-3 text-[13px] text-[#64716a]" title={evento.detalle ?? undefined}>
+                {evento.error_codigo ? <span className="mr-1.5 font-mono text-[#a87000]">{evento.error_codigo}</span> : null}
+                {evento.detalle ?? '—'}
+              </td>
+              <td className="px-5 py-3 whitespace-nowrap text-[#8d9891]">{formatRelative(evento.ts)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
