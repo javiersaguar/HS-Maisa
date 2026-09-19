@@ -1,7 +1,7 @@
 {
-  "ciclo": 7,
+  "ciclo": 8,
   "rama": "javier/ingesta",
-  "base": "a939c4d",
+  "base": "012e693",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -9,51 +9,27 @@
     "docs/entregas.log"
   ],
   "agentes": {
-    "G1": [
-      "src/albertitos/pipeline/auditoria.py",
-      "scripts/auditoria_entrega.py",
-      "tests/test_auditoria.py"
+    "H1": [
+      "data/fixtures/lote2_identicos/*",
+      "tests/test_identicos.py",
+      "scripts/verificar_material.py",
+      "tests/test_material.py",
+      "docs/agentes/P0-1-IDENTICOS.md",
+      ".claude/skills/lote2/SKILL.md"
     ],
-    "G2": [
-      "src/albertitos/sources/erp.py",
-      "src/albertitos/sources/snapshot.py",
-      "tests/test_erp.py",
-      "tests/test_snapshot.py",
-      "src/albertitos/sources/CLAUDE.md",
-      "scripts/cifras_check.py",
-      "tests/test_cifras.py",
-      "docs/agentes/RESILIENCIA-Y-COSTE.md",
-      "docs/agentes/ESCALA-10K.md"
+    "H2": [
+      "scripts/comparar_muestra.py",
+      "tests/test_comparar_muestra.py",
+      "docs/agentes/MUESTRA-CONTRASTE.md",
+      "data/fixtures/esperado_muestra_agente.csv"
     ],
     "Javier": [
-      "docs/agentes/PLAN-07.md",
-      "docs/agentes/partes/PARTE-06.md",
-      "scripts/agentes_check.py",
-      "docs/PLAN-MONICA.md",
-      "CLAUDE.md",
-      "src/albertitos/extract/llm.py",
-      "tests/test_llm.py",
-      "docs/ESTADO-BACKEND.md",
-      "docs/PLAN-SABADO.md",
-      "docs/reparto-backend.md",
-      "docs/hitos.md",
-      "docs/agentes/partes/PARTE-07.md",
-      "docs/adr/0009-*",
-      "docs/adr/README.md",
-      ".claude/skills/lote2/SKILL.md",
-      "scripts/contingencia.py",
-      "tests/test_contingencia.py",
-      "data/fixtures/hechos_caja.jsonl",
-      "docs/adr/0003-*",
-      "docs/agentes/KIT-DEFENSA.md",
-      "docs/CIFRAS.md",
-      "docs/agentes/AUDITORIA-ENTREGA.md"
+      "docs/agentes/PLAN-08.md"
     ],
     "Mónica": [
       "src/albertitos/rules/*",
       "tests/test_rules.py",
-      "docs/adr/0010-*",
-      "docs/adr/0011-*"
+      "data/fixtures/esperado_muestra.csv"
     ]
   }
 }
