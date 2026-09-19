@@ -17,8 +17,16 @@ def main():
     )
     parser.add_argument("--servidor", action="store_true")
     parser.add_argument("--puerto", type=int, default=8001)
+    parser.add_argument(
+        "--salud", action="store_true", help="la salud v2 (¿hay modelo y por qué no?), sin llamarlo"
+    )
     args = parser.parse_args()
-    if args.servidor:
+    if args.salud:
+        from albertitos.chat.agente import Gateway
+        from albertitos.chat.api import salud
+
+        sys.stdout.write(json.dumps(salud(args.db, Gateway()), ensure_ascii=False, indent=2) + "\n")
+    elif args.servidor:
         from albertitos.chat.api import servir
 
         sys.stdout.write(f"Chat sólo lectura en http://127.0.0.1:{args.puerto}\n")
