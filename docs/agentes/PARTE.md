@@ -89,7 +89,51 @@ sin bajar: eso es política de reintentos).
 `sources: el Excel tolera otra forma (cabeceras y hojas por nombre) y avisa de la hoja que parece la regla nueva`
 
 ## J3 · Las escaneadas del lote 2 no dependen de un solo modelo
-_(pendiente)_
+
+**Estado: HECHO.** Hay respaldo de visión recomendado con cifras propias, y el riesgo está acotado
+contra el código, no supuesto. Informe: `docs/agentes/RESPALDO-VISION.md`.
+
+### Lo que dejo hecho
+- `scripts/bench_vision_respaldo.py`: `--listar` (qué modelos ofrece el gateway) y el banco de
+  candidatos de visión, con tope duro de llamadas, caché en una BD de ensayo y la BD real en sólo
+  lectura. Compara contra dos referencias: los hechos vigentes y el maestro (verdad independiente).
+- `docs/agentes/RESPALDO-VISION.md`: tabla, recomendación, riesgo y la línea de `.env`.
+- **24 llamadas** de un tope de 30 (3 modelos × 8 escaneadas), 6 min 46 s, 0 errores, 0 desde caché.
+
+### Cifras (`uv run python scripts/bench_vision_respaldo.py --modelos qwen3.6,deepseek-v4-flash,glm5.3-flash --facturas 8 --max-llamadas 30 --sufijo j3a`)
+| Modelo | p50 | máx | tokens in/out | pedido | fecha | NIF (5 limpias) | IBAN (5 limpias) |
+|---|---|---|---|---|---|---|---|
+| `qwen3.6` (control) | 12,0 s | 25,8 s | 23.864 / 16.258 | 8/8 | 8/8 | 5/5 | 5/5 |
+| `deepseek-v4-flash` | 4,3 s | 8,9 s | 15.168 / 4.156 | 8/8 | 8/8 | 4/5 | 3/5 |
+| `glm5.3-flash` | 15,3 s | 81,2 s | 28.576 / 4.827 | 7/8 | 7/8 | 3/5 | 3/5 |
+
+NIF e IBAN, sólo sobre `scan_001`…`scan_005`: en las otras tres el IBAN impreso no es el del maestro
+(trampa de R1) y los tres modelos leyeron lo mismo, así que ahí no se mide al modelo.
+
+### Hallazgos
+- **Nadie lee mejor que `qwen3.6`.** Se confirma §5 de RESILIENCIA con una tanda propia y control.
+- **`glm5.3-flash` queda descartado para visión:** 81,2 s contra un timeout de 90 s, y se dejó un
+  `pedido` (`PO-2026-0463` por `PO-2026-0480`) y una `fecha`. Además ya es el respaldo de TEXTO:
+  ponerlo también en visión concentra el riesgo en un modelo.
+- **`deepseek-v4-flash` es el respaldo:** 3× más rápido que el principal, 0 fallos, y sus errores son
+  dígitos sueltos, los mismos que comete el principal.
+- **Una lectura del respaldo no puede acabar en PAGAR:** doble lectura → reconciliación con el maestro
+  → `confianza` 0,6 → R6 escala (ADR-0011); y si el NIF mal leído no está en el maestro, R1 en rojo.
+  El peor caso es un ESCALAR de más. Comprobado en `etapa._segunda_lectura`, `_reconciliar_con_maestro`,
+  `norma_v3.regla_1_proveedor` y `regla_6`.
+- **No hace falta tocar código.** `TIMEOUT_VISION_S` (90 s) le sobra al candidato; el respaldo ya se
+  salta el breaker (arreglo de E1) y cachea con clave propia. `llm.py` y `test_llm.py`, sin tocar.
+
+### Lo que necesito
+- **PIDO A Javier:** una línea en `.env` antes de las 17:30 (los agentes no pueden escribirlo):
+  `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash`. Sin ella, el respaldo sigue vacío.
+- **PIDO A quien lleve `docs/CIFRAS.md`** (no es mi fichero este ciclo): dos filas, con población,
+  máquina y comando, desde RESPALDO-VISION.md — la de `deepseek-v4-flash` 4,3 s p50 / 8,9 s máx y la
+  de `qwen3.6` 12,0 s p50 sobre estas 8 escaneadas. La §7 de RESILIENCIA dice que el respaldo de
+  visión «se deja vacío a propósito»: si Javier pone la línea, esa frase queda vieja.
+
+### Commits
+`extract: mido los candidatos a respaldo de visión y recomiendo uno, porque hoy no hay ninguno`
 
 ## J4 · La defensa con el código de hoy, y el dato en vivo del domingo
 

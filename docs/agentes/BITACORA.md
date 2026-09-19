@@ -717,3 +717,12 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 ### 12:59 · J2 · PIDO A Miguel: el error del Excel, en una línea y no en 60
 - Si el Excel de las 18:00 llega sin una columna clave, `albertitos maestro` **da el mensaje correcto pero detrás de 60 líneas de traceback** de rich: `Pedidos_2026: sin la columna «pedido» no se puede cargar el maestro. Cabeceras leídas en la fila 1: ['referencia interna', 'ProveedorID', ...]`. Es el mismo caso que arreglaste en `erp pull` («una línea útil, no 92 de traceback», `cli.py:320`).
 - Parche propuesto (cuatro líneas, tu patrón exacto) y la salida literal de hoy: `dist/ensayo/j2/pido-a-miguel-cli-maestro.patch`; se reproduce con `bash dist/ensayo/j2/ver_error_cli.sh`. `ErrorMaestro` hereda de `KeyError`, así que quien capturaba `KeyError` sigue igual. **No bloquea el lote 2**: el mensaje está, sólo hay que leer la última línea.
+
+### 12:59 · J3 · termino: hay respaldo de visión, con cifras
+- hice: `scripts/bench_vision_respaldo.py` (+ `--listar`) y `docs/agentes/RESPALDO-VISION.md`. **24 llamadas de un tope de 30** (3 modelos × 8 escaneadas), 6 min 46 s, 0 errores, 0 desde caché. Caché en `dist/ensayo/j3/bench.db`; BD real en sólo lectura, mismo sha256 antes y después.
+- **Recomendación: `deepseek-v4-flash`.** p50 4,3 s / máx 8,9 s (el principal `qwen3.6`, 12,0 / 25,8), 8/8 pedido, 8/8 fecha, NIF 4/5 y IBAN 3/5 sobre las cinco escaneadas limpias (el principal, 5/5 y 5/5). Ninguno lee mejor que el principal: el respaldo compra disponibilidad.
+- **`glm5.3-flash` descartado para visión:** 81,2 s contra un timeout de 90 s, se dejó un `pedido` (PO-2026-0463 por PO-2026-0480) y una `fecha`; y ya es el respaldo de TEXTO.
+- **No toco `llm.py`:** 90 s de timeout le sobran al candidato y el respaldo ya se salta el breaker (E1). Comprobado que una lectura del respaldo no puede acabar en PAGAR: doble lectura → reconciliación → confianza 0,6 → R6 escala (ADR-0011); y un NIF mal leído no está en el maestro → R1 en rojo. Peor caso, un ESCALAR de más.
+- **PIDO A Javier:** una línea en `.env` antes de las 17:30, `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash`. Sin ella el respaldo sigue vacío y las escaneadas del lote 2 dependen de un solo modelo.
+- **PIDO A quien lleve `docs/CIFRAS.md`** (no es mío este ciclo): dos filas desde RESPALDO-VISION.md. Y ojo, RESILIENCIA §7 dice que el respaldo de visión «se deja vacío a propósito»: con la línea puesta, esa frase queda vieja.
+- toco ahora: nada más. Mis ficheros commiteados.
