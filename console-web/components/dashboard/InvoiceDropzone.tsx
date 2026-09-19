@@ -276,6 +276,9 @@ export function InvoiceDropzone({
   }
 
   const comando = comandoArranque()
+  // En una URL pública (Vercel) el comando no le sirve a nadie: ahí el recuadro sólo explica qué pasa.
+  const enLocal =
+    typeof window === 'undefined' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(comando)
@@ -405,13 +408,19 @@ export function InvoiceDropzone({
                 Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
                 NEXT_PUBLIC_USE_MOCK=false.
               </p>
-            ) : (
+            ) : enLocal ? (
               <p>
                 Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
                 activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
                 proyecto, con este comando:
               </p>
+            ) : (
+              <p>
+                Esta demo pública es de sólo lectura: enseña las facturas ya decididas, pero no admite subir
+                ninguna. Subir facturas funciona en la consola del equipo, con el puente en modo bandeja.
+              </p>
             )}
+            {(USE_MOCK || enLocal) && (
             <div className="mt-2 flex items-center gap-2">
               <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
                 {comando}
@@ -424,7 +433,8 @@ export function InvoiceDropzone({
                 {copiado ? 'Copiado' : 'Copiar'}
               </button>
             </div>
-            {!USE_MOCK && (
+            )}
+            {!USE_MOCK && enLocal && (
               <p className="mt-2 text-[12px] text-muted">
                 Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
                 vuelva con la bandeja, este recuadro desaparece sin recargar la página.
