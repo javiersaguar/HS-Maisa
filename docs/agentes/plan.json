@@ -39,7 +39,8 @@
       "docs/agentes/KIT-DEFENSA.md",
       "docs/demo/*",
       "docs/agentes/PLAN-11.md",
-      "docs/agentes/partes/PARTE-10.md"
+      "docs/agentes/partes/PARTE-10.md",
+      "docs/agentes/PROMPT-ALEJANDRO-BONUS.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
