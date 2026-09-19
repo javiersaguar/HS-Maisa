@@ -393,3 +393,43 @@ Plantilla (cópiala tal cual):
 - hecho: recuperación scan_025 sólo en copia, caché 1/1, 0 tokens, sin caos y proveedor bloqueado en memoria. Reprocess v2-sim recalcula 1/510; package APTO 500+10 líneas; auditoría final VERDE, ámbar documento_superpuesto pendiente de Mónica. 21 tests propios; make check 323 passed, 9 skipped, 2 deselected.
 - PIDO A Javier: agentes-check da 8 rutas fuera del reparto (ninguna E3). También la comparación global detecta cambios concurrentes en dist/albertitos.db y albertitos_plan.pdf; no los atribuyo ni revierto. outcomes.jsonl conserva 5ec17aaa…41d73a3; el cambio de hechos_caja está anunciado por E1. Tabla con hashes completos en ENSAYO-LOTE2.md.
 - E3 no ha escrito data/, BD ni entrega reales; no se reexportan hechos de la simulación al fixture real.
+
+### 07:25 · F2 · arranco kit de la demo, ensayo en clon limpio, chuleta y trazas
+- hice: leídos PLAN-06, CLAUDE.md, guion-defensa, RESILIENCIA §3 (b bis) y (f), `scripts/demo_caos.py` (con `--sin-red`), `respaldar()` del preflight, la skill `demo` y `docs/demo/transcripcion-demo-caos.txt`.
+- toco ahora (ficheros): `scripts/kit_demo.py` + `tests/test_kit_demo.py`; después el ensayo en `dist/ensayo/limpio` (worktree, se borra al terminar), `docs/agentes/KIT-DEFENSA.md` y `docs/demo/trazas/`.
+- necesito / bloqueo: nada todavía. La BD real sólo se lee (backup de SQLite); nada en `dist/entrega/`.
+- para los demás: F1, te pediré `make kit-demo` y `make kit-instalar KIT=<tar>` cuando el script esté (comandos exactos en esa entrada). Para simular "sala sin ERP" no voy a parar el bridge de :8009 (lo usáis): apuntaré `ALBERTITOS_ERP_URL` a un puerto muerto sólo en el clon.
+
+### F1 · arranque PLAN-06
+- Leídos plan, skill entrega, auditoría, guard_bash, tests y registro. Implemento publicar con copia SQLite y paquete temporal: package emite eventos y no debe modificar la BD real durante el ensayo ni el modo seco.
+- Sólo rutas F1; tests contra remoto bare local. El rojo de auditoría detendrá antes de gh, clon o copia al destino. F2: añadiré los objetivos del kit cuando confirmes sus argumentos.
+
+### 07:30 · F2 · kit de la demo listo; PIDO A F1 los objetivos del Makefile
+- hice: `scripts/kit_demo.py` + `tests/test_kit_demo.py` (9 tests, 0,1 s, BD temporales). `empaquetar` copia con backup() a `dist/kit/albertitos-kit-<fecha Madrid>.tar.gz` (BD + MANIFIESTO.json). `instalar` comprueba sha256 y commit, no pisa una BD con datos sin `--forzar`, deja `.antes-del-kit` (sin sobrescribir nunca una copia anterior), borra el `-wal`/`-shm` de la BD vieja, avisa de un caos encendido y ejecuta `albertitos status`. La BD vacía que crea `./bootstrap.sh` (`db init`) se sustituye sin `--forzar`, con copia: si no, en el portátil de Alfonso siempre haría falta `--forzar` y dejaría de proteger nada.
+- verificado: kit real `dist/kit/albertitos-kit-20260919-0722.tar.gz` · 1,2 MB · BD 697e3e13d6b8 · commit b4f85c9a5 · ficheros {'1': 500} · 443/48/9 · caché LLM 881. `dist/albertitos.db` (9c812c30d51e) y `outcomes.jsonl` (5ec17aaa5045) con el mismo sha256 antes y después.
+- toco ahora (ficheros): el ensayo en un clon limpio (`git worktree add dist/ensayo/limpio`).
+- **PIDO A F1:** dos objetivos en el `Makefile` (cópialos tal cual si te valen):
+  - `kit-demo: ## Empaqueta la BD de la demo para otro portátil (dist/kit/albertitos-kit-<fecha>.tar.gz)` → `$(UV) run python scripts/kit_demo.py empaquetar`
+  - `kit-instalar: ## Instala un kit de la demo: make kit-instalar KIT=dist/kit/albertitos-kit-....tar.gz [ARGS=--forzar]` → `@test -n "$(KIT)" || (echo 'uso: make kit-instalar KIT=<kit.tar.gz>'; exit 1)` y `$(UV) run python scripts/kit_demo.py instalar "$(KIT)" $(ARGS)`
+  y `kit-demo kit-instalar` en `.PHONY`. `dist/kit/` ya está cubierto por el `.gitignore` (`dist/`).
+
+### F1 · publicación y ensayo real en seco verificados
+- make publicar: 0,685 s, package/validate APTO 500 (443/48/9), rojo sólo por scan_025 (None en hechos y motivo). Se detiene antes de gh/destino. Hashes de BD real, dist/entrega y archivos del clon real idénticos; logs en dist/ensayo/f1-publicar-seco.log y f1-integridad.json.
+- 30 tests de publicación/hooks verdes, con remoto bare local. Excepción con motivo en commit y registro; fallos técnicos, validate y archivos extra no se pueden aceptar. Modo seco prepara commit en clon temporal y usa push --dry-run: tampoco cambia el clon de destino.
+- RESPONDO A F2: añadidos make kit-demo y make kit-instalar KIT=<tar> [ARGS=--forzar] con los argumentos solicitados. No he ejecutado instalar sobre el repo real.
+- Hook real: ficheros sin decisión=0; ya no cuenta los siete eventos históricos. El hook sólo comprueba existencia de .env, sin leer contenido privado.
+
+### 07:55 · F2 · la demo funciona en un clon limpio; chuleta y cinco trazas (184cb50, 1d7adff)
+- hice: ensayo en `git worktree add dist/ensayo/limpio` (ya quitado): `./bootstrap.sh` 1,6 s · kit instalado 0,3 s (la BD vacía de bootstrap se sustituye sola, con copia) · `status` y `trace` 0,2 s · `demo_caos.py --sin-red` **4,7 s** (repetida 4,1 y 3,8 s; entrega `5ec17aaa5045`, `igual: True`) · breaker (b bis) tal cual `{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3}` · consola `health ok` en 1,0 s y AppTest sin excepciones con 500/443/48/9. Sin ERP (apuntando a un puerto muerto, sin parar el de :8009): status, trace, demo, reprocess y auditoría funcionan; fallan `erp pull` y el preflight. Detalle: `docs/demo/ENSAYO-CLON-LIMPIO.md`. Chuleta: `docs/agentes/KIT-DEFENSA.md`. Trazas: `docs/demo/trazas/`. `make kit-instalar` (de F1) probado con `--destino` en `dist/ensayo/`.
+- **ojo con una cifra:** la demo `--sin-red` tardó 4,7 s aquí y E1 midió 39,5 s a las 03:10 (cada `run` 9-10 s allí, ~1 s aquí). No he encontrado la causa; no es el índice de `decisiones`, que sigue sin estar. La chuleta dice "cronométralo a las 15:00".
+- **PIDO A F1:** `make erp-status` sale 0 con el ERP caído (`@curl …; echo`: el `echo` se come el código de salida). Propuesta: `@curl --fail --silent --show-error $(ERP_URL)/erp/estado && echo`.
+- **PIDO A Miguel** (cli.py / core.db.traza, para la trazabilidad de 20 pts):
+  1. `erp pull` sin ERP muestra un traceback de 92 líneas; la útil es la última (`ERP-AGOTADO: /erp/login tras 8 intentos (último: ERP-RED)`). Capturar `ErrorERP` y dar una línea con `make erp-fast`.
+  2. `trace` imprime `hechos_json` y `motivos_json` como cadenas escapadas: un `trace --legible` (una línea por paso: hechos → maestro → ERP → reglas → resultado).
+  3. Los 122 eventos del ERP no llevan `file_id`, así que los reintentos ORA-00600 que promete el guion no salen en ninguna traza. El snapshot `v1` guarda `consultas=31, reintentos=3`: que `trace` añada esa línea para el `erp_version` de la decisión.
+  4. En la BD real hay **0 eventos `validate`**: las dos facturas de `PO-2026-0492` dicen "duplicado_sospechoso" y ninguna traza dice con cuál. Que `trace` calcule el grupo al vuelo, o que `marcar_duplicados` reemita el evento si falta.
+  5. Las decisiones hechas con `decide`/`run` no llevan el porqué del linaje (`por`); en las trazas hay 6 decisiones por fichero (una ESCALAR del incidente de los `L2-*`) sin explicación.
+  6. `albertitos status` enseña `extract pendiente 7` y `2.3823 EUR` (histórico del viernes): en la sala asustan. La chuleta lleva la frase, pero la tabla es tuya.
+- **PIDO A Alejandro:** en la pestaña Traza, la decisión vigente arriba y el historial plegado: hoy es la última de seis y las primeras citan la frase cortada de antes del arreglo de D2. El Panel también enseña los 2,38 EUR históricos.
+- **PIDO A Alfonso:** (1) los reintentos ORA-00600 no salen en `trace`: enséñalos con `albertitos status` (`enrich retry 11`) o `albertitos bench`; (2) la traza, en la consola (`F26-2201_transportes.pdf`), no en la terminal; (3) ¿tu portátil tiene bash (WSL/Mac/Linux)? `bootstrap.sh` y los comandos del breaker lo necesitan, y `bootstrap` necesita red la primera vez: hazlo en casa.
+- **Para Javier:** el kit de las 07:22 (`dist/kit/albertitos-kit-20260919-0722.tar.gz`, 1,2 MB) vale para el ensayo de las 15:00 si no cambia la BD. Si se aplica lo de `scan_025`, `make kit-demo` otra vez antes de pasárselo a Alfonso.
