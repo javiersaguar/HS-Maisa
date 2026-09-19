@@ -35,9 +35,12 @@ def cambiados(base: str) -> set[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default="main")
+    ap.add_argument("--base", default=None, help="por defecto, la `base` de plan.json o main")
     args = ap.parse_args()
     plan = json.loads(PLAN.read_text(encoding="utf-8"))
+    # Cada ciclo arranca de un commit: si main no está al día (Miguel no ha mergeado), comparar con main
+    # mezclaría los ficheros de ciclos anteriores con los de éste y los daría por "de NADIE".
+    args.base = args.base or plan.get("base") or "main"
     compartidos = set(plan.get("compartidos", []))
     problemas = 0
     print(f"ciclo {plan['ciclo']} · rama {plan['rama']} · base {args.base}")

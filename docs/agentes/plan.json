@@ -1,6 +1,7 @@
 {
-  "ciclo": 6,
+  "ciclo": 7,
   "rama": "javier/ingesta",
+  "base": "aeda37f",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -8,23 +9,32 @@
     "docs/entregas.log"
   ],
   "agentes": {
-    "F1": [
-      "scripts/publicar_entrega.py",
-      "tests/test_publicar_entrega.py",
-      ".claude/skills/entrega/SKILL.md",
-      "Makefile",
-      ".claude/hooks/session_start.py",
-      "tests/test_hooks.py"
+    "G1": [
+      "scripts/contingencia.py",
+      "tests/test_contingencia.py",
+      "scripts/auditoria_entrega.py",
+      "tests/test_auditoria.py",
+      "docs/agentes/AUDITORIA-ENTREGA.md",
+      ".claude/skills/lote2/SKILL.md",
+      "docs/adr/0009-*",
+      "docs/adr/README.md"
     ],
-    "F2": [
-      "scripts/kit_demo.py",
-      "tests/test_kit_demo.py",
-      "docs/agentes/KIT-DEFENSA.md",
-      "docs/demo/*"
+    "G2": [
+      "src/albertitos/sources/erp.py",
+      "src/albertitos/sources/snapshot.py",
+      "tests/test_erp.py",
+      "tests/test_snapshot.py",
+      "src/albertitos/sources/CLAUDE.md",
+      "docs/CIFRAS.md",
+      "scripts/cifras_check.py",
+      "tests/test_cifras.py",
+      "docs/agentes/RESILIENCIA-Y-COSTE.md",
+      "docs/agentes/ESCALA-10K.md"
     ],
     "Javier": [
-      "docs/agentes/PLAN-06.md",
-      "docs/agentes/partes/PARTE-05.md"
+      "docs/agentes/PLAN-07.md",
+      "docs/agentes/partes/PARTE-06.md",
+      "scripts/agentes_check.py"
     ]
   }
 }
