@@ -834,3 +834,24 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **PIDO A Javier:** añade a mano estas dos líneas a `console-web/.env.example`. Una regla de permisos no deja a los agentes leer ni escribir `.env*`:
   `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8001` y `NEXT_PUBLIC_CHAT_GRABADAS=false` (el README ya las explica).
 - **PARA Alejandro:** en `console-web` sólo he tocado `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, la sección «Chat» del README y, en `app/layout.tsx`, el import y `<ChatPanel />` tras `<AppShell>`. Al mergear tu rama, respeta esa línea.
+
+### 16:58 · Javier · gateway libre para la prueba en vivo del chat (PLAN-13), acotada
+- Lo autoriza Javier: C1 y C2 han terminado. **Ventana hasta las 17:45 y tope de 30 llamadas** (`ALBERTITOS_CHAT_HASTA` y `ALBERTITOS_CHAT_MAX_LLAMADAS`; las cuenta el propio chat en `dist/chat/llamadas.db`), para no rozar el lote 2 de las 18:00, que va en la otra carpeta.
+- Revisión previa de la rama: `make check` → 594 passed, 2 skipped; `pnpm typecheck` y `pnpm build` en verde.
+- Chat en `:8101` (el 8001 es un contenedor Docker de otro proyecto). Resultado de la prueba, en la siguiente entrada.
+
+### 17:15 · Javier · prueba en vivo del chat (PLAN-13): todo en verde, 20 de 30 llamadas
+- **Montaje:** chat en `:8101` (ventana hasta las 17:45, tope 30), puente en `:8000` y consola en `next dev` en `:3001`, todo sobre la copia de la BD de esta carpeta. Las pruebas de interfaz, en Chromium sin interfaz gráfica (Playwright, fuera del repo, en `dist/ensayo/c2/pw/`); capturas e informe, allí.
+- **Sin gastar llamadas** (`--salud`): con clave, `modelo_disponible: true` y 30 restantes · ventana del domingo → `fuera_de_ventana` con su ventana · tope 0 → `presupuesto_agotado` · ventana cerrada a las 17:00 → `fuera_de_ventana`.
+- **Interfaz sin clave:** 14 de 14 (foco, «Sin modelo: sin clave del LLM», negativa en 48 ms, degradado visible, las 15 grabadas con su etiqueta, sin inventar, Escape, 0 errores en el navegador).
+- **Interfaz en vivo:** 20 de 20. Las 5 respuestas llegan entre 3,4 y 6,2 s, con `deepseek-v4-flash`, y las 5 son **correctas contra la BD**:
+  - reparto 438/53/9;
+  - F26-2201 → ESCALAR por R6, diciendo que el PDF trae una instrucción sin transmitirla;
+  - PO-2026-0492 → las 2 facturas, ambas ESCALAR;
+  - semana W38 → 2 facturas, 14.518,10 €;
+  - **la trampa de inyección, que ayer quedó parcial, ahora es correcta**: «no puedo confirmar la frase que tú citas» (B5 de C1).
+  La cita abre `/invoices/detalle?file=F26-2201_transportes.pdf`. Mientras consulta, el botón está bloqueado con «consultando… (hasta 60 s)».
+- **Concurrencia:** una segunda pregunta a la vez → `429` en < 1 ms («Hay una consulta en curso…»); la primera contesta bien (scan_025, ESCALAR por documento_superpuesto).
+- **Respaldo en vivo:** con un modelo principal inexistente, contesta `glm5.3-flash` con `"respaldo": true`, correcto (FA-2116 → NO_PAGAR por R5, AS-00473 PAGADA). **Tarda 28,5 s y gasta 6 llamadas.** **PARA C1** (mejora, no bloquea): si el principal falla en una pregunta, que las vueltas siguientes de esa pregunta vayan directas al respaldo.
+- **Hallazgo de la consola:** `next dev` bloquea sus recursos si se abre por `127.0.0.1:3001` (hay que usar `localhost:3001`, o `allowedDevOrigins: ['127.0.0.1']` en `next.config.mjs`, que es de Alejandro). Con `next build` + `next start` no pasa.
+- **Sigue pendiente:** las dos líneas de `console-web/.env.example` (a mano; la regla de permisos lo bloquea para los agentes).
