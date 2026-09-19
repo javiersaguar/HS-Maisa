@@ -20,7 +20,7 @@ export function EtapaCard({ etapa, ficheros }: { etapa: EtapaResumen; ficheros: 
     <Card className="group w-[min(390px,calc(100vw-64px))] shrink-0 p-5 transition hover:-translate-y-0.5 hover:border-[#b6d8c9] hover:">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-[var(--radius-card)] bg-[#eff8f4] text-[#176d59] transition-transform duration-300 group-hover:scale-105">
+          <div className="flex size-10 items-center justify-center bg-[#eff8f4] text-[#176d59] transition-transform duration-300 group-hover:scale-105">
             <EtapaIcon etapa={etapa.etapa} />
           </div>
           <div>
@@ -55,7 +55,7 @@ export function EtapaCard({ etapa, ficheros }: { etapa: EtapaResumen; ficheros: 
       </div>
       <Link
         href={`/workers/${etapa.etapa}`}
-        className="mt-5 flex w-full items-center justify-center gap-1 rounded-[var(--radius-ui)] border border-[#dfe4de] py-2 text-[14px] font-semibold text-[#315d53] transition"
+        className="mt-5 flex w-full items-center justify-center gap-1 border border-[#dfe4de] py-2 text-[14px] font-semibold text-[#315d53] transition"
       >
         Ver eventos <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
       </Link>

@@ -192,7 +192,7 @@ export function InvoiceDropzone({
           onDragLeave={() => setArrastrando(false)}
           onDrop={onDrop}
           disabled={bloqueado}
-          className={`flex w-full flex-col items-center gap-2 rounded-[var(--radius-card)] border border-dashed px-4 py-8 text-center transition disabled:cursor-not-allowed ${
+          className={`flex w-full flex-col items-center gap-2 border border-dashed px-4 py-8 text-center transition disabled:cursor-not-allowed ${
             arrastrando
               ? 'border-accent'
               : bloqueado

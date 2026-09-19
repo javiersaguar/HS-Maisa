@@ -45,7 +45,7 @@ export function InvoiceDocument({
   }
 
   const field = (campo: CampoHecho, label: string, mono = false) => (
-    <div key={campo} className={`rounded border px-3 py-2 ${box(campo)}`} data-field={campo}>
+    <div key={campo} className={`border px-3 py-2 ${box(campo)}`} data-field={campo}>
       <p className="text-[8px] font-bold uppercase text-[#176d59]">{label}</p>
       <p className={`mt-2 text-[13px] font-semibold ${mono ? 'font-mono' : ''}`}>{value(campo)}</p>
     </div>
@@ -54,12 +54,12 @@ export function InvoiceDocument({
   return (
     <Card className="flex min-h-[690px] flex-col overflow-hidden border-[#d9e2dc]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e3e9e4] bg-white px-4 py-3">
-        <div className="flex items-center gap-1 rounded-[var(--radius-ui)] border border-[#dfe6e0] bg-[#fafcfa] p-1">
+        <div className="flex items-center gap-1 border border-[#dfe6e0] bg-[#fafcfa] p-1">
           <button
             onClick={() => onZoom(Math.max(60, zoom - 10))}
             disabled={zoom <= 60}
             aria-label="Alejar"
-            className="size-7 min-h-0 rounded text-sm transition hover:bg-[#eaf3ee] disabled:opacity-30"
+            className="size-7 min-h-0 text-sm transition hover:bg-[#eaf3ee] disabled:opacity-30"
           >
             −
           </button>
@@ -67,7 +67,7 @@ export function InvoiceDocument({
             onClick={() => onZoom(100)}
             title="Restablecer zoom"
             aria-label={`Zoom ${zoom} %. Volver a 100 %`}
-            className="min-h-0 min-w-12 rounded text-center text-[13px] font-semibold tabular-nums transition hover:bg-[#eaf3ee]"
+            className="min-h-0 min-w-12 text-center text-[13px] font-semibold tabular-nums transition hover:bg-[#eaf3ee]"
           >
             {zoom}%
           </button>
@@ -75,7 +75,7 @@ export function InvoiceDocument({
             onClick={() => onZoom(Math.min(140, zoom + 10))}
             disabled={zoom >= 140}
             aria-label="Acercar"
-            className="size-7 min-h-0 rounded text-sm transition hover:bg-[#eaf3ee] disabled:opacity-30"
+            className="size-7 min-h-0 text-sm transition hover:bg-[#eaf3ee] disabled:opacity-30"
           >
             +
           </button>
@@ -98,7 +98,7 @@ export function InvoiceDocument({
       <div className="flex-1 overflow-auto bg-[#e9eeea] p-5 sm:p-8">
         <div
           ref={pageRef}
-          className="relative mx-auto flex min-h-[610px] max-w-[820px] flex-col overflow-hidden rounded-[var(--radius-ui)] border border-[#d5ddd6] bg-white p-7 transition-transform duration-200 ease-out"
+          className="relative mx-auto flex min-h-[610px] max-w-[820px] flex-col overflow-hidden border border-[#d5ddd6] bg-white p-7 transition-transform duration-200 ease-out"
           style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
         >
           {!hechos && (
@@ -110,16 +110,16 @@ export function InvoiceDocument({
             </div>
           )}
           <div className="flex items-start justify-between">
-            <div className={`rounded-[var(--radius-ui)] border p-3 ${box('razon_social')}`} data-field="razon_social">
+            <div className={`border p-3 ${box('razon_social')}`} data-field="razon_social">
               <p className="text-[8px] font-bold uppercase tracking-wide text-[#176d59]">Emisor</p>
               <p className="mt-2 text-[14px] font-semibold">{value('razon_social')}</p>
-              <p className={`mt-2 inline-block rounded border px-1.5 py-0.5 font-mono text-[11px] ${box('nif_emisor')}`} data-field="nif_emisor">
+              <p className={`mt-2 inline-block border px-1.5 py-0.5 font-mono text-[11px] ${box('nif_emisor')}`} data-field="nif_emisor">
                 NIF {value('nif_emisor')}
               </p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className="text-[18px] font-bold tracking-[0.2em] text-[#c9d2cc]">FACTURA</span>
-              <span className="h-2 w-14 rounded bg-[#e8e8e1]" />
+              <span className="h-2 w-14 bg-[#e8e8e1]" />
             </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-4">
@@ -138,14 +138,14 @@ export function InvoiceDocument({
                 ))
               : [1, 2, 3].map((line) => (
                   <div key={line} className="flex justify-between">
-                    <span className="h-2 w-44 rounded bg-[#f0f1ed]" />
-                    <span className="h-2 w-10 rounded bg-[#e8ebe5]" />
+                    <span className="h-2 w-44 bg-[#f0f1ed]" />
+                    <span className="h-2 w-10 bg-[#e8ebe5]" />
                   </div>
                 ))}
           </div>
 
           {hechos?.texto_sospechoso && (
-            <div className="mt-5 rounded border border-dashed border-[#e0c95a] px-3 py-2">
+            <div className="mt-5 border border-dashed border-[#e0c95a] px-3 py-2">
               <p className="text-[8px] font-bold uppercase tracking-wide text-[#a08400]">
                 Texto en el documento · evidencia, no una orden
               </p>
@@ -158,11 +158,11 @@ export function InvoiceDocument({
               {field('base', 'Base imponible')}
               {field('iva', 'IVA')}
             </div>
-            <div className={`flex justify-between rounded border px-3 py-3 text-[14px] font-bold ${box('total')}`} data-field="total">
+            <div className={`flex justify-between border px-3 py-3 text-[14px] font-bold ${box('total')}`} data-field="total">
               <span className="text-[#176d59]">TOTAL</span>
               <span>{value('total')}</span>
             </div>
-            <p className={`self-start rounded border px-2 py-1 font-mono text-[11px] ${box('iban')}`} data-field="iban">
+            <p className={`self-start border px-2 py-1 font-mono text-[11px] ${box('iban')}`} data-field="iban">
               IBAN {value('iban')}
             </p>
           </div>

@@ -60,11 +60,11 @@ export default function EtapasPage() {
                 return (
                   <Card
                     key={label}
-                    className="overflow-hidden rounded-[var(--radius-card)] border-[#e5e9e4] bg-[#fffefa] p-5"
+                    className="overflow-hidden border-[#e5e9e4] bg-[#fffefa] p-5"
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] text-[18px] font-semibold"
+                        className="flex size-9 shrink-0 items-center justify-center text-[18px] font-semibold"
                         style={{ color: style.color, backgroundColor: style.iconBg }}
                       >
                         {style.icon}

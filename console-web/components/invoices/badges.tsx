@@ -19,7 +19,7 @@ export function AvisoChip({ aviso }: { aviso: Aviso }) {
   return (
     <span
       title={aviso}
-      className={`inline-flex items-center rounded-[var(--radius-ui)] border px-1.5 py-0.5 text-[12px] ${
+      className={`inline-flex items-center border px-1.5 py-0.5 text-[12px] ${
         grave ? 'border-warn/40 text-warn' : 'border-line text-muted'
       }`}
     >

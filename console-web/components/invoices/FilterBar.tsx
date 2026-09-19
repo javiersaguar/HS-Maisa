@@ -64,7 +64,7 @@ export function FilterBar({
           onKeyDown={(event) => {
             if (event.key === 'Escape') set('q', '')
           }}
-          className="h-9 w-full rounded-[var(--radius-ui)] border border-line bg-surface pl-8 pr-16 text-[13px] outline-none transition placeholder:text-faint focus:border-accent"
+          className="h-9 w-full border border-line bg-surface pl-8 pr-16 text-[13px] outline-none transition placeholder:text-faint focus:border-accent"
         />
         <span className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 text-faint">
           {searching && <Spinner className="size-3.5" />}
@@ -72,7 +72,7 @@ export function FilterBar({
             <button
               onClick={() => set('q', '')}
               aria-label="Borrar búsqueda"
-              className="flex size-5 min-h-0 items-center justify-center rounded-[var(--radius-ui)] transition hover:text-ink"
+              className="flex size-5 min-h-0 items-center justify-center transition hover:text-ink"
             >
               <X className="size-3.5" />
             </button>
@@ -113,7 +113,7 @@ export function FilterBar({
       {active > 0 && (
         <button
           onClick={onReset}
-          className="h-9 rounded-[var(--radius-ui)] px-2 text-[13px] text-muted transition hover:text-ink"
+          className="h-9 px-2 text-[13px] text-muted transition hover:text-ink"
         >
           Quitar filtros ({active})
         </button>

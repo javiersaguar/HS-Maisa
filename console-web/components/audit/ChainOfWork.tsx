@@ -92,7 +92,7 @@ export function ChainOfWork({
         {header ? <div className="min-w-0 flex-1">{header}</div> : null}
         <button
           onClick={() => setExpanded(allOpen ? new Set() : new Set(shown.map((paso) => paso.id)))}
-          className="shrink-0 rounded-[var(--radius-ui)] px-2 py-1 text-[13px] font-semibold text-[#315d53] transition"
+          className="shrink-0 px-2 py-1 text-[13px] font-semibold text-[#315d53] transition"
         >
           {allOpen ? 'Plegar todo' : 'Desplegar evidencia'}
         </button>
@@ -130,11 +130,11 @@ export function ChainOfWork({
           return (
             <li key={paso.id} className="relative pl-10 animate-in fade-in slide-in-from-bottom-1 duration-300">
               <span
-                className={`absolute left-0 top-4 flex size-7 items-center justify-center rounded-[var(--radius-ui)] border ${NODE_CLASSES[nivel(paso)]}`}
+                className={`absolute left-0 top-4 flex size-7 items-center justify-center border ${NODE_CLASSES[nivel(paso)]}`}
               >
                 <Icon className="size-3.5" />
               </span>
-              <div className="rounded-[var(--radius-card)] border border-[#e1e8e2] bg-white transition hover:-translate-y-0.5 hover:border-[#b8dcca] hover:">
+              <div className="border border-[#e1e8e2] bg-white transition hover:-translate-y-0.5 hover:border-[#b8dcca] hover:">
                 <button onClick={() => toggle(paso.id)} aria-expanded={isOpen} className="w-full p-4 text-left">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -188,7 +188,7 @@ export function ChainOfWork({
         <div className="mt-4 flex justify-center">
           <button
             onClick={() => setVisible((value) => value + PAGE_SIZE)}
-            className="rounded-[var(--radius-ui)] border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45]"
+            className="border border-[#d5e0d9] bg-white px-4 py-2 text-[14px] font-semibold text-[#315d53] transition hover:border-[#164f45]"
           >
             Ver {Math.min(PAGE_SIZE, pasos.length - visible)} más de {pasos.length - visible} restantes
           </button>

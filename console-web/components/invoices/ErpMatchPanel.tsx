@@ -56,7 +56,7 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
 
   return (
     <div className="flex flex-col gap-4 text-[14px]">
-      <div className="rounded-[var(--radius-card)] border border-[#dfe4de] bg-[#fafcfa] p-4">
+      <div className="border border-[#dfe4de] bg-[#fafcfa] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Maestro de proveedores</h3>
           <span className="font-mono text-[12px] text-[#8a958e]">
@@ -68,7 +68,7 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
             ? `${proveedor.razon_social}${proveedor.ciudad ? `, de ${proveedor.ciudad}` : ''}${proveedor.condiciones_dias ? `. Pago a ${proveedor.condiciones_dias} días` : ''}.`
             : `El NIF ${hechos.nif_emisor ?? 'de la factura (no se pudo leer)'} no está en el maestro.`}
         </p>
-        <div className="mt-4 overflow-hidden rounded-[var(--radius-ui)] border border-[#dfe4de] bg-white text-[13px]">
+        <div className="mt-4 overflow-hidden border border-[#dfe4de] bg-white text-[13px]">
           <Check
             index={0}
             label="NIF"
@@ -107,7 +107,7 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
         </div>
       </div>
 
-      <div className="rounded-[var(--radius-card)] border border-[#dfe4de] bg-[#fafcfa] p-4">
+      <div className="border border-[#dfe4de] bg-[#fafcfa] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Asiento en el {ERP_NOMBRE}</h3>
           <span className="text-[12px] text-[#8a958e]">
@@ -119,7 +119,7 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
             {hechos.pedido ? `El pedido ${hechos.pedido} no tiene asiento en el ERP.` : 'Sin pedido no se puede cruzar con el ERP.'}
           </p>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-[var(--radius-ui)] border border-[#dfe4de] bg-white text-[13px]">
+          <div className="mt-4 overflow-hidden border border-[#dfe4de] bg-white text-[13px]">
             {asientos.map((asiento, index) => (
               <Check
                 key={asiento.asiento_id}

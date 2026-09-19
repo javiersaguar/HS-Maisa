@@ -62,7 +62,7 @@ export function ExtractedFields({
 
   return (
     <>
-      <div className="mt-2 overflow-hidden rounded-[var(--radius-ui)] border border-[#dfe4de] text-[13px]">
+      <div className="mt-2 overflow-hidden border border-[#dfe4de] text-[13px]">
         {CAMPOS.map((campo) => {
           const value = campoValor(hechos, campo.key)
           return (

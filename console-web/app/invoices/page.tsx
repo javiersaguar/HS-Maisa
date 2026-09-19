@@ -154,7 +154,7 @@ function FicherosScreen() {
   }
 
   const pagerButton =
-    'inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-ui)] border border-line bg-surface px-2.5 text-ink transition hover:border-faint disabled:text-faint disabled:hover:border-line'
+    'inline-flex h-8 items-center gap-1.5 border border-line bg-surface px-2.5 text-ink transition hover:border-faint disabled:text-faint disabled:hover:border-line'
 
   return (
     <div className="px-6 py-6">
@@ -195,7 +195,7 @@ function FicherosScreen() {
           <button
             onClick={exportFicheros}
             disabled={exporting || (!data?.total && !selectedIds.length)}
-            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-[13px] transition hover:border-faint disabled:opacity-50"
+            className="inline-flex h-9 shrink-0 items-center gap-2 border border-line bg-surface px-3 text-[13px] transition hover:border-faint disabled:opacity-50"
           >
             {exporting && <Spinner />}
             {exporting ? 'Exportando…' : selectedIds.length ? `Exportar ${selectedIds.length} seleccionados` : 'Exportar CSV'}
@@ -224,7 +224,7 @@ function FicherosScreen() {
                 action={
                   <button
                     onClick={() => changeFilters(EMPTY_FILTERS)}
-                    className="h-9 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-[13px] transition hover:border-faint"
+                    className="h-9 border border-line bg-surface px-3 text-[13px] transition hover:border-faint"
                   >
                     Quitar filtros
                   </button>
@@ -246,7 +246,7 @@ function FicherosScreen() {
                   <button onClick={() => goToPage(Math.max(1, page - 1))} disabled={page <= 1 || loading} className={pagerButton}>
                     Anterior
                   </button>
-                  <span className="rounded-lg border border-[#d5e2da] bg-white px-3 py-1.5 font-semibold text-[#315d53] tabular-nums">
+                  <span className="border border-[#d5e2da] bg-white px-3 py-1.5 font-semibold text-[#315d53] tabular-nums">
                     {page} / {pageCount}
                   </span>
                   <button
@@ -263,12 +263,12 @@ function FicherosScreen() {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-3 rounded-xl border border-[#68d4ad] bg-[#e2f8ee] px-5 py-3 text-[14px] font-semibold shadow-[0_10px_24px_rgba(20,75,60,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="sticky bottom-4 mt-6 flex items-center justify-between gap-3 border border-[#68d4ad] bg-[#e2f8ee] px-5 py-3 text-[14px] font-semibold shadow-[0_10px_24px_rgba(20,75,60,0.12)] animate-in fade-in slide-in-from-bottom-2 duration-200">
             {selectedIds.length} fichero{selectedIds.length === 1 ? '' : 's'} seleccionado{selectedIds.length === 1 ? '' : 's'}
             <span className="flex items-center gap-3">
               <button
                 onClick={exportFicheros}
-                className="rounded-lg bg-[#164f45] px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-[#0d4037]"
+                className="bg-[#164f45] px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-[#0d4037]"
               >
                 Exportar selección
               </button>

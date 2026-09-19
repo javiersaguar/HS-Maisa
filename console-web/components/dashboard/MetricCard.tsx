@@ -73,7 +73,7 @@ export function MetricCard({
     <>
       <span
         aria-hidden
-        className={`pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 ${GLOW[glow]}`}
+        className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 ${GLOW[glow]}`}
       />
       <div className="relative flex items-baseline justify-between gap-3">
         <p className="text-[13px] font-semibold text-[#5a655f]">{label}</p>
@@ -92,7 +92,7 @@ export function MetricCard({
   )
 
   const shell =
-    'relative block overflow-hidden rounded-[var(--radius-card)] border border-[#e6ebe6] bg-white px-4 py-3.5 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[#d5e2da] group-hover:'
+    'relative block overflow-hidden border border-[#e6ebe6] bg-white px-4 py-3.5 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-[#d5e2da] group-hover:'
 
   return (
     <div className="group relative z-0 hover:z-20 focus-within:z-20">
@@ -106,7 +106,7 @@ export function MetricCard({
       {tooltip ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[240px] -translate-x-1/2 rounded-[var(--radius-ui)] bg-[#17211e] px-3 py-1.5 text-center text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+          className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-30 w-max max-w-[240px] -translate-x-1/2 bg-[#17211e] px-3 py-1.5 text-center text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
         >
           {tooltip}
           <i

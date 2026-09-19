@@ -155,7 +155,7 @@ export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
               </p>
               <span
                 role="tooltip"
-                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] rounded-[var(--radius-ui)] bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100"
+                className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-30 w-max max-w-[240px] bg-[#17211e] px-3 py-1.5 text-left text-[12px] font-medium leading-snug text-white opacity-0 transition duration-150 group-hover:opacity-100"
               >
                 {stat.tooltip}
               </span>

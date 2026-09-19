@@ -32,8 +32,8 @@ export function Select<T extends string>({
 }) {
   // `radius` se conserva por compatibilidad de la API; el diseño usa un solo radio corto.
   void radius
-  const popupRadius = 'rounded-[var(--radius-ui)]'
-  const itemRadius = 'rounded-[var(--radius-ui)]'
+  const popupRadius = ''
+  const itemRadius = ''
 
   return (
     <BaseSelect.Root
@@ -49,7 +49,7 @@ export function Select<T extends string>({
       <BaseSelect.Trigger
         aria-label={ariaLabel}
         className={cn(
-          'inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-2.5 text-left text-[13px] font-normal normal-case tracking-normal text-ink outline-none transition hover:border-faint focus-visible:border-accent data-popup-open:border-accent disabled:opacity-60',
+          'inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 border border-line bg-surface px-2.5 text-left text-[13px] font-normal normal-case tracking-normal text-ink outline-none transition hover:border-faint focus-visible:border-accent data-popup-open:border-accent disabled:opacity-60',
           className,
         )}
       >

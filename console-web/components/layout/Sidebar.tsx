@@ -46,7 +46,7 @@ export function Sidebar() {
           onClick={() => setAbierto((v) => !v)}
           aria-expanded={abierto}
           title={abierto ? 'Plegar el panel' : 'Desplegar el panel'}
-          className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-ui)] text-faint transition hover:text-ink"
+          className="flex size-8 shrink-0 items-center justify-center text-faint transition hover:text-ink"
         >
           {abierto ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
         </button>

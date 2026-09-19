@@ -33,7 +33,7 @@ export function WorkflowOverview({ etapas, ficheros }: { etapas: EtapaResumen[];
             <div key={step} className="flex items-center gap-3">
               <div className="flex flex-col items-center">
                 <span
-                  className={`flex size-7 items-center justify-center rounded-[var(--radius-ui)] text-[12px] font-medium ${index === 0 ? 'bg-[#164f45] text-white' : 'bg-[#eff8f4] text-[#176d59]'}`}
+                  className={`flex size-7 items-center justify-center text-[12px] font-medium ${index === 0 ? 'bg-[#164f45] text-white' : 'bg-[#eff8f4] text-[#176d59]'}`}
                 >
                   {index === 0 ? <FileText className="size-3.5" /> : index}
                 </span>

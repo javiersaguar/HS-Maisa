@@ -201,7 +201,7 @@ function FicheroDetail() {
                       </span>
                     )}
                     <span
-                      className={`absolute inset-x-3 bottom-0 h-0.5 rounded bg-[#164f45] transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
+                      className={`absolute inset-x-3 bottom-0 h-0.5 bg-[#164f45] transition-all duration-300 ${tab === item ? 'opacity-100' : 'scale-x-0 opacity-0'}`}
                     />
                   </button>
                 ))}
@@ -215,7 +215,7 @@ function FicheroDetail() {
               >
                 {tab === 'Decisión' && (
                   <>
-                    <div className="rounded-[var(--radius-card)] border border-[#e4e5df] bg-[#f1f1ef] p-4">
+                    <div className="border border-[#e4e5df] bg-[#f1f1ef] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <ResultadoBadge estado={fichero.estado} withIcon={false} />
                         <span className="text-[13px] text-[#7d8580]">
@@ -242,7 +242,7 @@ function FicheroDetail() {
                     <Linaje decision={decision} />
 
                     {hechos?.texto_sospechoso && (
-                      <div className="mt-4 rounded-[var(--radius-card)] border border-dashed border-[#e0c95a] p-4">
+                      <div className="mt-4 border border-dashed border-[#e0c95a] p-4">
                         <p className="text-[11px] font-bold text-[#a08400]">
                           El documento intenta instruir
                         </p>
@@ -255,7 +255,7 @@ function FicheroDetail() {
 
                     <h3 className="mt-6 text-[13px] font-bold uppercase tracking-wide">Qué ha comprobado la norma</h3>
                     {decision ? (
-                      <ul className="mt-2 overflow-hidden rounded-[var(--radius-ui)] border border-[#dfe4de] text-[13px] leading-5 text-[#68736d]">
+                      <ul className="mt-2 overflow-hidden border border-[#dfe4de] text-[13px] leading-5 text-[#68736d]">
                         {decision.motivos.map((motivo) => (
                           <li
                             key={motivo.regla_id}
