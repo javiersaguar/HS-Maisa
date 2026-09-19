@@ -1,0 +1,21 @@
+{
+  "fuente": "docs/api/ejemplos/chat-05-duplicado.json",
+  "pregunta": "¿Qué facturas llevan el pedido PO-2026-0492?",
+  "respuesta": {
+    "respuesta": "Dos facturas llevan el pedido PO-2026-0492, ambas de Catering Hermanos Pico S.L. (B96233419) y ambas clasificadas ESCALAR por duplicado sospechoso: 2026-0233-A_catering.pdf (nº 2026/0233-A, 2026-04-11, total 1512,50; base 1250,00 + IVA 262,50) y factura_41082.pdf (nº F26-0233, 2026-04-07, total 1512,50; base 1250,00 + IVA 262,50, además con aviso fecha_en_letra). Importes y proveedor idénticos, por eso el duplicado sospechoso; ESCALAR es solo clasificación, no acción ejecutada.",
+    "citas": [
+      "2026-0233-A_catering.pdf",
+      "factura_41082.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 3947,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "Dos file_id correctos para PO-2026-0492, ambos ESCALAR."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "fuente": "docs/api/ejemplos/chat-03-pagada.json",
+  "pregunta": "¿Por qué no se paga FA-2116_mensajería.pdf?",
+  "respuesta": {
+    "respuesta": "FA-2116_mensajería.pdf está clasificada NO_PAGAR porque falla la regla v3.R5: el pedido PO-2026-0473 ya consta como PAGADA en el ERP mediante el asiento AS-00473 por 2083.37 €, por lo que pagar esta factura supondría un doble pago. Factura de Mensajería Rápida del Sur S.L. (B90233808, proveedor P011), fecha 2026-03-18, base 1721.79 € + IVA 361.58 € = 2083.37 €, sin avisos. Decisión vigente según corte 2026-09-18 (norma v3). Recuerda que NO_PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [
+      "FA-2116_mensajería.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas",
+      "buscar_facturas",
+      "traza"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 6324,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "NO_PAGAR por v3.R5, asiento AS-00473 ya PAGADA."
+  }
+}

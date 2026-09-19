@@ -1,0 +1,39 @@
+{
+  "fuente": "docs/api/ejemplos/chat-08-proveedor.json",
+  "pregunta": "Busca las facturas de Suministros Levante y dime cuántas hay y qué clasificación muestran las primeras.",
+  "respuesta": {
+    "respuesta": "Hay 47 facturas de Suministros Levante S.L. (NIF B46102331), pero el listado devuelto está truncado a 20. De esas 20, 19 figuran como PAGAR y 1 como NO_PAGAR (2026-17547_suministros.pdf, PO-2026-0475, 398,04 €); algunas con el aviso 'fecha_en_letra'. PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [
+      "2026-01-08_P001.pdf",
+      "2026-01-25_P001.pdf",
+      "2026-02-04_P001.pdf",
+      "2026-02-25_P001.pdf",
+      "2026-03-01_P001.pdf",
+      "2026-03-24_P001.pdf",
+      "2026-03-28_P001.pdf",
+      "2026-04-27_P001.pdf",
+      "2026-05-04_P001.pdf",
+      "2026-05-14_P001.pdf",
+      "2026-05-22_P001.pdf",
+      "2026-05-24_P001.pdf",
+      "2026-06-07_P001.pdf",
+      "2026-06-27_P001.pdf",
+      "2026-07-23_P001.pdf",
+      "2026-17547_suministros.pdf",
+      "2026-22807_suministros.pdf",
+      "2026-37816_suministros.pdf",
+      "2026-51245_suministros.pdf",
+      "2026-51936_suministros.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 5323,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "47 en total, lista truncada a 20: 19 PAGAR y 1 NO_PAGAR en esas veinte."
+  }
+}
