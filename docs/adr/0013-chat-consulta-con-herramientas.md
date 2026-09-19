@@ -1,6 +1,6 @@
 # ADR-0013 · Chat de consulta con herramientas cerradas
 
-Estado: implementado y evaluado, PLAN-11 K2. Fecha: 19/09/2026.
+Estado: implementado y evaluado, PLAN-11 K2; ampliado en el PLAN-13 (C1). Fecha: 19/09/2026.
 
 ## Contexto
 
@@ -29,6 +29,23 @@ Las barreras de escritura son deterministas; la explicación lingüística no lo
 Omitir instrucciones literales evita exponerlas innecesariamente, pero limita la explicación exacta de una anomalía: se remite a la traza. Se rechazan respuestas con citas inventadas y preguntas sin datos. Sin gateway, no se inventa una respuesta: se ofrece el comando de traza.
 
 No hay nuevas dependencias, memoria persistente de conversación, envío de pagos ni integración de Jev. El único estado escrito por chat es su contador local de presupuesto. No es servicio multiusuario de producción ni buscador para más de los documentos del reto.
+
+## Cambios del PLAN-13 (C1, 19/09 tarde)
+Para que el chat funcione el domingo, y no sólo como demo grabada:
+- **B1 · Ventana y tope configurables.** El cierre (17:30 del 19/09) y el tope (60) estaban fijos en el código; ahora
+  van por `ALBERTITOS_CHAT_DESDE/HASTA`, `ALBERTITOS_CHAT_MAX_LLAMADAS` (contadas dentro de la ventana) y
+  `ALBERTITOS_CHAT_CONTADOR`. Se descartó borrar el contador viejo para «reabrir»: el tope se salta cambiando la
+  configuración a la vista, no destruyendo el registro.
+- **B2 · `/chat/salud` v2:** disponibilidad del modelo y motivo, sin llamarlo. La consola lo enseña antes de preguntar.
+- **B3 · Orígenes configurables** (`localhost:3000` y `127.0.0.1:3000`), devolviendo el origen que pide, nunca `*`.
+- **B4 · Respaldo de modelo** (`glm5.3-flash`, el de texto medido) ante timeout, 5xx o una final fuera de esquema, con
+  25 s por petición para que quepa en los 60 s por pregunta. La respuesta dice qué modelo contestó. Alternativa
+  descartada: reintentar el mismo modelo, porque los dos timeouts de la evaluación eran del proveedor, no transitorios.
+- **B5 · Instrucción en el PDF:** la traza lo marca de forma explícita (`instruccion_en_pdf` + nota) y el prompt prohíbe
+  atribuir al PDF frases que no vengan de una herramienta. Sigue sin pasar el texto literal al modelo.
+- **B6 · `make chat`**, `--salud` en la CLI, y un puerto configurable con un mensaje claro si está ocupado.
+Evidencia: 25 tests en `tests/test_chat.py` (reloj inyectable para la ventana, transporte simulado para el respaldo,
+servidor real para CORS y salud), sin ninguna llamada al modelo. Prueba con curl en `docs/agentes/PARTE.md` (C1).
 
 ## Evidencia
 
