@@ -80,6 +80,7 @@ def test_factura_perfecta_se_paga(maestro, erp):
         ),
         (dict(avisos=[Aviso.DUPLICADO_SOSPECHOSO]), "v3.R6"),
         (dict(avisos=[Aviso.DOCUMENTO_SUPERPUESTO]), "v3.R6"),  # scan_025: otro proveedor dentro
+        (dict(avisos=[Aviso.ANOTACION_A_MANO]), "v3.R6"),  # e18 (lote 2): total corregido a mano
     ],
 )
 def test_una_regla_falla_escala(maestro, erp, cambio, regla):

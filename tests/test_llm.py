@@ -1125,3 +1125,27 @@ def test_la_moneda_del_llm_llega_a_los_hechos(bd):
         metodo=MetodoExtraccion.LLM_VISION,
     )
     assert h.moneda == "USD" and "moneda" in llm.ESQUEMA_HECHOS["properties"]
+
+
+def test_escritura_a_mano_en_un_pdf_con_texto_da_aviso_y_evidencia(bd, tmp_path, monkeypatch):
+    """ADR-0020: e18 corrige el total a mano. Lo impreso sale bien por plantilla, pero la factura lleva el
+    aviso (R6 escala) y la traza guarda lo escrito a mano."""
+
+    def falsa(texto, *, file_id, sha256):
+        return InvoiceFacts(
+            file_id=file_id,
+            sha256=sha256,
+            num_factura="E-18",
+            total=Decimal("1815.00"),
+            metodo=MetodoExtraccion.PLANTILLA,
+            extractor_version=EXTRACTOR_VERSION,
+        )
+
+    monkeypatch.setattr(plantillas, "extraer_por_plantilla", falsa)
+    rasgos = {"fuentes": ["BrushScriptMT"], "texto": "15.000,00 / corregido A.", "trazos": 8}
+    monkeypatch.setattr(etapa.pdf, "rasgos_manuscritos", lambda ruta: rasgos)
+    r = etapa.extraer(bd, fixture=fixture_de(tmp_path, TEXTO))
+    assert r.ok == 1
+    assert Aviso.ANOTACION_A_MANO in hechos_de(bd, TEXTO).avisos
+    ev = bd.execute("SELECT detalle FROM eventos WHERE etapa='extract' AND estado='ok'").fetchone()
+    assert "manuscrito=" in ev[0] and "corregido A." in ev[0]

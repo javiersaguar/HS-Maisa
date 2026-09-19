@@ -382,3 +382,42 @@ def test_el_tramo_no_arrastra_facturas_limpias(caja):
     limpias = [p for p in sorted((caja / "facturas").glob("*.pdf")) if p.name not in ORDENES][:60]
     detectadas = [p.name for p in limpias if instrucciones.detectar_instruccion(pdf.texto_de(p))]
     assert detectadas == [], detectadas
+
+
+# --------------------------------------------------------------- escritura a mano (ADR-0020, lote 2)
+
+
+@pytest.mark.parametrize(
+    ("nombre", "esperado"),
+    [
+        ("AAAAAA+BrushScriptMT", True),
+        ("AAAAAA+BradleyHandITCTT-Bold", True),
+        ("SnellRoundhand-0", True),
+        ("MarkerFelt-Thin-0", True),
+        ("Helvetica-Bold", False),
+        ("Courier", False),
+        ("AAAAAA+ArialUnicodeMS", False),
+    ],
+)
+def test_fuentes_manuscritas(nombre, esperado):
+    assert pdf.es_fuente_manuscrita(nombre) is esperado
+
+
+def test_ninguna_factura_del_lote_1_tiene_escritura_a_mano(caja):
+    """El aviso escala: si saltara en el lote 1, cambiaría una decisión ya entregada."""
+    con_algo = [r.name for r in (caja / "facturas").glob("*.pdf") if pdf.rasgos_manuscritos(r)]
+    assert con_algo == []
+
+
+def test_un_trazo_curvo_a_mano_se_detecta(tmp_path):
+    """e18: el total tachado y corregido con trazos curvos, sobre un PDF con texto impreso."""
+    import pymupdf
+
+    ruta = tmp_path / "e18.pdf"
+    with pymupdf.open() as doc:
+        pagina = doc.new_page()
+        pagina.insert_text((72, 100), "TOTAL: 1.815,00 EUR", fontname="helv")
+        pagina.draw_bezier((70, 96), (120, 80), (160, 110), (200, 96))
+        doc.save(ruta)
+    rasgos = pdf.rasgos_manuscritos(ruta)
+    assert rasgos["trazos"] == 1 and rasgos["fuentes"] == []
