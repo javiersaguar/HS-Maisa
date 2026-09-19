@@ -329,3 +329,27 @@ def test_solo_cambia_la_confianza_y_tambien_se_redecide(conn, base, maestro, erp
     _reprocesar(conn, maestro, erp)  # reprocess --impacted
     assert _vigentes(conn)["a.pdf"] == "ESCALAR"
     assert _evaluar(conn, maestro, erp).impactados == {}
+
+
+def test_una_factura_del_lote_2_no_marca_la_del_lote_1(conn, base, maestro, erp):
+    """ADR-0021: 2026-08-22_P010 (lote 2) repite el pedido de factura_4635 (lote 1, ya entregada). Se marca la
+    del lote 2; la del lote 1 no cambia ni se redecide."""
+    _factura(conn, "e.pdf", pedido="PO-2026-0001", total=Decimal("3012.89"), **P001)
+    conn.execute("UPDATE ficheros SET lote=2 WHERE sha256=?", ("e" * 64,))
+    conn.commit()
+    r = _reprocesar(conn, maestro, erp)
+    assert r.duplicados == (1, 0)
+    assert "a.pdf" not in r.impactados
+    assert _vigentes(conn)["a.pdf"] == "PAGAR" and _vigentes(conn)["e.pdf"] == "ESCALAR"
+
+
+def test_cada_lote_se_decide_en_su_contexto(conn, base, maestro, erp):
+    """ADR-0021: el lote 1 está decidido con v3 y el ERP de conftest. Otra norma u otro ERP para todos los
+    lotes chocan; para un lote sin decisiones, no."""
+    assert linaje.contextos_vigentes(conn) == {1: ("v3", erp.version)}
+    assert linaje.choques_de_contexto(conn, norma=None, erp=None) == []
+    assert linaje.choques_de_contexto(conn, norma="v3", erp=erp.version) == []
+    assert linaje.choques_de_contexto(conn, norma="v4", erp=None) == [
+        f"el lote 1 está decidido con la norma v3 y el ERP {erp.version}"
+    ]
+    assert linaje.choques_de_contexto(conn, norma="v4", erp="v2", lotes=[2]) == []

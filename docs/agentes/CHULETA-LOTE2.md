@@ -70,21 +70,23 @@ uv run albertitos status
 `run` empaqueta: su salida preliminar **nunca** es `dist/entrega`.
 
 ## 3 · ERP v2, diff y reprocesado
+El lote 1 **no se toca**: se entregó con la norma v3 y el ERP v1 (ADR-0021). Todo reproceso del sábado lleva
+`--lote 2`; sin él, `reprocess`, `run` y `decide` se niegan si cambiarían el contexto del lote 1.
 ```bash
 python3 data/caja/alberto_erp.py --puerto 8011 --lote2 data/lote2/erp_export_lote2.csv   # otra terminal
 curl --fail --silent http://127.0.0.1:8011/erp/estado
 ALBERTITOS_ERP_URL=http://127.0.0.1:8011 uv run albertitos erp pull --tag v2
 uv run albertitos erp diff v1 v2
-uv run albertitos reprocess --impacted --erp v2 --norma v3 --fecha-corte 2026-09-18
+uv run albertitos reprocess --impacted --lote 2 --erp v2 --norma v3 --fecha-corte 2026-09-18
 uv run python scripts/inventario_trampas.py --con-hechos --facturas data/lote2/facturas --erp-tag v2 --salida dist/anomalias_lote2.csv --sin-docs --solo-resumen
 ```
 
 ## 4 · La regla nueva (Mónica)
 No la escribes tú ni la deduces de las facturas. Cuando exista `norma_v4`:
 ```bash
-uv run albertitos reprocess --impacted --norma v4 --erp v2 --fecha-corte 2026-09-18
+uv run albertitos reprocess --impacted --lote 2 --norma v4 --erp v2 --fecha-corte 2026-09-18
 ```
-Si Mónica corrige la v3 **sin** subir la etiqueta, el linaje no lo ve: `reprocess --todo --norma v3 --erp v2`.
+Si Mónica corrige la v3 **sin** subir la etiqueta, el linaje no lo ve: `reprocess --todo --lote 2 --norma v3 --erp v2`.
 
 ## 5 · Auditoría, package, entrega
 ```bash
@@ -100,7 +102,7 @@ make publicar          # en seco, se lee entero; publicar: make publicar ARGS=--
 ## 6 · Si a las 07:30 del domingo queda algún PENDIENTE (ADR-0009)
 ```bash
 uv run albertitos chaos --off && uv run albertitos extract --workers 4
-uv run albertitos reprocess --impacted --erp v2 --norma v3 --fecha-corte 2026-09-18
+uv run albertitos reprocess --impacted --lote 2 --erp v2 --norma v3 --fecha-corte 2026-09-18
 uv run python scripts/contingencia.py --lote 2                       # en seco, primero
 uv run python scripts/contingencia.py --lote 2 --aplicar --motivo "<qué falló y qué se reintentó>" --fecha-corte 2026-09-18
 ```

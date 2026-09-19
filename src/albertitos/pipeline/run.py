@@ -113,6 +113,10 @@ def porques(
     )
 
 
+class ContextoDeLote(RuntimeError):
+    """`run` cambiaría la norma o el ERP de un lote ya decidido (ADR-0021)."""
+
+
 def correr(
     conn: sqlite3.Connection,
     *,
@@ -152,6 +156,12 @@ def correr(
             e = cliente.descargar_todo("v1")
         snapshot.guardar_erp(conn, e)
     r.maestro_version, r.erp_version = m.version, e.version
+    if choques := linaje.choques_de_contexto(conn, norma=norma_version, erp=e.version):
+        # run decide todos los lotes con un contexto: no puede cambiar el de uno ya decidido (ADR-0021)
+        raise ContextoDeLote(
+            "; ".join(choques) + ". `run` decide todos los lotes a la vez: para otro contexto, "
+            "`albertitos reprocess --lote N --norma … --erp …`"
+        )
 
     if not extraer:
         r.extract_nota = "--sin-extraer: sólo hechos ya en la BD"

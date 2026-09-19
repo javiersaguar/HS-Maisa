@@ -309,9 +309,14 @@ def comprobar_duplicados(filas: list[Fila]) -> list[Comprobacion]:
     sin_marca_rojo: dict[str, list[Fila]] = {}
     sin_marca_ambar: dict[str, list[Fila]] = {}
     for k, g in grupos.items():
-        if all(Aviso.DUPLICADO_SOSPECHOSO in f.hechos.avisos for f in g if f.hechos is not None):
+        # la misma regla que marcar_duplicados (ADR-0021): se marca la que repite un pedido de su lote o de uno
+        # anterior; la del lote anterior no. Pagar dos veces lo sigue cazando `pago_doble`, sea cual sea el lote.
+        deben = [f for f in g if any(o is not f and o.lote <= f.lote for o in g)]
+        if all(
+            Aviso.DUPLICADO_SOSPECHOSO in f.hechos.avisos for f in deben if f.hechos is not None
+        ):
             continue
-        (sin_marca_rojo if any(f.resultado == "PAGAR" for f in g) else sin_marca_ambar)[k] = g
+        (sin_marca_rojo if any(f.resultado == "PAGAR" for f in deben) else sin_marca_ambar)[k] = g
     que_hacer = (
         "`marcar_duplicados` sólo corre dentro de `run` y de `reprocess`: con pasos sueltos (extract, "
         "hechos import, decide) no se ejecuta. Ejecuta `albertitos reprocess --impacted` (o `run` entero) y "
