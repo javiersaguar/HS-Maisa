@@ -17,6 +17,7 @@ import { Toast } from '@/components/ui/Toast'
 export default function PortadaPage() {
   const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null)
   const [seleccionado, setSeleccionado] = useState<string | null>(null)
+  const [lista, setLista] = useState<string[]>([])
 
   const dismissToast = useCallback(() => setToast(null), [])
   const seleccionar = useCallback((fileId: string) => setSeleccionado(fileId), [])
@@ -28,9 +29,14 @@ export default function PortadaPage() {
     <div className="mx-auto flex max-w-[1400px] flex-col gap-5 p-6 pt-5 lg:h-full">
       <title>{`Panel · ${BRAND}`}</title>
       <div className="grid grid-cols-1 gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(360px,0.8fr)_1.2fr]">
-        <InvoiceDropzone onDone={facturasDecididas} onSelect={seleccionar} seleccionado={seleccionado} />
+        <InvoiceDropzone
+          onDone={facturasDecididas}
+          onSelect={seleccionar}
+          onLista={setLista}
+          seleccionado={seleccionado}
+        />
         <Card className="flex min-h-[420px] flex-col overflow-hidden">
-          <Analisis fileId={seleccionado} />
+          <Analisis fileId={seleccionado} fileIds={lista} onSelect={seleccionar} />
         </Card>
       </div>
       {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={dismissToast} />}
