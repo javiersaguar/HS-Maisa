@@ -35,7 +35,7 @@ export default function PagosPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col px-3 pb-0.5 sm:pr-4 sm:pl-5">
-      <title>{`Pagos · ${BRAND}`}</title>
+      <title>{`Calendario · ${BRAND}`}</title>
       {error && !calendario.data ? (
         <ErrorCard
           error={error}
