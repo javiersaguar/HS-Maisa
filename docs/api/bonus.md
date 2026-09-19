@@ -49,13 +49,20 @@ Cada handler tiene la firma del puente, `(conn, query) -> (status, body)`: `conn
 `programa.semanas`, que empieza en la semana del corte y nunca pasa del tope (con 150.000 €, el máximo es 149.999,99 €), salvo un pago que por sí solo lo supera
 (`supera_tope: true`). En pantalla, que no se pinten las dos con el mismo título.
 
-## Las cifras de hoy (copia de la BD real, corte 2026-09-18)
-438 PAGAR · **2.428.159,06 €** · vencido **2.383.400,88 €** (431 facturas) · en plazo 44.758,18 € · 2 vencen en la semana
-del corte · 11 proveedores · remesa 438, todas con `iban_control_ok=false` · 11 avisos `IBAN_SIN_CONTROL` (uno por
-proveedor). Con `tope=150000`: al día con lo vencido en **16 semanas**, todo pagado en 17.
+## Las cifras de hoy (BD de la entrega `d2ade3f`, los dos lotes, corte 2026-09-18)
+**468 PAGAR · 2.534.654,19 €** · 444 vencidas · 3 vencen en la semana del corte · 15 proveedores · remesa 468, de las
+que **467 llevan `iban_control_ok=false`** y 11 avisos `IBAN_SIN_CONTROL` (uno por proveedor). La excepción es
+`e08_P012.pdf`, la alemana del lote 2: su IBAN pasa el mod-97, así que en `--estricto` la remesa no sale vacía, sale
+ella sola (3.775,20 €). Con `tope=150000`: al día con lo vencido en **17 semanas**, todo pagado en 17.
+
+**Moneda (20/09):** el calendario, la tesorería y la remesa van **en euros**, como el maestro y el ERP. Una PAGAR que
+no esté en euros **no entra**: suma 1 en `excluidos_moneda` y deja un aviso `MONEDA_NO_EUR` con su importe y su
+divisa. Hoy son 0, porque las 8 facturas en divisa del lote 2 escalan; si la norma fija un tipo de cambio
+(ADR-0022) y alguna pasa a PAGAR, el calendario la apartará en vez de sumar dólares como si fueran euros. En
+`resumen` esas facturas ya no cuentan como `sin_vencimiento_calculable`: tienen su propio contador.
 
 ## Lo que propongo para la pantalla (la decide Alejandro)
-1. **Cabecera** (con `/bonus/resumen`): «438 facturas a pagar · 2.428.159,06 € · 2.383.400,88 € vencidos». Y un aviso
+1. **Cabecera** (con `/bonus/resumen`): «468 facturas a pagar · 2.534.654,19 € · 444 vencidas». Y un aviso
    siempre visible: **«Borrador: los IBAN de esta Caja son sintéticos y un banco los rechazaría. No se ha ejecutado
    ningún pago.»**
 2. **Calendario semanal** (con `/bonus/tesoreria`): una barra por semana con el importe, la parte vencida en rojo y la

@@ -18,6 +18,9 @@ from albertitos.core import db
 from albertitos.core.contracts import InvoiceFacts, MasterSnapshot
 from albertitos.formatos import iban_valido, normalizar_iban
 
+#: El calendario, la tesorería y la remesa van en euros, como el maestro y el ERP (ADR-0019).
+MONEDA_BASE = "EUR"
+
 
 class Pago(BaseModel):
     file_id: str
@@ -49,6 +52,8 @@ class Informe(BaseModel):
     decisiones_pagar: int
     calendario: list[Pago] = Field(default_factory=list)
     avisos: list[Incidencia] = Field(default_factory=list)
+    #: PAGAR que no están en euros: fuera del calendario, porque sumarlas sería sumar peras con manzanas.
+    excluidos_moneda: int = 0
 
     @property
     def remesa(self) -> list[Pago]:
@@ -71,8 +76,11 @@ class Informe(BaseModel):
             "remesa_numero": len(self.remesa),
             "remesa_total_eur": str(sum((p.importe_eur for p in self.remesa), Decimal("0.00"))),
             "excluidos_remesa": self.decisiones_pagar - len(self.remesa),
+            "excluidos_moneda": self.excluidos_moneda,
             "remesa_iban_sin_control": sum(not p.iban_control_ok for p in self.remesa),
-            "sin_vencimiento_calculable": self.decisiones_pagar - len(self.calendario),
+            "sin_vencimiento_calculable": (
+                self.decisiones_pagar - len(self.calendario) - self.excluidos_moneda
+            ),
             "vencidos": sum(p.vencido for p in self.calendario),
             "vencen_semana_corte": sum(
                 p.semana == semana_iso(self.fecha_corte) for p in self.calendario
@@ -178,6 +186,16 @@ def calcular_conn(
                 continue
             if h.fecha is None or not h.num_factura or not h.num_factura.strip() or h.total is None:
                 aviso("FACTURA_INCOMPLETA", "Falta fecha, referencia o importe.")
+                continue
+            if h.moneda is not None and h.moneda != MONEDA_BASE:
+                # El calendario, la tesorería y la remesa están en euros, y el maestro y el ERP también.
+                # Convertir es decisión de la norma (ADR-0022), no de un informe: aquí se dice y se aparta.
+                informe.excluidos_moneda += 1
+                aviso(
+                    "MONEDA_NO_EUR",
+                    f"La factura está en {h.moneda} ({h.total}) y el calendario va en euros: "
+                    "queda fuera hasta que la norma fije el tipo de cambio.",
+                )
                 continue
             if not h.total.is_finite() or h.total <= 0 or h.total.as_tuple().exponent < -2:
                 aviso(
