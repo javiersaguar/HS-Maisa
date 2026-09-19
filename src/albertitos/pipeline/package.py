@@ -103,7 +103,12 @@ def empaquetar(
     try:
         for lote, nombre, directorio in lotes:
             esperados = listar_pdfs(directorio)
-            filas = db.decisiones_vigentes(conn, lote=lote)
+            # un nombre interno de P0-5 (`./X.pdf`) nunca sale: su línea es la de su nombre de entrega
+            filas = [
+                f
+                for f in db.decisiones_vigentes(conn, lote=lote)
+                if not db.es_interno(f["fichero_id"])
+            ]
             extras = db.identidades_vigentes(conn, lote)
             if extras:
                 filas = sorted([*filas, *extras], key=lambda x: str(x["file_id"]))
