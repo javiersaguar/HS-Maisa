@@ -50,6 +50,11 @@ La validación es binaria contra una referencia privada. Tenemos 438/53/9 **sin 
   hecho antes). Si no, `trace` en terminal: es el repliegue previsto. Si Next se queda, Alejandro escribe su ADR.
 
 ### 🟡 D · Operación · Javier
+- **LO PRIMERO en cuanto el lote 2 esté publicado — reabrir el chat para la defensa:** hoy K2 tiene fijados en el
+  código un cierre a las 17:30 del sábado y un tope de 60 llamadas (van 59), así que el domingo respondería siempre
+  «degradado». Hay que convertir la hora de cierre y el tope en variables de entorno (`src/albertitos/chat/agente.py`,
+  líneas 71 y 82, con su test) y abrir una ventana nueva para la defensa: por ejemplo, **domingo de 09:00 a 12:00 y
+  30 llamadas**. Hasta entonces, la consola enseña las 15 respuestas grabadas, etiquetadas como tales.
 - **Antes de las 17:30:** `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash` en `.env`.
 - **18:00:** `CHULETA-LOTE2.md`. Lanzar el extract de las escaneadas en cuanto el material esté verificado (40
   escaneadas son 6-10 min). Si aparece un nombre repetido, ya no hay que mergear nada: P0-5 está en `main`.
