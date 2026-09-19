@@ -18,9 +18,9 @@ export function PipelineCard({ etapas, ficheros, actions }: { etapas: EtapaResum
           <h2 className="text-[14px] font-semibold">Etapas del pipeline</h2>
           <p className="text-[14px] text-[#9aa39e]">Salud de cada etapa según sus eventos</p>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge tone={incidencias ? 'yellow' : 'green'}>
-            {alDia} de {etapas.length} al día
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusBadge tone={incidencias ? 'yellow' : 'green'} className="whitespace-nowrap">
+            {alDia} de {etapas.length}
           </StatusBadge>
           {actions}
         </div>

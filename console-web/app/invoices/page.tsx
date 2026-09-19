@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { EstadoFichero, Fichero } from '@/lib/types'
 import { DEFAULT_PAGE_SIZE, fetchFicheros } from '@/lib/api/ficheros'
 import { toApiError } from '@/lib/api/client'
+import { LOTE_BANDEJA } from '@/lib/api/inbox'
 import { BRAND } from '@/lib/config'
 import { downloadCsv } from '@/lib/csv'
 import { ESTADOS_FICHERO, formatNumber, motivoPrincipal } from '@/lib/format'
@@ -48,7 +49,7 @@ function readUrl(params: URLSearchParams): { filters: FicheroFilters; page: numb
       q: params.get('q') ?? '',
       estado: ESTADOS_FICHERO.includes(estado as EstadoFichero) ? (estado as EstadoFichero) : 'all',
       regla: REGLAS.some((item) => item.value === regla) ? (regla as string) : 'all',
-      lote: lote === 1 || lote === 2 ? lote : 'all',
+      lote: lote === 1 || lote === 2 || lote === LOTE_BANDEJA ? lote : 'all',
     },
     page: Number.isInteger(page) && page > 1 ? page : 1,
   }

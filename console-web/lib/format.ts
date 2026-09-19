@@ -287,6 +287,7 @@ export function frase(texto: string): string {
 export function loteNombre(lote: number): string {
   if (lote === 1) return 'la Caja'
   if (lote === 2) return 'el lote sorpresa'
+  if (lote === 99) return 'la bandeja (fuera de la entrega)'
   return `el lote ${lote}`
 }
 
