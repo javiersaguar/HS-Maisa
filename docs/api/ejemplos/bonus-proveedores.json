@@ -1,0 +1,173 @@
+{
+  "peticion": "GET /bonus/proveedores",
+  "status": 200,
+  "respuesta": {
+    "proveedores": [
+      {
+        "proveedor_id": "P002",
+        "beneficiario": "Transportes Guadaira S.A.",
+        "numero": 45,
+        "importe_eur": "269461.89",
+        "vencidos_numero": 45,
+        "vencidos_importe_eur": "269461.89",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 45
+      },
+      {
+        "proveedor_id": "P001",
+        "beneficiario": "Suministros Levante S.L.",
+        "numero": 43,
+        "importe_eur": "269265.45",
+        "vencidos_numero": 39,
+        "vencidos_importe_eur": "238987.96",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-25",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 43
+      },
+      {
+        "proveedor_id": "P003",
+        "beneficiario": "Ofimática Cieza S.L.",
+        "numero": 45,
+        "importe_eur": "259682.21",
+        "vencidos_numero": 43,
+        "vencidos_importe_eur": "248814.89",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-22",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 45
+      },
+      {
+        "proveedor_id": "P005",
+        "beneficiario": "Catering Hermanos Pico S.L.",
+        "numero": 41,
+        "importe_eur": "228730.47",
+        "vencidos_numero": 41,
+        "vencidos_importe_eur": "228730.47",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 41
+      },
+      {
+        "proveedor_id": "P008",
+        "beneficiario": "Seguridad Alcores S.L.",
+        "numero": 43,
+        "importe_eur": "226116.45",
+        "vencidos_numero": 43,
+        "vencidos_importe_eur": "226116.45",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 43
+      },
+      {
+        "proveedor_id": "P006",
+        "beneficiario": "Electricidad Montcada S.A.",
+        "numero": 43,
+        "importe_eur": "221139.58",
+        "vencidos_numero": 42,
+        "vencidos_importe_eur": "217526.21",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-28",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 43
+      },
+      {
+        "proveedor_id": "P011",
+        "beneficiario": "Mensajería Rápida del Sur S.L.",
+        "numero": 45,
+        "importe_eur": "220138.66",
+        "vencidos_numero": 45,
+        "vencidos_importe_eur": "220138.66",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 45
+      },
+      {
+        "proveedor_id": "P010",
+        "beneficiario": "Informática Benimámet S.L.",
+        "numero": 40,
+        "importe_eur": "219517.83",
+        "vencidos_numero": 40,
+        "vencidos_importe_eur": "219517.83",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 40
+      },
+      {
+        "proveedor_id": "P007",
+        "beneficiario": "Papelería Ruzafa S.C.",
+        "numero": 42,
+        "importe_eur": "203827.72",
+        "vencidos_numero": 42,
+        "vencidos_importe_eur": "203827.72",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 42
+      },
+      {
+        "proveedor_id": "P004",
+        "beneficiario": "Limpiezas Turia S.L.",
+        "numero": 44,
+        "importe_eur": "194283.67",
+        "vencidos_numero": 44,
+        "vencidos_importe_eur": "194283.67",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 44
+      },
+      {
+        "proveedor_id": "P009",
+        "beneficiario": "Construcciones Benimaclet S.A.",
+        "numero": 7,
+        "importe_eur": "115995.13",
+        "vencidos_numero": 7,
+        "vencidos_importe_eur": "115995.13",
+        "primera_ejecucion": "2026-09-18",
+        "ultima_ejecucion": "2026-09-18",
+        "lotes": [
+          1
+        ],
+        "iban_control_ok": false,
+        "en_remesa_numero": 7
+      }
+    ]
+  }
+}

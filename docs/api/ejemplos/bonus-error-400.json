@@ -1,0 +1,7 @@
+{
+  "peticion": "GET /bonus/tesoreria?tope=-1",
+  "status": 400,
+  "respuesta": {
+    "error": "tope tiene que ser un importe positivo"
+  }
+}

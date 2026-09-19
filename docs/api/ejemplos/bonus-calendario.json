@@ -1,0 +1,70 @@
+{
+  "peticion": "GET /bonus/calendario?vencido=false&limite=3",
+  "status": 200,
+  "respuesta": {
+    "filtros": {
+      "semana": null,
+      "proveedor": null,
+      "lote": null,
+      "vencido": false
+    },
+    "total": 7,
+    "mostrados": 3,
+    "pagos": [
+      {
+        "file_id": "factura_7087.pdf",
+        "lote": 1,
+        "decision_id": 3459,
+        "proveedor_id": "P001",
+        "beneficiario": "Suministros Levante S.L.",
+        "iban": "ES2100491500051234567890",
+        "referencia": "2026/19929",
+        "importe_eur": "8107.54",
+        "fecha_factura": "2026-07-21",
+        "vencimiento": "2026-09-19",
+        "fecha_ejecucion": "2026-09-19",
+        "semana": "2026-W38",
+        "vencido": false,
+        "maestro_version": "80911e429c6c",
+        "apto_remesa": true,
+        "iban_control_ok": false
+      },
+      {
+        "file_id": "2026-07-23_P001.pdf",
+        "lote": 1,
+        "decision_id": 3201,
+        "proveedor_id": "P001",
+        "beneficiario": "Suministros Levante S.L.",
+        "iban": "ES2100491500051234567890",
+        "referencia": "2026/76702",
+        "importe_eur": "4823.60",
+        "fecha_factura": "2026-07-23",
+        "vencimiento": "2026-09-21",
+        "fecha_ejecucion": "2026-09-21",
+        "semana": "2026-W39",
+        "vencido": false,
+        "maestro_version": "80911e429c6c",
+        "apto_remesa": true,
+        "iban_control_ok": false
+      },
+      {
+        "file_id": "factura_4845.pdf",
+        "lote": 1,
+        "decision_id": 3415,
+        "proveedor_id": "P003",
+        "beneficiario": "Ofimática Cieza S.L.",
+        "iban": "ES6001825322180201588391",
+        "referencia": "F26-3527",
+        "importe_eur": "8339.63",
+        "fecha_factura": "2026-07-23",
+        "vencimiento": "2026-09-21",
+        "fecha_ejecucion": "2026-09-21",
+        "semana": "2026-W39",
+        "vencido": false,
+        "maestro_version": "80911e429c6c",
+        "apto_remesa": true,
+        "iban_control_ok": false
+      }
+    ]
+  }
+}
