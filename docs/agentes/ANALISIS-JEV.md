@@ -60,7 +60,7 @@ triadas por menos de un céntimo».
 - **Operativo:** es una clave más, una dependencia de red más y un modo de fallo más a las 18:00 y en la defensa. Si
   se integra, es **opcional y degradable**: sin clave o con Jev caído, la señal no aparece y nada se para. Con timeout
   de 2 s, breaker y caché por sha256.
-- **Stack:** «nada más sin ADR». Hace falta un ADR (sería el 0013), tanto si entra como si se descarta. Y el descarte
+- **Stack:** «nada más sin ADR». Hace falta un ADR (con número propio: el 0013 y el 0014 son del chat y de la confianza, PLAN-11), tanto si entra como si se descarta. Y el descarte
   razonado también suma: en el PDF puntúan las alternativas evaluadas (35 pts).
 - **Tiempo:** son las 14:00, con el lote 2 a las 18:00 y la congelación a las 02:00. Tocar extract, auditoría o consola
   ahora compite con lo que nos puede dejar NO APTO.
@@ -74,7 +74,7 @@ triadas por menos de un céntimo».
    - tokens y coste;
    - cuántos desacuerdos hay y, **de ellos, cuántos son fallos nuestros** (se revisan a mano).
 2. **Criterio para seguir:** que encuentre **al menos un caso real que se nos escapa**, o que confirme las 31 con
-   probabilidades altas y el 0 % de falsos positivos en las limpias. **Si no, se descarta** y queda en el ADR-0013 con
+   probabilidades altas y el 0 % de falsos positivos en las limpias. **Si no, se descarta** y queda en su ADR con
    las cifras.
 3. **Integración mínima**, después de entregar el lote 2 (sábado 20:00-23:00) y en el carril de Javier:
    - `src/albertitos/extract/jev.py`: cliente `httpx` contra la API REST, sin LangChain ni SDK nuevo. Clave
@@ -87,14 +87,14 @@ triadas por menos de un céntimo».
    - Opción B, sólo en el bonus: `score` por escalada en `dist/bonus/escalados.csv`.
 4. **La defensa, si entra:** «usamos un modelo de decisión barato **sólo para encontrar lo que se nos escapa**; nunca
    decide un pago». Si no entra: «lo evaluamos; no ve imágenes, no extrae, no explica, y nuestra norma ya decide de forma
-   determinista. Descartado con cifras (ADR-0013)».
+   determinista. Descartado con cifras (su ADR)».
 
 ## 6 · Recomendación
 **No en el camino que decide ni en el de extracción. Sí, como mucho, como segunda opinión opcional, y sólo si la
 prueba lo justifica.** En orden:
 1. **Ahora:** nada que afecte al lote 2. Si hay manos libres, **la prueba de 45 min** (paso 5.1), con el visto bueno
    del equipo para mandar el texto de las facturas a TypeSafe.
-2. **16:30:** decidir con las cifras. Si no aporta, **ADR-0013 «Evaluado y descartado»** y a otra cosa.
+2. **16:30:** decidir con las cifras. Si no aporta, **ADR propio («Evaluado y descartado»; el 0013 y el 0014 son del chat y la confianza)** y a otra cosa.
 3. **Después de entregar el lote 2:** integrar la opción A (y la B en el bonus) si aportó, con apagado por defecto
    y la entrega blindada por el test de identidad. Congelación a las 02:00.
 

@@ -1,0 +1,19 @@
+{
+  "fuente": "docs/api/ejemplos/chat-07-pagos.json",
+  "pregunta": "¿Cuánto suman todos los pagos del calendario y están listos para enviar al banco?",
+  "respuesta": {
+    "respuesta": "El calendario de pagos (decisiones PAGAR, corte 2026-09-18) suma 2.428.159,06 € en 438 facturas. No está listo para enviar al banco: es un borrador de remesa, no una orden bancaria ni pago ejecutado, y las 438 partidas usan IBAN sintéticos marcados sin control (aviso IBAN_SIN_CONTROL), por lo que no hay remesa bancaria validada. El listado de facturas devuelto está truncado (20 de 438), aunque el total y los recuentos son del corte guardado.",
+    "citas": [],
+    "herramientas_usadas": [
+      "pagos",
+      "resumen"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 4680,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "438, 2428159.06 EUR; describe IBAN marcados y borrador no bancario."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "fuente": "docs/api/ejemplos/chat-09-inexistente.json",
+  "pregunta": "Muéstrame la traza de NO-EXISTE-999.pdf.",
+  "respuesta": {
+    "respuesta": "No tengo datos consultados que permitan responder a esa pregunta. Indica una factura, un pedido o un proveedor.",
+    "citas": [],
+    "herramientas_usadas": [
+      "traza",
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 4824,
+    "estado": "sin_datos"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "Fichero inexistente: no inventa traza ni cita."
+  }
+}

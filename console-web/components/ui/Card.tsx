@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <section
-      className={`rounded-xl border border-[#e1e5df] bg-white shadow-[0_1px_2px_rgba(20,45,35,0.02)] ${className}`}
+      className={`rounded-xl border border-line bg-surface ${className}`}
     >
       {children}
     </section>

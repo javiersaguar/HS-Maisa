@@ -1,0 +1,86 @@
+{
+  "pregunta": "¿Por qué se puede pagar 2026-01-08_P001.pdf? Consulta su traza.",
+  "respuesta": {
+    "respuesta": "La factura 2026/11604 (Suministros Levante S.L., NIF B46102331, pedido PO-2026-0096, total 3012,89 €) está clasificada como PAGAR porque no falla ninguna regla: el NIF coincide con el del proveedor y el pedido, el importe total cuadra con el pedido y con el asiento esperado AS-00096 (PENDIENTE), el pedido está ABIERTO, no hay avisos y la confianza registrada es 1.0. Norma v3, maestro 80911e429c6c, ERP v1, corte 2026-09-18. PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [
+      "2026-01-08_P001.pdf"
+    ],
+    "herramientas_usadas": [
+      "traza"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 5893,
+    "estado": "ok"
+  },
+  "llamadas": 2,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "file_id": "2026-01-08_P001.pdf",
+        "lote": 1,
+        "hechos": {
+          "num_factura": "2026/11604",
+          "fecha": "2026-01-08",
+          "razon_social": "Suministros Levante S.L.",
+          "nif_emisor": "B46102331",
+          "pedido": "PO-2026-0096",
+          "total": "3012.89",
+          "base": "2489.99",
+          "iva": "522.90",
+          "metodo": "plantilla",
+          "avisos": [],
+          "confianza": 1.0
+        },
+        "resultado": "PAGAR",
+        "reglas_fallidas": [],
+        "fuentes": {
+          "maestro_version": "80911e429c6c",
+          "erp_version": "v1",
+          "proveedor": {
+            "id": "P001",
+            "razon_social": "Suministros Levante S.L.",
+            "nif": "B46102331",
+            "iban": "ES2100491500051234567890",
+            "ciudad": "Valencia",
+            "condiciones_dias": 60
+          },
+          "pedido": {
+            "pedido": "PO-2026-0096",
+            "proveedor_id": "P001",
+            "nif": "B46102331",
+            "importe_total": "3012.89",
+            "estado": "ABIERTO",
+            "fecha_pedido": "2026-01-08"
+          },
+          "asientos": [
+            {
+              "asiento_id": "AS-00096",
+              "fecha_registro": "2026-01-08",
+              "proveedor_id": "P001",
+              "nif": "B46102331",
+              "pedido": "PO-2026-0096",
+              "importe_esperado": "3012.89",
+              "estado": "PENDIENTE"
+            }
+          ]
+        },
+        "versiones": {
+          "norma_version": "v3",
+          "fecha_corte": "2026-09-18",
+          "maestro_version": "80911e429c6c",
+          "erp_version": "v1"
+        },
+        "texto_del_pdf_omitido": false,
+        "citas": [
+          "2026-01-08_P001.pdf"
+        ]
+      }
+    }
+  ],
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "PAGAR, sin reglas fallidas; hechos y fuentes coinciden con traza.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

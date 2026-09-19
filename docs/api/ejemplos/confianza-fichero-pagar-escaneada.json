@@ -1,0 +1,89 @@
+{
+  "api": 1,
+  "file_id": "scan_002.pdf",
+  "lote": 1,
+  "resultado": "PAGAR",
+  "regla": null,
+  "puntuacion": 82,
+  "banda": "alta",
+  "razones": [
+    "4 lecturas de la imagen; no coinciden en total",
+    "escaneada: leída por visión",
+    "base + IVA = total, con el IVA al 21 %"
+  ],
+  "causa": "cumple las seis reglas, corroborada por maestro y ERP",
+  "metodo": "cache",
+  "lecturas": {
+    "n": 4,
+    "campos_distintos": [
+      "total"
+    ]
+  },
+  "mismo_pdf_que": [],
+  "fuentes": {
+    "pdf": {
+      "penalizacion": 17.5,
+      "dudas": [
+        {
+          "id": "pdf.vision",
+          "fuente": "pdf",
+          "texto": "escaneada: leída por visión",
+          "puntos": 15,
+          "factor": 0.5,
+          "aplicado": 7.5,
+          "por_que": "Escaneada: sólo hay imagen y la leyó la visión, la vía con más errores (17 desacuerdos en 29)."
+        },
+        {
+          "id": "pdf.lecturas_discrepan",
+          "fuente": "pdf",
+          "texto": "4 lecturas de la imagen; no coinciden en total",
+          "puntos": 20,
+          "factor": 0.5,
+          "aplicado": 10.0,
+          "por_que": "Las lecturas independientes de la imagen no coinciden en un campo que decide."
+        }
+      ],
+      "a_favor": []
+    },
+    "coherencia": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "base + IVA = total, con el IVA al 21 %"
+      ]
+    },
+    "maestro": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "NIF, IBAN y pedido casan con el maestro (P004)"
+      ]
+    },
+    "erp": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "el ERP espera el mismo importe al céntimo (asiento AS-00478, PENDIENTE)"
+      ]
+    },
+    "decision": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": []
+    },
+    "politica": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "tope": 30
+    },
+    "revisor": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "opinion": null
+    }
+  },
+  "version": "confianza-1",
+  "escala": "puntuación ordinal 0-100 (100 = sin dudas conocidas); no es una probabilidad calibrada"
+}

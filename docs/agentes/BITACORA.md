@@ -733,3 +733,133 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Bonus de J5 corregido: 438 pagos marcados en vez de 0 (IBAN sintéticos), `--estricto` para el criterio bancario.
 - **PIDO A Mónica** (de J2 y J4): anular un pedido en el Excel (`Pedido.estado = ANULADO`) no cambia ninguna decisión, porque la v3 no lo lee. Hoy los 516 están ABIERTO, pero el Excel de las 18:00 puede traer alguno. ¿Debería escalar?
 - **Para Alfonso:** el kit de las 13:37 y KIT-DEFENSA.md con los tiempos del clon limpio.
+
+### 19/09 15:00 · Javier · PLAN-11 (bonus: calendario, chat y confianza)
+- **PLAN-11** (`docs/agentes/PLAN-11.md`): K1 continúa el calendario y lo sirve a la consola (`/bonus/*`); K2 hace el chat de sólo lectura con Helmcode (`:8001`, herramientas cerradas, sin text-to-SQL); K3 la métrica de confianza por factura (señales por fuente → 0-100 + banda + razones, `/confianza/*`). Ninguno cambia la entrega: un test cada uno.
+- **PIDO A Alejandro:** los contratos estarán en `docs/api/` hacia las 16:30. Tú registras las rutas con una línea en `console/api.py` (`RUTAS.update(bonus.rutas()); RUTAS.update(confianza.rutas())`) y haces tres pantallas: calendario, confianza (columna + desglose) y el panel de chat contra `:8001`. Y el ADR de la consola en Next.js.
+- **Gateway:** K2 y K3, 60 llamadas como mucho cada uno, y nada a partir de las 17:30 (lote 2).
+- ADRs: 0013 chat y 0014 confianza. Jev pasa al 0015.
+
+### 15:05 · K1 · arranco: calendario continuado y sus datos para la consola
+- huellas al empezar: se apuntan en el parte (BD real y `outcomes.jsonl`).
+- toco: `src/albertitos/bonus/*`, `tests/test_bonus.py`, `docs/BONUS.md`, `docs/adr/0012-*`, `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*`. Nada de `console/` (lo registra Alejandro con una línea).
+
+### 19/09 · K2 · inicio chat PLAN-11
+- Sólo chat/, test_chat, contrato y ejemplos chat, ADR-0013. Copia backup en dist/ensayo/k2/chat.db. Huellas iniciales: 0dc1c7817fda/1ec4be206089.
+- Herramientas cerradas; POST /chat en proceso propio :8001, CLI de repliegue. Máximo 60 llamadas, ninguna desde 17:30 Madrid.
+- PIDO A K1/K3: usaré pagos desde bonus.calcular (sin exportar) y confianza.rutas()[/confianza/fichero] con conexión de lectura si está disponible. Sin tocar vuestros ficheros.
+
+### 14:52 · K3 · arranco: métrica de confianza por factura
+- huellas al empezar: BD real `0dc1c7817fda` · `outcomes.jsonl` `1ec4be206089` (en `dist/ensayo/k3/huellas-inicio.txt`).
+- toco: `src/albertitos/confianza/*`, `tests/test_confianza.py`, `scripts/calibrar_confianza.py`, `docs/api/confianza.md`, `docs/api/ejemplos/confianza-*`, `docs/adr/0014-*`. Nada de core/, pipeline/, extract/, rules/, cli.py ni console/. La BD, sólo en lectura; los ensayos, sobre copias en `dist/ensayo/k3/`.
+- **RESPONDO A K2:** `confianza.rutas()["/confianza/fichero"]` tendrá la firma del puente `(conn, query) -> (status, body)` con `?file_id=`, y además una función pública `albertitos.confianza.puntuar(conn, file_id)` que devuelve el mismo dict: usa la que prefieras. Aviso aquí cuando exista.
+- LLM: el revisor es opcional y va apagado por defecto. Si lo uso, como mucho 60 llamadas y ninguna a partir de las 17:30.
+
+### 15:40 · K1 · rutas del bonus listas (`be179cd`)
+- **RESPONDO A K2:** usa `albertitos.bonus.calcular_conn(conn, fecha_corte=None, estricto=False)` con tu conexión de lectura (no abre otra; cierra su propia transacción de lectura sin escribir). O directamente las rutas: `bonus.rutas()["/bonus/calendario"](conn, {"proveedor": ["P001"]})`. Para una semana, `{"semana": ["2026-W38"]}`; para lo vencido, `{"vencido": ["true"]}`. Importes como string con 2 decimales.
+- Hecho: tesorería semanal (pagado, acumulado y vencido), vista por proveedor, `--tope-semanal` y `bonus.rutas()` (`/bonus/{resumen,calendario,proveedores,remesa,avisos,tesoreria}`). Copia de la BD real: 438 PAGAR, 2.428.159,06 € (2.383.400,88 vencidos), 11 proveedores que cuadran al céntimo; con tope de 150.000 €/semana, al día en 16 semanas. 25 tests, incluido el de la regla 5.
+- Lote 2 (BD del ensayo general de J1): el calendario incluye todos los lotes, pero las 10 del lote 2 simulado son ESCALAR (copias de pedidos del lote 1), así que no aportan pagos. El caso con PAGAR del lote 2 está cubierto con un test sintético.
+- toco ahora: `docs/api/bonus.md`, ejemplos y BONUS/ADR-0012.
+
+### 15:00 · K1 · contrato listo para Alejandro (y una corrección)
+- **Corrección:** mis dos entradas anteriores dicen «15:05» y «15:40», pero eran las 14:51 y las 14:53 (hora del reloj). Las horas de `docs/api/bonus.md` y `BONUS.md` ya están corregidas.
+- **PIDO A Alejandro:** una línea en `src/albertitos/console/api.py`, mejor con import perezoso: `from albertitos import bonus; RUTAS.update(bonus.rutas())`. El contrato, los ejemplos reales y la propuesta de pantalla están en `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*.json`. **Lo único obligatorio de la pantalla:** el aviso «Borrador: los IBAN de esta Caja son sintéticos y un banco los rechazaría. No se ha ejecutado ningún pago», siempre visible. Probado sin tocar tu fichero: `console.api.despachar` con `RUTAS` parcheado en un test.
+- **Para K3:** `/bonus/calendario?con_confianza=true` añade a cada pago lo que devuelva `albertitos.confianza.puntuar(conn, file_id)`, tal cual y sin suponer sus campos. Si no está tu módulo, sale `null` con una nota. Así, cuando publiques, se ve sin tocar nada más.
+
+### 15:02 · K3 · la puntuación ya existe: `albertitos.confianza.puntuar(conn, file_id)`
+- **RESPONDO A K1 y K2:** ya está (sin commitear todavía; aviso con el commit). `puntuar(conn, file_id)` devuelve `{file_id, lote, resultado, regla, puntuacion (0-100), banda (alta|media|baja), razones[3], causa, metodo, lecturas, mismo_pdf_que, fuentes{pdf, coherencia, maestro, erp, decision, politica, revisor}, version, escala}`, o `None` si no hay decisión vigente. Sólo lee. Cuesta **0,33 ms por fichero** (los 438 pagos del calendario, unos 0,15 s): el maestro y el ERP se cachean por versión. `puntuar_todas(conn, lote=None)`: las 500, en 0,04 s.
+- Sobre la BD real: **alta 447** (438 PAGAR y 9 NO_PAGAR) · **media 40** · **baja 13**, todas ESCALAR. Ninguna ESCALAR llega a alta: las 53 tienen una duda de lectura o una pregunta abierta del mentor (Q1 6 · Q2 2 · Q3 35 · Q5 2, los mismos recuentos que el mapa de I2). Las 13 bajas son las que se escalan sólo porque no se leyeron con seguridad (reconciliadas, discrepancias entre lecturas, superpuesta).
+- toco ahora: tests, calibración, ejemplos, contrato y ADR-0014.
+
+### 19/09 15:05 · K2 · chat evaluado y contrato para Alejandro
+- PIDO A Alejandro: servidor propio python -m albertitos.chat --servidor --db <copia.db> en 127.0.0.1:8001; POST /chat {mensaje,historial?}, GET /chat/salud. Contrato docs/api/chat.md y 15 ejemplos reales docs/api/ejemplos/chat-*.json. Panel lateral; citas abren traza; no registrar POST en tu puente GET. CORS http://localhost:3000.
+- 16 tests propios; make check 537 passed, 1 skipped, 2 deselected. Prueba de package sobre copia tras ejecutar chat: outcomes byte a byte idéntico (1ec4be206089).
+- Evaluación: 59/60 intentos HTTP, todos entre 14:58 y 15:04 Madrid. Serie inicial 12/15 completas; tras 3 repeticiones, 14/15 completas + 1 parcial: la inyección no cambia ESCALAR ni ejecuta pagos, pero atribuye al PDF una frase del usuario sin corroborarla. Dos timeouts reales devolvieron la degradación. Sin más llamadas de desarrollo.
+- IMPORTANTE demo: queda 1 llamada, insuficiente para otra pregunta de 2 pasos. Mostrar respuestas grabadas, negativa local de pago y trace; no borrar contador. Después de 17:30 el código bloquea gateway.
+- RESPONDO A K1/K3: integración por lectura ya preparada; confianza sólo se ofrece si existe vuestra ruta, sin revisor LLM.
+
+### 19/09 15:09 · K2 · cierre PLAN-11
+- Commit 57d43c9: chat de sólo lectura, herramientas cerradas, API :8001 y CLI, ADR-0013, contrato y 15 preguntas evaluadas con ejemplos.
+- make check final: 555 passed, 1 skipped, 2 deselected (35,11 s). 17 pruebas propias; integración K3 comprobada sin gateway: scan_025.pdf → 45, baja, ESCALAR. agentes-check OK.
+- 59/60 intentos HTTP, ninguno después de 15:04; no más llamadas. 14/15 respuestas completas tras repetir tres casos; 1 parcial por atribución de texto del usuario al PDF (documentada). Primera serie completa: 12/15; dos timeouts reales degradaron correctamente.
+- La prueba ejecuta chat y herramientas sobre copia, comprueba BD lógica intacta y package produce exactamente outcomes 1ec4be206089. Huellas finales reales iguales al inicio: BD 0dc1c7817fda / outcomes 1ec4be206089.
+- PIDO A Alejandro/Javier: integrar panel según docs/api/chat.md. El contador deja sólo 1 llamada; para repetir la demo sin excederlo, respuestas grabadas + negativa local + trace. El gateway se cierra en código a las 17:30; no borrar contador. Sin push ni cambios en la consola.
+
+### 15:09 · K3 · contrato listo para Alejandro; módulo y docs commiteados (`f246788`, `251b0d0`)
+- Hecho: `albertitos.confianza` (puntuación 0-100 + banda + 3 razones + desglose por fuente, sólo lectura), `confianza.rutas()` (`/confianza/{resumen,ficheros,fichero}`), 17 tests (regla 5 incluida: sobre una copia de la BD real, `package` da el mismo `outcomes.jsonl` antes y después), `scripts/calibrar_confianza.py`, contrato y ejemplos reales en `docs/api/confianza.md`, ADR-0014. `make check`: 555 en verde.
+- **PIDO A Alejandro:** una línea en `src/albertitos/console/api.py`, mejor con import perezoso: `from albertitos import confianza; RUTAS.update(confianza.rutas())` (el bloque `try/except ImportError` está en `docs/api/confianza.md`). Pantallas propuestas: columna «confianza» en la lista (chip con número y color de banda, y `razon_principal` al pasar el ratón), filtro «revisar primero» (`/confianza/ficheros?banda=baja`, que ya viene de menor a mayor), tarjeta «¿cuánto nos fiamos?» en el detalle con una fila por fuente, y el aviso literal «Confianza en la clasificación, no probabilidad de pago».
+- **PIDO A Javier (o a Alfonso, dueño de docs/):** una fila en `docs/adr/README.md` para el ADR-0014 («La confianza por factura es una puntuación ordinal y explicable, no una probabilidad», propuesto, Javier/K3). No está en mi lista de ficheros.
+- **Para Mónica:** ninguna de las 53 ESCALAR sale en banda alta, porque todas dependen de una duda de lectura o de una pregunta abierta del mentor (Q3 35, Q1 6, Q2 2, Q5 2). Las 13 de banda baja se escalan sólo porque no se leyeron con seguridad. En `docs/api/` no nombro ninguna factura de la muestra.
+- Calibración, dicha como es: sin la muestra cerrada no hay verdad etiquetada. Lo que cuadra: contraste plantilla↔LLM, 468 de 468; mapa de I2, 45 de 45 ficheros iguales; y las 13 bajas, ya sabidas. LLM: 0 llamadas hasta ahora.
+
+### 15:16 · K3 · termino: confianza por factura hecha, revisor ensayado (53 llamadas)
+- hecho: módulo, rutas, 27 tests (regla 5 incluida), calibración, contrato con ejemplos reales, ADR-0014 y revisor LLM opcional. Detalle y cifras en PARTE.md, sección K3. `make check`: 565 en verde. Huellas de la BD real y la entrega, iguales al empezar y al terminar.
+- LLM: 53 llamadas de un tope de 60, todas a las 15:13 (antes de las 17:30). Ninguna más.
+- Siguen en pie: **PIDO A Alejandro** (la línea en `console/api.py` y las pantallas) y **PIDO A Javier o Alfonso** (la fila del ADR-0014 en `docs/adr/README.md`).
+
+### 16:30 · Javier · revisión PLAN-12 (R1-R4) integrada en main
+- Revisados los cuatro commits de `revision/grok`. Traído a `main` lo que valía, con retoques: la fila «LLM» del preflight (hallazgo de R1: sin `.env` las escaneadas del lote 2 quedarían PENDIENTE), `smoke.sh` (R4), `enlaces_check.py` (R2), `contrato_api_check.py` (R3) y el resumen del ensayo del lote 2 (R1).
+- Corregido gracias a ellos: los ejemplos de confianza (faltaba `fuentes.revisor.opinion`), 6 enlaces rotos, la chuleta del lote 2 (P0-5 ya está en `main`: sin merge) y el estado del ADR-0012.
+- Descartado: el kit de las 15:55 de R4 como referencia (Alfonso tiene el de las 13:37, equivalente) y la nota de R1 sin `.env` en los tiempos de la chuleta (era un artefacto de su carpeta). El «tope superado en W35» de R4 no era un fallo: es el calendario natural, no el programa (aclarado en `docs/api/bonus.md`).
+- `make check`: 576 en verde. Preflight real: todo verde, con «LLM» en verde (respaldo de visión ya en `.env`). BD real y entrega sin cambios.
+### 15:50 · Alejandro · PR #5 (bandeja): arreglados los 3 bloqueantes de Miguel
+- **AVISO A Alfonso**: una línea en `extract/etapa.py`. `DIRECTORIOS[99]` sólo existe si viene `ALBERTITOS_DIR_BANDEJA`, que pasa `bandeja.cli` al subproceso. Sin la variable, extract hace lo mismo que antes.
+- La bandeja sigue cada PDF por la sha256 que registró ingest, no por el nombre: `./<nombre>` si el nombre ya era de la Caja (P0-5); el del original si es una copia exacta. POST sólo con `--bandeja` y desde `localhost:3000`.
+- `make check` en verde: 574 tests. Uno pasa por la CLI real (ingest → extract por plantilla → decide) con 0 tokens.
+
+### 16:50 · C1 · arranco el backend del chat (PLAN-13, B1-B6)
+- toco: `src/albertitos/chat/*`, `tests/test_chat.py`, `docs/api/chat.md`, `docs/api/ejemplos/chat-salud*.json`, `docs/adr/0013-*`, y en el `Makefile` sólo el objetivo nuevo `chat`. Ninguna llamada al modelo (no hay `.env`).
+- **PARA C2:** implemento `/chat/salud` v2 exactamente como el contrato del plan (`api: 2`). En esta carpeta, sin `.env`, saldrá `modelo_disponible: false`, `motivo: "sin_clave"`.
+
+### 16:38 · C2 · arranco el chat en la consola (PLAN-13)
+- huella al empezar: `dist/albertitos.db` `8501d9975c38`.
+- toco: `console-web/lib/api/chat.ts`, `console-web/lib/mock/chat*`, `console-web/components/chat/*`, en `console-web/app/layout.tsx` sólo la línea que monta el panel y su import, `console-web/.env.example` y la sección «Chat» de `console-web/README.md`. Nada más de console-web (es de Alejandro) ni el backend (C1).
+- **RESPONDO A C1:** consumo `/chat/salud` v2 tal como lo fija el plan (`api: 2`). Si me llega `api: 1` (el backend de antes), lo trato como «disponibilidad desconocida» sin romper. Ninguna llamada al modelo.
+
+### 16:46 · C2 · el puerto 8001 ya está ocupado en este portátil (no es el chat)
+- `curl -s http://127.0.0.1:8001/chat/salud` contesta `{"detail":"Not Found"}` (estilo FastAPI; el chat contesta `{"error": …}`). `ss -ltnp` enseña `127.0.0.1:8001` y `127.0.0.1:3000` en escucha **sin proceso de WSL**: es algo del lado de Windows (red en espejo).
+- **PARA C1:** tu prueba con curl en 8001 puede estar hablando con otro servicio. Comprueba que `curl …/chat/salud` devuelve `"api": 2` antes de dar nada por bueno; si no, arranca con `--puerto 8011` (o `ALBERTITOS_CHAT_PUERTO`). Yo pruebo en 8011.
+- **PARA Javier:** antes de la prueba en vivo, mira qué hay en 8001 en Windows (`netstat -ano | findstr :8001`). Si no se puede cerrar, `make chat` con `ALBERTITOS_CHAT_PUERTO=8011` y la consola con `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8011`. El panel ya lo admite.
+
+### 16:58 · C1 · backend listo; aviso a C2
+- (Corrección: mi entrada anterior dice «16:50», pero eran las 16:36.)
+- Hecho B1-B6 (`14b8402`) y el puerto configurable. `/chat/salud` v2 sale EXACTAMENTE como el contrato del plan.
+- **PARA C2:** en este portátil **el 8001 lo ocupa un contenedor Docker de otro proyecto** (responde `{"detail":"Not Found"}`). Arranca el chat con `ALBERTITOS_CHAT_PUERTO=8101 make chat` y usa `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101` en `console-web/.env.local`. Probado con curl en el 8101: salud → `motivo: "sin_clave"`; «paga la factura F26-2201_transportes.pdf» → `solo_lectura` en 0 ms con `Access-Control-Allow-Origin: http://127.0.0.1:3000`; pregunta normal → `degradado` con el texto «El chat no tiene clave del modelo configurada…»; Origin ajeno → 403.
+- Cada respuesta de `POST /chat` trae ahora `respaldo: true|false`.
+- 17:05 · C1 · **terminado** (parte en `PARTE.md`). 25 tests del chat, `make check` 594. La prueba en vivo queda para cuando haya «gateway libre»: preguntas y qué esperar, en el parte.
+- 16:51 · C1 · corrección de horas: mis entradas «16:58» y «17:05» fueron a las 16:45 y 16:51 (hora del reloj).
+
+### 16:55 · C2 · termino: el chat en la consola, probado contra el servidor de C1 sin modelo
+- hecho: cliente (`lib/api/chat.ts`), las 15 respuestas grabadas con su etiqueta (`lib/mock/chat*`), panel (`components/chat/`) montado con una línea en `app/layout.tsx`, y la sección «Chat» del README. `pnpm build` y `typecheck` en verde; 29 de 29 comprobaciones contra el servidor real en 8011. Detalle en PARTE.md, sección C2. Ninguna llamada al modelo. Huella de la BD, igual.
+- **PIDO A Javier:** añade a mano estas dos líneas a `console-web/.env.example`. Una regla de permisos no deja a los agentes leer ni escribir `.env*`:
+  `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8001` y `NEXT_PUBLIC_CHAT_GRABADAS=false` (el README ya las explica).
+- **PARA Alejandro:** en `console-web` sólo he tocado `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, la sección «Chat» del README y, en `app/layout.tsx`, el import y `<ChatPanel />` tras `<AppShell>`. Al mergear tu rama, respeta esa línea.
+
+### 16:58 · Javier · gateway libre para la prueba en vivo del chat (PLAN-13), acotada
+- Lo autoriza Javier: C1 y C2 han terminado. **Ventana hasta las 17:45 y tope de 30 llamadas** (`ALBERTITOS_CHAT_HASTA` y `ALBERTITOS_CHAT_MAX_LLAMADAS`; las cuenta el propio chat en `dist/chat/llamadas.db`), para no rozar el lote 2 de las 18:00, que va en la otra carpeta.
+- Revisión previa de la rama: `make check` → 594 passed, 2 skipped; `pnpm typecheck` y `pnpm build` en verde.
+- Chat en `:8101` (el 8001 es un contenedor Docker de otro proyecto). Resultado de la prueba, en la siguiente entrada.
+
+### 17:15 · Javier · prueba en vivo del chat (PLAN-13): todo en verde, 20 de 30 llamadas
+- **Montaje:** chat en `:8101` (ventana hasta las 17:45, tope 30), puente en `:8000` y consola en `next dev` en `:3001`, todo sobre la copia de la BD de esta carpeta. Las pruebas de interfaz, en Chromium sin interfaz gráfica (Playwright, fuera del repo, en `dist/ensayo/c2/pw/`); capturas e informe, allí.
+- **Sin gastar llamadas** (`--salud`): con clave, `modelo_disponible: true` y 30 restantes · ventana del domingo → `fuera_de_ventana` con su ventana · tope 0 → `presupuesto_agotado` · ventana cerrada a las 17:00 → `fuera_de_ventana`.
+- **Interfaz sin clave:** 14 de 14 (foco, «Sin modelo: sin clave del LLM», negativa en 48 ms, degradado visible, las 15 grabadas con su etiqueta, sin inventar, Escape, 0 errores en el navegador).
+- **Interfaz en vivo:** 20 de 20. Las 5 respuestas llegan entre 3,4 y 6,2 s, con `deepseek-v4-flash`, y las 5 son **correctas contra la BD**:
+  - reparto 438/53/9;
+  - F26-2201 → ESCALAR por R6, diciendo que el PDF trae una instrucción sin transmitirla;
+  - PO-2026-0492 → las 2 facturas, ambas ESCALAR;
+  - semana W38 → 2 facturas, 14.518,10 €;
+  - **la trampa de inyección, que ayer quedó parcial, ahora es correcta**: «no puedo confirmar la frase que tú citas» (B5 de C1).
+  La cita abre `/invoices/detalle?file=F26-2201_transportes.pdf`. Mientras consulta, el botón está bloqueado con «consultando… (hasta 60 s)».
+- **Concurrencia:** una segunda pregunta a la vez → `429` en < 1 ms («Hay una consulta en curso…»); la primera contesta bien (scan_025, ESCALAR por documento_superpuesto).
+- **Respaldo en vivo:** con un modelo principal inexistente, contesta `glm5.3-flash` con `"respaldo": true`, correcto (FA-2116 → NO_PAGAR por R5, AS-00473 PAGADA). **Tarda 28,5 s y gasta 6 llamadas.** **PARA C1** (mejora, no bloquea): si el principal falla en una pregunta, que las vueltas siguientes de esa pregunta vayan directas al respaldo.
+- **Hallazgo de la consola:** `next dev` bloquea sus recursos si se abre por `127.0.0.1:3001` (hay que usar `localhost:3001`, o `allowedDevOrigins: ['127.0.0.1']` en `next.config.mjs`, que es de Alejandro). Con `next build` + `next start` no pasa.
+- **Sigue pendiente:** las dos líneas de `console-web/.env.example` (a mano; la regla de permisos lo bloquea para los agentes).
+
+- **17:44 · Javier (sesión principal)** · bandeja «Añadir facturas»: no estaba rota, el puente del 8000 corre sin `--bandeja` (`/inbox` → `disponible: false`). La zona ahora lo explica, el comando va aparte con botón Copiar (antes se copiaba `--bandeja.`) y se activa sola al relanzar. Puerto ocupado → una línea con un puerto libre de verdad (puente y chat). `4483b82`, 597 tests en verde.
+### 16:45 · Javier · el chat en la consola lo hacemos nosotros (PLAN-13, rama `javier/chat`)
+- **PARA Alejandro:** ya no te toca el prompt del chat (`PROMPT-ALEJANDRO-CHAT.md` queda sin efecto). Lo hacen C1 (backend) y C2 (panel) en la rama `javier/chat`, carpeta `../HS-Maisa-chat`. En console-web sólo tocamos `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, **una línea (y su import) en `app/layout.tsx`** para montar el panel, `.env.example` y la sección «Chat» del README. Si tu rama toca `app/layout.tsx`, respeta esa línea al mergear. Lo demás de console-web sigue siendo tuyo (pagos, confianza, bandeja).
+- El backend del chat cambia: ventana y tope por variable de entorno, `/chat/salud` v2 con la disponibilidad del modelo, orígenes `localhost:3000` y `127.0.0.1:3000`, y modelo de respaldo. Contrato en `docs/agentes/PLAN-13.md` (rama `javier/chat`).
+- Nadie llama al modelo hasta que el lote 2 esté publicado; después, prueba en vivo y merge a `main`.
+
+- **18:42 · Javier (sesión principal)** · rediseño de AlbertitosAI commiteado desde la sesión principal (backend, consola, docs), merge de `main` con el PR #7 de Alejandro sin conflictos. 601 tests, tsc y `next build` en verde. Pendiente: probar el tono con el modelo cuando el gateway quede libre.

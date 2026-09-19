@@ -1,7 +1,7 @@
 {
-  "ciclo": 10,
-  "rama": "javier/ingesta",
-  "base": "990a75d",
+  "ciclo": 13,
+  "rama": "javier/chat",
+  "base": "3038d25",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -9,41 +9,67 @@
     "docs/entregas.log"
   ],
   "agentes": {
-    "J1": [
-      ".claude/skills/lote2/SKILL.md",
-      "docs/agentes/CHULETA-LOTE2.md",
-      "docs/agentes/ENSAYO-LOTE2.md"
-    ],
-    "J2": [
-      "src/albertitos/sources/excel.py",
-      "tests/test_excel.py",
-      "data/fixtures/maestro_cambiado/*",
-      "docs/agentes/ENSAYO-FUENTES.md"
-    ],
-    "J3": [
-      "scripts/bench_vision_respaldo.py",
-      "docs/agentes/RESPALDO-VISION.md",
-      "src/albertitos/extract/llm.py",
-      "tests/test_llm.py"
-    ],
-    "J4": [
-      "scripts/dato_en_vivo.py",
-      "tests/test_dato_en_vivo.py",
-      "docs/agentes/KIT-DEFENSA.md",
-      "docs/demo/*"
-    ],
-    "J5": [
-      "src/albertitos/bonus/*",
-      "tests/test_bonus.py",
-      "docs/adr/0012-*",
-      "docs/BONUS.md"
-    ],
     "Javier": [
       "docs/agentes/PLAN-10.md",
       "docs/agentes/partes/PARTE-09.md",
       "scripts/ensayo/*",
       "docs/agentes/RESILIENCIA-Y-COSTE.md",
-      "docs/agentes/ANALISIS-JEV.md"
+      "docs/agentes/ANALISIS-JEV.md",
+      ".github/workflows/windows.yml",
+      "tests/test_erp.py",
+      "tests/test_hooks.py",
+      "src/albertitos/sources/estado_bd.py",
+      "docs/ESTADO-BACKEND.md",
+      "scripts/cifras_check.py",
+      "tests/test_cifras.py",
+      ".claude/skills/lote2/SKILL.md",
+      "docs/agentes/CHULETA-LOTE2.md",
+      "docs/agentes/ENSAYO-LOTE2.md",
+      "src/albertitos/sources/excel.py",
+      "tests/test_excel.py",
+      "data/fixtures/maestro_cambiado/*",
+      "docs/agentes/ENSAYO-FUENTES.md",
+      "scripts/bench_vision_respaldo.py",
+      "docs/agentes/RESPALDO-VISION.md",
+      "src/albertitos/extract/llm.py",
+      "tests/test_llm.py",
+      "scripts/dato_en_vivo.py",
+      "tests/test_dato_en_vivo.py",
+      "docs/agentes/KIT-DEFENSA.md",
+      "docs/demo/*",
+      "docs/agentes/PLAN-11.md",
+      "docs/agentes/partes/PARTE-10.md",
+      "docs/agentes/PROMPT-ALEJANDRO-BONUS.md",
+      "docs/agentes/PROMPT-ALEJANDRO-CONFIANZA.md",
+      "docs/agentes/PROMPT-ALEJANDRO-CHAT.md",
+      "docs/adr/README.md",
+      "docs/agentes/PLAN-12.md",
+      "docs/revision/*",
+      "scripts/enlaces_check.py",
+      "tests/test_enlaces.py",
+      "scripts/contrato_api_check.py",
+      "tests/test_contrato_api.py",
+      "scripts/smoke.sh",
+      "scripts/preflight_lote2.py",
+      "tests/test_preflight.py",
+      "docs/agentes/fix_invoice_detail_*",
+      "src/albertitos/bonus/*",
+      "tests/test_bonus.py",
+      "docs/BONUS.md",
+      "docs/adr/0012-*",
+      "docs/api/bonus.md",
+      "docs/api/ejemplos/bonus-*",
+      "src/albertitos/confianza/*",
+      "tests/test_confianza.py",
+      "scripts/calibrar_confianza.py",
+      "docs/api/confianza.md",
+      "docs/api/ejemplos/confianza-*",
+      "docs/adr/0014-*",
+      "src/albertitos/extract/etapa.py",
+      "scripts/agentes_check.py",
+      "docs/agentes/PLAN-13.md",
+      "docs/agentes/partes/PARTE-11.md",
+      "docs/api/ejemplos/chat-[01]*"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -68,10 +94,32 @@
       "docs/ANALISIS-DATOS.md"
     ],
     "Alejandro": [
-      "console-web/*"
+      "src/albertitos/console/*",
+      "tests/test_console.py",
+      "docs/agentes/FASE-3-UNION.md",
+      ".claude/rules/consola.md",
+      "docs/adr/0007-*",
+      "docs/agentes/añadir_facturas_panel_*"
     ],
     "Alfonso": [
-      "docs/plan/*"
+      "docs/plan/*",
+      "presentaciones/*"
+    ],
+    "C1": [
+      "src/albertitos/chat/*",
+      "tests/test_chat.py",
+      "docs/api/chat.md",
+      "docs/api/ejemplos/chat-salud*",
+      "docs/adr/0013-*",
+      "Makefile"
+    ],
+    "C2": [
+      "console-web/lib/api/chat.ts",
+      "console-web/lib/mock/chat*",
+      "console-web/components/chat/*",
+      "console-web/app/layout.tsx",
+      "console-web/.env.example",
+      "console-web/README.md"
     ]
   }
 }

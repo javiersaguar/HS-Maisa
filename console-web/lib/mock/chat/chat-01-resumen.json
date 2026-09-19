@@ -1,0 +1,18 @@
+{
+  "fuente": "docs/api/ejemplos/chat-01-resumen.json",
+  "pregunta": "¿Cuántas facturas hay en PAGAR, ESCALAR y NO_PAGAR?",
+  "respuesta": {
+    "respuesta": "Según el corte guardado (fecha 2026-09-18, norma v3): PAGAR 438, ESCALAR 53, NO_PAGAR 9. Suma 500 facturas en el lote 1. Recuerda que PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [],
+    "herramientas_usadas": [
+      "resumen"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 3465,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "438/53/9, lote y corte correctos."
+  }
+}

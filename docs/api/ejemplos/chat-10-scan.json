@@ -1,0 +1,94 @@
+{
+  "pregunta": "¿Qué decisión tiene scan_025.pdf y cuál es el motivo?",
+  "respuesta": {
+    "respuesta": "scan_025.pdf tiene decisión vigente ESCALAR. Motivo: incumple la regla v3.R6, por una anomalía que debe ver una persona: documento_superpuesto (además del aviso sin_texto). Se trata de la factura 2026/27401 de Limpiezas Turia S.L. (P004), pedido PO-2026-0728, por 774,40 €; sin valor de confianza.",
+    "citas": [
+      "scan_025.pdf"
+    ],
+    "herramientas_usadas": [
+      "traza"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 3325,
+    "estado": "ok"
+  },
+  "llamadas": 2,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "file_id": "scan_025.pdf",
+        "lote": 1,
+        "hechos": {
+          "num_factura": "2026/27401",
+          "fecha": "2026-03-22",
+          "razon_social": "Limpiezas Turia S.L.",
+          "nif_emisor": "B98120774",
+          "pedido": "PO-2026-0728",
+          "total": "774.40",
+          "base": "640.00",
+          "iva": "134.40",
+          "metodo": "cache",
+          "avisos": [
+            "sin_texto",
+            "documento_superpuesto"
+          ],
+          "confianza": null
+        },
+        "resultado": "ESCALAR",
+        "reglas_fallidas": [
+          {
+            "regla": "v3.R6",
+            "motivo": "anomalía que debe ver una persona: documento_superpuesto"
+          }
+        ],
+        "fuentes": {
+          "maestro_version": "80911e429c6c",
+          "erp_version": "v1",
+          "proveedor": {
+            "id": "P004",
+            "razon_social": "Limpiezas Turia S.L.",
+            "nif": "B98120774",
+            "iban": "ES4414650100951704302211",
+            "ciudad": "Valencia",
+            "condiciones_dias": 45
+          },
+          "pedido": {
+            "pedido": "PO-2026-0728",
+            "proveedor_id": "P004",
+            "nif": "B98120774",
+            "importe_total": "774.40",
+            "estado": "ABIERTO",
+            "fecha_pedido": "2026-03-22"
+          },
+          "asientos": [
+            {
+              "asiento_id": "AS-73002",
+              "fecha_registro": "2026-03-22",
+              "proveedor_id": "P004",
+              "nif": "B98120774",
+              "pedido": "PO-2026-0728",
+              "importe_esperado": "774.40",
+              "estado": "PENDIENTE"
+            }
+          ]
+        },
+        "versiones": {
+          "norma_version": "v3",
+          "fecha_corte": "2026-09-18",
+          "maestro_version": "80911e429c6c",
+          "erp_version": "v1"
+        },
+        "texto_del_pdf_omitido": false,
+        "citas": [
+          "scan_025.pdf"
+        ]
+      }
+    }
+  ],
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "ESCALAR por documento_superpuesto, datos contrastados con traza.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

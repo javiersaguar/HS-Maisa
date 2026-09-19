@@ -18,7 +18,7 @@
 | auditoría · `package` con auditoría · `validate` ×2 · `trace` | 0,3 s · 0,4 s · 0,2 s ×2 · 0,2 s |
 | `make publicar` en seco (repo bare local) | 1,0 s, VERDE |
 | **Desvío rojo:** `package` se niega (exit 1) · `--aceptar-rojo` | 0,4 s · 0,3 s; evento «roja aceptada: <motivo>» |
-| **Desvío P0-5** (`desvio-p05.sh`): del ROJO del verificador a los dos lotes APTO | **39 s**, de ellos 36 s de `make check`; `2026-01-16_P004.pdf` sale en los dos lotes, ESCALAR |
+| **P0-5** (nombre repetido con otro contenido): ya está en `main`, el verificador sólo avisa | sin merge ni `make check` (antes, 39 s); `2026-01-16_P004.pdf` sale en los dos lotes, ESCALAR (R1, 15:55) |
 | **Contingencia** en seco | 0,2 s |
 
 ## Entorno
@@ -31,10 +31,14 @@ El ERP v1 del equipo vive en `:8009` y **no se toca**. El v2 del lote 2 va en **
 
 ## 0 · Antes de abrir el ZIP
 ```bash
-uv run python scripts/preflight_lote2.py --respaldar     # 0 fantasmas, ERP esperado v1
+uv run python scripts/preflight_lote2.py --respaldar     # 0 fantasmas, ERP esperado v1 y «LLM» en VERDE
 uv run python scripts/auditoria_entrega.py               # VERDE
 sha256sum dist/albertitos.db dist/entrega/outcomes.jsonl # apúntalas: al final, iguales
 ```
+
+**La fila «LLM» del preflight tiene que salir en VERDE** (clave presente, visión `qwen3.6`, respaldo `deepseek-v4-flash`).
+Lo encontró R1: sin `.env`, el modelo por defecto es `claude-*`, que el gateway rechaza, así que **las escaneadas del
+lote 2 se quedarían PENDIENTE**. En la carpeta de revisión, sin `.env`, así le pasó a él.
 
 ## 1 · Material
 ```bash
@@ -52,7 +56,7 @@ Flags reales: `material` posicional · `--hash` · `--db` · `--lote1-dir` · `-
 |---|---|
 | AVISO «copia exacta (SHA-256)… (P0-1)» | **Sigues.** Cada nombre tendrá su línea; todas las copias, y el original del lote 1, salen ESCALAR |
 | ROJO «PDF idéntico por SHA-256…» | Falta P0-1: `/sync` con `main` y repetir. Nunca ingerir así |
-| ROJO **«nombre coincide con lote 1»** (P0-5) | **Avisas a Miguel** y mergeas su rama: `git merge origin/miguel/p0-5-nombre-repetido && make check`. Luego repites el verificador: pasa a avisar. El que choca se guarda como `./X.pdf` (`db.PREFIJO_INTERNO`) y su nombre de entrega va en `identidades`: tiene sus hechos, su decisión y su línea |
+| AVISO **«nombre coincide con lote 1 y el contenido es otro»** (P0-5) | **Sigues.** P0-5 ya está en `main`: el verificador avisa y no para (R1, 15:55: APTO, exit 0), y **no hay nada que mergear**. El PDF que choca entra en `ficheros` como `./X.pdf` (`db.PREFIJO_INTERNO`) y su nombre de entrega va en `identidades`, con sus hechos, su decisión y su línea. Si vieras ROJO es que estás con código viejo: `git pull` |
 | ROJO NFC · `.PDF` · subcarpeta | Corriges la estructura. **Nunca renombres un PDF oficial** |
 | «sin adjuntos con posible regla» | La regla nueva llega por otro sitio: mírala en el canal y pásasela a Mónica literal |
 

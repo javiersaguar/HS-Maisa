@@ -1,0 +1,20 @@
+{
+  "fuente": "docs/api/ejemplos/chat-02-pagar.json",
+  "pregunta": "¿Por qué se puede pagar 2026-01-08_P001.pdf? Consulta su traza.",
+  "respuesta": {
+    "respuesta": "La factura 2026/11604 (Suministros Levante S.L., NIF B46102331, pedido PO-2026-0096, total 3012,89 €) está clasificada como PAGAR porque no falla ninguna regla: el NIF coincide con el del proveedor y el pedido, el importe total cuadra con el pedido y con el asiento esperado AS-00096 (PENDIENTE), el pedido está ABIERTO, no hay avisos y la confianza registrada es 1.0. Norma v3, maestro 80911e429c6c, ERP v1, corte 2026-09-18. PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [
+      "2026-01-08_P001.pdf"
+    ],
+    "herramientas_usadas": [
+      "traza"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 5893,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "PAGAR, sin reglas fallidas; hechos y fuentes coinciden con traza."
+  }
+}

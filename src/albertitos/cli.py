@@ -337,13 +337,27 @@ def erp_diff(a: str, b: str) -> None:
 
 
 @app.command()
-def decide(norma: str = "v3", fecha_corte: str | None = None, erp: str | None = None) -> None:
+def decide(
+    norma: str = "v3",
+    fecha_corte: str | None = None,
+    erp: str | None = None,
+    fixture: Path | None = typer.Option(
+        None, help="sólo estos file_id (uno por línea), como en extract"
+    ),
+) -> None:
     """Aplica la norma a todos los ficheros con hechos (usa el último maestro y el ERP indicado o el último)."""
     from albertitos.pipeline import etapas
     from albertitos.pipeline.run import porques
     from albertitos.sources import snapshot
 
     corte = _fecha_corte(fecha_corte)
+    solo = None
+    if fixture is not None:
+        solo = [
+            unicodedata.normalize("NFC", x.strip())
+            for x in fixture.read_text(encoding="utf-8").splitlines()
+            if x.strip() and not x.startswith("#")
+        ]
     conn = _conn()
     m = snapshot.cargar_maestro_bd(conn)
     e = snapshot.cargar_erp_bd(conn, erp)
@@ -356,6 +370,7 @@ def decide(norma: str = "v3", fecha_corte: str | None = None, erp: str | None = 
         fecha_corte=corte,
         maestro=m,
         erp=e,
+        solo=solo,
         por=por,
         por_defecto=por_defecto,
     )

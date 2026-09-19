@@ -18,7 +18,7 @@ export function FuncionCongelada({ titulo, descripcion }: { titulo: string; desc
           title={titulo}
           description={descripcion}
           action={
-            <Link href="/" className="rounded-lg bg-[#164f45] px-4 py-2 text-[14px] font-semibold text-white hover:bg-[#0d4037]">
+            <Link href="/" className="rounded-lg bg-accent-dark px-4 py-2 text-[14px] font-semibold text-canvas hover:bg-ink">
               Volver al panel
             </Link>
           }

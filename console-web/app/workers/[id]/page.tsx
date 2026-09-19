@@ -8,12 +8,13 @@ import {
   ESTADO_EVENTO_LABELS,
   ETAPAS,
   ETAPA_DESCRIPCIONES,
+  ETAPA_GRANO,
   ETAPA_LABELS,
   formatEur,
   formatMs,
   formatNumber,
   formatPercent,
-  formatRelative,
+  pieCoberturaEtapa,
 } from '@/lib/format'
 import { useEtapas, useEventos } from '@/hooks/useEtapas'
 import { useTraza } from '@/hooks/useTraza'
@@ -27,10 +28,10 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ErrorCard, ErrorState, LoadingCard, LoadingState } from '@/components/ui/states'
 
 const TONE_STYLE = {
-  green: { color: '#176d59', tint: '#e4f8ef' },
-  yellow: { color: '#a87000', tint: '#fff9e6' },
-  red: { color: '#bd3434', tint: '#fff0f0' },
-  gray: { color: '#63756d', tint: '#f1f5f3' },
+  green: { color: 'var(--color-ok)', tint: 'var(--color-ok-soft)' },
+  yellow: { color: 'var(--color-warn)', tint: 'var(--color-warn-soft)' },
+  red: { color: 'var(--color-bad)', tint: 'var(--color-bad-soft)' },
+  gray: { color: 'var(--color-muted)', tint: 'var(--color-raised)' },
 } as const
 
 export default function EtapaDetailPage() {
@@ -77,23 +78,23 @@ export default function EtapaDetailPage() {
   const chainHeading = (
     <div>
       <h2 className="text-[14px] font-semibold">Traza</h2>
-      <p className="text-[14px] text-[#9aa39e]">Últimos pasos de esta etapa{etapaId === 'decide' ? ', con las reglas de la norma' : ''}</p>
+      <p className="text-[14px] text-muted">Últimos pasos de esta etapa{etapaId === 'decide' ? ', con las reglas de la norma' : ''}</p>
     </div>
   )
 
   return shell(
     <>
-      <header className="flex items-center gap-4 border-b border-[#e2e5df] pb-5">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-[#eff8f4] text-[#176d59]">
+      <header className="flex items-center gap-4 border-b border-line pb-5">
+        <div className="flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent-dark">
           <EtapaIcon etapa={etapaId} className="size-6" />
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-[22px] font-semibold tracking-[-0.03em]">{ETAPA_LABELS[etapaId]}</h1>
-            <span className="font-mono text-[14px] text-[#9aa39e]">{etapaId}</span>
+            <span className="font-mono text-[14px] text-muted">{etapaId}</span>
             <StatusBadge tone={salud.tone}>{salud.label}</StatusBadge>
           </div>
-          <p className="mt-1 text-[13px] text-[#8d9891]">
+          <p className="mt-1 text-[13px] text-muted">
             {ETAPA_DESCRIPCIONES[etapaId]}
             {etapa.version ? ` · versión ${etapa.version}` : ''}
           </p>
@@ -101,10 +102,15 @@ export default function EtapaDetailPage() {
       </header>
 
       <section className={`mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 ${hasCost ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
-        <WorkerKpi icon="●" label="Cobertura" value={formatPercent(salud.cobertura)} {...TONE_STYLE[salud.tone]}>
-          {formatNumber(etapa.ficherosOk)} de {formatNumber(data.ficheros)} ficheros · {formatRelative(etapa.ultimoEventoEn)}
+        <WorkerKpi
+          icon="●"
+          label={ETAPA_GRANO[etapaId] === 'lote' ? 'Peticiones OK' : 'Cobertura'}
+          value={ETAPA_GRANO[etapaId] === 'lote' ? formatNumber(etapa.eventos) : formatPercent(salud.cobertura)}
+          {...TONE_STYLE[salud.tone]}
+        >
+          {pieCoberturaEtapa(etapa, data.ficheros)}
         </WorkerKpi>
-        <WorkerKpi icon="↗" label="Eventos" value={formatNumber(etapa.eventos)} color="#6354a8" tint="#f0edff">
+        <WorkerKpi icon="↗" label="Eventos" value={formatNumber(etapa.eventos)} color="var(--color-ink-soft)" tint="var(--color-raised)">
           {incidencias
             ? (Object.keys(etapa.porEstado) as Array<keyof typeof etapa.porEstado>)
                 .filter((estado) => estado !== 'ok' && etapa.porEstado[estado] > 0)
@@ -112,14 +118,14 @@ export default function EtapaDetailPage() {
                 .join(' · ')
             : 'Todos en estado ok'}
         </WorkerKpi>
-        <WorkerKpi icon="↻" label="Reintentos" value={formatNumber(etapa.reintentos)} color="#16825f" tint="#e4f8ef">
+        <WorkerKpi icon="↻" label="Reintentos" value={formatNumber(etapa.reintentos)} color="var(--color-ok)" tint="var(--color-ok-soft)">
           Eventos con intento &gt; 1
         </WorkerKpi>
-        <WorkerKpi icon="◷" label="Latencia media" value={formatMs(etapa.latenciaMediaMs)} color="#b36a35" tint="#fff1e4">
+        <WorkerKpi icon="◷" label="Latencia media" value={formatMs(etapa.latenciaMediaMs)} color="var(--color-warn)" tint="var(--color-warn-soft)">
           Por evento
         </WorkerKpi>
         {hasCost && (
-          <WorkerKpi icon="€" label="Coste" value={formatEur(etapa.costeEur, 2)} color="#315d53" tint="#eef3f1">
+          <WorkerKpi icon="€" label="Coste" value={formatEur(etapa.costeEur, 2)} color="var(--color-accent-dark)" tint="var(--color-accent-soft)">
             {formatNumber(etapa.tokensIn)} tokens de entrada · {formatNumber(etapa.tokensOut)} de salida
           </WorkerKpi>
         )}
@@ -127,9 +133,9 @@ export default function EtapaDetailPage() {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between gap-4 border-b border-[#e5e8e3] px-5 py-4">
+          <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
             <h2 className="text-[14px] font-semibold">Últimos eventos</h2>
-            <p className="text-[14px] text-[#9aa39e]">Filas de la tabla eventos con etapa = {etapaId}</p>
+            <p className="text-[14px] text-muted">Filas de la tabla eventos con etapa = {etapaId}</p>
           </div>
           {eventos.error ? (
             <ErrorState error={eventos.error} onRetry={eventos.refresh} retrying={eventos.loading} />

@@ -1,0 +1,109 @@
+{
+  "api": 1,
+  "file_id": "scan_006.pdf",
+  "lote": 1,
+  "resultado": "ESCALAR",
+  "regla": "v3.R6",
+  "puntuacion": 45,
+  "banda": "baja",
+  "razones": [
+    "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+    "la lectura se eligió reconciliándola con el maestro (confianza 0.6)",
+    "4 lecturas de la imagen; no coinciden en iban, nif_emisor"
+  ],
+  "causa": "se escala sólo por dudas de lectura",
+  "metodo": "cache",
+  "lecturas": {
+    "n": 4,
+    "campos_distintos": [
+      "iban",
+      "nif_emisor"
+    ]
+  },
+  "mismo_pdf_que": [],
+  "fuentes": {
+    "pdf": {
+      "penalizacion": 0.0,
+      "dudas": [
+        {
+          "id": "pdf.vision",
+          "fuente": "pdf",
+          "texto": "escaneada: leída por visión",
+          "puntos": 15,
+          "factor": 0.0,
+          "aplicado": 0.0,
+          "por_que": "Escaneada: sólo hay imagen y la leyó la visión, la vía con más errores (17 desacuerdos en 29)."
+        },
+        {
+          "id": "pdf.lecturas_discrepan",
+          "fuente": "pdf",
+          "texto": "4 lecturas de la imagen; no coinciden en iban, nif_emisor",
+          "puntos": 20,
+          "factor": 0.0,
+          "aplicado": 0.0,
+          "por_que": "Las lecturas independientes de la imagen no coinciden en un campo que decide."
+        },
+        {
+          "id": "pdf.reconciliada",
+          "fuente": "pdf",
+          "texto": "la lectura se eligió reconciliándola con el maestro (confianza 0.6)",
+          "puntos": 30,
+          "factor": 0.0,
+          "aplicado": 0.0,
+          "por_que": "Las lecturas no coincidían y se eligió la que cuadra con el maestro (confianza 0,6, ADR-0003/0011)."
+        }
+      ],
+      "a_favor": []
+    },
+    "coherencia": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "base + IVA = total, con el IVA al 21 %"
+      ]
+    },
+    "maestro": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "NIF, IBAN y pedido casan con el maestro (P004)"
+      ]
+    },
+    "erp": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "el ERP espera el mismo importe al céntimo (asiento AS-00482, PENDIENTE)"
+      ]
+    },
+    "decision": {
+      "penalizacion": 55.0,
+      "dudas": [
+        {
+          "id": "decision.escala_por_lectura",
+          "fuente": "decision",
+          "texto": "se escala porque no se leyó con seguridad, no porque la factura esté mal",
+          "puntos": 55,
+          "factor": 1.0,
+          "aplicado": 55.0,
+          "por_que": "Se escala sólo porque no se pudo leer con seguridad, no porque la factura esté mal: si el original está limpio, lo correcto sería PAGAR."
+        }
+      ],
+      "a_favor": []
+    },
+    "politica": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "tope": 30
+    },
+    "revisor": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "opinion": null
+    }
+  },
+  "version": "confianza-1",
+  "escala": "puntuación ordinal 0-100 (100 = sin dudas conocidas); no es una probabilidad calibrada"
+}

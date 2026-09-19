@@ -1,0 +1,69 @@
+{
+  "api": 1,
+  "file_id": "2026-01-11_P007.pdf",
+  "lote": 1,
+  "resultado": "PAGAR",
+  "regla": null,
+  "puntuacion": 100,
+  "banda": "alta",
+  "razones": [
+    "leída por plantilla y confirmada por el LLM campo a campo",
+    "base + IVA = total, con el IVA al 21 %",
+    "NIF, IBAN y pedido casan con el maestro (P007)"
+  ],
+  "causa": "cumple las seis reglas, corroborada por maestro y ERP",
+  "metodo": "plantilla",
+  "lecturas": {
+    "contraste": true,
+    "campos_distintos": []
+  },
+  "mismo_pdf_que": [],
+  "fuentes": {
+    "pdf": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "leída por plantilla y confirmada por el LLM campo a campo"
+      ]
+    },
+    "coherencia": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "base + IVA = total, con el IVA al 21 %"
+      ]
+    },
+    "maestro": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "NIF, IBAN y pedido casan con el maestro (P007)"
+      ]
+    },
+    "erp": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "el ERP espera el mismo importe al céntimo (asiento AS-00167, PENDIENTE)"
+      ]
+    },
+    "decision": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": []
+    },
+    "politica": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "tope": 30
+    },
+    "revisor": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": []
+    }
+  },
+  "version": "confianza-1",
+  "escala": "puntuación ordinal 0-100 (100 = sin dudas conocidas); no es una probabilidad calibrada"
+}

@@ -1,82 +1,39 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { usePanel } from '@/hooks/usePanel'
 import { BRAND } from '@/lib/config'
-import { downloadCsv } from '@/lib/csv'
-import { motivoPrincipal } from '@/lib/format'
-import { ActivityChart } from '@/components/dashboard/ActivityChart'
-import { DecisionDistribution } from '@/components/dashboard/DecisionDistribution'
-import { PipelineCard } from '@/components/dashboard/PipelineCard'
-import { ProcessingHealth } from '@/components/dashboard/ProcessingHealth'
-import { RecentDecisions } from '@/components/dashboard/RecentDecisions'
-import { ErrorCard, LoadingCard } from '@/components/ui/states'
+import { Analisis } from '@/components/dashboard/Analisis'
+import { InvoiceDropzone } from '@/components/dashboard/InvoiceDropzone'
+import { Card } from '@/components/ui/Card'
 import { Toast } from '@/components/ui/Toast'
 
-export default function PanelPage() {
-  const { data, error, loading, initialLoading, refresh } = usePanel({ live: true })
-  const [toast, setToast] = useState<string | null>(null)
+/**
+ * Portada: dos tarjetas. A la izquierda se sueltan facturas y se ve cómo avanza el envío; a la derecha,
+ * qué decide la norma con la que elijas y por qué.
+ *
+ * No hay recuentos de la base de datos a propósito: aquí se enseña lo que acabas de subir. El histórico
+ * acumulado vive en Ficheros y Etapas, porque cuando llegue otra Caja la portada tiene que hablar de ella.
+ */
+export default function PortadaPage() {
+  const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null)
+  const [seleccionado, setSeleccionado] = useState<string | null>(null)
+
   const dismissToast = useCallback(() => setToast(null), [])
-
-  if (error) {
-    return (
-      <div className="mx-auto max-w-[1380px] p-6 pt-5">
-        <ErrorCard error={error} onRetry={refresh} retrying={loading} />
-      </div>
-    )
-  }
-
-  if (initialLoading || !data) {
-    return (
-      <div className="mx-auto flex max-w-[1380px] flex-col gap-4 p-6 pt-5">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[.9fr_1.1fr]">
-          <LoadingCard label="Cargando etapas" rows={3} />
-          <LoadingCard label="Cargando contadores" rows={4} />
-        </div>
-        <LoadingCard label="Cargando últimas decisiones" rows={5} />
-      </div>
-    )
-  }
-
-  const exportRecientes = () => {
-    downloadCsv(
-      'albertitos-ultimas-decisiones.csv',
-      ['file_id', 'result', 'motivo', 'norma_version'],
-      data.recientes.map((fichero) => [
-        fichero.file_id,
-        fichero.estado,
-        fichero.decision ? motivoPrincipal(fichero) : '',
-        fichero.decision?.norma_version ?? '',
-      ]),
-    )
-    setToast(`${data.recientes.length} decisiones exportadas a CSV`)
-  }
+  const seleccionar = useCallback((fileId: string) => setSeleccionado(fileId), [])
+  const facturasDecididas = useCallback((message: string, tone: 'success' | 'error') => {
+    setToast({ message, tone })
+  }, [])
 
   return (
-    <div className="mx-auto flex max-w-[1380px] flex-col gap-4 p-6 pt-5">
+    <div className="mx-auto flex max-w-[1400px] flex-col gap-5 p-6 pt-5 lg:h-full">
       <title>{`Panel · ${BRAND}`}</title>
-      <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[.9fr_1.1fr]">
-        <PipelineCard
-          etapas={data.etapas}
-          ficheros={data.ficheros}
-          actions={
-            <button
-              onClick={exportRecientes}
-              disabled={!data.recientes.length}
-              className="hidden rounded-lg border border-[#dfe4de] px-3 py-1.5 text-[13px] font-medium text-[#59635e] transition hover:bg-[#f5f7f3] disabled:opacity-40 sm:block"
-            >
-              Exportar CSV
-            </button>
-          }
-        />
-        <div className="flex flex-col gap-4">
-          <ProcessingHealth panel={data} />
-          <DecisionDistribution shares={data.distribucion} />
-          <ActivityChart data={data.porMes} />
-        </div>
+      <div className="grid grid-cols-1 gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(360px,0.8fr)_1.2fr]">
+        <InvoiceDropzone onDone={facturasDecididas} onSelect={seleccionar} seleccionado={seleccionado} />
+        <Card className="flex min-h-[420px] flex-col overflow-hidden">
+          <Analisis fileId={seleccionado} />
+        </Card>
       </div>
-      <RecentDecisions ficheros={data.recientes} />
-      {toast && <Toast message={toast} onDismiss={dismissToast} />}
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={dismissToast} />}
     </div>
   )
 }

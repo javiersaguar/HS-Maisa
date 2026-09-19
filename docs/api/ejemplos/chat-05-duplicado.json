@@ -1,0 +1,78 @@
+{
+  "pregunta": "¿Qué facturas llevan el pedido PO-2026-0492?",
+  "respuesta": {
+    "respuesta": "Dos facturas llevan el pedido PO-2026-0492, ambas de Catering Hermanos Pico S.L. (B96233419) y ambas clasificadas ESCALAR por duplicado sospechoso: 2026-0233-A_catering.pdf (nº 2026/0233-A, 2026-04-11, total 1512,50; base 1250,00 + IVA 262,50) y factura_41082.pdf (nº F26-0233, 2026-04-07, total 1512,50; base 1250,00 + IVA 262,50, además con aviso fecha_en_letra). Importes y proveedor idénticos, por eso el duplicado sospechoso; ESCALAR es solo clasificación, no acción ejecutada.",
+    "citas": [
+      "2026-0233-A_catering.pdf",
+      "factura_41082.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 3947,
+    "estado": "ok"
+  },
+  "llamadas": 2,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "items": [
+          {
+            "file_id": "2026-0233-A_catering.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "2026/0233-A",
+              "fecha": "2026-04-11",
+              "razon_social": "CATERING HERMANOS PICO S.L.",
+              "nif_emisor": "B96233419",
+              "pedido": "PO-2026-0492",
+              "total": "1512.50",
+              "base": "1250.00",
+              "iva": "262.50",
+              "metodo": "plantilla",
+              "avisos": [
+                "duplicado_sospechoso"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "factura_41082.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-0233",
+              "fecha": "2026-04-07",
+              "razon_social": "Catering Hermanos Pico S.L.",
+              "nif_emisor": "B96233419",
+              "pedido": "PO-2026-0492",
+              "total": "1512.50",
+              "base": "1250.00",
+              "iva": "262.50",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra",
+                "duplicado_sospechoso"
+              ],
+              "confianza": 1.0
+            }
+          }
+        ],
+        "total": 2,
+        "truncado": false,
+        "citas": [
+          "2026-0233-A_catering.pdf",
+          "factura_41082.pdf"
+        ]
+      }
+    }
+  ],
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "Dos file_id correctos para PO-2026-0492, ambos ESCALAR.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

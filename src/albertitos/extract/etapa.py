@@ -47,6 +47,9 @@ DIRECTORIOS = {
         os.environ.get("ALBERTITOS_DIR_LOTE2", "data/lote2/facturas")
     ),  # ensayos: apuntar a un lote simulado
 }
+# La bandeja de la consola (lote 99, siempre sobre una BD aparte) pasa su carpeta al subproceso.
+if os.environ.get("ALBERTITOS_DIR_BANDEJA"):
+    DIRECTORIOS[99] = Path(os.environ["ALBERTITOS_DIR_BANDEJA"])
 DPI_VISION = int(os.environ.get("ALBERTITOS_DPI_VISION", "150"))
 # Segunda lectura de cada escaneada: recorte de la parte superior (identificadores) a más resolución.
 # Medido el 18/09: a 130 dpi la segunda lectura era PEOR que la primera (B99 por B98, 51,27 por 61,27) y

@@ -30,7 +30,11 @@ AHORA = datetime(2026, 9, 19, 17, 30, tzinfo=pub.MADRID)
 
 def git(ruta, *args):
     return subprocess.run(
-        ["git", "-C", str(ruta), *args], check=True, capture_output=True, text=True
+        ["git", "-C", str(ruta), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
     ).stdout.strip()
 
 
@@ -77,7 +81,7 @@ def caso(tmp_path, monkeypatch):
 from pathlib import Path
 args=sys.argv[1:]
 raiz=Path.cwd()
-with (raiz/'llamadas.txt').open('a') as f: f.write(json.dumps(args)+'\\n')
+with (raiz/'llamadas.txt').open('a', encoding='utf-8') as f: f.write(json.dumps(args)+'\\n')
 if args[0]=='package':
     p=Path(args[args.index('--salida')+1]);p.mkdir()
     (p/'outcomes.jsonl').write_text(json.dumps({'file_id':'a.pdf','result':'PAGAR'})+'\\n')
@@ -110,7 +114,7 @@ def test_seco_no_modifica_remoto_destino_bd_ni_registro(caso):
     assert llamar(caso) == 0
     assert not git(remoto, "for-each-ref")
     assert {p.name for p in destino.iterdir()} == {".git"}
-    assert (raiz / "docs/entregas.log").read_text() == "# registro\n"
+    assert (raiz / "docs/entregas.log").read_text(encoding="utf-8") == "# registro\n"
     assert pub.huella(raiz / "dist/albertitos.db") == antes
 
 
@@ -125,11 +129,11 @@ def test_publica_archivos_exactos_y_segunda_vez_no_commit(caso):
     assert {p.name for p in destino.iterdir()} == {".git", "albertitos_plan.pdf", "outcomes.jsonl"}
     mensaje = git(remoto, "log", "-1", "--format=%B", "main")
     assert "lote1 1 (1/0/0)" in mensaje and "norma v3 · erp v1" in mensaje
-    registro = (raiz / "docs/entregas.log").read_text()
+    registro = (raiz / "docs/entregas.log").read_text(encoding="utf-8")
     assert commit in registro
     assert llamar(caso, "--publicar") == 0
     assert git(remoto, "rev-parse", "main") == commit
-    assert (raiz / "docs/entregas.log").read_text() == registro
+    assert (raiz / "docs/entregas.log").read_text(encoding="utf-8") == registro
 
 
 def test_rojo_para_y_excepcion_queda_en_commit_y_log(caso, capsys):
@@ -141,9 +145,11 @@ def test_rojo_para_y_excepcion_queda_en_commit_y_log(caso, capsys):
     motivo = "scan_025: ESCALAR correcto; evidencia 'None' pendiente de Mónica"
     assert llamar(caso, "--publicar", "--aceptar-rojo", motivo) == 0
     assert motivo in git(remoto, "log", "-1", "--format=%B", "main")
-    assert motivo in (raiz / "docs/entregas.log").read_text()
+    assert motivo in (raiz / "docs/entregas.log").read_text(encoding="utf-8")
     # package también audita: el motivo le llega, o su puerta pararía el rojo antes que publicar
-    llamadas = [json.loads(x) for x in (raiz / "llamadas.txt").read_text().splitlines()]
+    llamadas = [
+        json.loads(x) for x in (raiz / "llamadas.txt").read_text(encoding="utf-8").splitlines()
+    ]
     paquetes = [a for a in llamadas if a[0] == "package"]
     assert "--aceptar-rojo" not in paquetes[0]
     assert paquetes[-1][-2:] == ["--aceptar-rojo", motivo]
@@ -162,7 +168,7 @@ def test_bloqueos_no_se_saltan_aceptando_rojo(caso, fallo):
     assert llamar(caso, "--publicar", "--aceptar-rojo", "no autoriza fallos técnicos") == 1
     assert not git(remoto, "for-each-ref")
     if fallo == "README.md":
-        assert (destino / fallo).read_text() == "conservar"
+        assert (destino / fallo).read_text(encoding="utf-8") == "conservar"
 
 
 def test_lote2_se_valida_y_publica(caso):
@@ -173,7 +179,9 @@ def test_lote2_se_valida_y_publica(caso):
         c.execute("INSERT INTO decisiones VALUES ('sha2','ESCALAR','v4','v2',1)")
     assert llamar(caso, "--publicar") == 0
     assert "outcomes_lote2.jsonl" in git(remoto, "ls-tree", "--name-only", "main")
-    llamadas = [json.loads(x) for x in (raiz / "llamadas.txt").read_text().splitlines()]
+    llamadas = [
+        json.loads(x) for x in (raiz / "llamadas.txt").read_text(encoding="utf-8").splitlines()
+    ]
     assert any(x[0] == "validate" and x[-1] == "2" for x in llamadas)
     assert "norma v3,v4 · erp v1,v2" in git(remoto, "log", "-1", "--format=%B", "main")
 
@@ -206,7 +214,7 @@ def test_cambios_locales_no_se_pisan(caso):
     assert llamar(caso, "--publicar") == 0
     (caso[1] / "outcomes.jsonl").write_text("trabajo ajeno")
     assert llamar(caso, "--publicar") == 1
-    assert (caso[1] / "outcomes.jsonl").read_text() == "trabajo ajeno"
+    assert (caso[1] / "outcomes.jsonl").read_text(encoding="utf-8") == "trabajo ajeno"
 
 
 def test_push_rechazado_no_se_registra_como_publicado(caso):
@@ -216,7 +224,7 @@ def test_push_rechazado_no_se_registra_como_publicado(caso):
     hook.chmod(0o755)
     assert llamar(caso, "--publicar") == 1
     assert not git(remoto, "for-each-ref")
-    assert (raiz / "docs/entregas.log").read_text() == "# registro\n"
+    assert (raiz / "docs/entregas.log").read_text(encoding="utf-8") == "# registro\n"
 
 
 def test_origin_de_push_distinto_bloquea(caso):

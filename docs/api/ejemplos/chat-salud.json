@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "api": 2,
+  "solo_lectura": true,
+  "bd_disponible": true,
+  "modelo_disponible": false,
+  "motivo": "sin_clave",
+  "modelo": "deepseek-v4-flash",
+  "respaldo": "glm5.3-flash",
+  "llamadas_restantes": 100,
+  "ventana": null
+}

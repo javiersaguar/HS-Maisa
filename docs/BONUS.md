@@ -1,6 +1,20 @@
-# Bonus: calendario y borrador de remesa
+# Bonus: calendario, tesorería y borrador de remesa
 
-Implementado por J5 (PLAN-10). Lee los PAGAR vigentes, los hechos de su linaje y el snapshot del maestro usado al decidir. No escribe en SQLite, no cambia decisiones, no genera outcomes y no conecta con bancos, ERP ni LLM.
+Implementado por J5 (PLAN-10); tesorería, proveedores, programa con tope y rutas para la consola, por K1 (PLAN-11). Lee los PAGAR vigentes, los hechos de su linaje y el snapshot del maestro usado al decidir. No escribe en SQLite, no cambia decisiones, no genera outcomes y no conecta con bancos, ERP ni LLM.
+
+## Lo nuevo de K1 (19/09 14:55)
+- **Tesorería por semana**: lo que se paga cada semana ISO, lo acumulado y lo vencido a la fecha de corte
+  (`tesoreria.json` y la sección «Tesorería» de `calendario.html`).
+- **Por proveedor**: facturas, importe, vencidas y la primera y última fecha de pago (`proveedores.csv`).
+- **Programa con tope** (`--tope-semanal 150000`): reparte la remesa por semanas desde la del corte, sin pasar del
+  tope, y dice cuánto se tarda. Con la Caja: **al día con lo vencido en 16 semanas**, todo pagado en 17.
+- **Cada pago lleva su lote**: el calendario incluye los PAGAR de todos los lotes vigentes.
+- **Rutas GET para la consola**: `bonus.rutas()` → `/bonus/{resumen,calendario,proveedores,remesa,avisos,tesoreria}`.
+  Contrato, ejemplos reales y propuesta de pantalla en [`docs/api/bonus.md`](api/bonus.md). Alejandro las registra
+  con una línea.
+
+Frase añadida para la defensa: «Si Alberto sólo puede pagar 150.000 € a la semana, en 16 semanas está al día con lo
+vencido. Es un cálculo sobre las decisiones, no una decisión nueva».
 
 ## Defensa en 30 segundos
 

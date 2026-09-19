@@ -27,12 +27,13 @@ def catalogo(tmp_path):
                 }
             ]
         )
-        + "\n-->\n"
+        + "\n-->\n",
+        encoding="utf-8",
     )
     for nombre in cifras.OBJETIVOS:
         ruta = tmp_path / nombre
         ruta.parent.mkdir(parents=True, exist_ok=True)
-        ruta.write_text("Sólo 0,065–0,106 ficheros/s.\n")
+        ruta.write_text("Sólo 0,065–0,106 ficheros/s.\n", encoding="utf-8")
     return p
 
 
@@ -41,7 +42,7 @@ def catalogo(tmp_path):
 )
 def test_cifra_obsoleta_con_linea_y_sustitucion_sin_escribir(tmp_path, catalogo, vieja, capsys):
     plan = tmp_path / cifras.OBJETIVOS[0]
-    plan.write_text("# Plan\n" + vieja + "\n")
+    plan.write_text("# Plan\n" + vieja + "\n", encoding="utf-8")
     antes = plan.read_bytes()
     assert cifras.main(["--raiz", str(tmp_path)]) == 1
     salida = capsys.readouterr().out
@@ -52,7 +53,7 @@ def test_cifra_obsoleta_con_linea_y_sustitucion_sin_escribir(tmp_path, catalogo,
 
 def test_vigentes_y_numero_distinto_no_fallan(tmp_path, catalogo):
     (tmp_path / cifras.OBJETIVOS[0]).write_text(
-        "10,22 ficheros/s no es 0,22 ni una afirmación sobre visión.\n"
+        "10,22 ficheros/s no es 0,22 ni una afirmación sobre visión.\n", encoding="utf-8"
     )
     assert cifras.main(["--raiz", str(tmp_path)]) == 0
 
@@ -63,7 +64,7 @@ def test_documento_ausente_no_da_falso_verde(tmp_path, catalogo):
 
 
 def test_catalogo_malformado_no_da_falso_verde(tmp_path, catalogo):
-    catalogo.write_text("<!-- cifras-obsoletas\n[]\n-->\n")
+    catalogo.write_text("<!-- cifras-obsoletas\n[]\n-->\n", encoding="utf-8")
     assert cifras.main(["--raiz", str(tmp_path)]) == 2
 
 

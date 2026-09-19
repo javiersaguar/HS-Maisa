@@ -1,0 +1,88 @@
+{
+  "api": 1,
+  "file_id": "factura_2018.pdf",
+  "lote": 1,
+  "resultado": "ESCALAR",
+  "regla": "v3.R2",
+  "puntuacion": 60,
+  "banda": "media",
+  "razones": [
+    "falla R2 de forma objetiva: ESCALAR o NO_PAGAR (Q3)",
+    "el total (4295.50) se queda a 0.40 € de lo esperado (4295.10)",
+    "se escala por: el total de la factura (4295.50) no coincide con el pedido PO-2026-0802 (4295.10)"
+  ],
+  "causa": "se escala por una causa clara del documento o del cruce",
+  "metodo": "plantilla",
+  "lecturas": {
+    "contraste": true,
+    "campos_distintos": []
+  },
+  "mismo_pdf_que": [],
+  "fuentes": {
+    "pdf": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "leída por plantilla y confirmada por el LLM campo a campo"
+      ]
+    },
+    "coherencia": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "base + IVA = total, con el IVA al 21 %"
+      ]
+    },
+    "maestro": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": []
+    },
+    "erp": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": []
+    },
+    "decision": {
+      "penalizacion": 15.0,
+      "dudas": [
+        {
+          "id": "decision.cerca_del_limite",
+          "fuente": "decision",
+          "texto": "el total (4295.50) se queda a 0.40 € de lo esperado (4295.10)",
+          "puntos": 15,
+          "factor": 1.0,
+          "aplicado": 15.0,
+          "por_que": "El importe se queda a menos de 1 € de lo que se esperaba: puede ser un redondeo o una mala lectura."
+        }
+      ],
+      "a_favor": [
+        "se escala por: el total de la factura (4295.50) no coincide con el pedido PO-2026-0802 (4295.10)"
+      ]
+    },
+    "politica": {
+      "penalizacion": 25.0,
+      "dudas": [
+        {
+          "id": "politica.q3_frontera",
+          "fuente": "politica",
+          "texto": "falla R2 de forma objetiva: ESCALAR o NO_PAGAR (Q3)",
+          "puntos": 25,
+          "factor": 1.0,
+          "aplicado": 25.0,
+          "por_que": "Falla una comprobación objetiva; hoy es ESCALAR, pero sería NO_PAGAR si el mentor fija así la frontera (Q3)."
+        }
+      ],
+      "a_favor": [],
+      "tope": 30
+    },
+    "revisor": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "opinion": null
+    }
+  },
+  "version": "confianza-1",
+  "escala": "puntuación ordinal 0-100 (100 = sin dudas conocidas); no es una probabilidad calibrada"
+}

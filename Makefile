@@ -4,7 +4,10 @@ ERP_URL ?= http://127.0.0.1:8009
 LOTE ?= 1
 
 .DEFAULT_GOAL := help
-.PHONY: kit-demo kit-instalar publicar agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench demo-caos worktree clean
+# En Windows, Python lee y escribe en cp1252 si no se le dice otra cosa: los nombres con tildes,
+# los «€» y las salidas de git en UTF-8 revientan. Todo lo que lance make, en UTF-8.
+export PYTHONUTF8 := 1
+.PHONY: kit-demo kit-instalar publicar agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace chat console package validate plan-pdf bench demo-caos worktree clean
 
 help: ## Lista estos comandos
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  make %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -54,8 +57,13 @@ status: ## Estado por etapa
 trace: ## Traza de una decisión: make trace FILE=factura_123.pdf
 	$(UV) run albertitos trace "$(FILE)"
 
-console: ## Consola Streamlit (sólo lectura sobre la BD)
-	$(UV) run streamlit run src/albertitos/console/app.py
+chat: ## Chat de sólo lectura en :8001 sobre dist/albertitos.db (ventana y tope: ALBERTITOS_CHAT_*)
+	$(UV) run python -m albertitos.chat --servidor
+
+console: ## Puente HTTP (:8000) + consola Next (:3000); Ctrl-C para los dos. Antes: cd console-web && pnpm install
+	@trap 'kill 0' INT TERM EXIT; \
+	$(UV) run python -m albertitos.console.api & \
+	cd console-web && pnpm dev
 
 package: ## Genera y valida dist/entrega/*.jsonl (nunca a mano)
 	$(UV) run albertitos package

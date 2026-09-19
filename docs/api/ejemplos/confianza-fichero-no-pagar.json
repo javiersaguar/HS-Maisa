@@ -1,0 +1,70 @@
+{
+  "api": 1,
+  "file_id": "2026-03-28_P002.pdf",
+  "lote": 1,
+  "resultado": "NO_PAGAR",
+  "regla": "v3.R5",
+  "puntuacion": 100,
+  "banda": "alta",
+  "razones": [
+    "el ERP marca el pedido PAGADA: no se paga dos veces",
+    "leída por plantilla y confirmada por el LLM campo a campo",
+    "base + IVA = total, con el IVA al 21 %"
+  ],
+  "causa": "el ERP ya la da por pagada: pagarla sería pagar dos veces",
+  "metodo": "plantilla",
+  "lecturas": {
+    "contraste": true,
+    "campos_distintos": []
+  },
+  "mismo_pdf_que": [],
+  "fuentes": {
+    "pdf": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "leída por plantilla y confirmada por el LLM campo a campo"
+      ]
+    },
+    "coherencia": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "base + IVA = total, con el IVA al 21 %"
+      ]
+    },
+    "maestro": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "NIF, IBAN y pedido casan con el maestro (P002)"
+      ]
+    },
+    "erp": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": []
+    },
+    "decision": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [
+        "el ERP marca el pedido PAGADA: no se paga dos veces"
+      ]
+    },
+    "politica": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "tope": 30
+    },
+    "revisor": {
+      "penalizacion": 0,
+      "dudas": [],
+      "a_favor": [],
+      "opinion": null
+    }
+  },
+  "version": "confianza-1",
+  "escala": "puntuación ordinal 0-100 (100 = sin dudas conocidas); no es una probabilidad calibrada"
+}
