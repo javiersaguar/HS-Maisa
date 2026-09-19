@@ -496,3 +496,18 @@ def test_chat_no_cambia_package_real(tmp_path):
         generado = (salida / "outcomes.jsonl").read_bytes()
         assert generado == referencia.read_bytes()
         assert hashlib.sha256(generado).hexdigest().startswith("1ec4be206089")
+
+
+def test_puerto_ocupado_da_un_mensaje_claro(datos, monkeypatch):
+    """En el portátil de Javier el 8001 lo usa un contenedor de otro proyecto: sin esto, un traceback."""
+    import socket
+
+    from albertitos.chat.api import PuertoOcupado, servir
+
+    monkeypatch.setattr(agente, "load_dotenv", lambda: None)
+    with socket.socket() as ocupado:
+        ocupado.bind(("127.0.0.1", 0))
+        ocupado.listen()
+        puerto = ocupado.getsockname()[1]
+        with pytest.raises(PuertoOcupado, match="ALBERTITOS_CHAT_PUERTO"):
+            servir(datos, puerto)

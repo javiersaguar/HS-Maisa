@@ -115,8 +115,32 @@ def hacer_handler(ruta: Path, gateway=None):
     return Handler
 
 
-def servir(ruta: Path, puerto=8001):
-    servidor = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta))
+PUERTO_DEFECTO = 8001
+
+
+def puerto_defecto() -> int:
+    try:
+        return int(os.getenv("ALBERTITOS_CHAT_PUERTO") or PUERTO_DEFECTO)
+    except ValueError:
+        return PUERTO_DEFECTO
+
+
+class PuertoOcupado(RuntimeError):
+    pass
+
+
+def servir(ruta: Path, puerto: int | None = None):
+    puerto = puerto or puerto_defecto()
+    try:
+        servidor = ThreadingHTTPServer(("127.0.0.1", puerto), hacer_handler(ruta))
+    except OSError as exc:
+        if exc.errno in (48, 98, 10048):  # dirección en uso: macOS, Linux, Windows
+            raise PuertoOcupado(
+                f"el puerto {puerto} ya lo usa otro proceso. Arranca el chat en otro: "
+                f"ALBERTITOS_CHAT_PUERTO=8101 make chat, y en la consola "
+                f"NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101"
+            ) from None
+        raise
     try:
         servidor.serve_forever()
     finally:
