@@ -1,80 +1,75 @@
-# Estado del proyecto y lo que falta · sábado 19/09, 14:30 (puesta en común)
+# Estado del proyecto y lo que falta · domingo 20/09, 01:00
 
-La versión anterior, con cada P0 tachado según se cerraba, está en el historial de git (`git log -p docs/ESTADO-BACKEND.md`).
+Lo de ayer a las 14:30, con los P0 tachados según se cerraban, está en el historial (`git log -p docs/ESTADO-BACKEND.md`).
+**Quedan 7 horas para la entrega final (08:00) y 10 para el cierre (11:00).**
 
 ## 1 · Dónde estamos, en una frase por área
 | Área | Estado | Evidencia |
 |---|---|---|
-| **Entrega del lote 1** | ✅ Publicada `232bb76`: 500 líneas, **438/53/9**, auditoría VERDE | `docs/entregas.log` · `outcomes.jsonl` `1ec4be206089` |
-| **Código en `main`** | ✅ `javier/ingesta` = `main` + arreglos de Windows. **tests en verde** en Linux y en Windows (ver la fila Windows) | `make check` |
-| **Riesgos de NO APTO del lote 2** | ✅ Cerrados los cinco: copias exactas (P0-1), nombre repetido (P0-5, ya en `main`), auditoría como puerta, `--aceptar-rojo` y contingencia ESCALAR (ADR-0009) | tests + ensayos |
-| **Lote 2 a las 18:00** | ✅ Ensayado con `main`: **14,2 s** de punta a punta sin visión nueva; nombre repetido en 39 s | `CHULETA-LOTE2.md` · `scripts/ensayo/` |
-| **Fuentes con otra forma** | ✅ El Excel se lee por nombre de columna; una hoja nueva que parezca la regla se avisa | `ENSAYO-FUENTES.md` (J2) |
-| **Resiliencia (10 pts)** | ✅ Demo sin red en 3 s, breaker, `--aceptar-rojo`, contingencia. Respaldo de visión medido: **falta la línea en `.env`** | `KIT-DEFENSA.md` · `RESPALDO-VISION.md` |
-| **Escala y coste (25 pts)** | ✅ Cada cifra con su fuente y su comando; el dato en vivo, en **< 0,6 s** | `docs/CIFRAS.md` · `scripts/dato_en_vivo.py` |
-| **Trazabilidad (20 pts)** | ✅ `trace` legible (hechos → maestro → ERP → duplicado → reglas), reintentos del ERP por snapshot | Miguel + G2 |
-| **Bonus (+10)** | ✅ Calendario y remesa: **438 pagos, 2.428.159,06 €**, en solo lectura | `docs/BONUS.md` · ADR-0012 |
-| **Consola** | 🟠 Alejandro la ha rehecho en **Next.js**, con un puente HTTP de solo lectura. Funciona contra la BD real, pero **necesita Node y pnpm** en el portátil de la defensa y **no tiene ADR** (el stack decía Streamlit). `make console` sigue lanzando el Streamlit viejo | `src/albertitos/console/CLAUDE.md` |
-| **La norma (Mónica)** | 🔴 **Muestra etiquetada: 0 de 21.** Ninguna respuesta de los mentores anotada. Tres políticas abiertas | abajo |
-| **Plan PDF (35 pts, Alfonso)** | 🔴 **Sin tocar en 12 h.** Tiene 4 ADRs más un hueco `ADR-000N · …`; hay 14 ADRs escritos (0001-0014) | `docs/plan/albertitos_plan.md` |
-| **Guion de la defensa (Alfonso)** | 🔴 **Sin tocar desde el andamiaje** (18 h). Hay presentación v1 (`presentaciones/`, 13,5 MB) y la chuleta del bloque 4 | `docs/guion-defensa.md` |
-| **Windows** | ✅ Los 8 fallos que vio Miguel y 5 de codificación que salieron después, arreglados: **513 en verde en `windows-latest`, sin `PYTHONUTF8`**. El CI de Windows se lanza a mano o subiendo a una rama `windows-check/**` | `.github/workflows/windows.yml` |
-
-**En resumen:** el sistema está terminado y ensayado. Lo que queda es **lo que no puede hacer un agente**: que la norma
-se valide contra personas y mentores, y que el PDF y el guion cuenten lo que ya existe.
+| **Entrega, los dos lotes** | ✅ Publicada `d2ade3f` (20/09 00:17): `outcomes.jsonl` 500 (**445/46/9**) + `outcomes_lote2.jsonl` 40 (**23/16/1**) + `albertitos_plan.pdf`. Auditoría VERDE | `docs/entregas.log` |
+| **Lote 2 integrado** | ✅ 40 facturas: maestro con los CSV nuevos (15 proveedores, 555 pedidos), ERP v2 (556 asientos) y norma v4 | `docs/agentes/lote2/EXTRACCION.md` |
+| **Lote 1 al día** | ✅ ADR-0017 aplicado: 7 escaneadas legibles pasan de ESCALAR a PAGAR (438→445). Etiquetado a ciegas de Miguel: 26/26 frente a 23/26 | ADR-0017 |
+| **Extracción del lote 2** | ✅ 40/40, 23 por plantilla y 17 por LLM. Fechas en 7 idiomas, 8 monedas leídas, 3 manuscritas marcadas | `data/fixtures/hechos_lote2.jsonl` |
+| **Subir facturas por la consola** | ✅ Probado con 6 PDF reales de los 3 resultados y de los 2 lotes; decide con la norma de la BD y enseña cada importe en su divisa | `EXTRACCION.md` §2 |
+| **Demo pública** | ✅ `https://albertitos.vercel.app` (Vercel) contra Render, de sólo lectura. Prueba de jurado en Chromium limpio: **12/12**, chat incluido. No se duerme: workflow cada 10 min | ADR-0023 · `deploy/README.md` |
+| **Demo local** | ✅ `bash scripts/demo.sh arrancar` levanta puente, chat y consola (3002/8000/8101) sobre una copia | `KIT-DEFENSA.md` |
+| **Resiliencia (10 pts)** | ✅ Demo sin red, breaker, contingencia, y el «cambia un dato» **arreglado** tras el ADR-0021 (`dato_en_vivo.py --lote`) | `KIT-DEFENSA.md` |
+| **Trazabilidad (20 pts)** | ✅ `trace` legible y la consola; cada decisión guarda norma, maestro, ERP y fecha de corte | consola · `trace` |
+| **Código en `main`** | ✅ 702 tests en verde. Ramas del lote 2 (fuentes y extracción) integradas | `make check` |
+| **Divisas** | 🟠 Las 8 facturas en divisa **escalan**: sin tabla de cambio oficial no convertimos (ADR-0022). Ver §2 A | `EXTRACCION.md` §3 |
+| **La norma v4 (Mónica)** | 🔴 **Sin revisar por ninguna persona.** La escribió Miguel anoche | ADR-0022 |
+| **Plan PDF (35 pts, Alfonso)** | 🔴 El publicado es el de ayer por la mañana; no incluye el lote 2, las divisas ni los ADR 0017-0023 | `docs/plan/albertitos_plan.md` |
+| **Guion de la defensa** | 🔴 Sin tocar desde el viernes. Alfonso está grabando la demo esta noche | `docs/guion-defensa.md` |
 
 ## 2 · Lo que falta, por orden de lo que nos cuesta si no se hace
-### 🔴 A · Validar la norma, antes de las 18:00 · Mónica (+ Alfonso para la muestra)
-La validación es binaria contra una referencia privada. Tenemos 438/53/9 **sin que ninguna persona lo haya comprobado**.
-1. **Muestra etiquetada a ciegas** (0 de 21): menos de una hora. Después, `scripts/comparar_muestra.py` y cada
-   discrepancia con su dueño: la regla, el dato o la etiqueta. La tercera lectura del agente H2 está preparada.
-2. **Mentores**, con los números de I2 (`MAPA-POLITICAS.md`):
-   - **frontera NO_PAGAR/ESCALAR**: **35 líneas** en juego, 28 de ellas fuera de la muestra. Es la que más pesa;
-   - **texto que ordena la decisión**: 6 líneas;
-   - **¿el lote 1 final va con la regla nueva y el ERP v2?** (P0-2): sin respuesta desde el viernes;
-   - **pedido ANULADO en el Excel**: hoy no cambia nada, porque la v3 no lee `Pedido.estado` (J2, J4);
-   - **copias exactas**: ¿también se escala el original del lote 1? (R3).
-3. Las respuestas, **literales, con hora**, en `docs/hitos.md` («Respuestas»). Y los cambios de norma, **subiendo la
-   etiqueta** (`v3.1`), para que el linaje los vea solos.
+### 🔴 A · Preguntar a los mentores por las divisas y el IVA · Mónica (o quien pille a un mentor)
+**Se juegan 5 facturas de 540, y la validación es binaria.** Las ocho en divisa escalan hoy por dos motivos: no
+convertimos (no hay tabla de cambio) y nuestra R3 exige un 21 % que la norma del Excel no pide («el IVA debe estar
+bien calculado»). Siete de ellas facturan al 0 % declarando exportación.
+1. ¿Hay tabla de tipos de cambio oficial? Si no, ¿vale el tipo fijo con el que cuadran los pedidos? (El mismo tipo
+   sale en facturas de fechas distintas y convertido cuadra al céntimo con el pedido y con el ERP.)
+2. Una factura de exportación con **IVA 0 %** que, convertida, cuadra con el pedido y con el ERP, ¿es PAGAR o ESCALAR?
+3. La regla 3, ¿es «IVA bien calculado» o «siempre 21 %»?
 
-### 🔴 B · El PDF del plan (35 pts), antes de la entrega del domingo 08:00 · Alfonso
-- Elegir **2-5 ADRs** de los 14. Mi propuesta: 0001 (el LLM extrae, la norma decide), 0006 (linaje), 0009
-  (contingencia), 0011 (una lectura reconciliada no se paga sola) y 0003 o 0005.
-- Quitar el hueco `ADR-000N · …` y comprobar las cifras con `uv run python scripts/cifras_check.py`.
-- `make plan-pdf` y revisarlo impreso. Entra en la entrega final: es uno de los tres ficheros.
+Medido: si la respuesta fuera «convertir y aceptar el 0 % de exportación», **cambiarían 5** (`e02`, `e10`, `e12`,
+`e13`, `e15`, todas de ESCALAR a PAGAR). `e09`, `e11` y `e14` escalan igual, por IVA incoherente, IBAN cambiado y
+cuentas que no cuadran. Hoy estamos en la opción conservadora, que es la regla 6 de la norma de Alberto.
+Las respuestas, **literales y con hora**, en `docs/hitos.md`. Lo demás sigue abierto desde ayer: frontera
+NO_PAGAR/ESCALAR, pedido ANULADO y copias exactas.
 
-### 🟠 C · La defensa: ensayo a las 15:00 · Alfonso (+ todos)
-- **Guion 2/2/4/2** al día con lo que existe: consola, traza, bloque 4 (`KIT-DEFENSA.md`), dato en vivo y bonus.
-- **Kit de las 13:37** instalado en su portátil y la chuleta cronometrada allí.
-- **Consola: decidir hoy cuál se enseña.** Next.js sólo si arranca en su portátil sin red en la sala (`pnpm install`
-  hecho antes). Si no, `trace` en terminal: es el repliegue previsto. Si Next se queda, Alejandro escribe su ADR.
+### 🔴 B · El PDF del plan (35 pts), antes de las 08:00 · Alfonso
+- Contar el lote 2: las 40, la norma v4 y la regla de moneda, el ERP v2 y el maestro con los CSV.
+- Elegir 2-5 ADRs de los 23. Propuesta: 0001 (el LLM extrae, la norma decide), 0006 (linaje), 0017 (desacuerdo entre
+  lecturas), 0021 (cada lote en su contexto) y 0022 (divisas detrás de su regla).
+- `uv run python scripts/cifras_check.py`, `make plan-pdf` y **republicar**, que el PDF entra en la entrega.
+
+### 🟠 C · La defensa · Alfonso (+ todos)
+- Guion 2/2/4/2 al día: consola, traza, bloque 4, dato en vivo, bonus y ahora el lote 2.
+- Demo: la pública (`albertitos.vercel.app`) o la local (`scripts/demo.sh arrancar`). La local no necesita red; la
+  pública, sí, pero se abre desde cualquier ordenador.
+- Cronometrar en el portátil de Alfonso.
 
 ### 🟡 D · Operación · Javier
-- **LO PRIMERO en cuanto el lote 2 esté publicado — reabrir el chat para la defensa:** hoy K2 tiene fijados en el
-  código un cierre a las 17:30 del sábado y un tope de 60 llamadas (van 59), así que el domingo respondería siempre
-  «degradado». Hay que convertir la hora de cierre y el tope en variables de entorno (`src/albertitos/chat/agente.py`,
-  líneas 71 y 82, con su test) y abrir una ventana nueva para la defensa: por ejemplo, **domingo de 09:00 a 12:00 y
-  30 llamadas**. Hasta entonces, la consola enseña las 15 respuestas grabadas, etiquetadas como tales.
-- **Antes de las 17:30:** `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash` en `.env`.
-- **18:00:** `CHULETA-LOTE2.md`. Lanzar el extract de las escaneadas en cuanto el material esté verificado (40
-  escaneadas son 6-10 min). Si aparece un nombre repetido, ya no hay que mergear nada: P0-5 está en `main`.
-- **Después del lote 2:** republicar con `make publicar`, rehacer el kit y, si hay tiempo, la prueba de Jev
-  (`ANALISIS-JEV.md`: fuera del camino que decide).
+- **Republicar si cambia algo** (norma, PDF): `reprocess --impacted --lote 2 …`, `package`, auditoría y
+  `make publicar ARGS=--publicar`. Se puede hasta las 11:00. Después, reexportar la demo pública
+  (`scripts/exportar_demo_db.py`), commit y push.
+- **Antes de salir:** `bash scripts/smoke.sh` y `bash scripts/demo.sh estado`.
+- Rotar la clave del gateway después del hackathon: está como secreto en Render.
 
-### 🟢 E · Deseable
-- `make console` lanza el Streamlit viejo: que apunte a lo que se enseñe (Alejandro).
-- La presentación de 13,5 MB está en git y cada versión suma otro tanto: mejor fuera del repo, o sólo la final.
-- Jev: su ADR (el 0015), lo integremos o no. El 0013 y el 0014 son del chat y la confianza (PLAN-11).
+### 🟢 E · Sabido y sin arreglar (no bloquea la entrega)
+- **El chat contestó «no he podido verificar las citas»** a una pregunta global («¿cuántas facturas hay en el lote
+  2?»): citó algo que las herramientas no le devolvieron. Es el guardarraíl funcionando, pero queda raro en vivo.
+- **La bandeja no marca duplicados:** llama a `decide`, no a `reprocess`. Una copia idéntica sí se detecta por su
+  huella; una reemisión con otro pedido, no.
+- **Al releer `e10_P006.pdf`**, el modelo marcó como sospechosa la línea de la divisa, que no ordena nada. No afecta
+  a lo entregado (las 31 con instrucción son reales), pero en una demo en vivo podría escalar una limpia.
+- **Jev (TypeSafe):** evaluado y descartado, sin ADR escrito (`docs/agentes/ANALISIS-JEV.md`).
 
 ## 3 · Calendario que queda
 | Hora | Qué | Quién |
 |---|---|---|
-| **15:00** | Ensayo de la defensa en el portátil de Alfonso (kit 13:37) | Alfonso + todos |
-| **antes de 17:00** | Muestra 21/21 · respuestas de los mentores · cambios de norma, si los hay | Mónica (+ Alfonso) |
-| 17:30 | Entrega de seguro: ya está publicada. Sólo se republica si cambia la norma | Javier / Miguel |
-| **18:00** | Lote 2 y regla nueva (`norma_v4`) | Javier → Mónica → Miguel |
-| 20:00 | Repliegue de la consola: si no enseña una traza, `trace` en terminal | Alejandro |
-| 22:00 | Lote 2 publicado; si no, se cancela lo opcional | todos |
-| 23:00 | Dato en vivo ensayado (ya medido: < 0,6 s) | — |
-| **02:00** | Congelación | todos |
-| **08:00** | Entrega final: `outcomes.jsonl` + `outcomes_lote2.jsonl` + `albertitos_plan.pdf` | Javier / Miguel |
+| **noche** | Grabar y editar la demo (la pública está despierta y probada) | Alfonso |
+| **08:00** | Entrega final: ya está publicada; sólo se republica si cambia la norma o el PDF | Javier / Miguel |
+| 09:00 | Mentores: divisas e IVA. Si cambia, reprocesar y republicar | Mónica |
+| 10:30 | Cierre interno (oficial 11:00). Última ventana para publicar | todos |
+| defensa | 2/2/4/2, con el bloque 4 ensayado (`KIT-DEFENSA.md`) | Alfonso |
