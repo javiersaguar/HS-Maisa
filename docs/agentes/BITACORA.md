@@ -796,3 +796,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - hecho: módulo, rutas, 27 tests (regla 5 incluida), calibración, contrato con ejemplos reales, ADR-0014 y revisor LLM opcional. Detalle y cifras en PARTE.md, sección K3. `make check`: 565 en verde. Huellas de la BD real y la entrega, iguales al empezar y al terminar.
 - LLM: 53 llamadas de un tope de 60, todas a las 15:13 (antes de las 17:30). Ninguna más.
 - Siguen en pie: **PIDO A Alejandro** (la línea en `console/api.py` y las pantallas) y **PIDO A Javier o Alfonso** (la fila del ADR-0014 en `docs/adr/README.md`).
+
+### 16:30 · Javier · revisión PLAN-12 (R1-R4) integrada en main
+- Revisados los cuatro commits de `revision/grok`. Traído a `main` lo que valía, con retoques: la fila «LLM» del preflight (hallazgo de R1: sin `.env` las escaneadas del lote 2 quedarían PENDIENTE), `smoke.sh` (R4), `enlaces_check.py` (R2), `contrato_api_check.py` (R3) y el resumen del ensayo del lote 2 (R1).
+- Corregido gracias a ellos: los ejemplos de confianza (faltaba `fuentes.revisor.opinion`), 6 enlaces rotos, la chuleta del lote 2 (P0-5 ya está en `main`: sin merge) y el estado del ADR-0012.
+- Descartado: el kit de las 15:55 de R4 como referencia (Alfonso tiene el de las 13:37, equivalente) y la nota de R1 sin `.env` en los tiempos de la chuleta (era un artefacto de su carpeta). El «tope superado en W35» de R4 no era un fallo: es el calendario natural, no el programa (aclarado en `docs/api/bonus.md`).
+- `make check`: 576 en verde. Preflight real: todo verde, con «LLM» en verde (respaldo de visión ya en `.env`). BD real y entrega sin cambios.
