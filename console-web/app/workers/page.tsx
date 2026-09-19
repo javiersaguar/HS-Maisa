@@ -93,7 +93,7 @@ export default function EtapasPage() {
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <h2 className="text-[15px] font-semibold">Etapas del pipeline</h2>
-                  <p className="text-[14px] text-[#9aa39e]">El anillo es la parte de los ficheros que la etapa ha completado</p>
+                  <p className="text-[14px] text-[#9aa39e]">El anillo es la salud de la etapa, no siempre un recuento de ficheros</p>
                 </div>
                 <span className="text-[13px] text-[#8d9891]">{data.etapas.length} etapas</span>
               </div>

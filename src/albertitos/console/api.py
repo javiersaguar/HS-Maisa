@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sqlite3
 from collections.abc import Callable
@@ -33,6 +34,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from albertitos.console import lecturas
 from albertitos.core import db
+
+logger = logging.getLogger(__name__)
 
 PUERTO_DEFECTO = 8000
 RUTA_BD = Path(os.environ.get("ALBERTITOS_DB", "dist/albertitos.db"))
@@ -226,6 +229,9 @@ def hacer_handler(ruta: Path) -> type[BaseHTTPRequestHandler]:
                 status, body = despachar(self.command, path, query, conn, ruta)
             except sqlite3.Error as exc:
                 status, body = 500, {"error": str(exc)}
+            except Exception as exc:  # noqa: BLE001 — un JSON raro en la BD no debe colgar la UI
+                logger.exception("console-api: fallo en %s", path)
+                status, body = 500, {"error": f"{type(exc).__name__}: {exc}"}
             finally:
                 if conn is not None:
                     conn.close()

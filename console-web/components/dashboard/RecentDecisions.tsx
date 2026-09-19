@@ -6,7 +6,7 @@ import { useRowLink } from '@/hooks/useRowLink'
 import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/states'
 import { ResultadoBadge } from '@/components/invoices/badges'
-import { ficheroHref } from '@/components/invoices/InvoiceTable'
+import { ficheroHref } from '@/lib/routes'
 
 export function RecentDecisions({ ficheros }: { ficheros: Fichero[] }) {
   const rowLink = useRowLink()

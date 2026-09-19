@@ -1,18 +1,23 @@
 'use client'
 
 import type { Event } from '@/lib/types'
-import { ETAPA_LABELS, formatMs, formatRelative } from '@/lib/format'
+import { describirEvento, ETAPA_LABELS, formatMs, formatRelative } from '@/lib/format'
 import { useRowLink } from '@/hooks/useRowLink'
 import { EmptyState } from '@/components/ui/states'
 import { EventoBadge } from '@/components/invoices/badges'
-import { ficheroHref } from '@/components/invoices/InvoiceTable'
+import { ficheroHref } from '@/lib/routes'
 
 /** Últimas filas de `eventos`. `showEtapa` añade la columna de etapa (vista general). */
 export function EventosTable({ eventos, showEtapa = false }: { eventos: Event[]; showEtapa?: boolean }) {
   const rowLink = useRowLink()
 
   if (!eventos.length) {
-    return <EmptyState title="Sin eventos todavía" description="Cada etapa deja al menos un evento por fichero." />
+    return (
+      <EmptyState
+        title="Sin eventos todavía"
+        description="ingest, extract y decide anotan un fichero; validate sólo duplicados; enrich son peticiones al ERP; emit aparece al empaquetar."
+      />
+    )
   }
 
   return (
@@ -44,9 +49,8 @@ export function EventosTable({ eventos, showEtapa = false }: { eventos: Event[];
                 {evento.intento > 1 && <span className="ml-1.5 text-[12px] text-[#9aa39e]">#{evento.intento}</span>}
               </td>
               <td className="px-5 py-3 text-[#64716a] tabular-nums">{formatMs(evento.latencia_ms)}</td>
-              <td className="max-w-[280px] truncate px-5 py-3 text-[13px] text-[#64716a]" title={evento.detalle ?? undefined}>
-                {evento.error_codigo ? <span className="mr-1.5 font-mono text-[#a87000]">{evento.error_codigo}</span> : null}
-                {evento.detalle ?? '—'}
+              <td className="max-w-[320px] truncate px-5 py-3 text-[13px] text-[#64716a]" title={describirEvento(evento)}>
+                {describirEvento(evento)}
               </td>
               <td className="px-5 py-3 whitespace-nowrap text-[#8d9891]">{formatRelative(evento.ts)}</td>
             </tr>

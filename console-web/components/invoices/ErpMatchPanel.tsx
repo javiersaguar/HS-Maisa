@@ -15,7 +15,7 @@ function Check({
   label: string
   status: string
   tone: Tone
-  detail: Array<[string, string]> | null
+  detail: string | null
   index: number
 }) {
   return (
@@ -25,16 +25,7 @@ function Check({
     >
       <div className="min-w-0">
         <p className="font-medium">{label}</p>
-        {detail && (
-          <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-[12px]">
-            {detail.map(([key, value]) => (
-              <div key={key} className="contents">
-                <dt className="text-[#8a958e]">{key}</dt>
-                <dd className="break-words font-mono text-[#52605a]">{value}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
+        {detail && <p className="mt-1 text-[12px] leading-5 text-[#68736d]">{detail}</p>}
       </div>
       <StatusBadge tone={tone} className="shrink-0">
         {status}
@@ -69,13 +60,13 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Maestro de proveedores</h3>
           <span className="font-mono text-[12px] text-[#8a958e]">
-            {fuentes.maestro_version ? `versión ${shortHash(fuentes.maestro_version, 12)}` : 'sin snapshot'}
+            {fuentes.maestro_version ? `versión ${shortHash(fuentes.maestro_version, 12)}` : 'sin snapshot todavía'}
           </span>
         </div>
         <p className="mt-2 leading-5 text-[#68736d]">
           {proveedor
-            ? `${proveedor.id} · ${proveedor.razon_social}${proveedor.ciudad ? ` · ${proveedor.ciudad}` : ''}${proveedor.condiciones_dias ? ` · pago a ${proveedor.condiciones_dias} días` : ''}`
-            : `El NIF ${hechos.nif_emisor ?? '(no legible)'} no está en el maestro.`}
+            ? `${proveedor.razon_social}${proveedor.ciudad ? `, de ${proveedor.ciudad}` : ''}${proveedor.condiciones_dias ? `. Pago a ${proveedor.condiciones_dias} días` : ''}.`
+            : `El NIF ${hechos.nif_emisor ?? 'de la factura (no se pudo leer)'} no está en el maestro.`}
         </p>
         <div className="mt-4 overflow-hidden rounded-lg border border-[#dfe4de] bg-white text-[13px]">
           <Check
@@ -83,35 +74,34 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
             label="NIF"
             tone={same(proveedor?.nif, hechos.nif_emisor) ? 'green' : 'yellow'}
             status={same(proveedor?.nif, hechos.nif_emisor) ? 'Coincide' : 'No coincide'}
-            detail={[
-              ['PDF', hechos.nif_emisor ?? '—'],
-              ['Maestro', proveedor?.nif ?? '—'],
-            ]}
+            detail={
+              same(proveedor?.nif, hechos.nif_emisor)
+                ? `El PDF y el maestro tienen el mismo NIF (${hechos.nif_emisor}).`
+                : `El PDF trae ${hechos.nif_emisor ?? 'un NIF ilegible'} y el maestro ${proveedor?.nif ?? 'no tiene NIF para este proveedor'}.`
+            }
           />
           <Check
             index={1}
             label="IBAN"
             tone={same(proveedor?.iban, hechos.iban) ? 'green' : 'yellow'}
             status={same(proveedor?.iban, hechos.iban) ? 'Coincide' : 'No coincide'}
-            detail={[
-              ['PDF', hechos.iban ?? '—'],
-              ['Maestro', proveedor?.iban ?? '—'],
-            ]}
+            detail={
+              same(proveedor?.iban, hechos.iban)
+                ? `El IBAN de la factura coincide con el del maestro.`
+                : `La factura trae ${hechos.iban ?? 'un IBAN ilegible'} y el maestro tiene ${proveedor?.iban ?? 'otro (o ninguno)'}.`
+            }
           />
           <Check
             index={2}
-            label={`Pedido ${hechos.pedido ?? ''}`}
+            label={hechos.pedido ? `Pedido ${hechos.pedido}` : 'Pedido'}
             tone={pedido ? (sameAmount(pedido.importe_total, hechos.total) && same(pedido.nif, hechos.nif_emisor) ? 'green' : 'yellow') : 'yellow'}
             status={pedido ? (sameAmount(pedido.importe_total, hechos.total) ? 'Importe coincide' : 'Importe distinto') : 'No existe'}
             detail={
               pedido
-                ? [
-                    ['Proveedor', pedido.proveedor_id],
-                    ['Importe', formatAmount(pedido.importe_total)],
-                    ['Estado', pedido.estado],
-                    ...(pedido.fecha_pedido ? [['Fecha', formatDate(pedido.fecha_pedido)] as [string, string]] : []),
-                  ]
-                : null
+                ? `Es de ${pedido.proveedor_id}, por ${formatAmount(pedido.importe_total)}, en estado ${pedido.estado.toLowerCase()}${pedido.fecha_pedido ? `, con fecha ${formatDate(pedido.fecha_pedido)}` : ''}.`
+                : hechos.pedido
+                  ? `El pedido ${hechos.pedido} no está en el maestro.`
+                  : 'La factura no referencia ningún pedido.'
             }
           />
         </div>
@@ -120,8 +110,8 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
       <div className="rounded-xl border border-[#dfe4de] bg-[#fafcfa] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Asiento en el {ERP_NOMBRE}</h3>
-          <span className="font-mono text-[12px] text-[#8a958e]">
-            {fuentes.erp_version ? `snapshot ${fuentes.erp_version}` : 'sin snapshot'}
+          <span className="text-[12px] text-[#8a958e]">
+            {fuentes.erp_version ? `versión ${fuentes.erp_version}` : 'sin snapshot todavía'}
           </span>
         </div>
         {asientos.length === 0 ? (
@@ -136,12 +126,8 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
                 index={index}
                 label={`Asiento ${asiento.asiento_id}`}
                 tone={asiento.estado === 'PAGADA' ? 'red' : sameAmount(asiento.importe_esperado, hechos.total) ? 'green' : 'yellow'}
-                status={asiento.estado}
-                detail={[
-                  ['Importe esperado', formatAmount(asiento.importe_esperado)],
-                  ['NIF', asiento.nif],
-                  ['Registrado', formatDate(asiento.fecha_registro)],
-                ]}
+                status={asiento.estado === 'PAGADA' ? 'Ya pagada' : asiento.estado === 'PENDIENTE' ? 'Pendiente' : asiento.estado}
+                detail={`El ERP espera ${formatAmount(asiento.importe_esperado)} para el NIF ${asiento.nif}, registrado el ${formatDate(asiento.fecha_registro)}.`}
               />
             ))}
           </div>

@@ -26,7 +26,7 @@ la UI nunca la importa.
 |---|---|
 | `/` | Panel: ficheros por lote, decisiones vigentes por resultado, pendientes, versiones, ficheros/s, coste, reintentos |
 | `/invoices` | Cola de ficheros. Filtros: resultado, regla incumplida, lote. CSV con las columnas de `outcomes.jsonl` |
-| `/invoices/[file_id]` | Hechos, reglas con evidencia, maestro + asiento ERP 2009, traza |
+| `/invoices/detalle?file=<file_id>` (alias `/invoices/[id]`) | Hechos, reglas con evidencia, maestro + asiento ERP 2009, traza |
 | `/workers`, `/workers/[etapa]` | Las 6 etapas (`ingest extract validate enrich decide emit`) a partir de `eventos` |
 | `/audit` | Traza global: eventos por etapa y reglas de la norma |
 
@@ -48,7 +48,7 @@ NEXT_PUBLIC_USE_MOCK=false
 ```
 
 Hacen falta las dos; sin URL la app se queda en el mock. Ninguna página cambia. La barra lateral dice siempre de dónde
-salen los datos (*Datos de ejemplo* · *BD real · N ficheros* · *Puente sin BD* · *Puente apagado*): en la defensa no se
+salen los datos (*Datos de ejemplo* · *Caja de Alberto · N facturas* · *Aún no hay Caja* · *Sin conexión*): en la defensa no se
 confunde el mock con la Caja.
 
 - `lib/api/*.ts`: una función por lectura. Único código que conoce rutas.
@@ -73,7 +73,7 @@ Contrato (versión 1; detalle en `src/albertitos/console/CLAUDE.md`):
 ## Estructura
 
 ```
-app/                 rutas (/, /invoices, /invoices/[id], /workers, /workers/[id], /audit; /runs y /profile mínimas)
+app/                 rutas (/, /invoices, /invoices/detalle?file=, /invoices/[id] → alias, /workers, /workers/[id], /audit; /runs y /profile mínimas)
 components/audit     ChainOfWork (fichero, etapa y /audit), TraceFilter
 components/invoices  tabla, filtros, documento, hechos, maestro/ERP, linaje
 components/dashboard components/workers components/layout components/ui
