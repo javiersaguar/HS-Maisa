@@ -2,10 +2,11 @@
 
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Fichero } from '@/lib/types'
+import type { ConfianzaItem, Fichero } from '@/lib/types'
 import { formatAmount, initials, motivoPrincipal } from '@/lib/format'
 import { ficheroHref } from '@/lib/routes'
 import { useRowLink } from '@/hooks/useRowLink'
+import { ConfianzaBadge } from '@/components/confianza/ConfianzaBadge'
 import { ResultadoBadge } from './badges'
 
 export function InvoiceTable({
@@ -13,11 +14,14 @@ export function InvoiceTable({
   selected,
   onToggle,
   onToggleAll,
+  confianza = null,
 }: {
   ficheros: Fichero[]
   selected: string[]
   onToggle: (fileId: string) => void
   onToggleAll: () => void
+  /** file_id → confianza de K3. Sin servicio (null) no hay columna. */
+  confianza?: Map<string, ConfianzaItem> | null
 }) {
   const router = useRouter()
   const rowLink = useRowLink()
@@ -48,6 +52,7 @@ export function InvoiceTable({
             <th className="px-3 py-4">Proveedor</th>
             <th className="px-3 py-4">Total</th>
             <th className="px-3 py-4">Resultado</th>
+            {confianza && <th className="px-3 py-4">Confianza</th>}
             <th className="px-3 py-4">Motivo principal</th>
             <th className="px-3 py-4">Lote</th>
             <th className="px-5 py-4 text-right">Abrir</th>
@@ -57,6 +62,7 @@ export function InvoiceTable({
           {ficheros.map((fichero) => {
             const h = fichero.hechos
             const proveedor = h?.razon_social ?? '—'
+            const conf = confianza?.get(fichero.file_id)
             return (
               <tr
                 key={fichero.file_id}
@@ -96,6 +102,15 @@ export function InvoiceTable({
                 <td className="px-3 py-4">
                   <ResultadoBadge estado={fichero.estado} withIcon={false} />
                 </td>
+                {confianza && (
+                  <td className="px-3 py-4">
+                    {conf ? (
+                      <ConfianzaBadge puntuacion={conf.puntuacion} banda={conf.banda} title={conf.razon_principal} />
+                    ) : (
+                      <span className="text-[#9aa39e]">—</span>
+                    )}
+                  </td>
+                )}
                 <td className="max-w-[320px] px-3 py-4">
                   <p className="line-clamp-2 text-[13px] leading-5 text-[#68736d]" title={motivoPrincipal(fichero)}>
                     {motivoPrincipal(fichero)}

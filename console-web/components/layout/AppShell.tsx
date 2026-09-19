@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
+import { ChatPanel } from '@/components/chat/ChatPanel'
 import { Sidebar } from './Sidebar'
 
 /**
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main ref={mainRef} className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
         {children}
       </main>
+      <ChatPanel />
     </div>
   )
 }

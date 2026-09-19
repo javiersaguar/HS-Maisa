@@ -13,6 +13,7 @@ import { ErpMatchPanel } from '@/components/invoices/ErpMatchPanel'
 import { ExtractedFields, type CampoHecho } from '@/components/invoices/ExtractedFields'
 import { InvoiceDocument } from '@/components/invoices/InvoiceDocument'
 import { Linaje } from '@/components/invoices/Linaje'
+import { ConfianzaCard } from '@/components/confianza/ConfianzaCard'
 import { BackLink } from '@/components/ui/BackLink'
 import { Card } from '@/components/ui/Card'
 import { EmptyState, ErrorCard, ErrorState, LoadingCard, LoadingState, Skeleton } from '@/components/ui/states'
@@ -240,6 +241,8 @@ function FicheroDetail() {
                     {pendiente && pasosRecientes}
 
                     <Linaje decision={decision} />
+
+                    {decision && <ConfianzaCard fileId={fichero.file_id} />}
 
                     {hechos?.texto_sospechoso && (
                       <div className="mt-4 rounded-xl border border-dashed border-[#e0c95a] bg-[#fffbe8] p-4">

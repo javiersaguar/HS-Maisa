@@ -11,6 +11,7 @@ import { downloadCsv } from '@/lib/csv'
 import { ESTADOS_FICHERO, formatNumber, motivoPrincipal } from '@/lib/format'
 import { useFicheros } from '@/hooks/useFicheros'
 import { usePanel } from '@/hooks/usePanel'
+import { useConfianzaMapa } from '@/hooks/useConfianza'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { EMPTY_FILTERS, FilterBar, REGLAS, type FicheroFilters } from '@/components/invoices/FilterBar'
 import { InvoiceTable } from '@/components/invoices/InvoiceTable'
@@ -90,6 +91,7 @@ function FicherosScreen() {
   }
   const { data, error, loading, refresh } = useFicheros(query)
   const { data: summary, error: summaryError } = usePanel()
+  const { data: confianza } = useConfianzaMapa()
   const searching = loading || q !== filters.q
 
   useEffect(() => {
@@ -231,7 +233,13 @@ function FicherosScreen() {
               />
             ) : (
               <div aria-busy={loading} className={`transition-opacity duration-200 ${loading ? 'opacity-60' : ''}`}>
-                <InvoiceTable ficheros={ficheros} selected={selectedIds} onToggle={toggle} onToggleAll={toggleAll} />
+                <InvoiceTable
+                  ficheros={ficheros}
+                  selected={selectedIds}
+                  onToggle={toggle}
+                  onToggleAll={toggleAll}
+                  confianza={confianza}
+                />
               </div>
             )}
             {data && data.total > 0 && (
