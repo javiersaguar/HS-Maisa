@@ -492,7 +492,12 @@ def test_chat_no_cambia_package_real(tmp_path):
         h.ejecutar("pagos", {"semana": "2026-W38"})
         assert antes == list(conn.iterdump())
         salida = Path(carpeta) / "entrega"
-        empaquetar(conn, salida, Path("data/caja"), con_traza=True, auditar=auditor_de_entrega())
+        # Los dos lotes, como los empaqueta la CLI: con el lote 2 en la BD, auditar sólo el 1 da ROJO
+        # («ficheros en la BD que no existen en disco»), que es un fallo del montaje del test, no del chat.
+        lote2 = Path("data/lote2") if (Path("data/lote2/facturas")).is_dir() else None
+        empaquetar(
+            conn, salida, Path("data/caja"), lote2, con_traza=True, auditar=auditor_de_entrega()
+        )
         conn.close()
         generado = (salida / "outcomes.jsonl").read_bytes()
         # El invariante: el chat no cambia lo que se entrega. Aquí se fijaba además el hash de una entrega
