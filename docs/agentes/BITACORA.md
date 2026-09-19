@@ -569,3 +569,13 @@ Plantilla (cópiala tal cual):
 - Encontrado por el camino: (1) dos copias en **la misma pasada** se renombraban entre sí, porque ingest calculaba lo conocido una sola vez; (2) la auditoría, `status`, `trace` y la consola abren la BD en **solo lectura**, y una BD de antes no tiene la tabla. Los dos están resueltos en el parche y cubiertos con tests.
 - **PIDO A Miguel:** aplicar el parche (`docs/agentes/P0-1-IDENTICOS.md`: `git apply dist/ensayo/h1/identicos.patch && make check`, 10 min) antes de las 17:00. El verificador pasa solo de ROJO a AVISO.
 - **PIDO A Mónica:** con el parche, todas las identidades de un PDF repetido salen ESCALAR, **también el original del lote 1** aunque ya se hubiera entregado como PAGAR. Es la política de duplicados vigente; si prefieres otra, se cambia en `rules/`.
+
+### 10:42 · H2 · corrección de hora
+- la entrada «11:20 · H2 · parte A cerrada» de arriba lleva la hora mal: la parte A se cerró a las **10:38** (la calculé en vez de mirarla). Lo demás de esa entrada vale.
+- comprobado a las 10:41 (`git fetch`): Mónica no ha subido `esperado_muestra.csv` en ninguna rama (0 de 21). El comparador ya está (10 tests); `MUESTRA-CONTRASTE.md` va con el método y el comando, sin etiquetas.
+
+### 10:50 · H2 · termino: A, B y D hechos; C espera a Mónica
+- hice: tercera lectura 21 de 21 (en `dist/ensayo/h2/`, fuera del repo) · `9f31b5f` comparador (`scripts/comparar_muestra.py`, 10 tests: con la muestra humana abierta no enseña ni el sistema ni al agente, ni abre la BD) · `19aaf99` `MUESTRA-CONTRASTE.md` (método y comando, sin etiquetas). `make check`: 417 passed, 5 xfailed (de H1). Detalle en PARTE.md, sección H2.
+- sin etiquetas aquí. Contaminación: la declarada a las 10:28, marcada etiqueta a etiqueta en mi CSV.
+- **PIDO A Mónica:** avisa en el canal cuando subas tu columna; entonces se copia mi CSV a `data/fixtures/`, se ejecuta el comparador y cada discrepancia sale con dueño (REGLA / DATO / ETIQUETA). Receta en MUESTRA-CONTRASTE.md.
+- **PIDO A Mónica, para el mentor hoy, sin esperar a la muestra:** ¿qué se hace con una factura cuyos datos cuadran con maestro, pedido y ERP pero que trae texto que ordena la decisión (escalar, bloquear, no pagar)? Afecta a varias de las 21 y a más de la Caja; es la pregunta 4 de hitos.md ampliada.
