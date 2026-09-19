@@ -1,6 +1,6 @@
 import type { Fuentes, InvoiceFacts } from '@/lib/types'
 import { ERP_NOMBRE } from '@/lib/config'
-import { formatAmount, formatDate } from '@/lib/format'
+import { formatAmount, formatDate, shortHash } from '@/lib/format'
 import type { Tone } from '@/lib/theme'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { EmptyState } from '@/components/ui/states'
@@ -59,8 +59,8 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
       <div className="rounded-xl border border-[#dfe4de] bg-[#fafcfa] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Maestro de proveedores</h3>
-          <span className="text-[12px] text-[#8a958e]">
-            {fuentes.maestro_version ? 'snapshot actual' : 'sin snapshot todavía'}
+          <span className="font-mono text-[12px] text-[#8a958e]">
+            {fuentes.maestro_version ? `versión ${shortHash(fuentes.maestro_version, 12)}` : 'sin snapshot todavía'}
           </span>
         </div>
         <p className="mt-2 leading-5 text-[#68736d]">
