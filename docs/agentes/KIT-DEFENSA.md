@@ -119,3 +119,33 @@ hoy, sin tocar la entrega. **Límite que hay que decir:** si cambian un CSV del 
   `scan_025` (AUDITORIA-ENTREGA.md).
 - **¿Y el calendario de pagos?** → `uv run python -m albertitos.bonus --salida dist/bonus --tope-semanal 150000` (438 PAGAR, 2.428.159,06 EUR). Es un borrador; los IBAN de la Caja no tienen dígito de control.
 - **¿Y si le pides al chat que pague?** → se niega en local (`estado: solo_lectura`, 0 ms, `sin_modelo`) y no llama al LLM.
+
+## Grabar la demo en local (19/09, 21:45, probado 13/13 en Chromium)
+La consola de Vercel sólo puede enseñar los datos de ejemplo: el puente, el chat y el LLM viven en el portátil.
+Para grabar, todo en local. **En el portátil de Javier el 3000 es un Grafana de otro proyecto y el 8001 otro
+contenedor**: la consola va en el **3002** y el chat en el **8101**.
+
+1. Bandeja limpia con el contexto del lote 2 (copia aparte, nunca la BD de la entrega):
+   ```bash
+   mkdir -p dist/ensayo/aparte && mv dist/bandeja.db* dist/inbox dist/ensayo/aparte/ 2>/dev/null
+   uv run python -c "from albertitos.console import bandeja; bandeja.preparar()"
+   ALBERTITOS_DB=dist/bandeja.db uv run albertitos maestro --lote2 data/lote2
+   ALBERTITOS_DB=dist/bandeja.db ALBERTITOS_ERP_URL=http://127.0.0.1:8011 uv run albertitos erp pull --tag v2
+   ```
+2. Tres terminales:
+   ```bash
+   ALBERTITOS_BANDEJA_NORMA=v4 ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3002 uv run python -m albertitos.console.api --bandeja
+   ALBERTITOS_CHAT_PUERTO=8101 ALBERTITOS_CHAT_HASTA=2026-09-20T01:00 ALBERTITOS_CHAT_ORIGENES=http://localhost:3002 make chat
+   cd console-web && NEXT_PUBLIC_USE_MOCK=false NEXT_PUBLIC_API_URL=http://127.0.0.1:8000 NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101 npx pnpm build && npx pnpm start -p 3002
+   ```
+3. Abrir `http://localhost:3002`. Facturas del lote 2 que cuentan algo al soltarlas (medido en la bandeja con la v4):
+
+| Fichero | Sale | Por qué |
+|---|---|---|
+| `factura_2923.pdf` · `e08_P012.pdf` | PAGAR | todo cuadra (la segunda, alemana: NIF-IVA e IBAN DE válidos) |
+| `2026-08-22_P010.pdf` | NO_PAGAR | R5: el pedido PO-2026-0071 ya figura PAGADA en el ERP (AS-90001) |
+| `FA-7532_informática.pdf` | ESCALAR | R1: IBAN distinto del maestro (la factura pide «tomen nueva cuenta») |
+| `e02_P002.pdf` | ESCALAR | R7: factura en USD contra un pedido en EUR, sin tipo de cambio acordado |
+| `e18_P001.pdf` | ESCALAR | R6: total corregido a mano (anotación a mano) |
+
+La pregunta al chat de la prueba: «¿Por qué no se paga F26-2201_transportes.pdf?» → ESCALAR, 5,7 s, ficha de la BD debajo.
