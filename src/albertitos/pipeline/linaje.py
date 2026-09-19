@@ -5,8 +5,9 @@ depende de lo que la norma lee con el pedido y el NIF de la factura (v3: R1 busc
 R2 el pedido, R5 los asientos del pedido; `tests/test_linaje.py` lo comprueba para cada norma del
 REGISTRO). Así que:
 - hechos, norma o fecha de corte distintos → se recalcula. "Hechos distintos" es `hechos_hash` distinto
-  o hechos reescritos después de la decisión: el hash excluye la evidencia (`texto_sospechoso`,
-  `confianza`), que sí aparece en el motivo, y un fixture reimportado con evidencia nueva no se colaría;
+  o hechos reescritos después de la decisión: el hash excluye `texto_sospechoso` (R6 lo cita en el
+  motivo) y `confianza` (R6 escala `< 1` desde ADR-0011), y unos hechos reimportados o reextraídos que
+  sólo cambien eso no se colarían;
 - maestro o ERP distintos → se recalcula sólo si el diff entre la versión con la que se decidió y la de
   destino toca su pedido o su NIF. Las demás NO se tocan: conservan la versión con la que se decidieron
   y se deja un evento `decide/skip` que dice que el diff no les afecta.
@@ -124,7 +125,7 @@ def evaluar(
             out.impactados[fid] = "hechos cambiados"
             continue
         if _posterior(f["h_en"], f["d_en"]):
-            out.impactados[fid] = "hechos reescritos tras decidir (evidencia)"
+            out.impactados[fid] = "hechos reescritos tras decidir (evidencia o confianza)"
             continue
         if f["norma_version"] != norma_version:
             out.impactados[fid] = f"norma {f['norma_version']}→{norma_version}"

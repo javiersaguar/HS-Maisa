@@ -303,7 +303,25 @@ def test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide(conn, base, maest
     time.sleep(0.01)  # la reimportación llega después de la decisión
     db.guardar_hechos(conn, nueva)
     assert _evaluar(conn, maestro, erp).impactados == {
-        "a.pdf": "hechos reescritos tras decidir (evidencia)"
+        "a.pdf": "hechos reescritos tras decidir (evidencia o confianza)"
     }
     _reprocesar(conn, maestro, erp)
+    assert _evaluar(conn, maestro, erp).impactados == {}
+
+
+def test_solo_cambia_la_confianza_y_tambien_se_redecide(conn, base, maestro, erp):
+    """Mónica (ADR-0011): R6 escala `confianza < 1`, y `hash()` excluye `confianza`. Lo cubre la misma red
+    que la evidencia: unos hechos reescritos después de decidir se redeciden aunque el hash no cambie."""
+    import time
+
+    fila = conn.execute("SELECT hechos_json FROM hechos WHERE sha256=?", ("a" * 64,)).fetchone()
+    a = InvoiceFacts.model_validate_json(fila[0])
+    reconciliada = a.model_copy(update={"confianza": 0.6})
+    assert reconciliada.hash() == a.hash()  # por eso hace falta la red
+    time.sleep(0.01)  # la reextracción llega después de la decisión
+    db.guardar_hechos(conn, reconciliada)
+    assert "a.pdf" in _evaluar(conn, maestro, erp).impactados
+    assert _vigentes(conn)["a.pdf"] == "PAGAR"
+    _reprocesar(conn, maestro, erp)  # reprocess --impacted
+    assert _vigentes(conn)["a.pdf"] == "ESCALAR"
     assert _evaluar(conn, maestro, erp).impactados == {}
