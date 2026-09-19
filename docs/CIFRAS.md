@@ -1,16 +1,21 @@
-# Cifras para la defensa · catálogo G2 · 19/09/2026
+# Cifras para la defensa · catálogo G2, al día el 20/09/2026 a las 01:15
 
 Una cifra sólo se puede citar con su población, máquina, fecha y estado. Ésta es la tabla de referencia;
 los documentos enlazados conservan los experimentos originales. «Vigente» no significa volver a medir hoy
 un ensayo con llamadas al LLM. No se hicieron llamadas al LLM ni se modificaron BD/entrega reales en G2.
-Las cifras del portátil de Javier no son las del de Alfonso; medir allí a las 15:00.
+Las cifras del portátil de Javier no son las del de Alfonso; medir allí antes de la defensa.
+**El lote 2 ya está recibido, decidido y publicado** (20/09 00:17, entrega `d2ade3f`): las filas de abajo
+distinguen lote 1, lote 2 y total. Lo que sigue diciendo «lote 1» es de la Caja del viernes y no ha cambiado.
 
 | Cifra | Qué mide / alcance | Fuente | Comando que la reproduce o consulta | Fecha de medida | Vigencia / límite |
 |---|---|---|---|---|---|
-| 500/500 extraídos y decididos | Caja lote 1, hechos disponibles; no significa 100 % de exactitud | BD real; [CONTRASTE-TOTAL §1](agentes/CONTRASTE-TOTAL.md) | C1 debajo | 19/09, G2 | Confirmado sólo lectura; lote 2 real aún no recibido |
+| **540/540 extraídos y decididos** | Los dos lotes: 500 de la Caja + 40 del lote 2; hechos disponibles, no significa 100 % de exactitud | BD real; [CONTRASTE-TOTAL §1](agentes/CONTRASTE-TOTAL.md), [EXTRACCION](agentes/lote2/EXTRACCION.md) | C1 debajo | 20/09 00:17, Javier | Confirmado sólo lectura. 0 pendientes |
+| 40/40 del lote 2: 23 plantilla, 17 LLM de texto | Extracción del lote sorpresa; ninguna escaneada, todas con capa de texto | [EXTRACCION §1](agentes/lote2/EXTRACCION.md) | C1 (cambiando `lote=1` por `lote=2`) | 19/09 23:30, agente B | Las 17 pasaron por `deepseek-v4-flash` con el prompt p-0.4; 0 pendientes |
 | 468/468 coincidencias, 0 discrepancias y 0 fallos; 472 s, 717.188 tokens | Contraste de ocho campos plantilla↔LLM; no etiqueta humana | [CONTRASTE-TOTAL §1](agentes/CONTRASTE-TOTAL.md); ADR-0002 | C2; no se repitió la lectura en G2 | 18/09, C1, desde 23:24 | Evidencia histórica vigente para esas plantillas/hechos; no mide las escaneadas |
 | 468/500 = 93,6 %; 6 plantillas | Cobertura determinista; 29 escaneadas y 3 textos sin plantilla completan 500 | [RESILIENCIA §2](agentes/RESILIENCIA-Y-COSTE.md), ADR-0002 | C1; `uv run pytest tests/test_plantillas.py -q` | 18/09; recuento G2 19/09 | Confirmado 468; caché puede cambiar el nombre del método de las otras 32 |
-| 438 PAGAR / 53 ESCALAR / 9 NO_PAGAR | Decisiones vigentes lote 1, norma v3 con ADR-0010/0011, ERP v1 | BD real; entrega `232bb76` ([entregas.log](entregas.log)) | C1; `uv run albertitos status` | 19/09 10:07, Javier | Referencia actual. Antes de ADR-0011: 443/48/9 (las 5 reconciliadas se pagaban). No es verdad etiquetada |
+| **468 PAGAR / 62 ESCALAR / 10 NO_PAGAR** (540) | Decisiones vigentes de los dos lotes, tal como se entregaron | BD real; entrega `d2ade3f` ([entregas.log](entregas.log)) | C1; `uv run albertitos status` | 20/09 00:17, Javier | Referencia actual. **No es verdad etiquetada**: la validación oficial es binaria y no la conocemos |
+| 445 PAGAR / 46 ESCALAR / 9 NO_PAGAR | Sólo lote 1, norma v3 y ERP v1 (cada lote en su contexto, ADR-0021) | entrega `d2ade3f`; ADR-0017 | C1 | 20/09 00:17 | Antes del ADR-0017 era 438/53/9 (entrega `232bb76`): 7 escaneadas legibles pasaron a PAGAR. Antes del ADR-0011, 443/48/9 |
+| 23 PAGAR / 16 ESCALAR / 1 NO_PAGAR | Sólo lote 2, norma v4 y ERP v2 | entrega `d2ade3f`; ADR-0022 | C1 | 20/09 00:17 | 8 de los 16 escalados son las facturas en divisa: sin tabla de cambio no convertimos. Pendiente de mentores |
 | 57,1 s; 38,6 s con índice | Camino determinista a 10.000 en Ryzen 9; suma por etapas, excluye render/LLM | [ESCALA-10K §2 y §5](agentes/ESCALA-10K.md) | `uv run python scripts/bench_escala.py --n 10000 --etiqueta cifras-10k --workers 1,8 --decide-variantes` | 19/09 00:51–01:10, D1 | Histórico: 57,1 sin índice; 38,6 suma con índice. Esquema actual ya trae el índice; no prometer 57 s actuales |
 | 3 min 39 s; pico 653 MB | Banco sintético 10k completo, dos tandas de extract; LLM sustituido por hechos congelados | [ESCALA-10K §1–2](agentes/ESCALA-10K.md) | `/usr/bin/time -v uv run python scripts/bench_escala.py --n 10000 --etiqueta cifras-banco --workers 1,8` | 19/09 00:51, D1 | No es un lote de 10k leído por el LLM ni un test de precisión |
 | 0,065 y 0,106 ficheros/s | Visión real de doble lectura, 4 y 8 hilos, tandas de 24, Ryzen 9 | [ESCALA-10K §4](agentes/ESCALA-10K.md) | `uv run python scripts/bench_escala.py --n 0 --etiqueta cifras-llm --llm-vision 24 --llm-texto 12 --workers-llm 4,8` | 19/09 ~01:00, D1 | Base de extrapolación vigente; comando llama al LLM, no ejecutado G2. Sustituye 0,22 de una lectura |
@@ -30,6 +35,10 @@ Las cifras del portátil de Javier no son las del de Alfonso; medir allí a las 
 | 5/5 recuperadas en intento 2; 32,6 s | Caos 429 simulado, no 429 real del gateway | [RESILIENCIA §3 (b)](agentes/RESILIENCIA-Y-COSTE.md) | Receta §3 (b), copia y fixture de cinco; llama al LLM | 18/09 B2 | Histórico, no repetido G2; no confundir con 429 real del ERP |
 | Respaldo 3/3, hechos iguales; 68,7 s | Principal texto con 402, respaldo glm5.3-flash | [RESILIENCIA §3 (e)](agentes/RESILIENCIA-Y-COSTE.md) | Receta §3 (e) sobre copia y fixture; llama al LLM | 18/09 B2 | Disponibilidad, no demuestra mejor precisión de NIF |
 | ERP v1: 516 asientos, 31 consultas, 3 reintentos ORA-00600, 35 ms HTTP | Snapshot descargado 18/09 19:55:36 UTC =21:55 Madrid; ids 3213–3243 | BD real; `sources.snapshot.resumen_erp` | C6 | Descarga 18/09; consulta G2 19/09 | Asociación histórica inferida; latencia excluye backoff y ritmo. No usar 122 eventos/11 retries históricos como si fueran de v1 |
+| Maestro del lote 2: 15 proveedores, 555 pedidos (`f504377103b2`) | Excel + `proveedores_nuevos.csv` + `pedidos_nuevos.csv`; el Excel solo da `80911e429c6c` | `sources/lote2.py`; [EXTRACCION](agentes/lote2/EXTRACCION.md) | `uv run albertitos maestro --lote2 data/lote2` | 19/09 20:45, Javier | Los IBAN de P013, P014 y P015 no pasan el control (el japonés no es un IBAN): quedan como avisos de calidad |
+| ERP v2: 556 asientos, 33 consultas, 3 reintentos, 4,3 s | Descarga completa tras cargar el lote 2 en el bridge; 40 asientos nuevos, 0 cambiados | BD real; `sources.snapshot.diff_erp` | `python3 data/caja/alberto_erp.py --puerto 8011 --lote2 data/lote2/erp_export_lote2.csv` y `erp pull --tag v2` | 19/09 20:40, Javier | `AS-90001` es un asiento **nuevo** que deja PO-2026-0071 PAGADA; por eso `2026-08-22_P010` es NO_PAGAR |
+| Un dato de la Caja cambiado: 50 de 500 recalculadas, 43 cambian, 1,4 s | IBAN de P006 cambiado en una copia del Excel; linaje granular | [KIT-DEFENSA](agentes/KIT-DEFENSA.md) | `bash scripts/ensayo/dato-cambiado.sh` | 19/09 20:26, Javier | Sobre una copia; la BD real y la entrega no cambian. Con un importe de pedido, 1 de 500 |
+| Demo pública: 12/12 comprobaciones, chat en 5,7 s | Vercel contra Render, Chromium limpio y sin permisos especiales | ADR-0023; `deploy/README.md` | `bash scripts/demo.sh estado` | 20/09 00:50, Javier | Plan gratuito: si duerme, el primer acceso tarda ~50 s. El workflow la despierta cada 10 min |
 | ERP inaccesible: 8 consultas, 7 reintentos, 5,619 s | Puerto local reservado sin escucha; política por defecto | `tests/test_erp.py::test_conexion_rechazada_se_registra_y_agota`; log `dist/ensayo/g2/sin-erp.log` | `uv run pytest tests/test_erp.py -q -k conexion_rechazada` usa 2 intentos, <2 s; C7 mide defaults | 19/09 G2 | Medido sin alterar bridge; latencia no instantánea. CLI requiere captura de ErrorERP por Miguel |
 
 ## Comandos de comprobación
@@ -45,10 +54,10 @@ import sqlite3
 from contextlib import closing
 with closing(sqlite3.connect('file:dist/albertitos.db?mode=ro', uri=True)) as c:
     for sql in (
-        'SELECT count(*) FROM ficheros WHERE lote=1',
-        'SELECT count(DISTINCT h.sha256) FROM hechos h JOIN ficheros f USING(sha256) WHERE f.lote=1',
-        'SELECT h.metodo,count(*) FROM hechos h JOIN ficheros f USING(sha256) WHERE f.lote=1 GROUP BY h.metodo',
-        'SELECT d.resultado,count(*) FROM decisiones d JOIN ficheros f USING(sha256) WHERE d.vigente=1 AND f.lote=1 GROUP BY d.resultado',
+        'SELECT lote,count(*) FROM ficheros GROUP BY lote',
+        'SELECT f.lote,h.metodo,count(*) FROM hechos h JOIN ficheros f USING(sha256) GROUP BY f.lote,h.metodo',
+        'SELECT d.resultado,count(*) FROM decisiones d WHERE d.vigente=1 GROUP BY d.resultado',
+        'SELECT f.lote,d.norma_version,d.erp_version,d.resultado,count(*) FROM decisiones d JOIN ficheros f USING(sha256) WHERE d.vigente=1 GROUP BY f.lote,d.norma_version,d.erp_version,d.resultado',
     ): print(c.execute(sql).fetchall())
 PY
 ```
@@ -115,6 +124,9 @@ de la línea): si la frase se reescribe, vuelve a saltar. El comprobador no deci
   {"formas": ["0,22 ficheros/s", "0,22 f/s"], "vigente": "0,065 ficheros/s (4 hilos) / 0,106 (8), visión con doble lectura", "fuente": "docs/agentes/ESCALA-10K.md §4; docs/CIFRAS.md",
    "historicas": [{"fichero": "docs/benchmark.md", "contiene": "La cifra que usábamos antes, 0,22 ficheros/s con 4 hilos"}]},
   {"formas": ["10.000 en ~45 min", "salen en ~45 min"], "vigente": "10.000: estimación 1,5–2,5 h con una key y mezcla de Caja", "fuente": "docs/agentes/ESCALA-10K.md §7; docs/CIFRAS.md"},
-  {"formas": ["reprocesar 500 decisiones, 0,04 s"], "vigente": "2 de 500 en 0,04 s; total 500 depende del banco (7,06 s en ensayo de Javier)", "fuente": "docs/benchmark.md, Cifras; docs/agentes/ENSAYO-REPROCESADO.md, Qué salió"}
+  {"formas": ["reprocesar 500 decisiones, 0,04 s"], "vigente": "2 de 500 en 0,04 s; total 500 depende del banco (7,06 s en ensayo de Javier)", "fuente": "docs/benchmark.md, Cifras; docs/agentes/ENSAYO-REPROCESADO.md, Qué salió"},
+  {"formas": ["438/53/9", "438 PAGAR"], "vigente": "entrega d2ade3f (20/09 00:17): 540 = 468 PAGAR / 62 ESCALAR / 10 NO_PAGAR; lote 1 445/46/9 y lote 2 23/16/1", "fuente": "docs/CIFRAS.md; docs/entregas.log",
+   "historicas": [{"fichero": "docs/agentes/KIT-DEFENSA.md", "contiene": "**438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881"}]},
+  {"formas": ["500 líneas", "las 500 facturas", "500 outcomes"], "vigente": "540 facturas entregadas: outcomes.jsonl 500 + outcomes_lote2.jsonl 40", "fuente": "docs/CIFRAS.md; docs/entregas.log"}
 ]
 -->
