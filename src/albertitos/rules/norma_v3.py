@@ -31,6 +31,8 @@ from albertitos.formatos import CENT
 
 VERSION = "v3"
 IVA_GENERAL = Decimal("21")
+# Una lectura por debajo de esto se reconcilió con el maestro en vez de leerse limpia: la ve una persona.
+CONFIANZA_MINIMA = 1.0
 ANOMALIAS_HUMANO = {
     Aviso.TEXTO_INSTRUCCION,
     Aviso.DUPLICADO_SOSPECHOSO,
@@ -223,13 +225,25 @@ def regla_6_anomalias(
     h: InvoiceFacts, maestro: MasterSnapshot, erp: ErpSnapshot, ctx: ContextoDecision
 ) -> Motivo:
     graves = [a for a in h.avisos if a in ANOMALIAS_HUMANO]
-    if graves:
-        detalle = "anomalía que debe ver una persona: " + ", ".join(a.value for a in graves)
+    lectura_floja = h.confianza is not None and h.confianza < CONFIANZA_MINIMA
+    if graves or lectura_floja:
+        partes = []
+        if graves:
+            partes.append(
+                "anomalía que debe ver una persona: " + ", ".join(a.value for a in graves)
+            )
+        if lectura_floja:
+            partes.append(
+                f"la lectura del documento no es firme (confianza {h.confianza}): se eligió "
+                "reconciliándola con el maestro, no se leyó limpia"
+            )
+        detalle = " · ".join(partes)
         if h.texto_sospechoso:
             detalle += f' · el documento dice: "{h.texto_sospechoso[:300]}"'  # el tramo entero: a 120 se cortaba la orden
-        return _ko(
-            "R6", detalle, avisos=[a.value for a in graves], texto_sospechoso=h.texto_sospechoso
-        )
+        evidencia = {"avisos": [a.value for a in graves], "texto_sospechoso": h.texto_sospechoso}
+        if lectura_floja:
+            evidencia["confianza"] = h.confianza
+        return _ko("R6", detalle, **evidencia)
     return _ok(
         "R6", "sin anomalías que requieran revisión humana", avisos=[a.value for a in h.avisos]
     )
