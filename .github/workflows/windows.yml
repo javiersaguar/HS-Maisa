@@ -20,7 +20,9 @@ jobs:
       - run: uv sync --frozen
       - name: ERP 2009 sin latencia (para los tests marcados erp)
         run: |
-          (uv run python data/caja/alberto_erp.py --rapido > erp.log 2>&1 &)
+          # Con el python del venv, no con `uv run`: un uv vivo en segundo plano bloquea la caché y el
+          # «Post setup-uv» (uv cache prune) se queda esperando el candado hasta fallar.
+          (.venv/Scripts/python.exe data/caja/alberto_erp.py --rapido > erp.log 2>&1 &)
           for i in $(seq 20); do curl -sf http://127.0.0.1:8009/erp/estado && break; sleep 1; done
       - name: ruff
         run: uv run ruff format --check src tests scripts && uv run ruff check src tests scripts
