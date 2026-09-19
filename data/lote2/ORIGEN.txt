@@ -1,0 +1,6 @@
+Lote 2 ("lote sorpresa") de la Caja de Alberto, tal cual, sin modificar.
+Origen: https://github.com/ikurotime/500-sombras-de-alberto (repo de participantes)
+Commit: f831e3432d739cabcc3fb6d76d61eb58bec2ecd9 · 2026-09-19 17:57:37 +0200 · "chore: preparaos que se vienen cositas"
+Copiado: facturas_primin/*.pdf -> data/lote2/facturas/ (40 PDFs, nombres en NFC) y los tres CSV de la raíz.
+No se ha publicado ZIP ni hash en el canal (19/09 20:00). Manifiesto: data/lote2.sha256 (sha256sum -c).
+El lote 1, el Excel, el ERP y el manual del mismo commit coinciden con data/caja.sha256 (505/505).
