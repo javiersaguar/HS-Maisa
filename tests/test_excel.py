@@ -1,10 +1,35 @@
+import importlib.util
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 import openpyxl
 import pytest
 
-from albertitos.sources.excel import cargar_maestro, leer_norma
+from albertitos.sources.excel import ErrorMaestro, cargar_maestro, hojas_norma, leer_norma
+
+MAESTRO_XLSX = "FINAL_v7_DEFINITIVO_ahorasi.xlsx"
+VERSION_REAL = "80911e429c6c"  # la que está en la BD y en la entrega publicada
+_GENERAR = Path(__file__).parent.parent / "data/fixtures/maestro_cambiado/generar.py"
+
+
+def _generador():
+    """El generador de fixtures vive en data/fixtures/, que no es un paquete importable."""
+    spec = importlib.util.spec_from_file_location("maestro_cambiado_generar", _GENERAR)
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
+
+
+GEN = _generador()
+
+
+@pytest.fixture(scope="session")
+def variantes(caja, tmp_path_factory):
+    """Las copias del Excel real con otra forma o otro contenido, generadas una vez."""
+    destino = tmp_path_factory.mktemp("maestro_cambiado")
+    nombres = ["original", *GEN.VARIANTES]
+    return {n: GEN.generar(n, destino, caja / MAESTRO_XLSX) for n in nombres}
 
 
 def test_maestro_real(caja):
@@ -144,3 +169,124 @@ def test_cierra_excel_incluso_si_falta_hoja(tmp_path, monkeypatch, lector, con_e
     finally:
         for wb in libros:
             wb.close()
+
+
+# --- El Excel del sábado con otra forma: data/fixtures/maestro_cambiado/generar.py ---
+
+
+@pytest.mark.parametrize("variante", sorted(GEN.FORMA))
+def test_otra_forma_no_cambia_el_maestro(caja, variantes, variante):
+    """Columnas, cabeceras, hojas y huecos son envoltorio: el maestro sale idéntico, dato a dato."""
+    real = cargar_maestro(caja / MAESTRO_XLSX)
+    m = cargar_maestro(variantes[variante])
+    assert m.proveedores == real.proveedores
+    assert m.pedidos == real.pedidos
+    assert m.version == real.version == VERSION_REAL
+
+
+@pytest.mark.parametrize("variante", sorted(GEN.CONTENIDO))
+def test_otro_contenido_cambia_la_version(caja, variantes, variante):
+    m = cargar_maestro(variantes[variante])
+    assert m.version != VERSION_REAL
+
+
+def test_columnas_reordenadas_no_mezclan_iban_con_ciudad(variantes):
+    """El fallo silencioso que buscábamos: leyendo por posición, el IBAN acabaría en la ciudad."""
+    m = cargar_maestro(variantes["columnas_reordenadas"])
+    p = m.proveedores["P001"]
+    assert p.iban == "ES2100491500051234567890"
+    assert p.ciudad == "Valencia"
+    assert p.nif == "B46102331"
+    assert m.pedidos["PO-2026-0001"].importe_total == Decimal("9221.75")
+    assert m.pedidos["PO-2026-0001"].fecha_pedido == date(2026, 1, 31)
+
+
+def test_columna_desconocida_se_avisa_y_no_desplaza(variantes):
+    m = cargar_maestro(variantes["columna_nueva"])
+    assert m.proveedores["P001"].nif == "B46102331"
+    assert any("Centro_Coste" in a and "no conozco" in a for a in m.avisos_calidad)
+    assert any("Observaciones_2026" in a and "no conozco" in a for a in m.avisos_calidad)
+
+
+def test_filas_vacias_se_saltan_y_la_fila_sin_id_se_explica(variantes):
+    m = cargar_maestro(variantes["filas_vacias"])
+    assert any("sin ID" in a and "se ignora" in a for a in m.avisos_calidad)
+    assert any("sin número de pedido" in a for a in m.avisos_calidad)
+
+
+def test_titulo_encima_encuentra_la_cabecera(variantes):
+    m = cargar_maestro(variantes["titulo_encima"])
+    assert any("la cabecera está en la fila 3" in a for a in m.avisos_calidad)
+    assert not any("MAESTRO PROVEEDORES" in str(p.id) for p in m.proveedores.values())
+
+
+def test_hoja_renombrada_se_lee_y_se_dice(variantes):
+    m = cargar_maestro(variantes["hoja_renombrada"])
+    assert any("la hoja se llama «PEDIDOS 2026»" in a for a in m.avisos_calidad)
+    assert any("la hoja se llama «Maestro Proveedores»" in a for a in m.avisos_calidad)
+
+
+def test_hoja_que_parece_norma_avisa_con_su_nombre(variantes):
+    """La regla de las 18:00 puede llegar dentro del Excel: no puede pasar desapercibida."""
+    m = cargar_maestro(variantes["hoja_norma_v4"])
+    aviso = next(a for a in m.avisos_calidad if a.startswith("REGLA NUEVA?"))
+    assert "Norma_Pagos_v4" in aviso
+    assert "Norma_Pagos_v4" in hojas_norma(variantes["hoja_norma_v4"])
+    assert not any(
+        a.startswith("REGLA NUEVA?") for a in cargar_maestro(variantes["original"]).avisos_calidad
+    )
+    assert any(
+        "firma del director financiero" in x
+        for x in leer_norma(variantes["hoja_norma_v4"], "norma pagos V4")
+    )
+
+
+def test_iban_cambiado_solo_toca_a_su_proveedor(caja, variantes):
+    real = cargar_maestro(caja / MAESTRO_XLSX)
+    m = cargar_maestro(variantes["iban_cambiado"])
+    assert m.proveedores["P001"].iban == "ES9121000418450200051332"
+    assert {k: v for k, v in m.proveedores.items() if k != "P001"} == {
+        k: v for k, v in real.proveedores.items() if k != "P001"
+    }
+    assert m.pedidos == real.pedidos
+
+
+def test_pedido_anulado_y_proveedor_nuevo_llegan_al_maestro(variantes):
+    assert cargar_maestro(variantes["pedido_anulado"]).pedidos["PO-2026-0001"].estado == "ANULADO"
+    m = cargar_maestro(variantes["proveedor_nuevo"])
+    assert m.proveedores["P099"].condiciones_dias == 30
+    assert m.pedidos["PO-2026-0999"].proveedor_id == "P099"
+
+
+def test_sin_la_columna_clave_dice_que_mirar(tmp_path):
+    """Un maestro medio vacío escalaría las 500 en silencio: mejor un error con nombre."""
+    ruta = _crear_excel(tmp_path)
+    wb = openpyxl.load_workbook(ruta)
+    wb["Pedidos_2026"]["A1"] = "referencia interna"
+    wb.save(ruta)
+    wb.close()
+    with pytest.raises(ErrorMaestro) as e:
+        cargar_maestro(ruta)
+    assert "pedido" in str(e.value) and "referencia interna" in str(e.value)
+
+
+def test_columna_critica_ausente_avisa_pero_carga(tmp_path):
+    ruta = _crear_excel(tmp_path)
+    wb = openpyxl.load_workbook(ruta)
+    wb["Proveedores"]["D1"] = "no_es_un_iban"
+    wb.save(ruta)
+    wb.close()
+    m = cargar_maestro(ruta)
+    assert m.proveedores["P001"].iban == ""
+    assert any("FALTA la columna «iban»" in a and "escalarán" in a for a in m.avisos_calidad)
+
+
+def test_sin_hoja_de_pedidos_dice_los_nombres_que_valen(tmp_path):
+    ruta = _crear_excel(tmp_path)
+    wb = openpyxl.load_workbook(ruta)
+    wb["Pedidos_2026"].title = "otra_cosa"
+    wb.save(ruta)
+    wb.close()
+    with pytest.raises(ErrorMaestro) as e:
+        cargar_maestro(ruta)
+    assert "Pedidos_2026" in str(e.value) and "otra_cosa" in str(e.value)

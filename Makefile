@@ -4,6 +4,9 @@ ERP_URL ?= http://127.0.0.1:8009
 LOTE ?= 1
 
 .DEFAULT_GOAL := help
+# En Windows, Python lee y escribe en cp1252 si no se le dice otra cosa: los nombres con tildes,
+# los «€» y las salidas de git en UTF-8 revientan. Todo lo que lance make, en UTF-8.
+export PYTHONUTF8 := 1
 .PHONY: kit-demo kit-instalar publicar agentes-check help setup check fmt test erp erp-fast erp-lote2 erp-lote2-fast erp-status caja-verify db run status trace console package validate plan-pdf bench demo-caos worktree clean
 
 help: ## Lista estos comandos

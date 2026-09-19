@@ -1,0 +1,64 @@
+{
+  "peticion": "GET /bonus/avisos",
+  "status": 200,
+  "respuesta": {
+    "total": 11,
+    "avisos": [
+      {
+        "file_id": "2026-01-08_P001.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P001 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-11_P007.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P007 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-12_P002.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P002 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-12_P010.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P010 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-15_P003.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P003 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-16_P004.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P004 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-17_P011.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P011 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-18_P005.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P005 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-22_P006.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P006 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-24_P009.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P009 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      },
+      {
+        "file_id": "2026-01-28_P008.pdf",
+        "codigo": "IBAN_SIN_CONTROL",
+        "detalle": "El IBAN de P008 no pasa el mod-97 (IBAN sintético de la Caja): entra marcado; un banco real lo rechazaría (usa --estricto para excluirlo)."
+      }
+    ]
+  }
+}

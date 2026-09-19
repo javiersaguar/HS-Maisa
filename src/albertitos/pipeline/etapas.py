@@ -40,13 +40,18 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
     Un PDF idéntico a otro ya registrado (misma sha256) con otro nombre o en otro lote es una COPIA:
     su nombre va a `identidades` y el original no se toca (P0-1: si no, el lote del original perdía su
     línea). Sólo si el nombre anterior ya no está en este directorio del mismo lote es un renombrado, y
-    entonces se actualiza el file_id como antes."""
+    entonces se actualiza el file_id como antes.
+
+    Un PDF con el MISMO nombre que otro de otro lote y distinto contenido (P0-5) entra en `ficheros`
+    con el nombre interno `./<nombre>` (el file_id es UNIQUE) y su nombre de entrega en `identidades`:
+    tiene sus propios hechos, su decisión y su línea."""
     from albertitos.extract import pdf  # import tardío: pymupdf tarda en cargar
 
     conocidos = {
         r["sha256"]: (r["file_id"], r["lote"])
         for r in conn.execute("SELECT sha256, file_id, lote FROM ficheros")
     }
+    ocupados = {fid: (sha, lote_) for sha, (fid, lote_) in conocidos.items()}
     extras = (
         {
             (r["file_id"], r["lote"]): r["sha256"]
@@ -65,7 +70,9 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
         if conocidos.get(sha) == (file_id, lote) or extras.get((file_id, lote)) == sha:
             continue
         original = conocidos.get(sha)
-        if original is not None and (original[1] != lote or original[0] in presentes):
+        if original is not None and (
+            original[1] != lote or db.nombre_entrega(original[0]) in presentes
+        ):
             db.guardar_identidad(conn, file_id=file_id, lote=lote, sha256=sha)
             extras[(file_id, lote)] = sha
             db.registrar_evento(
@@ -76,7 +83,8 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
                     etapa=Etapa.INGEST,
                     estado=EstadoEvento.OK,
                     latencia_ms=int((time.perf_counter() - t0) * 1000),
-                    detalle=f"lote={lote} copia exacta de {original[0]} (lote {original[1]})",
+                    detalle=f"lote={lote} copia exacta de {db.nombre_entrega(original[0])}"
+                    f" (lote {original[1]})",
                 ),
             )
             n += 1
@@ -86,16 +94,27 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
                 db.quitar_identidad(conn, file_id=file_id, lote=lote)
                 del extras[(file_id, lote)]
             paginas, tiene_texto = pdf.info(ruta)
+            en_bd, nota = file_id, ""
+            otro = ocupados.get(file_id)
+            if original is None and otro is not None and otro[0] != sha and otro[1] != lote:
+                en_bd = db.PREFIJO_INTERNO + file_id  # P0-5: nombre ya usado en el lote otro[1]
+                nota = (
+                    f" · nombre repetido del lote {otro[1]} con otro contenido: en la BD, {en_bd}"
+                )
             db.guardar_fichero(
                 conn,
                 sha256=sha,
-                file_id=file_id,
+                file_id=en_bd,
                 lote=lote,
                 bytes_=ruta.stat().st_size,
                 paginas=paginas,
                 tiene_texto=tiene_texto,
             )
-            conocidos[sha] = (file_id, lote)  # otro PDF igual más abajo en este directorio es copia
+            if en_bd != file_id:
+                db.guardar_identidad(conn, file_id=file_id, lote=lote, sha256=sha)
+                extras[(file_id, lote)] = sha
+            conocidos[sha] = (en_bd, lote)  # otro PDF igual más abajo en este directorio es copia
+            ocupados[en_bd] = (sha, lote)
             db.registrar_evento(
                 conn,
                 Event(
@@ -104,7 +123,8 @@ def ingest(conn: sqlite3.Connection, directorio: Path, lote: int = 1) -> int:
                     etapa=Etapa.INGEST,
                     estado=EstadoEvento.OK,
                     latencia_ms=int((time.perf_counter() - t0) * 1000),
-                    detalle=f"lote={lote} paginas={paginas} texto={'si' if tiene_texto else 'no'}",
+                    detalle=f"lote={lote} paginas={paginas} texto={'si' if tiene_texto else 'no'}"
+                    + nota,
                 ),
             )
             n += 1

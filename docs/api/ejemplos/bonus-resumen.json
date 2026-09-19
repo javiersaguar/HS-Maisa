@@ -1,0 +1,170 @@
+{
+  "peticion": "GET /bonus/resumen",
+  "status": 200,
+  "respuesta": {
+    "tipo": "BORRADOR: no es una orden bancaria ni acredita pagos ejecutados",
+    "fecha_corte": "2026-09-18",
+    "decisiones_pagar": 438,
+    "calendario_numero": 438,
+    "calendario_total_eur": "2428159.06",
+    "remesa_numero": 438,
+    "remesa_total_eur": "2428159.06",
+    "excluidos_remesa": 0,
+    "remesa_iban_sin_control": 438,
+    "sin_vencimiento_calculable": 0,
+    "vencidos": 431,
+    "vencen_semana_corte": 2,
+    "avisos_por_codigo": {
+      "IBAN_SIN_CONTROL": 11
+    },
+    "semanas": {
+      "2026-W06": {
+        "numero": 1,
+        "importe_eur": "10541.08"
+      },
+      "2026-W07": {
+        "numero": 3,
+        "importe_eur": "18184.66"
+      },
+      "2026-W08": {
+        "numero": 2,
+        "importe_eur": "1232.17"
+      },
+      "2026-W09": {
+        "numero": 17,
+        "importe_eur": "77631.53"
+      },
+      "2026-W10": {
+        "numero": 13,
+        "importe_eur": "43241.98"
+      },
+      "2026-W11": {
+        "numero": 14,
+        "importe_eur": "65094.76"
+      },
+      "2026-W12": {
+        "numero": 17,
+        "importe_eur": "107986.60"
+      },
+      "2026-W13": {
+        "numero": 15,
+        "importe_eur": "78053.23"
+      },
+      "2026-W14": {
+        "numero": 15,
+        "importe_eur": "87423.42"
+      },
+      "2026-W15": {
+        "numero": 7,
+        "importe_eur": "39246.61"
+      },
+      "2026-W16": {
+        "numero": 15,
+        "importe_eur": "87005.05"
+      },
+      "2026-W17": {
+        "numero": 14,
+        "importe_eur": "85681.79"
+      },
+      "2026-W18": {
+        "numero": 13,
+        "importe_eur": "71506.02"
+      },
+      "2026-W19": {
+        "numero": 15,
+        "importe_eur": "67178.02"
+      },
+      "2026-W20": {
+        "numero": 15,
+        "importe_eur": "72696.43"
+      },
+      "2026-W21": {
+        "numero": 17,
+        "importe_eur": "108837.79"
+      },
+      "2026-W22": {
+        "numero": 22,
+        "importe_eur": "125415.19"
+      },
+      "2026-W23": {
+        "numero": 16,
+        "importe_eur": "58170.52"
+      },
+      "2026-W24": {
+        "numero": 13,
+        "importe_eur": "60890.07"
+      },
+      "2026-W25": {
+        "numero": 12,
+        "importe_eur": "87690.56"
+      },
+      "2026-W26": {
+        "numero": 13,
+        "importe_eur": "83601.36"
+      },
+      "2026-W27": {
+        "numero": 20,
+        "importe_eur": "109681.78"
+      },
+      "2026-W28": {
+        "numero": 13,
+        "importe_eur": "82668.54"
+      },
+      "2026-W29": {
+        "numero": 16,
+        "importe_eur": "104325.08"
+      },
+      "2026-W30": {
+        "numero": 23,
+        "importe_eur": "116822.14"
+      },
+      "2026-W31": {
+        "numero": 14,
+        "importe_eur": "78823.19"
+      },
+      "2026-W32": {
+        "numero": 13,
+        "importe_eur": "58069.17"
+      },
+      "2026-W33": {
+        "numero": 14,
+        "importe_eur": "66027.20"
+      },
+      "2026-W34": {
+        "numero": 13,
+        "importe_eur": "64547.20"
+      },
+      "2026-W35": {
+        "numero": 19,
+        "importe_eur": "184374.50"
+      },
+      "2026-W36": {
+        "numero": 12,
+        "importe_eur": "58347.53"
+      },
+      "2026-W37": {
+        "numero": 4,
+        "importe_eur": "15995.15"
+      },
+      "2026-W38": {
+        "numero": 2,
+        "importe_eur": "14518.10"
+      },
+      "2026-W39": {
+        "numero": 5,
+        "importe_eur": "33037.27"
+      },
+      "2026-W40": {
+        "numero": 1,
+        "importe_eur": "3613.37"
+      }
+    },
+    "vencido_importe_eur": "2383400.88",
+    "en_plazo_importe_eur": "44758.18",
+    "semana_corte": "2026-W38",
+    "lotes": [
+      1
+    ],
+    "proveedores": 11
+  }
+}

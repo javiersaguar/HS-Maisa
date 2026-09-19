@@ -521,6 +521,9 @@ def status(
 @app.command()
 def trace(
     file_id: str,
+    lote: int | None = typer.Option(
+        None, help="si el mismo nombre está en los dos lotes, cuál (por defecto, el del lote 1)"
+    ),
     legible: bool = typer.Option(
         True,
         "--legible/--json",
@@ -534,16 +537,18 @@ def trace(
 
     conn = _conn(solo_lectura=True)
     fid = unicodedata.normalize("NFC", file_id)
-    t = db.traza(conn, fid)
+    t = db.traza(conn, fid, lote)
     if not t["fichero"]:
         rprint(f"[red]{file_id} no está en la BD[/red] (¿ingest? ¿nombre exacto?)")
         raise typer.Exit(1)
     if legible:
-        print(traza.legible(conn, fid))  # print: los corchetes de los avisos no son markup de rich
+        print(
+            traza.legible(conn, fid, lote)
+        )  # print: los corchetes de los avisos no son markup de rich
         return
     vigente = next((d for d in t["decisiones"] if d["vigente"]), None)
-    lote = (t["identidad"] or t["fichero"])["lote"]
-    t["duplicado_con"] = traza.duplicado_con(conn, t["fichero"]["sha256"], fid, lote)
+    su_lote = (t["identidad"] or t["fichero"])["lote"]
+    t["duplicado_con"] = traza.duplicado_con(conn, t["fichero"]["sha256"], fid, su_lote)
     t["erp"] = traza.resumen_erp_o_nada(conn, vigente["erp_version"]) if vigente else None
     print(json.dumps(t, ensure_ascii=False, indent=1, default=str))
 

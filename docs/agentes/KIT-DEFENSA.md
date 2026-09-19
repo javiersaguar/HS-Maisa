@@ -1,12 +1,17 @@
 # Chuleta de la defensa · bloque 4 (resiliencia, 2 min) · para Alfonso
 
-Tiempos medidos por F2 el 19/09 a las 07:25 en un clon limpio del repo (`docs/demo/ENSAYO-CLON-LIMPIO.md`), en el
-portátil de Javier. **En el tuyo serán otros: cronométralos en el ensayo de las 15:00.** Todo es bash (WSL, Linux o Mac).
+Tiempos medidos de nuevo el 19/09 a las 13:35, con `main` y el kit de las 13:37, en un clon limpio del repo y en el
+portátil de Javier: `bootstrap` 1,7 s · `kit instalar` 0,3 s · `status` 0,2 s · `trace` 0,2 s · `demo_caos --sin-red`
+**3,0 s** · `dato_en_vivo --pagada` **0,5 s**. Todo con exit 0. **En el tuyo serán otros: cronométralos en el ensayo de las 15:00.** Todo es bash (WSL, Linux o Mac).
 
 ## Antes de salir de casa (con red)
-1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red.
+1. `git pull --ff-only && ./bootstrap.sh`. La primera vez descarga dependencias: necesita red. El merge de
+   `miguel/pipeline` **ya está en `main` (`8935c3e`)**: trae el `trace` legible, el `status` nuevo y las copias exactas.
 2. Copia el kit que te pase Javier a `dist/kit/` e instálalo: `make kit-instalar KIT=dist/kit/albertitos-kit-<fecha>.tar.gz`.
-   Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881 (kit de las 10:07, con las decisiones de Mónica; el de las 09:02 decía 443/48/9).
+   Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881.
+   **Pide el kit `albertitos-kit-20260919-1337.tar.gz`** (1,4 MB): es el primero con el esquema v3 (tabla `identidades`)
+   y con el código de `main` que trae el `trace` legible. Los de las 10:07 y las 13:17 sirven de repliegue (los recuentos
+   son los mismos), pero sus BD son de esquema v2.
    Si te pide `--forzar`, es que ya tenías una BD con datos: añade `ARGS=--forzar` (la anterior queda en `…antes-del-kit`).
 3. `uv run albertitos status` (los mismos recuentos) y `make console` una vez: tres pestañas, Panel con 500/438/53/9.
 4. Ensaya el bloque entero con cronómetro. El ERP no hace falta para nada de esto.
@@ -14,20 +19,53 @@ portátil de Javier. **En el tuyo serán otros: cronométralos en el ensayo de l
 ## En la sala, en orden
 | # | Comando | Qué se ve (una línea) | Tarda | Qué dices |
 |---|---|---|---|---|
-| 1 | `uv run python scripts/demo_caos.py --sin-red` | paso 1: `run → exit 1 · entrega escrita: no` y las 3 facturas `extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA` | todo, ~4 s | «Se cae el proveedor: tres facturas quedan pendientes, ninguna se paga a ciegas y la entrega se niega a salir incompleta.» |
-| | (mismo comando) | paso 2: `run → exit 0 · outcomes.jsonl 5ec17aaa5045` (el mismo hash que imprimió `kit-instalar`) | | **«La vuelta la sirvo desde la caché para no depender del wifi.»** Prueba que el pipeline reanuda, no que el proveedor conteste |
+| 1 | `uv run python scripts/demo_caos.py --sin-red` | paso 1: `run → exit 1 · entrega escrita: no` y las 3 facturas `extract pendiente (LLM-DOWN) → decide skip → emit pendiente · decisión: NINGUNA` | todo, ~3 s | «Se cae el proveedor: tres facturas quedan pendientes, ninguna se paga a ciegas y la entrega se niega a salir incompleta.» |
+| | (mismo comando) | paso 2: `run → exit 0 · outcomes.jsonl 1ec4be206089` (el de la entrega publicada `232bb76`, el mismo que imprime `kit-instalar`) | | **«La vuelta la sirvo desde la caché para no depender del wifi.»** Prueba que el pipeline reanuda, no que el proveedor conteste |
 | | (mismo comando) | paso 3: `(igual: True)` | | «Repetir no llama a nadie ni duplica nada: la identidad es el sha256. Y es el mismo hash que la entrega oficial.» |
 | 2 | los 5 comandos de RESILIENCIA §3 (b bis), tal cual, con `chaos --llm-down` antes del `extract` | `{'LLM-DOWN': 5, 'LLM-CIRCUIT-OPEN': 3}` | ~2 s el bloque | «A partir del quinto fallo dejamos de castigar al proveedor. Lo pendiente sigue pendiente.» |
 | 3 | consola → Traza → `copia_2026_0518.pdf` | eventos `LLM-DOWN` y `LLM-INVALID` del viernes y, después, la extracción buena | — | «Esto no es un ensayo: pasó el viernes con esta factura, y se reanudó sin tocar nada.» |
 
-Si en pantalla sale `extract pendiente 7` o `2.3823 EUR` en `status`: «son eventos del viernes; los 7 pendientes son
-pruebas de caos de ficheros que luego se extrajeron bien (0 sin decisión), y los 2,38 € son una tarifa inventada que
-corregimos: los modelos que usamos no cobran por token».
+`status` enseña el último evento de cada fichero: el `extract pendiente 7` y los `2.3823 EUR` del viernes ya no salen
+(sólo con `status --historico`). Si salen ahí o en el Panel de la consola: «son eventos del viernes; los 7 pendientes
+son pruebas de caos de ficheros que luego se extrajeron bien (0 sin decisión), y los 2,38 € son una tarifa inventada
+que corregimos: los modelos que usamos no cobran por token».
+
+## Si el tribunal cambia un dato (la pregunta del domingo)
+Un comando, sobre una **copia** (`dist/vivo.db`): ni la BD real ni la entrega se tocan, así que se puede repetir
+delante de ellos las veces que haga falta y siempre sale lo mismo.
+
+```bash
+uv run python scripts/dato_en_vivo.py --listar               # pedidos que hoy se pagan y siguen PENDIENTE
+uv run python scripts/dato_en_vivo.py --pagada PO-2026-XXXX  # ese asiento pasa a PAGADA en el ERP
+```
+
+Enseña, en este orden: el dato que cambia → `reprocess --impacted` → **N de 500 recalculadas, K cambian** → la traza
+legible de la que cambió. Lo que dices: «cambiar un asiento no nos obliga a repasar 500 facturas. El linaje sabe qué
+decisiones dependían de ese pedido: recalcula ésas y las demás conservan la versión con la que se tomaron» (ADR-0006).
+
+También admite `--importe PEDIDO=1234,56`, `--iban P003=ES…`, `--estado-pedido PEDIDO=ANULADO` y `--fecha-corte`.
+Nunca se cambia una decisión a mano: se cambia el dato, y vuelve a decidir la norma.
+
+Medido el 19/09 a las 13:17 en el portátil de Javier, sobre una copia de la BD real (438/53/9). La BD real y la entrega
+no cambian (mismas huellas antes y después):
+
+| Comando | Qué pasa | Tarda (entero / reproceso) |
+|---|---|---|
+| `--listar` | 10 pedidos que hoy se pagan y siguen PENDIENTE | 0,16 s |
+| **`--pagada PO-2026-0003`** (el de la demo) | `factura_8764.pdf` PAGAR → **NO_PAGAR**; **1 de 500 recalculadas** | **0,51 s** / 0,02 s |
+| `--importe PO-2026-0006=1200,00` | `2026-05-04_P011.pdf` PAGAR → ESCALAR; 1 de 500 | 0,53 s / 0,02 s |
+| `--iban P003=ES…392` | 51 de 500 recalculadas (todas las de P003), 45 cambian a ESCALAR | 0,55 s / 0,03 s |
+| `--estado-pedido PO-2026-0007=ANULADO` | 1 de 500 recalculada y **0 cambian**: la norma v3 no lee el estado del pedido del Excel (lo decide Mónica; ver la bitácora de J2). **No lo uses en la sala** | 0,37 s |
+| `--fecha-corte 2026-01-31` | 500 de 500 recalculadas, 388 cambian (fechas futuras respecto al corte) | 0,58 s / 0,09 s |
+
+El hito de `docs/hitos.md` pedía < 30 s; sale **por debajo de un segundo**. Hay que volver a cronometrarlo en el portátil
+de Alfonso, que puede ser más lento.
 
 ## Si algo falla
 - **La demo no arranca:** enseña `docs/demo/transcripcion-demo-caos.txt` (la misma demo con red, 104 s, tokens incluidos).
 - **La consola no abre:** `uv run albertitos status` y `uv run albertitos trace F26-2201_transportes.pdf` en la terminal.
-  El porqué está en `motivos_json` de la última decisión (la vigente); `docs/demo/trazas/README.md` dice qué mirar.
+  `trace` sale legible, un paso por bloque (hechos → maestro → ERP → duplicado → reglas → resultado) y con la vigente
+  primero en el historial; `docs/demo/trazas/README.md` dice qué mirar.
 - **No hay ERP en la sala:** da igual para la demo (se comprobó apagándolo). Sólo fallan `erp pull` y el preflight.
 
 ## Qué pregunta responde cada cosa
@@ -39,6 +77,8 @@ corregimos: los modelos que usamos no cobran por token».
   `LLM-INVALID` real.
 - **¿Y si hay otro proveedor?** → respaldo de texto `glm5.3-flash`, 3/3 con hechos idénticos (§3 (e)). De visión no:
   ninguno lee el NIF mejor (ADR-0004).
+- **¿Y si cambia un dato después de entregar?** → `scripts/dato_en_vivo.py` (arriba): el cambio entra como un snapshot
+  nuevo, el linaje dice qué decisiones dependían de él y sólo se recalculan ésas (ADR-0006). La entrega no se toca.
 - **¿Y si el LLM se equivoca en vez de caerse?** → el LLM sólo rellena hechos. Decide la norma, y los validadores y
   el maestro contrastan: las 468 de plantilla, contrastadas 468/468; las escaneadas, leídas dos veces y reconciliadas
   con el maestro, y si no cuadra, se escala. La auditoría de entrega caza evidencias falsas: encontró el «None» de

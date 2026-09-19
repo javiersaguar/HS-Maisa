@@ -1,0 +1,417 @@
+{
+  "pregunta": "¿Cuánto suman todos los pagos del calendario y están listos para enviar al banco?",
+  "respuesta": {
+    "respuesta": "El calendario de pagos (decisiones PAGAR, corte 2026-09-18) suma 2.428.159,06 € en 438 facturas. No está listo para enviar al banco: es un borrador de remesa, no una orden bancaria ni pago ejecutado, y las 438 partidas usan IBAN sintéticos marcados sin control (aviso IBAN_SIN_CONTROL), por lo que no hay remesa bancaria validada. El listado de facturas devuelto está truncado (20 de 438), aunque el total y los recuentos son del corte guardado.",
+    "citas": [],
+    "herramientas_usadas": [
+      "pagos",
+      "resumen"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 4680,
+    "estado": "ok"
+  },
+  "llamadas": 2,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "fecha_corte": "2026-09-18",
+        "numero": 438,
+        "importe_eur": "2428159.06",
+        "resumen_global": {
+          "tipo": "BORRADOR: no es una orden bancaria ni acredita pagos ejecutados",
+          "fecha_corte": "2026-09-18",
+          "decisiones_pagar": 438,
+          "calendario_numero": 438,
+          "calendario_total_eur": "2428159.06",
+          "remesa_numero": 438,
+          "remesa_total_eur": "2428159.06",
+          "excluidos_remesa": 0,
+          "remesa_iban_sin_control": 438,
+          "sin_vencimiento_calculable": 0,
+          "vencidos": 431,
+          "vencen_semana_corte": 2,
+          "avisos_por_codigo": {
+            "IBAN_SIN_CONTROL": 11
+          },
+          "semanas": {
+            "2026-W06": {
+              "numero": 1,
+              "importe_eur": "10541.08"
+            },
+            "2026-W07": {
+              "numero": 3,
+              "importe_eur": "18184.66"
+            },
+            "2026-W08": {
+              "numero": 2,
+              "importe_eur": "1232.17"
+            },
+            "2026-W09": {
+              "numero": 17,
+              "importe_eur": "77631.53"
+            },
+            "2026-W10": {
+              "numero": 13,
+              "importe_eur": "43241.98"
+            },
+            "2026-W11": {
+              "numero": 14,
+              "importe_eur": "65094.76"
+            },
+            "2026-W12": {
+              "numero": 17,
+              "importe_eur": "107986.60"
+            },
+            "2026-W13": {
+              "numero": 15,
+              "importe_eur": "78053.23"
+            },
+            "2026-W14": {
+              "numero": 15,
+              "importe_eur": "87423.42"
+            },
+            "2026-W15": {
+              "numero": 7,
+              "importe_eur": "39246.61"
+            },
+            "2026-W16": {
+              "numero": 15,
+              "importe_eur": "87005.05"
+            },
+            "2026-W17": {
+              "numero": 14,
+              "importe_eur": "85681.79"
+            },
+            "2026-W18": {
+              "numero": 13,
+              "importe_eur": "71506.02"
+            },
+            "2026-W19": {
+              "numero": 15,
+              "importe_eur": "67178.02"
+            },
+            "2026-W20": {
+              "numero": 15,
+              "importe_eur": "72696.43"
+            },
+            "2026-W21": {
+              "numero": 17,
+              "importe_eur": "108837.79"
+            },
+            "2026-W22": {
+              "numero": 22,
+              "importe_eur": "125415.19"
+            },
+            "2026-W23": {
+              "numero": 16,
+              "importe_eur": "58170.52"
+            },
+            "2026-W24": {
+              "numero": 13,
+              "importe_eur": "60890.07"
+            },
+            "2026-W25": {
+              "numero": 12,
+              "importe_eur": "87690.56"
+            },
+            "2026-W26": {
+              "numero": 13,
+              "importe_eur": "83601.36"
+            },
+            "2026-W27": {
+              "numero": 20,
+              "importe_eur": "109681.78"
+            },
+            "2026-W28": {
+              "numero": 13,
+              "importe_eur": "82668.54"
+            },
+            "2026-W29": {
+              "numero": 16,
+              "importe_eur": "104325.08"
+            },
+            "2026-W30": {
+              "numero": 23,
+              "importe_eur": "116822.14"
+            },
+            "2026-W31": {
+              "numero": 14,
+              "importe_eur": "78823.19"
+            },
+            "2026-W32": {
+              "numero": 13,
+              "importe_eur": "58069.17"
+            },
+            "2026-W33": {
+              "numero": 14,
+              "importe_eur": "66027.20"
+            },
+            "2026-W34": {
+              "numero": 13,
+              "importe_eur": "64547.20"
+            },
+            "2026-W35": {
+              "numero": 19,
+              "importe_eur": "184374.50"
+            },
+            "2026-W36": {
+              "numero": 12,
+              "importe_eur": "58347.53"
+            },
+            "2026-W37": {
+              "numero": 4,
+              "importe_eur": "15995.15"
+            },
+            "2026-W38": {
+              "numero": 2,
+              "importe_eur": "14518.10"
+            },
+            "2026-W39": {
+              "numero": 5,
+              "importe_eur": "33037.27"
+            },
+            "2026-W40": {
+              "numero": 1,
+              "importe_eur": "3613.37"
+            }
+          }
+        },
+        "items": [
+          {
+            "file_id": "factura_2052.pdf",
+            "importe_eur": "10541.08",
+            "vencimiento": "2026-02-06",
+            "semana": "2026-W06",
+            "proveedor": "P011",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-11_P007.pdf",
+            "importe_eur": "7955.25",
+            "vencimiento": "2026-02-10",
+            "semana": "2026-W07",
+            "proveedor": "P007",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-12_P010.pdf",
+            "importe_eur": "7161.18",
+            "vencimiento": "2026-02-11",
+            "semana": "2026-W07",
+            "proveedor": "P010",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-5753_papelería.pdf",
+            "importe_eur": "3068.23",
+            "vencimiento": "2026-02-13",
+            "semana": "2026-W07",
+            "proveedor": "P007",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-17_P011.pdf",
+            "importe_eur": "1047.51",
+            "vencimiento": "2026-02-16",
+            "semana": "2026-W08",
+            "proveedor": "P011",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-25603_limpiezas.pdf",
+            "importe_eur": "184.66",
+            "vencimiento": "2026-02-22",
+            "semana": "2026-W08",
+            "proveedor": "P004",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-1352_catering.pdf",
+            "importe_eur": "6446.73",
+            "vencimiento": "2026-02-23",
+            "semana": "2026-W09",
+            "proveedor": "P005",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-3527_transportes.pdf",
+            "importe_eur": "10244.76",
+            "vencimiento": "2026-02-23",
+            "semana": "2026-W09",
+            "proveedor": "P002",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-4673_informática.pdf",
+            "importe_eur": "1630.35",
+            "vencimiento": "2026-02-23",
+            "semana": "2026-W09",
+            "proveedor": "P010",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-9145_papelería.pdf",
+            "importe_eur": "6816.61",
+            "vencimiento": "2026-02-23",
+            "semana": "2026-W09",
+            "proveedor": "P007",
+            "vencido": true
+          },
+          {
+            "file_id": "factura_7521.pdf",
+            "importe_eur": "5240.92",
+            "vencimiento": "2026-02-23",
+            "semana": "2026-W09",
+            "proveedor": "P011",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-4666_transportes.pdf",
+            "importe_eur": "4921.83",
+            "vencimiento": "2026-02-24",
+            "semana": "2026-W09",
+            "proveedor": "P002",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-26_P007.pdf",
+            "importe_eur": "1705.37",
+            "vencimiento": "2026-02-25",
+            "semana": "2026-W09",
+            "proveedor": "P007",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-26_P010.pdf",
+            "importe_eur": "930.66",
+            "vencimiento": "2026-02-25",
+            "semana": "2026-W09",
+            "proveedor": "P010",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-12_P002.pdf",
+            "importe_eur": "859.40",
+            "vencimiento": "2026-02-26",
+            "semana": "2026-W09",
+            "proveedor": "P002",
+            "vencido": true
+          },
+          {
+            "file_id": "FA-5855_mensajería.pdf",
+            "importe_eur": "1974.90",
+            "vencimiento": "2026-02-26",
+            "semana": "2026-W09",
+            "proveedor": "P011",
+            "vencido": true
+          },
+          {
+            "file_id": "factura_3421.pdf",
+            "importe_eur": "1724.77",
+            "vencimiento": "2026-02-26",
+            "semana": "2026-W09",
+            "proveedor": "P005",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-28_P007.pdf",
+            "importe_eur": "5587.01",
+            "vencimiento": "2026-02-27",
+            "semana": "2026-W09",
+            "proveedor": "P007",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-28_P008.pdf",
+            "importe_eur": "7923.56",
+            "vencimiento": "2026-02-27",
+            "semana": "2026-W09",
+            "proveedor": "P008",
+            "vencido": true
+          },
+          {
+            "file_id": "2026-01-14_P002.pdf",
+            "importe_eur": "2967.25",
+            "vencimiento": "2026-02-28",
+            "semana": "2026-W09",
+            "proveedor": "P002",
+            "vencido": true
+          }
+        ],
+        "truncado": true,
+        "aviso": "Sólo borrador, no pagos ejecutados. IBAN sintéticos marcados, no remesa bancaria validada.",
+        "citas": [
+          "factura_2052.pdf",
+          "2026-01-11_P007.pdf",
+          "2026-01-12_P010.pdf",
+          "FA-5753_papelería.pdf",
+          "2026-01-17_P011.pdf",
+          "2026-25603_limpiezas.pdf",
+          "FA-1352_catering.pdf",
+          "FA-3527_transportes.pdf",
+          "FA-4673_informática.pdf",
+          "FA-9145_papelería.pdf",
+          "factura_7521.pdf",
+          "FA-4666_transportes.pdf",
+          "2026-01-26_P007.pdf",
+          "2026-01-26_P010.pdf",
+          "2026-01-12_P002.pdf",
+          "FA-5855_mensajería.pdf",
+          "factura_3421.pdf",
+          "2026-01-28_P007.pdf",
+          "2026-01-28_P008.pdf",
+          "2026-01-14_P002.pdf"
+        ]
+      }
+    },
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "decisiones": {
+          "PAGAR": 438,
+          "ESCALAR": 53,
+          "NO_PAGAR": 9
+        },
+        "lotes": {
+          "1": 500
+        },
+        "versiones": {
+          "norma_version": [
+            "v3"
+          ],
+          "maestro_version": [
+            "80911e429c6c"
+          ],
+          "erp_version": [
+            "v1"
+          ],
+          "fecha_corte": [
+            "2026-09-18"
+          ]
+        },
+        "citas": []
+      }
+    }
+  ],
+  "intento_anterior": {
+    "respuesta": {
+      "respuesta": "No he podido verificar las citas de la respuesta. Consulta la traza de la factura.",
+      "citas": [],
+      "herramientas_usadas": [
+        "pagos",
+        "resumen"
+      ],
+      "modelo": "deepseek-v4-flash",
+      "latencia_ms": 5215,
+      "estado": "sin_evidencia"
+    },
+    "llamadas": 2
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "438, 2428159.06 EUR; describe IBAN marcados y borrador no bancario.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

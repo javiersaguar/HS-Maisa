@@ -379,6 +379,7 @@ nueva.** Por eso `InvoiceFacts` no tiene ningún campo que se llame `resultado`,
 - **No hemos visto un solo 429 real.** Los límites (100 RPM, 5-10 concurrentes, 2M TPM) están
   publicados por Helmcode y son coherentes con la saturación observada en visión, pero no los hemos
   provocado. El 429 del guion es el caos simulado.
+- **Actualización 19/09 13:40 (J3, `RESPALDO-VISION.md`):** medido contra el gateway, el respaldo de visión recomendado es `deepseek-v4-flash` (p50 4,3 s, 0 fallos; lee peor el NIF y el IBAN que `qwen3.6`, pero la reconciliación con el maestro y la R6 lo acotan: el peor caso es un ESCALAR de más). Se activa con `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash` en `.env`, a mano (Javier). El párrafo siguiente es la decisión anterior, sin medir.
 - **El respaldo de VISIÓN se deja vacío a propósito.** Existe el mecanismo y está probado, pero
   ninguno de los candidatos lee el NIF mejor que `qwen3.6`, así que activarlo sólo cambiaría un
   error por otro. Se activa con `ALBERTITOS_MODELO_VISION_FALLBACK` cuando haya un modelo que lo

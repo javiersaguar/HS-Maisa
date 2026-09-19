@@ -1,0 +1,441 @@
+{
+  "pregunta": "Busca las facturas de Suministros Levante y dime cuántas hay y qué clasificación muestran las primeras.",
+  "respuesta": {
+    "respuesta": "Hay 47 facturas de Suministros Levante S.L. (NIF B46102331), pero el listado devuelto está truncado a 20. De esas 20, 19 figuran como PAGAR y 1 como NO_PAGAR (2026-17547_suministros.pdf, PO-2026-0475, 398,04 €); algunas con el aviso 'fecha_en_letra'. PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [
+      "2026-01-08_P001.pdf",
+      "2026-01-25_P001.pdf",
+      "2026-02-04_P001.pdf",
+      "2026-02-25_P001.pdf",
+      "2026-03-01_P001.pdf",
+      "2026-03-24_P001.pdf",
+      "2026-03-28_P001.pdf",
+      "2026-04-27_P001.pdf",
+      "2026-05-04_P001.pdf",
+      "2026-05-14_P001.pdf",
+      "2026-05-22_P001.pdf",
+      "2026-05-24_P001.pdf",
+      "2026-06-07_P001.pdf",
+      "2026-06-27_P001.pdf",
+      "2026-07-23_P001.pdf",
+      "2026-17547_suministros.pdf",
+      "2026-22807_suministros.pdf",
+      "2026-37816_suministros.pdf",
+      "2026-51245_suministros.pdf",
+      "2026-51936_suministros.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 5323,
+    "estado": "ok"
+  },
+  "llamadas": 2,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "items": [
+          {
+            "file_id": "2026-01-08_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/11604",
+              "fecha": "2026-01-08",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0096",
+              "total": "3012.89",
+              "base": "2489.99",
+              "iva": "522.90",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-01-25_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/84946",
+              "fecha": "2026-01-25",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0469",
+              "total": "5817.98",
+              "base": "4808.25",
+              "iva": "1009.73",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-02-04_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/64340",
+              "fecha": "2026-02-04",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0449",
+              "total": "10869.07",
+              "base": "8982.70",
+              "iva": "1886.37",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-02-25_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/15521",
+              "fecha": "2026-02-25",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0294",
+              "total": "4435.57",
+              "base": "3665.76",
+              "iva": "769.81",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-03-01_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/56725",
+              "fecha": "2026-03-01",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0346",
+              "total": "10012.48",
+              "base": "8274.78",
+              "iva": "1737.70",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-03-24_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/97603",
+              "fecha": "2026-03-24",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0066",
+              "total": "7864.95",
+              "base": "6499.96",
+              "iva": "1364.99",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-03-28_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/28037",
+              "fecha": "2026-03-28",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0435",
+              "total": "9846.47",
+              "base": "8137.58",
+              "iva": "1708.89",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-04-27_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/54335",
+              "fecha": "2026-04-27",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0421",
+              "total": "3068.87",
+              "base": "2536.26",
+              "iva": "532.61",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-05-04_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/23532",
+              "fecha": "2026-05-04",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0410",
+              "total": "8091.65",
+              "base": "6687.31",
+              "iva": "1404.34",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-05-14_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/35914",
+              "fecha": "2026-05-14",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0268",
+              "total": "8139.39",
+              "base": "6726.77",
+              "iva": "1412.62",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-05-22_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/54226",
+              "fecha": "2026-05-22",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0351",
+              "total": "3474.74",
+              "base": "2871.69",
+              "iva": "603.05",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-05-24_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/94924",
+              "fecha": "2026-05-24",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0341",
+              "total": "295.87",
+              "base": "244.52",
+              "iva": "51.35",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-06-07_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/94142",
+              "fecha": "2026-06-07",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0461",
+              "total": "10829.54",
+              "base": "8950.03",
+              "iva": "1879.51",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-06-27_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/34101",
+              "fecha": "2026-06-27",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0002",
+              "total": "10325.90",
+              "base": "8533.80",
+              "iva": "1792.10",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-07-23_P001.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/76702",
+              "fecha": "2026-07-23",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0015",
+              "total": "4823.60",
+              "base": "3986.45",
+              "iva": "837.15",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-17547_suministros.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "2026/17547",
+              "fecha": "2026-05-24",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0475",
+              "total": "398.04",
+              "base": "328.96",
+              "iva": "69.08",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-22807_suministros.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/22807",
+              "fecha": "2026-06-07",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0166",
+              "total": "4609.08",
+              "base": "3809.16",
+              "iva": "799.92",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-37816_suministros.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/37816",
+              "fecha": "2026-07-03",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0278",
+              "total": "3630.97",
+              "base": "3000.80",
+              "iva": "630.17",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-51245_suministros.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/51245",
+              "fecha": "2026-05-18",
+              "razon_social": "Suministros Levante S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0468",
+              "total": "7606.80",
+              "base": "6286.61",
+              "iva": "1320.19",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-51936_suministros.pdf",
+            "lote": 1,
+            "resultado": "PAGAR",
+            "hechos": {
+              "num_factura": "2026/51936",
+              "fecha": "2026-03-18",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0425",
+              "total": "7891.15",
+              "base": "6521.61",
+              "iva": "1369.54",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          }
+        ],
+        "total": 47,
+        "truncado": true,
+        "citas": [
+          "2026-01-08_P001.pdf",
+          "2026-01-25_P001.pdf",
+          "2026-02-04_P001.pdf",
+          "2026-02-25_P001.pdf",
+          "2026-03-01_P001.pdf",
+          "2026-03-24_P001.pdf",
+          "2026-03-28_P001.pdf",
+          "2026-04-27_P001.pdf",
+          "2026-05-04_P001.pdf",
+          "2026-05-14_P001.pdf",
+          "2026-05-22_P001.pdf",
+          "2026-05-24_P001.pdf",
+          "2026-06-07_P001.pdf",
+          "2026-06-27_P001.pdf",
+          "2026-07-23_P001.pdf",
+          "2026-17547_suministros.pdf",
+          "2026-22807_suministros.pdf",
+          "2026-37816_suministros.pdf",
+          "2026-51245_suministros.pdf",
+          "2026-51936_suministros.pdf"
+        ]
+      }
+    }
+  ],
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "47 en total, lista truncada a 20: 19 PAGAR y 1 NO_PAGAR en esas veinte.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

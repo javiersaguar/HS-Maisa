@@ -1,0 +1,48 @@
+{
+  "peticion": "GET /bonus/remesa?limite=2",
+  "status": 200,
+  "respuesta": {
+    "tipo": "BORRADOR: no es una orden bancaria ni acredita pagos ejecutados",
+    "iban_sin_control": 438,
+    "total": 438,
+    "mostrados": 2,
+    "pagos": [
+      {
+        "file_id": "factura_2052.pdf",
+        "lote": 1,
+        "decision_id": 3377,
+        "proveedor_id": "P011",
+        "beneficiario": "Mensajería Rápida del Sur S.L.",
+        "iban": "ES9368884400123588900142",
+        "referencia": "FA-5185",
+        "importe_eur": "10541.08",
+        "fecha_factura": "2026-01-07",
+        "vencimiento": "2026-02-06",
+        "fecha_ejecucion": "2026-09-18",
+        "semana": "2026-W06",
+        "vencido": true,
+        "maestro_version": "80911e429c6c",
+        "apto_remesa": true,
+        "iban_control_ok": false
+      },
+      {
+        "file_id": "2026-01-11_P007.pdf",
+        "lote": 1,
+        "decision_id": 3063,
+        "proveedor_id": "P007",
+        "beneficiario": "Papelería Ruzafa S.C.",
+        "iban": "ES5531590012348765123407",
+        "referencia": "FA-3566",
+        "importe_eur": "7955.25",
+        "fecha_factura": "2026-01-11",
+        "vencimiento": "2026-02-10",
+        "fecha_ejecucion": "2026-09-18",
+        "semana": "2026-W07",
+        "vencido": true,
+        "maestro_version": "80911e429c6c",
+        "apto_remesa": true,
+        "iban_control_ok": false
+      }
+    ]
+  }
+}

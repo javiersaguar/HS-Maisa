@@ -125,9 +125,10 @@ def porques(decisiones: list[dict], eventos: list[dict]) -> dict[int, str]:
     return out
 
 
-def legible(conn: sqlite3.Connection, file_id: str) -> str | None:
-    """La traza en texto, un paso por bloque. None si el fichero no está en la BD."""
-    t = db.traza(conn, file_id)
+def legible(conn: sqlite3.Connection, file_id: str, lote: int | None = None) -> str | None:
+    """La traza en texto, un paso por bloque. None si el fichero no está en la BD. `lote` elige
+    cuando el mismo nombre está en los dos lotes."""
+    t = db.traza(conn, file_id, lote)
     f = t["fichero"]
     if not f:
         return None
@@ -137,7 +138,12 @@ def legible(conn: sqlite3.Connection, file_id: str) -> str | None:
         f"{file_id} · lote {lote} · {_v(f['paginas'])} pág. · "
         f"{'con texto' if f['tiene_texto'] else 'escaneada'} · sha256 {f['sha256'][:12]}"
     ]
-    if identidad:
+    if identidad and db.es_interno(f["file_id"]):
+        L.append(
+            f"{SANGRIA}otro PDF de otro lote se llama igual y tiene otro contenido: en la BD va"
+            f" como {f['file_id']}, con sus propios hechos, decisión y línea"
+        )
+    elif identidad:
         L.append(
             f"{SANGRIA}copia exacta de {f['file_id']} (lote {f['lote']}): mismos hechos y misma"
             " decisión; cada nombre tiene su línea"

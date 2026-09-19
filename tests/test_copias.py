@@ -222,3 +222,63 @@ def test_una_bd_anterior_sin_la_tabla_se_lee_igual(conn, caja, maestro, erp, tmp
     assert db.resumen(conn)["copias"] == {}
     assert db.traza(conn, "no-existe.pdf")["fichero"] is None
     assert traza.legible(conn, X).startswith(X)
+
+
+# ----------------------------------------------------------------------------- P0-5
+# El caso contrario: el MISMO nombre que un PDF del lote 1, con OTRO contenido, en el lote 2.
+
+
+def test_mismo_nombre_otro_contenido_en_el_lote_2(conn, caja, maestro, erp, tmp_path, lote1):
+    sha_x = conn.execute("SELECT sha256 FROM ficheros WHERE file_id=?", (X,)).fetchone()[0]
+    pdfs2 = {X: Z, "otra.pdf": "scan_002.pdf"}  # X.pdf del lote 2 trae el contenido de Z
+    lote2 = _lote(tmp_path, "lote2", pdfs2, caja)
+    assert etapas.ingest(conn, lote2 / "facturas", 2) == 2  # antes: PDF-ILEGIBLE por el UNIQUE
+
+    # el del lote 1 no se toca; el del lote 2 entra con su nombre interno y su nombre de entrega
+    filas = {(r["file_id"], r["lote"]): r["sha256"] for r in db.ficheros(conn)}
+    assert filas[(X, 1)] == sha_x and (f"./{X}", 2) in filas
+    sha_z = filas[(f"./{X}", 2)]
+    assert dict(conn.execute("SELECT file_id, lote, sha256 FROM identidades").fetchone()) == {
+        "file_id": X,
+        "lote": 2,
+        "sha256": sha_z,
+    }
+    assert db.nombres_por_sha(conn) == {}  # no es una copia
+    for sha in (sha_z, filas[("otra.pdf", 2)]):  # como extract: etiqueta con el file_id de la BD
+        fid = next(f for (f, _), s in filas.items() if s == sha)
+        db.guardar_hechos(
+            conn,
+            InvoiceFacts(
+                file_id=fid,
+                sha256=sha,
+                fecha=date(2026, 1, 8),
+                pedido="PO-2026-0009",  # asiento ya PAGADA en el ERP del fixture: NO_PAGAR
+                total=Decimal("100.00"),
+                metodo=MetodoExtraccion.PLANTILLA,
+                extractor_version=EXTRACTOR_VERSION,
+            ),
+        )
+    conn.commit()
+    assert _decidir(conn, maestro, erp)[X] == "PAGAR"  # el del lote 1 sigue a lo suyo
+
+    salida = tmp_path / "entrega"
+    auditar = package.auditor_de_entrega()
+    for _ruta, inf in package.empaquetar(
+        conn, salida, lote1, lote2, con_traza=True, auditar=auditar
+    ):
+        assert inf.ok, inf.texto()
+    uno, dos = _lineas(salida / "outcomes.jsonl"), _lineas(salida / "outcomes_lote2.jsonl")
+    assert set(uno) == {X, Y} and set(dos) == {X, "otra.pdf"}
+    assert uno[X]["result"] == "PAGAR" and dos[X]["result"] != "PAGAR"
+    assert "./" not in (salida / "outcomes_lote2.jsonl").read_text(encoding="utf-8")
+
+    # idempotente, sin fantasmas, y la traza distingue los dos X.pdf
+    assert etapas.ingest(conn, lote2 / "facturas", 2) == 0
+    from albertitos.sources import estado_bd
+
+    assert estado_bd.ficheros_fantasma(conn, lote1 / "facturas", lote2 / "facturas") == []
+    t1, t2 = traza.legible(conn, X), traza.legible(conn, X, lote=2)
+    assert "6 RESULTADO   PAGAR" in t1 and "lote 1" in t1.splitlines()[0]
+    assert "otro PDF de otro lote se llama igual" in t2 and "lote 2" in t2.splitlines()[0]
+    assert "6 RESULTADO   PAGAR" not in t2 and "outcomes_lote2.jsonl" in t2
+    assert "outcomes.jsonl →" not in t2  # los eventos del X.pdf del lote 1 no se cuelan

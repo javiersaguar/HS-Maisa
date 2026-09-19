@@ -1,6 +1,7 @@
 """Contra el bridge real (make erp-fast). Se saltan si no responde."""
 
 import socket
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -183,7 +184,11 @@ def test_conexion_rechazada_se_registra_y_agota(conn):
                     "snapshot anterior",
                 )
             )
-            assert "\n" not in mensaje and time.monotonic() - inicio < 2
+            # En Windows, conectar a un puerto cerrado de localhost tarda ~1 s por intento (la pila
+            # reintenta el SYN antes de dar "rechazada"); en Linux es inmediato. Lo que se prueba es
+            # que no se cuelga, no los milisegundos.
+            limite = 8 if sys.platform == "win32" else 2
+            assert "\n" not in mensaje and time.monotonic() - inicio < limite
             assert c.consultas == 2 and c.reintentos == 1
     eventos = list(conn.execute("SELECT estado, error_codigo FROM eventos ORDER BY id"))
     assert [(fila["estado"], fila["error_codigo"]) for fila in eventos] == [

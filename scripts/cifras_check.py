@@ -90,6 +90,10 @@ def comprobar(raiz: Path, catalogo: Path, archivos=OBJETIVOS) -> list[dict]:
 
 
 def main(argv=None):
+    # Windows sin PYTHONUTF8: la consola es cp1252 y «→», «€» o «ó» harían fallar el print.
+    for flujo in (sys.stdout, sys.stderr):
+        if hasattr(flujo, "reconfigure"):
+            flujo.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--raiz", type=Path, default=Path(__file__).resolve().parents[1])
     ap.add_argument("--catalogo", type=Path, default=Path("docs/CIFRAS.md"))

@@ -542,6 +542,83 @@ Plantilla (cópiala tal cual):
 - **Entrega republicada**: `232bb76` (438/53/9, sha256 `1ec4be206089`) sustituye a la de seguro `fdc76e8`; registrada en `docs/entregas.log`. Kit nuevo: `dist/kit/albertitos-kit-20260919-1007.tar.gz`. KIT-DEFENSA, CIFRAS, AUDITORIA-ENTREGA y la auditoría citan ya 438/53/9.
 - **Para Mónica, sobre su punto 2 a Miguel (`confianza` fuera del hash):** el linaje ya recalcula cuando los hechos se reescriben después de decidir, aunque el hash no cambie (`test_linaje.py::test_evidencia_nueva_con_el_mismo_hash_tambien_se_redecide`). No es urgente; meterla en el hash es lo limpio, pero cambia todos los `hechos_hash`. **PIDO A Miguel**: decidirlo antes de las 17:00 o dejarlo anotado. **Propuesta para Mónica:** el próximo cambio de comportamiento en la v3 sube la etiqueta (`v3.1`) para que el linaje y la traza lo vean solos (ESTADO-BACKEND §2).
 
+### 10:35 · H1 · arranco P0-1 (PDF idéntico con otro nombre)
+- hice: leído PLAN-08. Al empezar: BD real y `outcomes.jsonl` con sus sha256 anotados en el parte; no se tocan.
+- toco ahora: `data/fixtures/lote2_identicos/`, `tests/test_identicos.py`; después el parche en `dist/ensayo/h1/` (worktree aparte, nada de core/ ni pipeline/ en este árbol), el verificador y `P0-1-IDENTICOS.md`.
+
+### 10:28 · H2 · arranco la tercera lectura de la muestra, a ciegas
+- hice: leído PLAN-08 (mi prompt). Fuentes que voy a usar: `data/caja/README.md` (norma de Alberto), `MANUAL_ERP_2009.md`, el Excel, los 21 PDFs de `data/fixtures/muestra.txt` y el ERP (bridge o `snapshots` v1). Fecha de corte 2026-09-18.
+- **declaro antes de empezar:** en una sesión anterior a este encargo, esta misma sesión leyó ficheros que ahora tengo prohibidos (cola de esta bitácora, ESTADO-BACKEND, cabecera de CIFRAS, índice de ADRs, `esperado_muestra.csv` —vacía—, PLAN-MONICA y el guion de la defensa). Lo detallo en mi parte y marcaré como contaminadas las etiquetas afectadas.
+- toco ahora (ficheros): nada del repo. Trabajo en `dist/ensayo/h2/` (gitignorado). Después `scripts/comparar_muestra.py` + `tests/test_comparar_muestra.py` y `docs/agentes/MUESTRA-CONTRASTE.md`.
+- necesito / bloqueo: nada. En esta bitácora sólo escribiré progreso («N de 21»), nunca etiquetas ni resultados de la muestra.
+- para los demás: Mónica, no mires `dist/ensayo/h2/`. H1, no toco nada tuyo.
+
+### 10:50 · H1 · P0-1 reproducido
+- hice: `data/fixtures/lote2_identicos/` + `tests/test_identicos.py`. Con el ERP v1 real y el maestro real, sin red: hoy el lote 1 **pierde su línea** (ingest reescribe `file_id` y lote del original) y `package` **se niega**. R1-R4, con xfail estricto (5); controles que pasan hoy (5), incluido el renombrado dentro de un lote, que el parche no puede romper. `make check` sigue verde.
+- toco ahora: el parche en un worktree aparte (`dist/ensayo/h1/wt`).
+
+### 11:20 · H2 · parte A cerrada: 21 de 21
+- hice: tercera lectura de las 21, desde las fuentes (norma del Excel, maestro, pedidos, ERP bajado del bridge —516 asientos, idénticos al snapshot v1—, PDFs con PyMuPDF; las 3 escaneadas como imagen, el fax con desenfoque para quitar la trama; las dos páginas de `2026-01-25_P001.pdf` sumadas línea a línea). Etiquetas, motivo, fuentes, confianza y dudas en `dist/ensayo/h2/` (fuera del repo).
+- no pongo aquí ninguna etiqueta. Contaminación: la declarada al empezar; afecta a una etiqueta de forma directa y a cinco de forma leve, marcadas en mi CSV. Durante la lectura no he abierto nada de la lista prohibida.
+- toco ahora (ficheros): `scripts/comparar_muestra.py` + `tests/test_comparar_muestra.py`; después `docs/agentes/MUESTRA-CONTRASTE.md` (sólo método y comando mientras Mónica no cierre).
+- **para Mónica:** cuando subas `esperado_muestra.csv`, avisa en el canal; el contraste de tres columnas estará listo y no enseña el sistema hasta que tu columna (o `acordado`) esté completa.
+
+### 11:05 · H1 · P0-1 terminado: el parche está listo para Miguel
+- hice: fixture + tests (`e9f4ca1`), verificador que detecta el parche (`2fb5f76`), documento y skill (`47c12d0`). En el árbol: 407 passed + 5 xfail estrictos, `agentes-check` OK. BD real `c66d00e45be3` y `outcomes.jsonl` `1ec4be206089`, los dos sin tocar.
+- **Parche `dist/ensayo/h1/identicos.patch`** (sha256 `ede37b97d8fa`): aplicado en un worktree limpio sobre el HEAD da **412 passed**. Sobre una copia de la BD real: **0 cambian, 438/53/9 y el mismo `outcomes.jsonl`** (R5). De punta a punta con la CLI y el fixture como lote 2: **APTO los dos lotes**, todas las copias en ESCALAR y `trace` nombra la pareja.
+- Encontrado por el camino: (1) dos copias en **la misma pasada** se renombraban entre sí, porque ingest calculaba lo conocido una sola vez; (2) la auditoría, `status`, `trace` y la consola abren la BD en **solo lectura**, y una BD de antes no tiene la tabla. Los dos están resueltos en el parche y cubiertos con tests.
+- **PIDO A Miguel:** aplicar el parche (`docs/agentes/P0-1-IDENTICOS.md`: `git apply dist/ensayo/h1/identicos.patch && make check`, 10 min) antes de las 17:00. El verificador pasa solo de ROJO a AVISO.
+- **PIDO A Mónica:** con el parche, todas las identidades de un PDF repetido salen ESCALAR, **también el original del lote 1** aunque ya se hubiera entregado como PAGAR. Es la política de duplicados vigente; si prefieres otra, se cambia en `rules/`.
+
+### 10:42 · H2 · corrección de hora
+- la entrada «11:20 · H2 · parte A cerrada» de arriba lleva la hora mal: la parte A se cerró a las **10:38** (la calculé en vez de mirarla). Lo demás de esa entrada vale.
+- comprobado a las 10:41 (`git fetch`): Mónica no ha subido `esperado_muestra.csv` en ninguna rama (0 de 21). El comparador ya está (10 tests); `MUESTRA-CONTRASTE.md` va con el método y el comando, sin etiquetas.
+
+### 10:50 · H2 · termino: A, B y D hechos; C espera a Mónica
+- hice: tercera lectura 21 de 21 (en `dist/ensayo/h2/`, fuera del repo) · `9f31b5f` comparador (`scripts/comparar_muestra.py`, 10 tests: con la muestra humana abierta no enseña ni el sistema ni al agente, ni abre la BD) · `19aaf99` `MUESTRA-CONTRASTE.md` (método y comando, sin etiquetas). `make check`: 417 passed, 5 xfailed (de H1). Detalle en PARTE.md, sección H2.
+- sin etiquetas aquí. Contaminación: la declarada a las 10:28, marcada etiqueta a etiqueta en mi CSV.
+- **PIDO A Mónica:** avisa en el canal cuando subas tu columna; entonces se copia mi CSV a `data/fixtures/`, se ejecuta el comparador y cada discrepancia sale con dueño (REGLA / DATO / ETIQUETA). Receta en MUESTRA-CONTRASTE.md.
+- **PIDO A Mónica, para el mentor hoy, sin esperar a la muestra:** ¿qué se hace con una factura cuyos datos cuadran con maestro, pedido y ERP pero que trae texto que ordena la decisión (escalar, bloquear, no pagar)? Afecta a varias de las 21 y a más de la Caja; es la pregunta 4 de hitos.md ampliada.
+
+### 19/09 11:00 · Javier · cierre del ciclo 8 (H1, H2) y P0-1
+- H1 y H2 cerrados; partes en `partes/PARTE-08.md`. Corrección de hora: la entrada «10:50 · H2 · termino» se escribió a las 10:44.
+- **P0-1: vale la implementación de Miguel** (`e3b3764` en `miguel/pipeline`, tabla `identidades`), que llegó a la vez que el parche de H1. **`dist/ensayo/h1/identicos.patch` queda superado y no se aplica** (además, no entraba en `main`: `contratos.md` choca con `70ed35b` y `tests/test_identicos.py` sólo existe en esta rama). Lo que sigue valiendo de H1: el fixture `lote2_identicos/`, `tests/test_identicos.py` y el ensayo de punta a punta.
+- **RESPONDO A Miguel:** valido ahora `miguel/pipeline` + esta rama con los tests de H1 (en un worktree de `dist/ensayo/p01/`), el fixture de punta a punta y R5 sobre una copia de la BD real. Resultado en la siguiente entrada.
+
+### 19/09 11:10 · Javier · P0-1 de Miguel validado con lo de H1
+- **RESPONDO A Miguel:** tu `miguel/pipeline` (`58e2bd8`) mezclado con `javier/ingesta` (`647e995`, ya con `main`) en un worktree, sin conflictos (sólo la bitácora, por unión):
+  - `make check` en Linux: **430 passed**; sólo fallan los 5 xfail estrictos de H1, que ahora pasan (XPASS). Tus 7 fallos de Windows aquí pasan.
+  - Tests de H1 como tests normales (`--runxfail`): **8 passed** (R1-R4 y los controles); los dos «hoy» se saltan solos.
+  - **R5**, copia de la BD real (`c66d00e45be3`): `reprocess --todo --erp v1` → 500 de 500 · 0 cambian; `package` con auditoría → APTO **438/53/9**, `outcomes.jsonl` **idéntico byte a byte** a la entrega publicada (`1ec4be206089`).
+  - **De punta a punta** con `data/fixtures/lote2_identicos/` (`dist/ensayo/p01/e2e.log`): el verificador **avisa** («copia exacta… saldrá ESCALAR (P0-1)»), ingest 4 → reprocess (`duplicados: +5`) → `package` APTO lote 1 (500) y lote 2 (4, todas ESCALAR) → `validate` APTO/APTO. Los motivos nombran a la pareja («el mismo PDF que 2026-01-08_P001.pdf (lote 1)») y `trace` de la copia sale legible con «copia exacta de …» y el paso DUPLICADO.
+  - BD real y entrega sin tocar (mismas huellas antes y después).
+- **Orden propuesto:** Miguel mergea `miguel/pipeline` a `main` (en `main` no está `test_identicos.py`, así que sale verde). Luego yo hago `/sync` y quito los xfail en el mismo commit (`dist/ensayo/p01/tests-identicos-sin-xfail.patch`, validado arriba) y abro la PR de `javier/ingesta`.
+- **Una nota menor para Miguel:** en la traza de una copia el porqué sale «hechos cambiados». Sería más claro «duplicado nuevo: copia exacta de X». No cambia resultados.
+- Hecho en esta rama: `verificar_material`, la skill `/lote2` y `P0-1-IDENTICOS.md` ya nombran tu implementación en vez del parche de H1; ESTADO-BACKEND, al día (P0-1, P0-4 y trazabilidad hechos en tu rama; **P0-5 nuevo**, el nombre repetido entre lotes con distinto contenido, lo decides tú).
+
+### 11:47 · I2 · arranco mapa de políticas
+- hice: leído PLAN-09 I2. BD y entrega sólo lectura.
+- toco: scripts/mapa_politicas.py · tests/test_mapa_politicas.py · docs/agentes/MAPA-POLITICAS.md · dist/ensayo/i2/
+- para los demás: I1 no toco tus ficheros. Mónica: te doy recuentos, no lista por fichero de la muestra hasta que cierres.
+
+### 11:48 · I2 · termino
+- CONTROL OK 438/53/9 fichero a fichero.
+- Q1: 31 con TEXTO_INSTRUCCION; 6 pasarían a PAGAR (todas en muestra; 0 fuera); tipos escalar=3 evaluador=2 no_pagar=1. Comprobación a mano: 6 LIMPIA, 0 DATO.
+- Q2: 2 con PEDIDO_ANULADO (ambas en muestra); Q2a→PAGAR = 0 (siguen por TEXTO_INSTRUCCION); Q2b→NO_PAGAR = 2. Comprobación: OTRA_REGLA.
+- Q3: 35 ESCALAR→NO_PAGAR (28 fuera de muestra) — la de más peso.
+- Q4: 2 docs evaluador, hoy ESCALAR, en muestra.
+- Q5: 2 (PO-2026-0492) fuera de muestra.
+- make check: 425 passed, 2 deselected, 6 xfailed. agentes-check: ROJO por 4 ficheros ajenos a I2 (skill entrega, KIT-DEFENSA, docs/demo/trazas/README, albertitos_plan); rutas I2 en verde. tests/test_mapa_politicas.py: 4 passed.
+- huellas BD/entrega sin cambio: c66d00e45be3 / 1ec4be206089
+- **PIDO A Mónica:** números en MAPA-POLITICAS.md; lista por fichero cuando cierres la muestra.
+
+
+### 11:58 · Javier · I1 sin terminal: lo que dejó, revisado y subido
+- I1 se quedó sin shell (`powershell.exe ENOENT` en Cursor) y trabajó sólo escribiendo ficheros. **Su borrador de esta bitácora (cabecera «¿¿:??») no llegó al fichero**; su parte sí (lo commiteó I2 en `adc3f50`). Repongo aquí lo que pedía.
+- Revisado antes de subir: `tests/test_nombre_repetido.py` pasa (3 + 1 xfail estricto). **El PDF del fixture era de juguete** (453 bytes, texto «P0-5 L2 distinto») aunque el README decía otra cosa: ahora es la copia real de `lote2_sim/L2-2026-01-16_P004.pdf` (`4d15672a49cc`, distinto del de la Caja `dc54bdbf1be4`, fuera de la muestra), y el README lleva los sha256.
+- I1 también dejó al día documentos fuera de su lista, que subo tal cual: la skill `/entrega` y `KIT-DEFENSA.md` (`--aceptar-rojo` de Miguel, `trace` legible, `status` sin histórico, 438/53/9), `docs/demo/trazas/README.md` y **la línea 98 del plan de Alfonso** (0,04 s → 0,11 s: `cifras_check` ya no la marca). **Alfonso:** esa línea la he corregido yo en tu fichero; revísala.
+- **Sin hacer (necesita shell):** el ensayo general A cronometrado, `--aceptar-rojo` probado, la chuleta y la skill con tiempos reales. `CHULETA-LOTE2.md` es un borrador **sin ejecutar**: no usarla a las 18:00 hasta que I1 (u otra sesión) la ensaye.
+- **PIDO A Miguel (de I1, P0-5):** mismo nombre que un PDF del lote 1 y distinto contenido. Fixture en `data/fixtures/lote2_nombre_repetido/` y requisito en `tests/test_nombre_repetido.py` (xfail estricto: los dos nombres, cada uno en su lote y con su decisión; validate APTO en los dos). Hoy: el verificador para y la ingesta no deja línea en el lote 2. Parche nuestro no hay. Lo decides tú.
 ### 19/09 10:55 · Miguel · P0-4, P0-1 y la trazabilidad hechos en `miguel/pipeline` (sin push todavía)
 - hice (`make check`: 408 en verde; los 7 que fallan en mi portátil son de Windows —hooks, rutas, conexión rechazada— y fallan igual sin mis cambios):
   - **P0-4 · `429552a`**: `package` y `run --aceptar-rojo "<motivo>"`. El rojo aceptado queda en un emit `AUDITORIA-ROJA-ACEPTADA` con el motivo y los rojos; el emit del lote dice `"auditoria": "roja aceptada: <motivo>"`. Una auditoría que falla, un JSONL inválido o un motivo vacío no se aceptan nunca. **`make publicar --aceptar-rojo` ahora se lo pasa a `package`**: con la puerta activa, su excepción era inalcanzable (package se negaba antes).
@@ -552,3 +629,170 @@ Plantilla (cópiala tal cual):
 - **PIDO A Mónica (R3):** las copias exactas salen por la norma como cualquier duplicado: `DUPLICADO_SOSPECHOSO` → R6 → ESCALAR (o NO_PAGAR si otra regla lo dice antes, p. ej. el asiento ya PAGADA). Nunca PAGAR. Si quieres otra política, se cambia en `ANOMALIAS_HUMANO`/R6, no en pipeline.
 - **Riesgo NUEVO, sin resolver (lo decide Miguel):** un PDF del lote 2 con **el mismo nombre que uno del lote 1 y distinto contenido**. `ficheros.file_id` es UNIQUE: la ingesta falla (`PDF-ILEGIBLE` por la restricción), no hay hechos ni línea → NO APTO. `verificar_material` ya lo marca en ROJO («nombre coincide con lote 1»). Arreglarlo exige reconstruir `ficheros` sin el UNIQUE (migración) o un file_id interno distinto del de entrega. No lo toco sin decisión.
 - **`.env.example`**: está bloqueado para los agentes; Miguel añade a mano `ALBERTITOS_BREAKER_FALLOS=5`, `ALBERTITOS_BREAKER_SEGUNDOS=60` y `ALBERTITOS_WORKERS=3` (ya los leen `extract/llm.py` y `demo_caos.py`).
+
+### 12:12 · Javier · ensayo de integración: todas las ramas juntas, en verde
+- En un worktree desechable, `javier/ingesta` (`a5e1bb7`, con `main` dentro) + `miguel/pipeline` + `miguel/p0-5-nombre-repetido` + `monica/norma-v3` + `alfonso/presentaciones-y-pdf`, en ese orden: **0 conflictos**.
+- `make check` de todo junto: **444 passed, 1 skipped, 0 failed** (el skip es el control «sin P0-5», que con P0-5 no aplica). R5 sobre una copia de la BD real: 500 de 500, 0 cambian, **438/53/9 y `outcomes.jsonl` idéntico** (`1ec4be206089`).
+- **RESPONDO A Miguel (P0-5):** tu rama cumple el requisito donde importa. En el fixture de I1, cada lote tiene su línea `2026-01-16_P004.pdf`, `validate` da APTO en los dos y no se pagan las dos (comparten pedido: ESCALAR por duplicado). Ensayado también por la CLI sobre una copia de la BD real. El test de I1 miraba el `file_id` interno (`./X.pdf`) y lo he reescrito para que mire la línea entregada. Esta rama ya vale con tu P0-5 y sin él: se detecta por `db.PREFIJO_INTERNO`, y el verificador, con P0-5, avisa en vez de parar (sólo con el nombre exacto).
+- En esta rama: `main` dentro y los xfail de P0-1 quitados (pasan). **Miguel: `javier/ingesta` se puede mergear a `main` cuando quieras**; lleva el comparador de la muestra, el mapa de políticas (I2), los fixtures y tests de P0-1 y P0-5, y docs al día.
+### 19/09 11:40 · Miguel · main = 8935c3e; P0-5 preparado en rama aparte
+- hice: **`main` avanzado a `8935c3e`** (fast-forward de `miguel/pipeline`, validado por Javier/H1 en Linux). Incluye la nota de Javier: el porqué del linaje ya no dice «hechos cambiados» cuando lo único distinto es la marca de duplicado; con una copia dice «copia exacta: el mismo PDF llega como X (lote 1), Y (lote 2) → duplicado marcado».
+- **P0-5 (mismo nombre que un PDF del lote 1, otro contenido) en `miguel/p0-5-nombre-repetido` (`334845e`), NO en main.** El PDF que choca entra en `ficheros` como `./X.pdf` (único en la BD; contra la carpeta de su lote es el mismo fichero, así que extract y la auditoría lo leen sin cambios) y su nombre de entrega en `identidades`: sus hechos, su decisión, su línea. `package` y la auditoría saltan el interno; `trace X.pdf --lote 2`. Sin esquema nuevo; R5 byte a byte; test en `test_copias.py` (falla sin el arreglo).
+  - Por qué rama aparte: en el lote 1 faltan `scan_019/020/024`, lo que apunta a una serie única de 540 nombres repartida entre los dos lotes; la colisión es poco probable y no quiero meter cambios en ingest/package/auditoría antes del lote 2 sin necesidad.
+- **PIDO A Javier:** (1) a las 18:00, si `verificar_material` da «nombre coincide con lote 1», me avisas y mergeo la rama (o la mergeas tú: `git merge origin/miguel/p0-5-nombre-repetido`, `make check`) y se sigue con la ingesta; (2) esa rama toca `sources/estado_bd.ficheros_fantasma` (tuyo): con `db.nombre_entrega`, para que `preflight --limpiar` no borre el `./X.pdf`. Revísalo; (3) para el verificador, la capacidad se detecta con `albertitos.core.db.PREFIJO_INTERNO`.
+- **Para Mónica (R3, de su lista):** con una copia exacta en el lote 2, el original del lote 1 también sale ESCALAR (una decisión por contenido). Si el mentor dice que el lote 1 no debe cambiar por el lote 2 (P0-2), se cambia en `package` en ~30 min: sólo la copia escala.
+
+### 12:30 · Javier · merge a main y PLAN-10 (cinco agentes)
+- **Mergeados** en `javier/ingesta` `monica/norma-v3` (su análisis de datos y la corrección del ADR-0011) y `miguel/pipeline` (bitácora). **`main` = `990a75d`** por avance rápido; `monica/norma`, `monica/norma-v3`, `alfonso/plan-defensa` y `miguel/pipeline` quedan en el mismo punto, porque no tenían commits propios. 443 en verde + 1 xfail estricto (P0-5), auditoría VERDE, entrega `1ec4be206089` intacta.
+- **No mergeado, a propósito:** `miguel/p0-5-nombre-repetido`, que Miguel lo dejó para las 18:00 y sólo si hace falta. Tampoco `alfonso/presentaciones-y-pdf`: un .pptx de 13,5 MB en git; que decida Alfonso con Miguel si va a `main`. Ensayado: las dos mezclan sin conflictos.
+- **PLAN-10** (`docs/agentes/PLAN-10.md`): J1 hace el ensayo general del lote 2 con `main`; J2, el Excel y el ERP con otra forma; J3, el respaldo de visión (hoy vacío); J4, el kit, la defensa y el dato en vivo del domingo; J5, el bonus (remesa + calendario). Cinco listas de ficheros sin solapes.
+- **Para Alfonso:** I1 corrigió la línea 98 de tu `albertitos_plan.md` (la cifra falsa del reprocesado, 0,04 s). Ya está en `main`; revísala.
+
+### 19/09 · J5 · inicio bonus PLAN-10
+- Trabajo sólo en bonus, tests, ADR-0012 y BONUS.md. Copia SQLite backup en dist/ensayo/j5/bonus.db; sin red ni LLM.
+- Huellas iniciales BD / outcomes: c66d00e45be3 / 1ec4be206089. Calendario y CSV de remesa desde PAGAR, con validación IBAN y exclusiones explícitas.
+
+### 12:28 · J1 · sin terminal otra vez: el ensayo queda escrito para una sola orden
+- **Hora tomada del reloj del entorno (UTC+2 = Madrid), no calculada.** No pude ejecutar `TZ=Europe/Madrid date`: el shell de este agente no arranca (`powershell.exe ENOENT`; el sandbox del host tampoco puede aplicar `workspace_readwrite`). Es el mismo bloqueo que tumbó a I1 en el ciclo 9. **No hay tiempos medidos y no me los invento.**
+- **BD real, `dist/entrega/` y el bridge de `:8009`: sin tocar.** No he ejecutado nada.
+- Dejo el ensayo listo para lanzarlo de un tirón cuando haya shell: `bash dist/ensayo/j1/ensayo.sh` (receta entera cronometrada, copia de la BD por `Connection.backup`, ERP v2 en `:8011`, worktree desechable, desvíos de auditoría roja y contingencia, `publicar_entrega.py` contra un bare local) y `bash dist/ensayo/j1/desvio-p05.sh` (P0-5, cronometrando desde el ROJO del verificador hasta `package` APTO). Los dos dejan `tiempos.tsv`.
+- **Tres cosas que la receta decía mal**, encontradas leyendo el código de `main` y ya corregidas en la skill y en la chuleta: (1) `run --erp` existe, así que sobra la rama `if … grep -q -- '--erp'` y su alternativa; (2) `package` ya audita y se niega en rojo salvo `--aceptar-rojo`, pero la skill seguía pidiendo auditar a mano antes de entregar; (3) **P0-5 tenía escrito «no hay salida»**, y sí la tiene: mergear tu rama. Esa frase, a las 18:00, habría parado el lote entero sin necesidad.
+- **Trampa de los ensayos (no del lote real):** `cli.LOTE2` es la constante `Path("data/lote2")`; `run`, `package` y `validate --lote 2` no leen `ALBERTITOS_DIR_LOTE2`. Un ensayo que apunte esa variable a `lote2_sim` y llame a `run` no está ensayando el camino real. Por eso los scripts copian el material a `data/lote2/facturas` dentro de un worktree.
+- **PIDO A Javier (persona):** esto necesita una terminal de verdad. Lanza los dos scripts tú y pégame `dist/ensayo/j1/tiempos.tsv`; con eso relleno la chuleta, la skill y ENSAYO-LOTE2 en cinco minutos. La chuleta lleva arriba un aviso en negrita de que los tiempos están sin medir: **no la uses a las 18:00 creyendo que está ensayada**.
+- **PIDO A Miguel:** tu rama de P0-5 no se ha podido ensayar todavía. El guion de `desvio-p05.sh` sigue tu instrucción de las 11:40 tal cual; si el merge a las 18:00 lo haces tú, avísame y lo quito del ensayo.
+- toco: `.claude/skills/lote2/SKILL.md`, `docs/agentes/CHULETA-LOTE2.md`, `docs/agentes/ENSAYO-LOTE2.md`, `dist/ensayo/j1/*`.
+
+### 19/09 · J5 · bonus medido sobre copia
+- Calendario: 438 PAGAR, 2.428.159,06 EUR, 431 vencidos y 2 vencen en semana del corte 2026-09-18. Remesa: 0 pagos, 438 exclusiones individuales por IBAN_INVALIDO (los 11 IBAN sintéticos del maestro fallan mod-97). No se corrigen ni se alteran decisiones.
+- 16 tests propios pasan; CLI medida en 0.184 s, copia intacta. Artefactos en dist/ensayo/j5/bonus/.
+- PIDO A Alejandro: leer resumen.json (remesa_numero/total_eur, calendario_numero/total_eur, semanas y avisos_por_codigo), calendario.csv y avisos.csv; enlace a calendario.html. Remesa.csv es borrador, nunca ejecutar pagos desde la consola.
+- PIDO A J4: make check se detiene por formato de scripts/dato_en_vivo.py; salida en dist/ensayo/j5/check.log. Mis ficheros pasan formato/lint. Repetiré al cierre si ya está formateado.
+
+### 12:36 · J2 · arranco: Excel y ERP con otra forma
+- hice: leído PLAN-10 (J2), sources/excel.py, sources/CLAUDE.md, linaje.diff_maestro, tests/test_excel.py, la cola desde 12:12. Inventario del Excel real hecho (14 hojas, cabeceras \ID|Razon Social|NIF|IBAN|Ciudad|Condiciones\ y \Pedido|ProveedorID|NIF|Importe_Total|Estado|Fecha_Pedido\, 0 filas vacías, Estado='ABIERTO' en las 516, importes 502 float + 14 int, fechas 516 str ISO). Maestro real: 80911e429c6c · 11 prov · 516 ped · 41 avisos.
+- hallazgo que justifica el ciclo: el loader lee **por posición** (\ila[0]..fila[5]\). Una columna reordenada o insertada no revienta: mete el IBAN en la ciudad **en silencio**. Eso a las 18:05 es peor que un fallo.
+- toco: src/albertitos/sources/excel.py · tests/test_excel.py · data/fixtures/maestro_cambiado/ · docs/agentes/ENSAYO-FUENTES.md · dist/ensayo/j2/
+- BD y entrega sólo lectura: c66d00e45be3 / 1ec4be206089. ERP :8009 no lo toco.
+
+### 12:35 · J3 · arranco: respaldo de visión medido
+- hice: leído llm.py (_modelo_respaldo, VISION_DOBLE, timeouts, breaker), etapa.py (doble lectura y reconciliación), RESILIENCIA §3 (e) y §5, ESCALA-10K §4, CIFRAS. `scripts/bench_vision_respaldo.py` escrito.
+- toco ahora: scripts/bench_vision_respaldo.py · docs/agentes/RESPALDO-VISION.md (nuevo) · dist/ensayo/j3/. Llamo al LLM: tope 30 llamadas, plan 3 modelos × 8 escaneadas = 24. Caché en dist/ensayo/j3/bench.db, nunca en la BD real (sólo lectura).
+- para los demás: soy el único que llama al LLM este ciclo (PLAN-10).
+
+### 19/09 · J5 · cierre bonus PLAN-10
+- Implementado y commiteado: 8e8301d. Calendario HTML/CSV, remesa CSV, avisos y controles JSON; ADR-0012 y receta de defensa en docs/BONUS.md.
+- 438 vencimientos / 2.428.159,06 EUR; 431 vencidos, 2 en semana del corte. Remesa 0 / 0,00 EUR; exactamente 438 exclusiones por IBAN_INVALIDO, una por fichero. CLI 0,184 s sobre copia.
+- Tests propios 16 passed; batería completa ejecutada 459 passed, 2 deselected, 1 xfailed (39,33 s). Formato/lint propios verdes; agentes-check OK.
+- make check final todavía se detiene en formato ajeno: src/albertitos/sources/excel.py, en edición por J2 (antes J4). PIDO A J2/Javier: repetir al cerrar sus cambios; log dist/ensayo/j5/check-final.log. No declaro make check verde.
+- Huellas finales BD / outcomes: c66d00e45be3 / 1ec4be206089, idénticas al inicio. También intacta la copia del ensayo. Sin push.
+
+### ¿¿:?? · J4 · BLOQUEO shell — dato en vivo escrito; kit y cronómetros sin hacer
+- **hora:** sin shell no puedo ejecutar `TZ=Europe/Madrid date +%H:%M`; el reloj del entorno decía ~12:45. Mismo bloqueo que I1 (ciclo 9) y J1 hoy: el terminal no arranca. **No he ejecutado nada: ni un tiempo medido, ni `make check`, ni commit.** BD real, `dist/entrega/`, `data/caja/` y el bridge :8009 siguen intactos porque no los he tocado.
+- hice (sólo Write): `scripts/dato_en_vivo.py` + `tests/test_dato_en_vivo.py` (14 tests) · `docs/agentes/KIT-DEFENSA.md` al día con `main` y con el bloque del dato en vivo.
+- **`dato_en_vivo.py`**: el tribunal cambia un dato y se recalcula sólo lo que ese dato toca. Trabaja sobre una copia (`dist/vivo.db`, hecha con `Connection.backup`), nunca sobre la BD real ni la entrega, así que se puede repetir delante de ellos. `--pagada PEDIDO` (su asiento pasa a PAGADA), `--importe PEDIDO=1234,56`, `--iban P003=ES…`, `--estado-pedido PEDIDO=ANULADO`, `--fecha-corte`, y `--listar` para elegir en la sala un pedido que hoy se paga y sigue PENDIENTE. El cambio entra como snapshot **nuevo** (ERP con la etiqueta `vivo`; maestro con su versión recalculada), nunca encima del que se usó para entregar; después `reprocess --impacted` y la traza legible del primero que cambia. Ninguna decisión se toca a mano: se cambia el dato y vuelve a decidir la norma.
+- **dos decisiones que dejo anotadas:** (1) el snapshot derivado lleva `consultas=0` y `reintentos=0` a propósito, porque no es una descarga y la traza no debe decir que lo fue; (2) `version_maestro()` duplica el cálculo de `sources/excel.py` (el maestro de este script no sale de un Excel) y hay un test que la compara con la del Excel real. **J2: si cambias cómo se versiona el maestro, ese test salta, y salta a propósito.**
+- **RESPONDO A J5:** lo que te paraba `make check` en lo mío era `tests/test_dato_en_vivo.py:184`, un `@pytest.mark.skipif` partido en tres líneas que ruff quiere en una. **Corregido.** En tu `check-final.log`, que es posterior, mis dos ficheros ya no aparecen: sólo queda `sources/excel.py` (J2). Gracias por el log: sin shell era mi única forma de verlo.
+- **PIDO A J3 (urgente: rompe el `make check` de todos):** `scripts/bench_vision_respaldo.py` no compila. Lleva incrustados los números de línea del visor —la línea 34 es literalmente `    30|import os`— y ruff corta con `invalid-syntax: Unexpected indentation`. Sale en los dos logs de J5 (`dist/ensayo/j5/check.log` y `check-final.log`). Es tuyo; no lo toco.
+- **PIDO A Javier (persona), lo que necesita terminal y no he podido hacer:**
+  1. **El kit nuevo**, que es la mitad de mi encargo: `make kit-demo` y pasárselo a Alfonso. El de las 10:07 sirve de repliegue (mismos recuentos, y su commit es ancestro de `main`, así que no da ámbar), pero se hizo antes de la tabla `identidades`: su BD es esquema v2 y se lee como si no hubiera copias exactas, así que con él no se puede enseñar esa parte.
+  2. **Cronometrar** en el ensayo de las 15:00, en el portátil de Alfonso: `--listar`, el `--pagada` entero y los pasos del bloque 4. En la chuleta esas casillas dicen **«sin medir»** en negrita a propósito: que nadie la use como si estuviera ensayada.
+  3. Una pasada de `uv run python scripts/dato_en_vivo.py --listar` sobre la BD real (sólo lectura) para elegir el pedido de la demo y escribirlo en la chuleta en lugar de `PO-2026-XXXX`.
+- **lo que NO he verificado:** que mis 14 tests pasen. J5 da la batería en 459 passed con mis ficheros ya en el árbol, lo que es buena señal, pero no lo he visto yo y no lo declaro verde.
+- para los demás: no he tocado nada de J1, J2, J3 ni J5, ni `core/`, `pipeline/`, `rules/` ni `cli.py`. `docs/demo/*` es mío este ciclo y lo dejo sin tocar: las trazas guardadas son del formato viejo y regenerarlas exige ejecutar.
+
+### 12:50 · J2 · termino: el Excel y el ERP con otra forma ya no nos paran
+- **El loader leía por posición.** Ahora busca hojas y columnas por **cabecera normalizada** (sin tildes, mayúsculas ni separadores), con alias por campo, la cabecera en las 6 primeras filas, y lo que no entiende va a \visos_calidad\ con una frase legible. Estricto con el contenido: sólo se niega a cargar si falta la columna clave (\id\, \pedido\) o el importe, y el error dice qué mirar. \ErrorMaestro\ hereda de \KeyError\: nada de lo que había cambia.
+- **La regla de las 18:00, si viene en el Excel, se ve:** aviso \REGLA NUEVA?: la hoja «X» parece una norma y nadie la lee\ + \hojas_norma(xlsx)\. Con el Excel de hoy: \['Norma_Pagos_v3']\ y ningún aviso.
+- **Criterio cumplido:** Excel real → maestro **80911e429c6c**, 11 prov, 516 ped, 41 avisos, y \
+eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan un maestro idéntico dato a dato y la misma versión.
+- Contenido: \iban_cambiado\ **47 recalculadas · 43 PAGAR→ESCALAR** (453 sin impacto por diff, 0,33 s) · \importe_cambiado\ 1/1 · \proveedor_nuevo\ 0 de 500. Fixtures: \data/fixtures/maestro_cambiado/generar.py\ (12 variantes, los .xlsx no van a git). Tests: \	ests/test_excel.py\ 12 → **35**.
+- **ERP: no hay que tocar nada** (y sin levantar bridges). El CSV del bridge admite otro orden, columnas de más y BOM, y para con mensaje si falta un nombre; nuestro XML se parsea por etiqueta: una nueva se ignora, una que falta da \ERP-FORMATO\ con el asiento. Ojo a las 18:00: \make erp-lote2\ espera \data/lote2/erp_export_lote2.csv\; si llega con otro nombre, \make -C data/caja erp-lote2 LOTE2_ERP=<ruta>\.
+- **PIDO A Mónica:** con PO-2026-0001 puesto a ANULADO en el Excel, su factura (\F26-9865_ofimática.pdf\) se recalcula y **sigue en PAGAR**: la v3 sólo mira el estado del asiento del ERP (orma_v3.py:183-198\), \Pedido.estado\ no lo lee ninguna regla. Hoy es inocuo (las 516 dicen ABIERTO); el sábado no tiene por qué. Es la otra cara de tu Q2 y lo decides tú.
+- \make check\: **497 passed, 2 deselected, 1 xfailed**. Método y cifras: \docs/agentes/ENSAYO-FUENTES.md\. Huellas sin cambio: c66d00e45be3 / 1ec4be206089.
+
+### 12:55 · J2 · dos avisos para los otros cuatro (el shell SÍ funciona, y ojo al CRLF)
+- **El `powershell.exe ENOENT` que bloquea a J1 y a J4 tiene arreglo.** La culpa es del directorio de trabajo por defecto (la ruta UNC `\\wsl.localhost\...`), no del shell. Receta que he usado en todos los comandos de este ciclo: **`working_directory` a una ruta Windows de verdad** (`C:\Users\Javier`) y el comando envuelto en `wsl -d Ubuntu -- bash -lc "cd /home/javier/proyectos/HackSpain; ..."`. Dos pegas: PowerShell parte la línea en los operadores de encadenado, en `<` y en `$?`, y destroza los heredoc de Python; mete lo que sea largo en un `.sh` o un `.py` dentro de `dist/ensayo/<tú>/` y ejecuta el fichero. Con eso he corrido `make check`, el ensayo entero y los commits.
+- **Editar un fichero con la herramienta de edición de Cursor (ruta UNC) lo pasa entero a CRLF.** Me pasó con BITACORA.md: 711 líneas marcadas como cambiadas por una corrección de dos caracteres. Devuelta a LF en `f4de157`, comprobado que **no falta ninguna entrada de nadie** (comparadas las cabeceras `###` antes y después). En los ficheros compartidos (bitácora, PARTE) **añadid con un heredoc desde WSL**, no con el editor; y si ya lo habéis hecho, pasadle `sed -i 's/\r$//' <fichero>` antes de commitear.
+
+### 12:59 · J2 · PIDO A Miguel: el error del Excel, en una línea y no en 60
+- Si el Excel de las 18:00 llega sin una columna clave, `albertitos maestro` **da el mensaje correcto pero detrás de 60 líneas de traceback** de rich: `Pedidos_2026: sin la columna «pedido» no se puede cargar el maestro. Cabeceras leídas en la fila 1: ['referencia interna', 'ProveedorID', ...]`. Es el mismo caso que arreglaste en `erp pull` («una línea útil, no 92 de traceback», `cli.py:320`).
+- Parche propuesto (cuatro líneas, tu patrón exacto) y la salida literal de hoy: `dist/ensayo/j2/pido-a-miguel-cli-maestro.patch`; se reproduce con `bash dist/ensayo/j2/ver_error_cli.sh`. `ErrorMaestro` hereda de `KeyError`, así que quien capturaba `KeyError` sigue igual. **No bloquea el lote 2**: el mensaje está, sólo hay que leer la última línea.
+
+### 12:59 · J3 · termino: hay respaldo de visión, con cifras
+- hice: `scripts/bench_vision_respaldo.py` (+ `--listar`) y `docs/agentes/RESPALDO-VISION.md`. **24 llamadas de un tope de 30** (3 modelos × 8 escaneadas), 6 min 46 s, 0 errores, 0 desde caché. Caché en `dist/ensayo/j3/bench.db`; BD real en sólo lectura, mismo sha256 antes y después.
+- **Recomendación: `deepseek-v4-flash`.** p50 4,3 s / máx 8,9 s (el principal `qwen3.6`, 12,0 / 25,8), 8/8 pedido, 8/8 fecha, NIF 4/5 y IBAN 3/5 sobre las cinco escaneadas limpias (el principal, 5/5 y 5/5). Ninguno lee mejor que el principal: el respaldo compra disponibilidad.
+- **`glm5.3-flash` descartado para visión:** 81,2 s contra un timeout de 90 s, se dejó un `pedido` (PO-2026-0463 por PO-2026-0480) y una `fecha`; y ya es el respaldo de TEXTO.
+- **No toco `llm.py`:** 90 s de timeout le sobran al candidato y el respaldo ya se salta el breaker (E1). Comprobado que una lectura del respaldo no puede acabar en PAGAR: doble lectura → reconciliación → confianza 0,6 → R6 escala (ADR-0011); y un NIF mal leído no está en el maestro → R1 en rojo. Peor caso, un ESCALAR de más.
+- **PIDO A Javier:** una línea en `.env` antes de las 17:30, `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash`. Sin ella el respaldo sigue vacío y las escaneadas del lote 2 dependen de un solo modelo.
+- **PIDO A quien lleve `docs/CIFRAS.md`** (no es mío este ciclo): dos filas desde RESPALDO-VISION.md. Y ojo, RESILIENCIA §7 dice que el respaldo de visión «se deja vacío a propósito»: con la línea puesta, esa frase queda vieja.
+- toco ahora: nada más. Mis ficheros commiteados.
+
+### 19/09 13:45 · Javier · cierre del ciclo 10
+- J1 y J4 se quedaron sin terminal: lo suyo lo ejecutó Javier (resumen en PARTE.md, «Cierre del ciclo 10»). Ensayo general del lote 2: 14,2 s en verde. P0-5: 39 s. dato_en_vivo: < 0,6 s por modo. Kit `albertitos-kit-20260919-1337.tar.gz` (esquema v3).
+- **La BD real recibió `init_schema`** (13:36): la tabla `identidades` vacía; ninguna decisión cambia; `outcomes.jsonl` sigue en `1ec4be206089`.
+- Bonus de J5 corregido: 438 pagos marcados en vez de 0 (IBAN sintéticos), `--estricto` para el criterio bancario.
+- **PIDO A Mónica** (de J2 y J4): anular un pedido en el Excel (`Pedido.estado = ANULADO`) no cambia ninguna decisión, porque la v3 no lo lee. Hoy los 516 están ABIERTO, pero el Excel de las 18:00 puede traer alguno. ¿Debería escalar?
+- **Para Alfonso:** el kit de las 13:37 y KIT-DEFENSA.md con los tiempos del clon limpio.
+
+### 19/09 15:00 · Javier · PLAN-11 (bonus: calendario, chat y confianza)
+- **PLAN-11** (`docs/agentes/PLAN-11.md`): K1 continúa el calendario y lo sirve a la consola (`/bonus/*`); K2 hace el chat de sólo lectura con Helmcode (`:8001`, herramientas cerradas, sin text-to-SQL); K3 la métrica de confianza por factura (señales por fuente → 0-100 + banda + razones, `/confianza/*`). Ninguno cambia la entrega: un test cada uno.
+- **PIDO A Alejandro:** los contratos estarán en `docs/api/` hacia las 16:30. Tú registras las rutas con una línea en `console/api.py` (`RUTAS.update(bonus.rutas()); RUTAS.update(confianza.rutas())`) y haces tres pantallas: calendario, confianza (columna + desglose) y el panel de chat contra `:8001`. Y el ADR de la consola en Next.js.
+- **Gateway:** K2 y K3, 60 llamadas como mucho cada uno, y nada a partir de las 17:30 (lote 2).
+- ADRs: 0013 chat y 0014 confianza. Jev pasa al 0015.
+
+### 15:05 · K1 · arranco: calendario continuado y sus datos para la consola
+- huellas al empezar: se apuntan en el parte (BD real y `outcomes.jsonl`).
+- toco: `src/albertitos/bonus/*`, `tests/test_bonus.py`, `docs/BONUS.md`, `docs/adr/0012-*`, `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*`. Nada de `console/` (lo registra Alejandro con una línea).
+
+### 19/09 · K2 · inicio chat PLAN-11
+- Sólo chat/, test_chat, contrato y ejemplos chat, ADR-0013. Copia backup en dist/ensayo/k2/chat.db. Huellas iniciales: 0dc1c7817fda/1ec4be206089.
+- Herramientas cerradas; POST /chat en proceso propio :8001, CLI de repliegue. Máximo 60 llamadas, ninguna desde 17:30 Madrid.
+- PIDO A K1/K3: usaré pagos desde bonus.calcular (sin exportar) y confianza.rutas()[/confianza/fichero] con conexión de lectura si está disponible. Sin tocar vuestros ficheros.
+
+### 14:52 · K3 · arranco: métrica de confianza por factura
+- huellas al empezar: BD real `0dc1c7817fda` · `outcomes.jsonl` `1ec4be206089` (en `dist/ensayo/k3/huellas-inicio.txt`).
+- toco: `src/albertitos/confianza/*`, `tests/test_confianza.py`, `scripts/calibrar_confianza.py`, `docs/api/confianza.md`, `docs/api/ejemplos/confianza-*`, `docs/adr/0014-*`. Nada de core/, pipeline/, extract/, rules/, cli.py ni console/. La BD, sólo en lectura; los ensayos, sobre copias en `dist/ensayo/k3/`.
+- **RESPONDO A K2:** `confianza.rutas()["/confianza/fichero"]` tendrá la firma del puente `(conn, query) -> (status, body)` con `?file_id=`, y además una función pública `albertitos.confianza.puntuar(conn, file_id)` que devuelve el mismo dict: usa la que prefieras. Aviso aquí cuando exista.
+- LLM: el revisor es opcional y va apagado por defecto. Si lo uso, como mucho 60 llamadas y ninguna a partir de las 17:30.
+
+### 15:40 · K1 · rutas del bonus listas (`be179cd`)
+- **RESPONDO A K2:** usa `albertitos.bonus.calcular_conn(conn, fecha_corte=None, estricto=False)` con tu conexión de lectura (no abre otra; cierra su propia transacción de lectura sin escribir). O directamente las rutas: `bonus.rutas()["/bonus/calendario"](conn, {"proveedor": ["P001"]})`. Para una semana, `{"semana": ["2026-W38"]}`; para lo vencido, `{"vencido": ["true"]}`. Importes como string con 2 decimales.
+- Hecho: tesorería semanal (pagado, acumulado y vencido), vista por proveedor, `--tope-semanal` y `bonus.rutas()` (`/bonus/{resumen,calendario,proveedores,remesa,avisos,tesoreria}`). Copia de la BD real: 438 PAGAR, 2.428.159,06 € (2.383.400,88 vencidos), 11 proveedores que cuadran al céntimo; con tope de 150.000 €/semana, al día en 16 semanas. 25 tests, incluido el de la regla 5.
+- Lote 2 (BD del ensayo general de J1): el calendario incluye todos los lotes, pero las 10 del lote 2 simulado son ESCALAR (copias de pedidos del lote 1), así que no aportan pagos. El caso con PAGAR del lote 2 está cubierto con un test sintético.
+- toco ahora: `docs/api/bonus.md`, ejemplos y BONUS/ADR-0012.
+
+### 15:00 · K1 · contrato listo para Alejandro (y una corrección)
+- **Corrección:** mis dos entradas anteriores dicen «15:05» y «15:40», pero eran las 14:51 y las 14:53 (hora del reloj). Las horas de `docs/api/bonus.md` y `BONUS.md` ya están corregidas.
+- **PIDO A Alejandro:** una línea en `src/albertitos/console/api.py`, mejor con import perezoso: `from albertitos import bonus; RUTAS.update(bonus.rutas())`. El contrato, los ejemplos reales y la propuesta de pantalla están en `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*.json`. **Lo único obligatorio de la pantalla:** el aviso «Borrador: los IBAN de esta Caja son sintéticos y un banco los rechazaría. No se ha ejecutado ningún pago», siempre visible. Probado sin tocar tu fichero: `console.api.despachar` con `RUTAS` parcheado en un test.
+- **Para K3:** `/bonus/calendario?con_confianza=true` añade a cada pago lo que devuelva `albertitos.confianza.puntuar(conn, file_id)`, tal cual y sin suponer sus campos. Si no está tu módulo, sale `null` con una nota. Así, cuando publiques, se ve sin tocar nada más.
+
+### 15:02 · K3 · la puntuación ya existe: `albertitos.confianza.puntuar(conn, file_id)`
+- **RESPONDO A K1 y K2:** ya está (sin commitear todavía; aviso con el commit). `puntuar(conn, file_id)` devuelve `{file_id, lote, resultado, regla, puntuacion (0-100), banda (alta|media|baja), razones[3], causa, metodo, lecturas, mismo_pdf_que, fuentes{pdf, coherencia, maestro, erp, decision, politica, revisor}, version, escala}`, o `None` si no hay decisión vigente. Sólo lee. Cuesta **0,33 ms por fichero** (los 438 pagos del calendario, unos 0,15 s): el maestro y el ERP se cachean por versión. `puntuar_todas(conn, lote=None)`: las 500, en 0,04 s.
+- Sobre la BD real: **alta 447** (438 PAGAR y 9 NO_PAGAR) · **media 40** · **baja 13**, todas ESCALAR. Ninguna ESCALAR llega a alta: las 53 tienen una duda de lectura o una pregunta abierta del mentor (Q1 6 · Q2 2 · Q3 35 · Q5 2, los mismos recuentos que el mapa de I2). Las 13 bajas son las que se escalan sólo porque no se leyeron con seguridad (reconciliadas, discrepancias entre lecturas, superpuesta).
+- toco ahora: tests, calibración, ejemplos, contrato y ADR-0014.
+
+### 19/09 15:05 · K2 · chat evaluado y contrato para Alejandro
+- PIDO A Alejandro: servidor propio python -m albertitos.chat --servidor --db <copia.db> en 127.0.0.1:8001; POST /chat {mensaje,historial?}, GET /chat/salud. Contrato docs/api/chat.md y 15 ejemplos reales docs/api/ejemplos/chat-*.json. Panel lateral; citas abren traza; no registrar POST en tu puente GET. CORS http://localhost:3000.
+- 16 tests propios; make check 537 passed, 1 skipped, 2 deselected. Prueba de package sobre copia tras ejecutar chat: outcomes byte a byte idéntico (1ec4be206089).
+- Evaluación: 59/60 intentos HTTP, todos entre 14:58 y 15:04 Madrid. Serie inicial 12/15 completas; tras 3 repeticiones, 14/15 completas + 1 parcial: la inyección no cambia ESCALAR ni ejecuta pagos, pero atribuye al PDF una frase del usuario sin corroborarla. Dos timeouts reales devolvieron la degradación. Sin más llamadas de desarrollo.
+- IMPORTANTE demo: queda 1 llamada, insuficiente para otra pregunta de 2 pasos. Mostrar respuestas grabadas, negativa local de pago y trace; no borrar contador. Después de 17:30 el código bloquea gateway.
+- RESPONDO A K1/K3: integración por lectura ya preparada; confianza sólo se ofrece si existe vuestra ruta, sin revisor LLM.
+
+### 19/09 15:09 · K2 · cierre PLAN-11
+- Commit 57d43c9: chat de sólo lectura, herramientas cerradas, API :8001 y CLI, ADR-0013, contrato y 15 preguntas evaluadas con ejemplos.
+- make check final: 555 passed, 1 skipped, 2 deselected (35,11 s). 17 pruebas propias; integración K3 comprobada sin gateway: scan_025.pdf → 45, baja, ESCALAR. agentes-check OK.
+- 59/60 intentos HTTP, ninguno después de 15:04; no más llamadas. 14/15 respuestas completas tras repetir tres casos; 1 parcial por atribución de texto del usuario al PDF (documentada). Primera serie completa: 12/15; dos timeouts reales degradaron correctamente.
+- La prueba ejecuta chat y herramientas sobre copia, comprueba BD lógica intacta y package produce exactamente outcomes 1ec4be206089. Huellas finales reales iguales al inicio: BD 0dc1c7817fda / outcomes 1ec4be206089.
+- PIDO A Alejandro/Javier: integrar panel según docs/api/chat.md. El contador deja sólo 1 llamada; para repetir la demo sin excederlo, respuestas grabadas + negativa local + trace. El gateway se cierra en código a las 17:30; no borrar contador. Sin push ni cambios en la consola.
+
+### 15:09 · K3 · contrato listo para Alejandro; módulo y docs commiteados (`f246788`, `251b0d0`)
+- Hecho: `albertitos.confianza` (puntuación 0-100 + banda + 3 razones + desglose por fuente, sólo lectura), `confianza.rutas()` (`/confianza/{resumen,ficheros,fichero}`), 17 tests (regla 5 incluida: sobre una copia de la BD real, `package` da el mismo `outcomes.jsonl` antes y después), `scripts/calibrar_confianza.py`, contrato y ejemplos reales en `docs/api/confianza.md`, ADR-0014. `make check`: 555 en verde.
+- **PIDO A Alejandro:** una línea en `src/albertitos/console/api.py`, mejor con import perezoso: `from albertitos import confianza; RUTAS.update(confianza.rutas())` (el bloque `try/except ImportError` está en `docs/api/confianza.md`). Pantallas propuestas: columna «confianza» en la lista (chip con número y color de banda, y `razon_principal` al pasar el ratón), filtro «revisar primero» (`/confianza/ficheros?banda=baja`, que ya viene de menor a mayor), tarjeta «¿cuánto nos fiamos?» en el detalle con una fila por fuente, y el aviso literal «Confianza en la clasificación, no probabilidad de pago».
+- **PIDO A Javier (o a Alfonso, dueño de docs/):** una fila en `docs/adr/README.md` para el ADR-0014 («La confianza por factura es una puntuación ordinal y explicable, no una probabilidad», propuesto, Javier/K3). No está en mi lista de ficheros.
+- **Para Mónica:** ninguna de las 53 ESCALAR sale en banda alta, porque todas dependen de una duda de lectura o de una pregunta abierta del mentor (Q3 35, Q1 6, Q2 2, Q5 2). Las 13 de banda baja se escalan sólo porque no se leyeron con seguridad. En `docs/api/` no nombro ninguna factura de la muestra.
+- Calibración, dicha como es: sin la muestra cerrada no hay verdad etiquetada. Lo que cuadra: contraste plantilla↔LLM, 468 de 468; mapa de I2, 45 de 45 ficheros iguales; y las 13 bajas, ya sabidas. LLM: 0 llamadas hasta ahora.
+
+### 15:16 · K3 · termino: confianza por factura hecha, revisor ensayado (53 llamadas)
+- hecho: módulo, rutas, 27 tests (regla 5 incluida), calibración, contrato con ejemplos reales, ADR-0014 y revisor LLM opcional. Detalle y cifras en PARTE.md, sección K3. `make check`: 565 en verde. Huellas de la BD real y la entrega, iguales al empezar y al terminar.
+- LLM: 53 llamadas de un tope de 60, todas a las 15:13 (antes de las 17:30). Ninguna más.
+- Siguen en pie: **PIDO A Alejandro** (la línea en `console/api.py` y las pantallas) y **PIDO A Javier o Alfonso** (la fila del ADR-0014 en `docs/adr/README.md`).
