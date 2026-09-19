@@ -1,0 +1,23 @@
+# v0 sandbox leftovers — do not commit
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+
+# Environment — keep .env.example, never commit secrets
+.env*.local
+.env
+
+# Dependencies and build
+node_modules/
+.next/
+out/
+tsconfig.tsbuildinfo
+
+# Logs and OS
+*.log
+debug.log
+.DS_Store
+Thumbs.db
