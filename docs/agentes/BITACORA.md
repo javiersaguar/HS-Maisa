@@ -938,3 +938,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - `make check`: 696 passed. Sin conflictos.
 - Con los validadores de B, el CNPJ de P014 se normaliza sin barra y el maestro del lote 2 pasa a la versión **`f504377103b2`** (la `4fa206ac8bb2` de mi entrada anterior queda vieja).
 - **Sigue pendiente:** las 17 `e*` de B (falta el `.env` en `../HS-Maisa-lote2`, lo copia Javier a mano); el M5 real sobre la BD de Javier; el visto bueno de Miguel para publicar.
+
+### 23:10 · Javier · la demo pública funciona para cualquiera: `https://albertitos.vercel.app` (ADR-0023)
+- Puente y chat en Render (`albertitos-puente` y `albertitos-chat` `.onrender.com`), de sólo lectura, sobre `deploy/demo.db` (438/53/9). Vercel sólo con las tres `NEXT_PUBLIC_*`; las claves ya no están allí.
+- Probado como un jurado (Chromium limpio, sin permisos): 12/12, chat incluido.
+- **PARA Miguel:** cuando publiques el lote 2 (o el 445/46/9), avísame: `uv run python scripts/exportar_demo_db.py`, commit y push, y Render se actualiza solo.
+- **PARA Alejandro:** no toques las `NEXT_PUBLIC_*` de Vercel. **PARA Alfonso:** el plan gratuito duerme a los 15 min; abre el enlace un minuto antes de enseñarlo. El repliegue sigue siendo la consola local (`KIT-DEFENSA.md`).

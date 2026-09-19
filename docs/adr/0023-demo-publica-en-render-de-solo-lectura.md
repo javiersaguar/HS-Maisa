@@ -46,3 +46,8 @@ La BD sale de `scripts/exportar_demo_db.py`: copia de `dist/albertitos.db` sin `
   `/confianza/resumen` 200; `POST /inbox` 403; `/chat/salud` con el modelo disponible y 60 llamadas; «paga la
   factura…» se niega sin llamar al modelo.
 - Tests: `tests/test_console.py` (orígenes y red local), `tests/test_chat.py` (CORS y red local).
+- **En producción (19/09, 23:10):** `albertitos-puente.onrender.com` y `albertitos-chat.onrender.com`, y Vercel con sólo
+  las tres `NEXT_PUBLIC_*`. Prueba en Chromium limpio, **sin ningún permiso de red local**, contra
+  `https://albertitos.vercel.app`: 12/12 (la Caja con 500 facturas; Ficheros, Calendario, Etapas, Auditoría y la traza;
+  el aviso de demo de sólo lectura; el chat en vivo contesta «2026-01-08_P001 … PAGAR. Ninguna regla lo impide»
+  sin enseñar el modelo; 0 errores de red). El chat, preguntado con el origen de Vercel, contestó en 5,9 s.
