@@ -1,7 +1,7 @@
 {
   "ciclo": 7,
   "rama": "javier/ingesta",
-  "base": "aeda37f",
+  "base": "a939c4d",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -12,6 +12,7 @@
     "G1": [
       "scripts/contingencia.py",
       "tests/test_contingencia.py",
+      "src/albertitos/pipeline/auditoria.py",
       "scripts/auditoria_entrega.py",
       "tests/test_auditoria.py",
       "docs/agentes/AUDITORIA-ENTREGA.md",

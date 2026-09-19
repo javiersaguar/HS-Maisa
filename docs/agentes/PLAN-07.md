@@ -42,7 +42,7 @@ en la bitácora.
 ## Propiedad de ficheros (`plan.json`; `make agentes-check` lo verifica)
 | G1 | G2 |
 |---|---|
-| `scripts/contingencia.py` (nuevo) · `tests/test_contingencia.py` (nuevo) · `scripts/auditoria_entrega.py` · `tests/test_auditoria.py` · `docs/agentes/AUDITORIA-ENTREGA.md` · `.claude/skills/lote2/SKILL.md` · `docs/adr/0009-*.md` (nuevo) · `docs/adr/README.md` | `src/albertitos/sources/erp.py` · `src/albertitos/sources/snapshot.py` · `tests/test_erp.py` · `tests/test_snapshot.py` · `src/albertitos/sources/CLAUDE.md` · `docs/CIFRAS.md` (nuevo) · `scripts/cifras_check.py` (nuevo) · `tests/test_cifras.py` (nuevo) · `docs/agentes/RESILIENCIA-Y-COSTE.md` · `docs/agentes/ESCALA-10K.md` |
+| `scripts/contingencia.py` (nuevo) · `tests/test_contingencia.py` (nuevo) · `src/albertitos/pipeline/auditoria.py` (nuevo, hueco que dejó Miguel) · `scripts/auditoria_entrega.py` · `tests/test_auditoria.py` · `docs/agentes/AUDITORIA-ENTREGA.md` · `.claude/skills/lote2/SKILL.md` · `docs/adr/0009-*.md` (nuevo) · `docs/adr/README.md` | `src/albertitos/sources/erp.py` · `src/albertitos/sources/snapshot.py` · `tests/test_erp.py` · `tests/test_snapshot.py` · `src/albertitos/sources/CLAUDE.md` · `docs/CIFRAS.md` (nuevo) · `scripts/cifras_check.py` (nuevo) · `tests/test_cifras.py` (nuevo) · `docs/agentes/RESILIENCIA-Y-COSTE.md` · `docs/agentes/ESCALA-10K.md` |
 
 Compartidos, sólo añadiendo al final: `docs/agentes/BITACORA.md` y `docs/agentes/PARTE.md` (cada uno en su sección).
 Ninguno toca `pipeline/`, `cli.py`, `core/`, `rules/`, `console/`, `docs/plan/` ni `docs/guion-defensa.md`: lo
@@ -55,7 +55,7 @@ el parche propuesto en la bitácora.
 
 ```
 Eres el agente G1 de Javier en el repo Albertitos (HackSpain 2026, reto Maisa). Trabajas EN PARALELO con otro agente (G2) en este mismo directorio y en la misma rama `javier/ingesta`, en ficheros distintos. Reglas de convivencia, sin excepción:
-1. Sólo editas: scripts/contingencia.py (nuevo) · tests/test_contingencia.py (nuevo) · scripts/auditoria_entrega.py · tests/test_auditoria.py · docs/agentes/AUDITORIA-ENTREGA.md · .claude/skills/lote2/SKILL.md · docs/adr/0009-*.md (nuevo) · docs/adr/README.md. Cualquier otro fichero: NO lo toques; escribe `PIDO A G2:`, `PIDO A Miguel:` o `PIDO A Mónica:` en docs/agentes/BITACORA.md, con el parche propuesto, y sigue.
+1. Sólo editas: scripts/contingencia.py (nuevo) · tests/test_contingencia.py (nuevo) · src/albertitos/pipeline/auditoria.py (nuevo) · scripts/auditoria_entrega.py · tests/test_auditoria.py · docs/agentes/AUDITORIA-ENTREGA.md · .claude/skills/lote2/SKILL.md · docs/adr/0009-*.md (nuevo) · docs/adr/README.md. Cualquier otro fichero: NO lo toques; escribe `PIDO A G2:`, `PIDO A Miguel:` o `PIDO A Mónica:` en docs/agentes/BITACORA.md, con el parche propuesto, y sigue.
 2. docs/agentes/BITACORA.md es append-only: una entrada AL FINAL al empezar, otra por hito y otra al terminar, siempre con un heredoc con comillas simples (<<'EOF'). Lee las de G2 antes de cada hito.
 3. No cambies de rama; nada de stash/checkout/merge/rebase; no ejecutes /handoff ni /sync. Commitea sólo tus ficheros con rutas explícitas (nunca `git add -A`), con mensaje `modulo: qué y por qué` y SIN trailer `Co-Authored-By` ni ninguna mención a Claude o a una IA. No hagas push.
 4. NUNCA escribas en la BD real (`dist/albertitos.db`), en `dist/entrega/` ni en `../HS-Maisa-Entrega`. Todo ensayo va en copias hechas con `sqlite3.Connection.backup` dentro de `dist/ensayo/g1/`, con `ALBERTITOS_DB` apuntando a la copia. El caos es por BD (`<db>.chaos.json`): enciéndelo sólo en la copia y apágalo al terminar. Nunca leas `.env`.
@@ -77,9 +77,24 @@ D · Skill /lote2: un paso nuevo, "Si a las 07:30 del domingo queda algún PENDI
 E · ADR-0009, "Si a la hora de entregar no hay hechos, ESCALAR explícito y reversible", en estado **propuesto** (lo aceptan Mónica y Miguel): contexto (binario 540/540), alternativas (no entregar el lote 2; PAGAR por defecto; NO_PAGAR por defecto; ESCALAR con registro), decisión, consecuencias y evidencia (la de tu ensayo) + "Resumen para el plan (5 líneas)" como los demás. Añádelo a docs/adr/README.md.
 F · ENSAYO DE PUNTA A PUNTA, en una copia de la BD real en dist/ensayo/g1/ con el lote 2 simulado (sigue lo que hace tests/test_lote2_sim.py y ENSAYO-LOTE2.md: el ERP simulado va en otro puerto; no toques el de :8009). Mide cada paso con `time`: chaos --llm-down → ingest+extract del lote 2 simulado → las escaneadas PENDIENTE → `package` se niega → contingencia en seco → --aplicar → auditoría (ámbar) → package APTO 510 → chaos --off → extract de pendientes → `reprocess --impacted` → las de contingencia sustituidas → auditoría. Pega las salidas literales en tu parte. Borra el caos de la copia al terminar.
 
+G · CONECTAR LA AUDITORÍA A `package` (añadido a las 09:00, tras mergear el PR #1 de Miguel). `package` ya busca
+  `albertitos.pipeline.auditoria.auditar(conn, {lote: dir_pdfs}) -> informe` (mira `Auditor` e `InformeAuditoria` en
+  pipeline/package.py) y, si no lo encuentra, avisa y sólo valida. Hoy no lo encuentra: E2 hizo la auditoría como
+  script. Mueve la lógica a src/albertitos/pipeline/auditoria.py con esa firma exacta (el informe con `.ok`, `.rojos`
+  y `.texto()` que espera package) y deja scripts/auditoria_entrega.py como envoltorio fino de la CLI, con la misma
+  salida y los mismos códigos de salida (F1 y `make publicar` lo llaman). Los tests de test_auditoria.py tienen que
+  seguir pasando sin cambiar lo que comprueban.
+  OJO CON EL ORDEN: en cuanto el módulo exista, `package` SE NIEGA con la auditoría en rojo y no tiene salida de
+  excepción. Hoy, con scan_025, la BD real sale roja: `make package` y `make publicar` dejarían de funcionar hasta que
+  Mónica conteste. Así que: (1) el test de que package se niega en rojo y entrega en verde, con BD temporales;
+  (2) NO lo commitees hasta que la auditoría de la BD real salga verde (mírala: la arregla Javier cuando Mónica
+  conteste) o hasta que Miguel añada a `package` un `--aceptar-rojo "<motivo>"` equivalente al de publicar_entrega.py.
+  Deja el PIDO A Miguel con ese parche en la bitácora en cuanto empieces. Si al terminar no se cumple ninguna de las
+  dos, deja el trabajo sin commitear y dilo en tu parte con el diff listo.
+
 CRITERIOS DE ACEPTACIÓN: sin --aplicar no escribe nunca; sólo escribe ESCALAR; se revierte sola con los hechos (probado con un test y en el ensayo); la auditoría la enseña en ámbar; la skill /lote2 la tiene como último recurso; ADR-0009 propuesto; `make check` y `make agentes-check` verdes; la BD real y dist/entrega, con el mismo sha256 antes y después (apúntalos).
 
-NO HAGAS: tocar pipeline/, cli.py, core/ ni rules/ (si `package` o `decide` necesitan algo, PIDO A Miguel con el parche); aplicar la contingencia a la BD real; decidir PAGAR o NO_PAGAR por contingencia; borrar filas de la BD real.
+NO HAGAS: tocar pipeline/ (salvo el fichero nuevo pipeline/auditoria.py), cli.py, core/ ni rules/ (si `package` o `decide` necesitan algo, PIDO A Miguel con el parche); aplicar la contingencia a la BD real; decidir PAGAR o NO_PAGAR por contingencia; borrar filas de la BD real.
 ```
 
 ---
