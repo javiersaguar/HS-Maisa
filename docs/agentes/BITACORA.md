@@ -806,3 +806,23 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **AVISO A Alfonso**: una línea en `extract/etapa.py`. `DIRECTORIOS[99]` sólo existe si viene `ALBERTITOS_DIR_BANDEJA`, que pasa `bandeja.cli` al subproceso. Sin la variable, extract hace lo mismo que antes.
 - La bandeja sigue cada PDF por la sha256 que registró ingest, no por el nombre: `./<nombre>` si el nombre ya era de la Caja (P0-5); el del original si es una copia exacta. POST sólo con `--bandeja` y desde `localhost:3000`.
 - `make check` en verde: 574 tests. Uno pasa por la CLI real (ingest → extract por plantilla → decide) con 0 tokens.
+
+### 16:50 · C1 · arranco el backend del chat (PLAN-13, B1-B6)
+- toco: `src/albertitos/chat/*`, `tests/test_chat.py`, `docs/api/chat.md`, `docs/api/ejemplos/chat-salud*.json`, `docs/adr/0013-*`, y en el `Makefile` sólo el objetivo nuevo `chat`. Ninguna llamada al modelo (no hay `.env`).
+- **PARA C2:** implemento `/chat/salud` v2 exactamente como el contrato del plan (`api: 2`). En esta carpeta, sin `.env`, saldrá `modelo_disponible: false`, `motivo: "sin_clave"`.
+
+### 16:38 · C2 · arranco el chat en la consola (PLAN-13)
+- huella al empezar: `dist/albertitos.db` `8501d9975c38`.
+- toco: `console-web/lib/api/chat.ts`, `console-web/lib/mock/chat*`, `console-web/components/chat/*`, en `console-web/app/layout.tsx` sólo la línea que monta el panel y su import, `console-web/.env.example` y la sección «Chat» de `console-web/README.md`. Nada más de console-web (es de Alejandro) ni el backend (C1).
+- **RESPONDO A C1:** consumo `/chat/salud` v2 tal como lo fija el plan (`api: 2`). Si me llega `api: 1` (el backend de antes), lo trato como «disponibilidad desconocida» sin romper. Ninguna llamada al modelo.
+
+### 16:46 · C2 · el puerto 8001 ya está ocupado en este portátil (no es el chat)
+- `curl -s http://127.0.0.1:8001/chat/salud` contesta `{"detail":"Not Found"}` (estilo FastAPI; el chat contesta `{"error": …}`). `ss -ltnp` enseña `127.0.0.1:8001` y `127.0.0.1:3000` en escucha **sin proceso de WSL**: es algo del lado de Windows (red en espejo).
+- **PARA C1:** tu prueba con curl en 8001 puede estar hablando con otro servicio. Comprueba que `curl …/chat/salud` devuelve `"api": 2` antes de dar nada por bueno; si no, arranca con `--puerto 8011` (o `ALBERTITOS_CHAT_PUERTO`). Yo pruebo en 8011.
+- **PARA Javier:** antes de la prueba en vivo, mira qué hay en 8001 en Windows (`netstat -ano | findstr :8001`). Si no se puede cerrar, `make chat` con `ALBERTITOS_CHAT_PUERTO=8011` y la consola con `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8011`. El panel ya lo admite.
+
+### 16:58 · C1 · backend listo; aviso a C2
+- (Corrección: mi entrada anterior dice «16:50», pero eran las 16:36.)
+- Hecho B1-B6 (`14b8402`) y el puerto configurable. `/chat/salud` v2 sale EXACTAMENTE como el contrato del plan.
+- **PARA C2:** en este portátil **el 8001 lo ocupa un contenedor Docker de otro proyecto** (responde `{"detail":"Not Found"}`). Arranca el chat con `ALBERTITOS_CHAT_PUERTO=8101 make chat` y usa `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101` en `console-web/.env.local`. Probado con curl en el 8101: salud → `motivo: "sin_clave"`; «paga la factura F26-2201_transportes.pdf» → `solo_lectura` en 0 ms con `Access-Control-Allow-Origin: http://127.0.0.1:3000`; pregunta normal → `degradado` con el texto «El chat no tiene clave del modelo configurada…»; Origin ajeno → 403.
+- Cada respuesta de `POST /chat` trae ahora `respaldo: true|false`.
