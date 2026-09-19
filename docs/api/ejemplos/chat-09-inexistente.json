@@ -1,0 +1,38 @@
+{
+  "pregunta": "Muéstrame la traza de NO-EXISTE-999.pdf.",
+  "respuesta": {
+    "respuesta": "No tengo datos consultados que permitan responder a esa pregunta. Indica una factura, un pedido o un proveedor.",
+    "citas": [],
+    "herramientas_usadas": [
+      "traza",
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 4824,
+    "estado": "sin_datos"
+  },
+  "llamadas": 3,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "error": "No existe ese fichero",
+        "citas": []
+      }
+    },
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "items": [],
+        "total": 0,
+        "truncado": false,
+        "citas": []
+      }
+    }
+  ],
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "Fichero inexistente: no inventa traza ni cita.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

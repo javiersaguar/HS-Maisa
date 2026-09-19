@@ -1,0 +1,311 @@
+{
+  "pregunta": "¿Por qué no se paga FA-2116_mensajería.pdf?",
+  "respuesta": {
+    "respuesta": "FA-2116_mensajería.pdf está clasificada NO_PAGAR porque falla la regla v3.R5: el pedido PO-2026-0473 ya consta como PAGADA en el ERP mediante el asiento AS-00473 por 2083.37 €, por lo que pagar esta factura supondría un doble pago. Factura de Mensajería Rápida del Sur S.L. (B90233808, proveedor P011), fecha 2026-03-18, base 1721.79 € + IVA 361.58 € = 2083.37 €, sin avisos. Decisión vigente según corte 2026-09-18 (norma v3). Recuerda que NO_PAGAR es una clasificación, no un pago ejecutado.",
+    "citas": [
+      "FA-2116_mensajería.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas",
+      "buscar_facturas",
+      "traza"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 6324,
+    "estado": "ok"
+  },
+  "llamadas": 3,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "items": [
+          {
+            "file_id": "FA-2116_mensajería.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "FA-2116",
+              "fecha": "2026-03-18",
+              "razon_social": "Mensajería Rápida del Sur S.L.",
+              "nif_emisor": "B90233808",
+              "pedido": "PO-2026-0473",
+              "total": "2083.37",
+              "base": "1721.79",
+              "iva": "361.58",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          }
+        ],
+        "total": 1,
+        "truncado": false,
+        "citas": [
+          "FA-2116_mensajería.pdf"
+        ]
+      }
+    },
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "items": [
+          {
+            "file_id": "2026-03-28_P002.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "FA-5499",
+              "fecha": "2026-03-28",
+              "razon_social": "Transportes Guadaira S.A.",
+              "nif_emisor": "A41220987",
+              "pedido": "PO-2026-0476",
+              "total": "2551.64",
+              "base": "2108.79",
+              "iva": "442.85",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-04-08_P007.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "2026/40801",
+              "fecha": "2026-04-08",
+              "razon_social": "Papelería Ruzafa S.C.",
+              "nif_emisor": "J40112358",
+              "pedido": "PO-2026-0814",
+              "total": "2020.70",
+              "base": "1670.00",
+              "iva": "350.70",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-05-28_P003.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "F26-1946",
+              "fecha": "2026-05-28",
+              "razon_social": "OFIMÁTICA CIEZA S.L.",
+              "nif_emisor": "B30455812",
+              "pedido": "PO-2026-0471",
+              "total": "1449.86",
+              "base": "1198.23",
+              "iva": "251.63",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-06-04_P006.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "2026/06004",
+              "fecha": "2026-06-04",
+              "razon_social": "Electricidad Montcada S.A.",
+              "nif_emisor": "A46990201",
+              "pedido": "PO-2026-0803",
+              "total": "1076.90",
+              "base": "890.00",
+              "iva": "186.90",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-17547_suministros.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "2026/17547",
+              "fecha": "2026-05-24",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0475",
+              "total": "398.04",
+              "base": "328.96",
+              "iva": "69.08",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "FA-1016_papelería.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "FA-1016",
+              "fecha": "2026-06-25",
+              "razon_social": "Papelería Ruzafa S.C.",
+              "nif_emisor": "J40112358",
+              "pedido": "PO-2026-0474",
+              "total": "1388.33",
+              "base": "1147.38",
+              "iva": "240.95",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "FA-2116_mensajería.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "FA-2116",
+              "fecha": "2026-03-18",
+              "razon_social": "Mensajería Rápida del Sur S.L.",
+              "nif_emisor": "B90233808",
+              "pedido": "PO-2026-0473",
+              "total": "2083.37",
+              "base": "1721.79",
+              "iva": "361.58",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "factura_4619.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "FA-1518",
+              "fecha": "2026-06-30",
+              "razon_social": "ELECTRICIDAD MONTCADA S.A.",
+              "nif_emisor": "A46990201",
+              "pedido": "PO-2026-0472",
+              "total": "3388.18",
+              "base": "2800.15",
+              "iva": "588.03",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "factura_5911.pdf",
+            "lote": 1,
+            "resultado": "NO_PAGAR",
+            "hechos": {
+              "num_factura": "2026/41508",
+              "fecha": "2026-04-21",
+              "razon_social": "Limpiezas Turia S.L.",
+              "nif_emisor": "B98120774",
+              "pedido": "PO-2026-0703",
+              "total": "1802.90",
+              "base": "1490.00",
+              "iva": "312.90",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          }
+        ],
+        "total": 9,
+        "truncado": false,
+        "citas": [
+          "2026-03-28_P002.pdf",
+          "2026-04-08_P007.pdf",
+          "2026-05-28_P003.pdf",
+          "2026-06-04_P006.pdf",
+          "2026-17547_suministros.pdf",
+          "FA-1016_papelería.pdf",
+          "FA-2116_mensajería.pdf",
+          "factura_4619.pdf",
+          "factura_5911.pdf"
+        ]
+      }
+    },
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "file_id": "FA-2116_mensajería.pdf",
+        "lote": 1,
+        "hechos": {
+          "num_factura": "FA-2116",
+          "fecha": "2026-03-18",
+          "razon_social": "Mensajería Rápida del Sur S.L.",
+          "nif_emisor": "B90233808",
+          "pedido": "PO-2026-0473",
+          "total": "2083.37",
+          "base": "1721.79",
+          "iva": "361.58",
+          "metodo": "plantilla",
+          "avisos": [],
+          "confianza": 1.0
+        },
+        "resultado": "NO_PAGAR",
+        "reglas_fallidas": [
+          {
+            "regla": "v3.R5",
+            "motivo": "el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces"
+          }
+        ],
+        "fuentes": {
+          "maestro_version": "80911e429c6c",
+          "erp_version": "v1",
+          "proveedor": {
+            "id": "P011",
+            "razon_social": "Mensajería Rápida del Sur S.L.",
+            "nif": "B90233808",
+            "iban": "ES9368884400123588900142",
+            "ciudad": "Málaga",
+            "condiciones_dias": 30
+          },
+          "pedido": {
+            "pedido": "PO-2026-0473",
+            "proveedor_id": "P011",
+            "nif": "B90233808",
+            "importe_total": "2083.37",
+            "estado": "ABIERTO",
+            "fecha_pedido": "2026-03-18"
+          },
+          "asientos": [
+            {
+              "asiento_id": "AS-00473",
+              "fecha_registro": "2026-03-18",
+              "proveedor_id": "P011",
+              "nif": "B90233808",
+              "pedido": "PO-2026-0473",
+              "importe_esperado": "2083.37",
+              "estado": "PAGADA"
+            }
+          ]
+        },
+        "versiones": {
+          "norma_version": "v3",
+          "fecha_corte": "2026-09-18",
+          "maestro_version": "80911e429c6c",
+          "erp_version": "v1"
+        },
+        "texto_del_pdf_omitido": false,
+        "citas": [
+          "FA-2116_mensajería.pdf"
+        ]
+      }
+    }
+  ],
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "NO_PAGAR por v3.R5, asiento AS-00473 ya PAGADA.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}

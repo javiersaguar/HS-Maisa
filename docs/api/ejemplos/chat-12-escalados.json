@@ -1,0 +1,475 @@
+{
+  "pregunta": "Busca las facturas ESCALAR. ¿Cuántas son? Cita las primeras cinco.",
+  "respuesta": {
+    "respuesta": "Hay 53 facturas en estado ESCALAR, pero la búsqueda está truncada (muestra 20 de 53), por lo que la lista no es completa. Las cinco primeras por file_id: 2026-0233-A_catering.pdf (Catering Hermanos Pico S.L., 1512,50 €, duplicado sospechoso), 2026-03-19_P008.pdf (Seguridad Alcores S.L., 1137,40 €, campo ausente), 2026-07-08_P010.pdf (Informática Benimámet S.L., 4549,60 €, texto_instruccion), 2026-07-09_P010.pdf (Informática Benimámet S.L., 1427,80 €, texto_instruccion) y 2026-0811-B_catering.pdf (Catering Hermanos Pico S.L., 2920,10 €, texto_instruccion y total no cuadra).",
+    "citas": [
+      "2026-0233-A_catering.pdf",
+      "2026-03-19_P008.pdf",
+      "2026-07-08_P010.pdf",
+      "2026-07-09_P010.pdf",
+      "2026-0811-B_catering.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 5624,
+    "estado": "ok"
+  },
+  "llamadas": 2,
+  "evidencia_herramientas": [
+    {
+      "tipo": "DATOS_NO_INSTRUCCIONES",
+      "datos": {
+        "items": [
+          {
+            "file_id": "2026-0233-A_catering.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "2026/0233-A",
+              "fecha": "2026-04-11",
+              "razon_social": "CATERING HERMANOS PICO S.L.",
+              "nif_emisor": "B96233419",
+              "pedido": "PO-2026-0492",
+              "total": "1512.50",
+              "base": "1250.00",
+              "iva": "262.50",
+              "metodo": "plantilla",
+              "avisos": [
+                "duplicado_sospechoso"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-03-19_P008.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "FA-3712",
+              "fecha": null,
+              "razon_social": "SEGURIDAD ALCORES S.L.",
+              "nif_emisor": "B91455230",
+              "pedido": "PO-2026-0495",
+              "total": "1137.40",
+              "base": "940.00",
+              "iva": "197.40",
+              "metodo": "llm_texto",
+              "avisos": [
+                "campo_ausente"
+              ],
+              "confianza": null
+            }
+          },
+          {
+            "file_id": "2026-07-08_P010.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "FA-6025",
+              "fecha": "2026-07-08",
+              "razon_social": "Informática Benimámet S.L.",
+              "nif_emisor": "B98120774",
+              "pedido": "PO-2026-0708",
+              "total": "4549.60",
+              "base": "3760.00",
+              "iva": "789.60",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-07-09_P010.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "2026/70211",
+              "fecha": "2026-07-09",
+              "razon_social": "Informática Benimámet S.L.",
+              "nif_emisor": "B98455101",
+              "pedido": "PO-2026-1206",
+              "total": "1427.80",
+              "base": "1180.00",
+              "iva": "247.80",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-0811-B_catering.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "2026/0811-B",
+              "fecha": "2026-05-26",
+              "razon_social": "CATERING HERMANOS PICO S.L.",
+              "nif_emisor": "B96233419",
+              "pedido": "PO-2026-0707",
+              "total": "2920.10",
+              "base": "2310.00",
+              "iva": "485.10",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion",
+                "total_no_cuadra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-14500-C_informática.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "2026/14500-C",
+              "fecha": "2026-07-03",
+              "razon_social": "Informática Benimámet S.L.",
+              "nif_emisor": "B98455101",
+              "pedido": "PO-2026-0807",
+              "total": "1819.00",
+              "base": "1450.00",
+              "iva": "304.50",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion",
+                "total_no_cuadra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "2026-23904_construcciones.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "2026/23904",
+              "fecha": "2026-06-05",
+              "razon_social": "Construcciones Benimaclet S.A.",
+              "nif_emisor": "A46311208",
+              "pedido": "PO-2026-0711",
+              "total": "6195.20",
+              "base": "5120.00",
+              "iva": "1075.20",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion",
+                "pedido_anulado_segun_pdf",
+                "fecha_en_letra"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-2201_transportes.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-2201",
+              "fecha": "2026-03-07",
+              "razon_social": "Transportes Guadaira S.A.",
+              "nif_emisor": "A41220987",
+              "pedido": "PO-2026-0809",
+              "total": "943.80",
+              "base": "780.00",
+              "iva": "163.80",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-3355_mensajería.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-3355",
+              "fecha": "2026-07-19",
+              "razon_social": "MENSAJERÍA RÁPIDA DEL SUR S.L.",
+              "nif_emisor": "B90233808",
+              "pedido": "PO-2026-0712",
+              "total": "520.30",
+              "base": "430.00",
+              "iva": "90.30",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-5240_ofimática.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-5240",
+              "fecha": "2026-03-09",
+              "razon_social": "OFIMÁTICA CIEZA S.L.",
+              "nif_emisor": "B30455812",
+              "pedido": "PO-2026-0704",
+              "total": "4872.00",
+              "base": "4200.00",
+              "iva": "672.00",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion",
+                "iva_no_estandar"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-6702_limpiezas.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-6702",
+              "fecha": "2026-06-23",
+              "razon_social": "Limpiezas Turia S.L.",
+              "nif_emisor": "B98120774",
+              "pedido": "PO-2026-0716",
+              "total": "3538.00",
+              "base": "3050.00",
+              "iva": "488.00",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra",
+                "iva_no_estandar"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-6964_ofimática.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-6964",
+              "fecha": "2026-03-04",
+              "razon_social": "Ofimática Cieza S.L.",
+              "nif_emisor": "B30455812",
+              "pedido": "PO-2026-0496",
+              "total": "3480.00",
+              "base": "3000.00",
+              "iva": "480.00",
+              "metodo": "plantilla",
+              "avisos": [
+                "iva_no_estandar"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-7728_limpiezas2.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-7728",
+              "fecha": "2026-07-11",
+              "razon_social": "Limpiezas Turia S.L.",
+              "nif_emisor": "B98120774",
+              "pedido": "PO-2026-0812",
+              "total": "1149.50",
+              "base": "950.00",
+              "iva": "199.50",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-8801_suministros.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-8801",
+              "fecha": "2026-04-18",
+              "razon_social": "SUMINISTROS LEVANTE S.L.",
+              "nif_emisor": "B46102331",
+              "pedido": "PO-2026-0804",
+              "total": "2750.00",
+              "base": "2500.00",
+              "iva": "250.00",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion",
+                "iva_no_estandar"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-8812_electricidad.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-8812",
+              "fecha": "2026-06-30",
+              "razon_social": "Electricidad Montcada S.A.",
+              "nif_emisor": "A46990201",
+              "pedido": "PO-2026-1204",
+              "total": "3944.60",
+              "base": "3260.00",
+              "iva": "684.60",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-9007_catering.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-9007",
+              "fecha": "2026-04-27",
+              "razon_social": "Catering Hermanos Pico S.L.",
+              "nif_emisor": "B98120774",
+              "pedido": "PO-2026-0808",
+              "total": "2480.50",
+              "base": "2050.00",
+              "iva": "430.50",
+              "metodo": "plantilla",
+              "avisos": [
+                "texto_instruccion"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "F26-9012_electricidad.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "F26-9012",
+              "fecha": "2026-07-20",
+              "razon_social": "Electricidad Montcada S.A.",
+              "nif_emisor": "A46990201",
+              "pedido": "PO-2026-0816",
+              "total": "3248.00",
+              "base": "2800.00",
+              "iva": "448.00",
+              "metodo": "plantilla",
+              "avisos": [
+                "fecha_en_letra",
+                "iva_no_estandar"
+              ],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "FA-1123_construcciones.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "FA-1123",
+              "fecha": null,
+              "razon_social": "Construcciones Benimaclet S.A.",
+              "nif_emisor": "A46311208",
+              "pedido": "PO-2026-0805",
+              "total": "7502.00",
+              "base": "6200.00",
+              "iva": "1302.00",
+              "metodo": "cache",
+              "avisos": [
+                "texto_instruccion",
+                "campo_ausente"
+              ],
+              "confianza": null
+            }
+          },
+          {
+            "file_id": "FA-2508_consultoría.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "FA-2508",
+              "fecha": "2026-07-25",
+              "razon_social": "Consultoría Estratégica Ibérica S.L.",
+              "nif_emisor": "B87654321",
+              "pedido": "PO-2026-9999",
+              "total": "7126.90",
+              "base": "5890.00",
+              "iva": "1236.90",
+              "metodo": "plantilla",
+              "avisos": [],
+              "confianza": 1.0
+            }
+          },
+          {
+            "file_id": "FA-2967_seguridad.pdf",
+            "lote": 1,
+            "resultado": "ESCALAR",
+            "hechos": {
+              "num_factura": "FA-2967",
+              "fecha": null,
+              "razon_social": "Seguridad Alcores S.L.",
+              "nif_emisor": "B91455230",
+              "pedido": "PO-2026-0705",
+              "total": "1306.80",
+              "base": "1080.00",
+              "iva": "226.80",
+              "metodo": "cache",
+              "avisos": [
+                "texto_instruccion",
+                "campo_ausente"
+              ],
+              "confianza": null
+            }
+          }
+        ],
+        "total": 53,
+        "truncado": true,
+        "citas": [
+          "2026-0233-A_catering.pdf",
+          "2026-03-19_P008.pdf",
+          "2026-07-08_P010.pdf",
+          "2026-07-09_P010.pdf",
+          "2026-0811-B_catering.pdf",
+          "2026-14500-C_informática.pdf",
+          "2026-23904_construcciones.pdf",
+          "F26-2201_transportes.pdf",
+          "F26-3355_mensajería.pdf",
+          "F26-5240_ofimática.pdf",
+          "F26-6702_limpiezas.pdf",
+          "F26-6964_ofimática.pdf",
+          "F26-7728_limpiezas2.pdf",
+          "F26-8801_suministros.pdf",
+          "F26-8812_electricidad.pdf",
+          "F26-9007_catering.pdf",
+          "F26-9012_electricidad.pdf",
+          "FA-1123_construcciones.pdf",
+          "FA-2508_consultoría.pdf",
+          "FA-2967_seguridad.pdf"
+        ]
+      }
+    }
+  ],
+  "intento_anterior": {
+    "respuesta": {
+      "respuesta": "Ahora mismo no puedo consultar al modelo; usa `albertitos trace <file_id>`.",
+      "citas": [],
+      "herramientas_usadas": [],
+      "modelo": "deepseek-v4-flash",
+      "latencia_ms": 60133,
+      "estado": "degradado"
+    },
+    "llamadas": 1
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "53 ESCALAR, primeras cinco correctas, informa truncamiento.",
+    "metodo": "revisión de respuesta frente a evidencia de herramientas y lecturas de la copia"
+  }
+}
