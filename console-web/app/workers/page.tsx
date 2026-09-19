@@ -5,7 +5,6 @@ import { formatEur, formatNumber, formatPercent } from '@/lib/format'
 import { useEtapas } from '@/hooks/useEtapas'
 import { EtapaCard } from '@/components/workers/EtapaCard'
 import { EventosTable } from '@/components/workers/EventosTable'
-import { WorkflowOverview } from '@/components/workers/WorkflowOverview'
 import { Card } from '@/components/ui/Card'
 import { ErrorCard, LoadingCard } from '@/components/ui/states'
 
@@ -48,9 +47,9 @@ export default function EtapasPage() {
             <ErrorCard error={error} onRetry={refresh} retrying={loading} />
           </div>
         ) : initialLoading || !data ? (
-          <div className="mt-6 grid gap-4 xl:grid-cols-2">
+          <div className="mt-6 space-y-4">
             <LoadingCard label="Cargando etapas" rows={3} />
-            <LoadingCard label="Cargando eventos" rows={3} />
+            <LoadingCard label="Cargando eventos" rows={6} />
           </div>
         ) : (
           <>
@@ -106,16 +105,15 @@ export default function EtapasPage() {
               </div>
             </section>
 
-            <div className="mt-5 grid gap-5 xl:grid-cols-[.72fr_1.28fr]">
-              <WorkflowOverview etapas={data.etapas} ficheros={data.ficheros} />
-              <Card className="overflow-hidden">
-                <div className="flex items-center justify-between gap-4 border-b border-[#e5e8e3] px-5 py-4">
-                  <h2 className="text-[14px] font-semibold">Últimos eventos</h2>
-                  <p className="text-[14px] text-[#9aa39e]">De todas las etapas</p>
-                </div>
+            <Card className="mt-5 flex min-h-[28rem] flex-col overflow-hidden">
+              <div className="flex items-center justify-between gap-4 border-b border-[#e5e8e3] px-5 py-4">
+                <h2 className="text-[14px] font-semibold">Últimos eventos</h2>
+                <p className="text-[14px] text-[#9aa39e]">De todas las etapas</p>
+              </div>
+              <div className="min-h-0 flex-1 overflow-auto">
                 <EventosTable eventos={data.recientes} showEtapa />
-              </Card>
-            </div>
+              </div>
+            </Card>
           </>
         )}
       </div>
