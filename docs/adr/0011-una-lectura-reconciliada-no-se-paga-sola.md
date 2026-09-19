@@ -39,12 +39,16 @@ capa de texto) no se ven afectados.
 ## Consecuencias aceptadas
 - Cinco ESCALAR más para Alberto. Si la referencia privada esperaba PAGAR en esos cinco, los perdemos; el
   riesgo simétrico —pagar a un IBAN reconstruido— nos pareció peor.
-- **Aviso para Miguel, y es de contrato:** `confianza` está en la lista de campos excluidos de
+- **De contrato, resuelto con Miguel (19/09):** `confianza` está en la lista de campos excluidos de
   `InvoiceFacts.hash()` (`core/contracts.py`), junto a `metodo`, `extractor_version` y `texto_sospechoso`.
-  Desde este ADR la decisión **sí** depende de `confianza`, así que un hecho reextraído que sólo cambie la
-  confianza no cambia el `hechos_hash` y el linaje no marcará la decisión para recalcular. Hoy no muerde
-  porque el cambio de norma obliga a reprocesar de todos modos, pero el invariante "si cambia lo que decide,
-  cambia el hash" está roto mientras siga excluido.
+  Desde este ADR la decisión **sí** depende de `confianza`, así que el `hechos_hash` ya no cubre todo lo
+  que decide. **El linaje no se lo salta**: además de comparar hashes, marca como impactados los hechos
+  reescritos después de la decisión (`_posterior(h_en, d_en)` en `pipeline/linaje.py`, motivo "hechos
+  reescritos tras decidir"), que es justo el camino por el que llega una reextracción que sólo cambia la
+  confianza. Lo fija `tests/test_linaje.py::test_solo_cambia_la_confianza_y_tambien_se_redecide`.
+  Meter `confianza` en el hash se descarta hoy, decisión de Miguel: cambiaría el hash de todos los hechos
+  ya guardados y la auditoría pondría en rojo cualquier BD que no se reimportase antes. Queda anotado que
+  la red que nos cubre es la marca de tiempo, no el hash.
 - Como el ADR-0010, es un cambio in situ sobre la v3: la etiqueta de versión no cambia y hay que reprocesar
   explícitamente.
 
