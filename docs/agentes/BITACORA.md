@@ -584,3 +584,14 @@ Plantilla (cópiala tal cual):
 - H1 y H2 cerrados; partes en `partes/PARTE-08.md`. Corrección de hora: la entrada «10:50 · H2 · termino» se escribió a las 10:44.
 - **P0-1: vale la implementación de Miguel** (`e3b3764` en `miguel/pipeline`, tabla `identidades`), que llegó a la vez que el parche de H1. **`dist/ensayo/h1/identicos.patch` queda superado y no se aplica** (además, no entraba en `main`: `contratos.md` choca con `70ed35b` y `tests/test_identicos.py` sólo existe en esta rama). Lo que sigue valiendo de H1: el fixture `lote2_identicos/`, `tests/test_identicos.py` y el ensayo de punta a punta.
 - **RESPONDO A Miguel:** valido ahora `miguel/pipeline` + esta rama con los tests de H1 (en un worktree de `dist/ensayo/p01/`), el fixture de punta a punta y R5 sobre una copia de la BD real. Resultado en la siguiente entrada.
+
+### 19/09 11:10 · Javier · P0-1 de Miguel validado con lo de H1
+- **RESPONDO A Miguel:** tu `miguel/pipeline` (`58e2bd8`) mezclado con `javier/ingesta` (`647e995`, ya con `main`) en un worktree, sin conflictos (sólo la bitácora, por unión):
+  - `make check` en Linux: **430 passed**; sólo fallan los 5 xfail estrictos de H1, que ahora pasan (XPASS). Tus 7 fallos de Windows aquí pasan.
+  - Tests de H1 como tests normales (`--runxfail`): **8 passed** (R1-R4 y los controles); los dos «hoy» se saltan solos.
+  - **R5**, copia de la BD real (`c66d00e45be3`): `reprocess --todo --erp v1` → 500 de 500 · 0 cambian; `package` con auditoría → APTO **438/53/9**, `outcomes.jsonl` **idéntico byte a byte** a la entrega publicada (`1ec4be206089`).
+  - **De punta a punta** con `data/fixtures/lote2_identicos/` (`dist/ensayo/p01/e2e.log`): el verificador **avisa** («copia exacta… saldrá ESCALAR (P0-1)»), ingest 4 → reprocess (`duplicados: +5`) → `package` APTO lote 1 (500) y lote 2 (4, todas ESCALAR) → `validate` APTO/APTO. Los motivos nombran a la pareja («el mismo PDF que 2026-01-08_P001.pdf (lote 1)») y `trace` de la copia sale legible con «copia exacta de …» y el paso DUPLICADO.
+  - BD real y entrega sin tocar (mismas huellas antes y después).
+- **Orden propuesto:** Miguel mergea `miguel/pipeline` a `main` (en `main` no está `test_identicos.py`, así que sale verde). Luego yo hago `/sync` y quito los xfail en el mismo commit (`dist/ensayo/p01/tests-identicos-sin-xfail.patch`, validado arriba) y abro la PR de `javier/ingesta`.
+- **Una nota menor para Miguel:** en la traza de una copia el porqué sale «hechos cambiados». Sería más claro «duplicado nuevo: copia exacta de X». No cambia resultados.
+- Hecho en esta rama: `verificar_material`, la skill `/lote2` y `P0-1-IDENTICOS.md` ya nombran tu implementación en vez del parche de H1; ESTADO-BACKEND, al día (P0-1, P0-4 y trazabilidad hechos en tu rama; **P0-5 nuevo**, el nombre repetido entre lotes con distinto contenido, lo decides tú).

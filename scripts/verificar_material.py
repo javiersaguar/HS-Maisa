@@ -48,8 +48,8 @@ NOMBRE_REGLA = re.compile(r"norma|regla|instruccion|manual|readme|bases", re.I)
 def pipeline_admite_copias() -> bool:
     """P0-1: ¿el pipeline guarda otro nombre para el mismo PDF sin tocar el original?
 
-    Se detecta en el código, no se supone: lo añade el parche de docs/agentes/P0-1-IDENTICOS.md
-    (`core.db.guardar_identidad`). Sin él, un PDF idéntico renombrado o reescribe el file_id del original
+    Se detecta en el código, no se supone: lo añade P0-1 (Miguel, `e3b3764`: tabla `identidades` y
+    `core.db.guardar_identidad`). Sin él, un PDF idéntico renombrado o reescribe el file_id del original
     (el lote 1 pierde su línea) o se colapsa con su pareja: los dos caminos son NO APTO, así que se para.
     Con él, cada nombre tiene su línea y todos salen ESCALAR: basta con avisar.
     """
@@ -319,8 +319,8 @@ def verificar(
                 else:
                     inf.errores.append(
                         f"PDF idéntico por SHA-256 al lote 1: {nombre} / {hashes_originales[huella]}; "
-                        "ingest reasignaría el original. Falta el parche P0-1 "
-                        "(docs/agentes/P0-1-IDENTICOS.md): pídeselo a Miguel."
+                        "ingest reasignaría el original. Esta rama no tiene P0-1 (Miguel, e3b3764): "
+                        "haz /sync con main antes de ingerir."
                     )
             if huella in hashes:
                 if admite:
@@ -331,8 +331,8 @@ def verificar(
                 else:
                     inf.errores.append(
                         f"PDF idéntico por SHA-256 dentro del material: {hashes[huella]} / {nombre}; "
-                        "ingest colapsaría ambos nombres. Falta el parche P0-1 "
-                        "(docs/agentes/P0-1-IDENTICOS.md). No alterar el PDF para evitar este control."
+                        "ingest colapsaría ambos nombres. Esta rama no tiene P0-1 (Miguel, e3b3764): "
+                        "haz /sync con main. No alterar el PDF para evitar este control."
                     )
             hashes[huella] = nombre
             clave = clave_nombre(p.name)

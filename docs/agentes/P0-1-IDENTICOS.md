@@ -1,5 +1,10 @@
 # P0-1 · El mismo PDF con otro nombre · para Miguel (H1, 19/09 11:00)
 
+> **Superado (19/09 11:10).** P0-1 va con la implementación de Miguel, `e3b3764` en `miguel/pipeline` (tabla
+> `identidades`, mismo diseño). **El parche `dist/ensayo/h1/identicos.patch` no se aplica.** Lo que sigue valiendo de
+> H1: el fixture `data/fixtures/lote2_identicos/`, `tests/test_identicos.py` y el ensayo. Validación de la rama de
+> Miguel con todo eso (R1-R5, de punta a punta): bitácora, 19/09 11:10. Este documento queda como registro del problema.
+
 **Qué pasa hoy.** `ficheros` usa la sha256 como clave, y los hechos y las decisiones también van por sha256. Con una copia
 byte a byte renombrada hay tres fallos, y los tres nos dejan sin premio o pagan dos veces:
 - **(a)** Una copia de un PDF del lote 1 que llega en el lote 2: `guardar_fichero` hace `ON CONFLICT(sha256) DO UPDATE SET file_id, lote`. El lote 1 pierde su línea y `package` se niega.
