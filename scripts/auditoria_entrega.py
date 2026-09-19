@@ -56,6 +56,8 @@ MAX_EJEMPLOS = 8
 UMBRAL_ESCALAR = 0.15
 UMBRAL_NO_PAGAR = 0.05
 ENTREGAS = {1: "outcomes.jsonl", 2: "outcomes_lote2.jsonl"}
+# Avisos que no dicen nada malo de la factura: cómo se leyó (escaneada) o cómo se escribió la fecha.
+AVISOS_BENIGNOS = {Aviso.SIN_TEXTO, Aviso.FECHA_EN_LETRA}
 # Lo mismo que descarta `extract/llm.py::_fragmento_valido`: hay modelos que rellenan el campo con la palabra
 # "None" en vez de dejarlo nulo. Un hecho guardado antes de ese filtro sigue llevándola (scan_025, 18/09).
 NO_ES_FRAGMENTO = {
@@ -484,6 +486,26 @@ def comprobar_evidencia(
     ]
 
 
+def comprobar_avisos_en_pagar(filas: list[Fila], lotes: list[int]) -> Comprobacion:
+    """PAGAR cuyos hechos traen algún aviso que no es benigno. D2 lo auditó a mano el 19/09 (0 de 443)."""
+    hallazgos = []
+    for f in filas:
+        if f.lote not in lotes or f.resultado != "PAGAR" or f.hechos is None:
+            continue
+        raros = [a.value for a in f.hechos.avisos if a not in AVISOS_BENIGNOS]
+        if raros:
+            hallazgos.append(f"{f.file_id}: {', '.join(raros)}")
+    return _comprobacion(
+        "pagar_con_avisos",
+        "PAGAR con un aviso del extractor que no es benigno",
+        hallazgos,
+        AMBAR,
+        "La norma la paga aunque el extractor avisó de algo que ninguna regla mira. Caso conocido: "
+        "`documento_superpuesto` mientras no esté en ANOMALIAS_HUMANO de rules/norma_v3.py (lo decide "
+        "Mónica). Mira `albertitos trace <file_id>` y díselo a quien lleve la norma.",
+    )
+
+
 def comprobar_distribucion(informe: Informe, filas: list[Fila], lotes: list[int]) -> Comprobacion:
     hallazgos = []
     for lote in lotes:
@@ -599,6 +621,7 @@ def auditar(
     comps.append(comprobar_pagar(filas, lotes, snaps))
     comps.extend(comprobar_desfase(filas, lotes))
     comps.extend(comprobar_evidencia(filas, lotes, dirs))
+    comps.append(comprobar_avisos_en_pagar(filas, lotes))
     comps.append(comprobar_distribucion(informe, filas, lotes))
     comps.append(comprobar_confianza(filas, lotes))
     comps.extend(comprobar_entrega_en_disco(filas, lotes, dirs, entrega, informe.notas))

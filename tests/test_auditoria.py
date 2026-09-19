@@ -173,6 +173,15 @@ def test_pagar_de_un_pedido_ya_pagado_es_rojo(bd):
     assert c.nivel == aud.ROJO and "PAGADA" in c.ejemplos[0]
 
 
+def test_pagar_con_documento_superpuesto_es_ambar_no_rojo(bd):
+    """scan_025 reextraído: con la v3 de hoy DOCUMENTO_SUPERPUESTO no escala. Se avisa; decide Mónica."""
+    alta(bd, "scan_025.pdf", avisos=[Aviso.SIN_TEXTO, Aviso.DOCUMENTO_SUPERPUESTO])
+    inf = auditar(bd)
+    c = rojo(inf, "pagar_con_avisos")
+    assert inf.ok and c.nivel == aud.AMBAR
+    assert c.ejemplos == ["scan_025.pdf: documento_superpuesto"]
+
+
 def test_texto_sospechoso_none_es_rojo(bd):
     """scan_025.pdf: el modelo devolvió la cadena "None" y la factura escalaba por ese motivo."""
     alta(
