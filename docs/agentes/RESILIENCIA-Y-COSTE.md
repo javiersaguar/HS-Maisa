@@ -248,6 +248,11 @@ reanudación se sirve de la caché. El JSONL final sale con el mismo sha256 que 
 conteste. Lo que de verdad puntúa —que con el LLM caído nada se paga a ciegas y `package` se niega— es el
 paso 1, y ese es offline de todas formas.
 
+**Corrección (08:40):** los 39,5 s eran de una máquina cargada (E2 y E3 trabajaban a la vez en el mismo portátil;
+cada `run` tardaba 9-10 s). Repetido sin carga: **3,6 s** aquí, con el ERP vivo y con el ERP apuntando a un puerto
+muerto (la demo no lo usa: decide con el snapshot), y **4,7 s** en el clon limpio de F2. La cifra para la chuleta es
+~4 s; el paso con red sigue siendo el que oscila.
+
 Si el wifi de la sala va bien, el mismo comando sin la bandera hace las 3 lecturas de verdad. Y si falla
 hasta el portátil, `docs/demo/transcripcion-demo-caos.txt` es la ejecución literal con red, tokens incluidos.
 
