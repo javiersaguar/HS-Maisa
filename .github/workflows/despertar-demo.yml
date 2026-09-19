@@ -1,0 +1,27 @@
+name: despertar la demo pública
+
+# El plan gratuito de Render duerme el servicio a los 15 minutos sin tráfico y el primer acceso tarda ~50 s.
+# Esto lo mantiene despierto SÓLO en la ventana de la defensa, sin depender de ningún portátil encendido.
+# Fuera de esa ventana no corre: las horas de instancia del plan gratuito son limitadas (750 al mes en total).
+# Para despertarla en otro momento: pestaña Actions → este workflow → «Run workflow».
+
+on:
+  schedule:
+    # cada 10 min, domingo 20/09 de 05:00 a 13:00 UTC (07:00 a 15:00 en Madrid)
+    - cron: '*/10 5-13 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  despertar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Puente y chat
+        run: |
+          for url in https://albertitos-puente.onrender.com/salud https://albertitos-chat.onrender.com/chat/salud; do
+            code=$(curl -s -m 120 -o /dev/null -w '%{http_code} en %{time_total}s' "$url") || code="sin respuesta"
+            echo "$url -> $code"
+          done
+          # Sólo /salud: no gasta ninguna llamada al modelo ni toca la BD.
