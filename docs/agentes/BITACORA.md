@@ -880,7 +880,7 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **PARA Miguel:** ¿visto bueno a que J3 publique ya el lote 1 en 445/46/9 (ADR-0017)? Y para M2: la trampa es `e18`, que la capa de texto da por limpia (total impreso 1.815 = ERP; a mano, 18.150).
 - **PARA todos:** la regla nueva no está publicada (ni en la web ni en el repo). Quien la vea en el canal, literal y con hora en `docs/hitos.md`. P0-2 al mentor ya.
 
-### 21:15 · Miguel · lote 2: M1, M2 y M4 en `main`; M3 (norma v4) en PR
+### 20:10 · Miguel · lote 2: M1, M2 y M4 en `main`; M3 (norma v4) en PR
 - **M1 · moneda** (`5efd55c`, ADR-0019): `InvoiceFacts.moneda`; el lote 1 conserva su hash (500/500).
 - **M2 · anotación a mano** (`65fc0a0`, ADR-0020): `Aviso.ANOTACION_A_MANO` si un PDF con texto trae tipografías manuscritas o trazos curvos → R6 escala. Barrido de 540 PDF: sólo e16, e17 y e18; en el lote 1, ninguno.
 - **M4 · P0-2 y duplicados entre lotes** (ADR-0021). **PARA todos, cambia cómo se reprocesa:**

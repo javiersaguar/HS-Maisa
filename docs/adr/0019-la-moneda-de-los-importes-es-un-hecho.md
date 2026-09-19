@@ -1,6 +1,6 @@
 # ADR-0019 · Los importes llevan su moneda, y el hash de lo ya guardado no cambia
 
-- **Estado:** aceptado (Miguel, 19/09). **Fecha:** 2026-09-19 19:40 · **Dueño:** Miguel · **Módulos:** core/, extract/
+- **Estado:** aceptado (Miguel, 19/09). **Fecha:** 2026-09-19 19:33 · **Dueño:** Miguel · **Módulos:** core/, extract/
 
 ## Contexto
 En el lote 2 hay 8 facturas en divisa (e02 y e10 en USD, e11 en GBP, e12 y e15 en CHF, e13 en BRL, e14 en MXN,

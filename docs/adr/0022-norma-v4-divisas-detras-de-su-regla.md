@@ -1,10 +1,10 @@
 # ADR-0022 · La norma v4 es la v3 más una regla de moneda, y la divisa escala hasta que haya tipo de cambio
 
-- **Estado:** propuesto (Miguel, 19/09 21:15). Lo revisa Mónica; se cierra cuando se publique la regla nueva.
+- **Estado:** propuesto (Miguel, 19/09 20:10). Lo revisa Mónica; se cierra cuando se publique la regla nueva.
 - **Fecha:** 2026-09-19 · **Dueño:** Miguel (M3) · **Módulos:** rules/
 
 ## Contexto
-El lote 2 trae "una regla nueva", pero a las 21:00 no está publicada ni en la web ni en el repo. Lo que sí traen
+El lote 2 trae "una regla nueva", pero a las 20:10 no está publicada ni en la web ni en el repo. Lo que sí traen
 los datos (`docs/agentes/lote2/HIPOTESIS.md`) son 8 facturas en divisa (USD, GBP, CHF, BRL, MXN, JPY) contra
 pedidos y asientos en EUR. El tipo implícito (pedido / total) es fijo en cada moneda: USD 0,92, GBP 1,17, CHF 1,05,
 BRL 0,1613, MXN 0,0469, JPY 0,00617. Con la v3, esas 8 escalan por R2 con un motivo falso: "el total no coincide

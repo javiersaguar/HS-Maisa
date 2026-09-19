@@ -1,7 +1,7 @@
 # ADR-0021 · Cada lote se decide en su contexto, y el lote 2 no reabre el lote 1
 
 - **Estado:** aceptado por Miguel (19/09). Pregunta abierta al mentor (P0-2): ¿el lote 1 debe reprocesarse con
-  el ERP del sábado? **Fecha:** 2026-09-19 20:40 · **Dueño:** Miguel · **Módulos:** pipeline/, cli
+  el ERP del sábado? **Fecha:** 2026-09-19 20:03 · **Dueño:** Miguel · **Módulos:** pipeline/, cli
 
 ## Contexto
 El ERP del sábado (v2) registra como PAGADA (asiento AS-90001, 01/09) el pedido PO-2026-0071. Es justo el pago

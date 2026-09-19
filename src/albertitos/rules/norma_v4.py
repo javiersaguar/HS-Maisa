@@ -1,6 +1,6 @@
 """NORMA DE PAGOS v4 = la v3 + la regla nueva del lote 2 (sábado 19/09). Dueño: Miguel (M3); la revisa Mónica.
 
-A las 21:00 la regla nueva no está publicada. Esta v4 lleva la hipótesis de divisas (`docs/agentes/lote2/HIPOTESIS.md`:
+A las 20:10 del sábado la regla nueva no está publicada. Esta v4 lleva la hipótesis de divisas (`docs/agentes/lote2/HIPOTESIS.md`:
 8 facturas en USD, GBP, CHF, BRL, MXN o JPY contra pedidos en EUR, con un tipo implícito fijo por moneda) detrás de
 su propia regla, R7, para poder cambiarla sin tocar las demás cuando llegue el texto literal (ADR-0022):
 
