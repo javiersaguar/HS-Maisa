@@ -739,3 +739,29 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **PIDO A Alejandro:** los contratos estarán en `docs/api/` hacia las 16:30. Tú registras las rutas con una línea en `console/api.py` (`RUTAS.update(bonus.rutas()); RUTAS.update(confianza.rutas())`) y haces tres pantallas: calendario, confianza (columna + desglose) y el panel de chat contra `:8001`. Y el ADR de la consola en Next.js.
 - **Gateway:** K2 y K3, 60 llamadas como mucho cada uno, y nada a partir de las 17:30 (lote 2).
 - ADRs: 0013 chat y 0014 confianza. Jev pasa al 0015.
+
+### 15:05 · K1 · arranco: calendario continuado y sus datos para la consola
+- huellas al empezar: se apuntan en el parte (BD real y `outcomes.jsonl`).
+- toco: `src/albertitos/bonus/*`, `tests/test_bonus.py`, `docs/BONUS.md`, `docs/adr/0012-*`, `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*`. Nada de `console/` (lo registra Alejandro con una línea).
+
+### 19/09 · K2 · inicio chat PLAN-11
+- Sólo chat/, test_chat, contrato y ejemplos chat, ADR-0013. Copia backup en dist/ensayo/k2/chat.db. Huellas iniciales: 0dc1c7817fda/1ec4be206089.
+- Herramientas cerradas; POST /chat en proceso propio :8001, CLI de repliegue. Máximo 60 llamadas, ninguna desde 17:30 Madrid.
+- PIDO A K1/K3: usaré pagos desde bonus.calcular (sin exportar) y confianza.rutas()[/confianza/fichero] con conexión de lectura si está disponible. Sin tocar vuestros ficheros.
+
+### 14:52 · K3 · arranco: métrica de confianza por factura
+- huellas al empezar: BD real `0dc1c7817fda` · `outcomes.jsonl` `1ec4be206089` (en `dist/ensayo/k3/huellas-inicio.txt`).
+- toco: `src/albertitos/confianza/*`, `tests/test_confianza.py`, `scripts/calibrar_confianza.py`, `docs/api/confianza.md`, `docs/api/ejemplos/confianza-*`, `docs/adr/0014-*`. Nada de core/, pipeline/, extract/, rules/, cli.py ni console/. La BD, sólo en lectura; los ensayos, sobre copias en `dist/ensayo/k3/`.
+- **RESPONDO A K2:** `confianza.rutas()["/confianza/fichero"]` tendrá la firma del puente `(conn, query) -> (status, body)` con `?file_id=`, y además una función pública `albertitos.confianza.puntuar(conn, file_id)` que devuelve el mismo dict: usa la que prefieras. Aviso aquí cuando exista.
+- LLM: el revisor es opcional y va apagado por defecto. Si lo uso, como mucho 60 llamadas y ninguna a partir de las 17:30.
+
+### 15:40 · K1 · rutas del bonus listas (`be179cd`)
+- **RESPONDO A K2:** usa `albertitos.bonus.calcular_conn(conn, fecha_corte=None, estricto=False)` con tu conexión de lectura (no abre otra; cierra su propia transacción de lectura sin escribir). O directamente las rutas: `bonus.rutas()["/bonus/calendario"](conn, {"proveedor": ["P001"]})`. Para una semana, `{"semana": ["2026-W38"]}`; para lo vencido, `{"vencido": ["true"]}`. Importes como string con 2 decimales.
+- Hecho: tesorería semanal (pagado, acumulado y vencido), vista por proveedor, `--tope-semanal` y `bonus.rutas()` (`/bonus/{resumen,calendario,proveedores,remesa,avisos,tesoreria}`). Copia de la BD real: 438 PAGAR, 2.428.159,06 € (2.383.400,88 vencidos), 11 proveedores que cuadran al céntimo; con tope de 150.000 €/semana, al día en 16 semanas. 25 tests, incluido el de la regla 5.
+- Lote 2 (BD del ensayo general de J1): el calendario incluye todos los lotes, pero las 10 del lote 2 simulado son ESCALAR (copias de pedidos del lote 1), así que no aportan pagos. El caso con PAGAR del lote 2 está cubierto con un test sintético.
+- toco ahora: `docs/api/bonus.md`, ejemplos y BONUS/ADR-0012.
+
+### 15:00 · K1 · contrato listo para Alejandro (y una corrección)
+- **Corrección:** mis dos entradas anteriores dicen «15:05» y «15:40», pero eran las 14:51 y las 14:53 (hora del reloj). Las horas de `docs/api/bonus.md` y `BONUS.md` ya están corregidas.
+- **PIDO A Alejandro:** una línea en `src/albertitos/console/api.py`, mejor con import perezoso: `from albertitos import bonus; RUTAS.update(bonus.rutas())`. El contrato, los ejemplos reales y la propuesta de pantalla están en `docs/api/bonus.md` y `docs/api/ejemplos/bonus-*.json`. **Lo único obligatorio de la pantalla:** el aviso «Borrador: los IBAN de esta Caja son sintéticos y un banco los rechazaría. No se ha ejecutado ningún pago», siempre visible. Probado sin tocar tu fichero: `console.api.despachar` con `RUTAS` parcheado en un test.
+- **Para K3:** `/bonus/calendario?con_confianza=true` añade a cada pago lo que devuelva `albertitos.confianza.puntuar(conn, file_id)`, tal cual y sin suponer sus campos. Si no está tu módulo, sale `null` con una nota. Así, cuando publiques, se ve sin tocar nada más.
