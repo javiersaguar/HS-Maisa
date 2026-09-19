@@ -79,6 +79,7 @@ def test_factura_perfecta_se_paga(maestro, erp):
             "v3.R6",
         ),
         (dict(avisos=[Aviso.DUPLICADO_SOSPECHOSO]), "v3.R6"),
+        (dict(avisos=[Aviso.DOCUMENTO_SUPERPUESTO]), "v3.R6"),  # scan_025: otro proveedor dentro
     ],
 )
 def test_una_regla_falla_escala(maestro, erp, cambio, regla):
@@ -109,6 +110,22 @@ def test_pedido_ya_pagado_no_se_paga(maestro, erp):
     assert d.resultado == Resultado.NO_PAGAR
     assert "v3.R5" in d.reglas_incumplidas
     assert "PAGADA" in d.motivo_principal
+
+
+def test_lectura_reconciliada_no_se_paga(maestro, erp):
+    # scan_006/009/011/012/017: las dos lecturas de visión discrepaban y ganó la que casa con el
+    # maestro. La R1 ya no puede fallar para ese campo, así que la duda la resuelve una persona.
+    d = norma_v3.decidir(hechos(confianza=0.6), maestro, erp, CTX)
+    assert d.resultado == Resultado.ESCALAR
+    assert "v3.R6" in d.reglas_incumplidas
+    m = next(x for x in d.motivos if x.regla_id == "v3.R6")
+    assert m.evidencia["confianza"] == 0.6 and "no es firme" in m.detalle
+
+
+def test_frontera_confianza(maestro, erp):
+    # una lectura limpia se paga; los 471 con capa de texto no traen confianza y no deben verse afectados
+    assert norma_v3.decidir(hechos(confianza=1.0), maestro, erp, CTX).resultado == Resultado.PAGAR
+    assert norma_v3.decidir(hechos(confianza=None), maestro, erp, CTX).resultado == Resultado.PAGAR
 
 
 def test_motivos_llevan_evidencia_legible(maestro, erp):
