@@ -40,7 +40,10 @@
       "docs/demo/*",
       "docs/agentes/PLAN-11.md",
       "docs/agentes/partes/PARTE-10.md",
-      "docs/agentes/PROMPT-ALEJANDRO-BONUS.md"
+      "docs/agentes/PROMPT-ALEJANDRO-BONUS.md",
+      "docs/agentes/PROMPT-ALEJANDRO-CONFIANZA.md",
+      "docs/agentes/PROMPT-ALEJANDRO-CHAT.md",
+      "docs/adr/README.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
