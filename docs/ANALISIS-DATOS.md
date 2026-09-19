@@ -14,6 +14,10 @@ snapshot v1) y `data/fixtures/hechos_caja.jsonl` (los 500 hechos que el pipeline
 decidió). **Ninguna cifra de aquí es verdad etiquetada por humanos**: describen el material y lo que la
 norma v3 hace con él, no si ese resultado es el correcto.
 
+> **Alcance.** Las secciones 1-11 son el **lote 1** (500 facturas, norma v3, ERP v1), tal como estaban el
+> sábado a mediodía. El **lote 2** llegó el sábado a las 18:00 con 40 facturas más, 4 proveedores
+> extranjeros, un ERP v2 y la norma v4: está en la **sección 12**, y con él el total pasa a **540**.
+
 ---
 
 ## 1 · El maestro de proveedores: son 11, no 13
@@ -102,6 +106,8 @@ legible. Por mes: enero 51, febrero 54, marzo 82, abril 75, mayo 80, junio 86, j
 > el 18 de septiembre, **ninguna factura del lote 1 tiene fecha futura**. La regla 4 no rechaza ni una sola
 > por ese motivo: sus 3 fallos son fechas ilegibles o imposibles. La pregunta al mentor sobre respecto a
 > qué fecha se evalúa "no futura" **no cambia ni un resultado del lote 1**; sólo importa para el lote 2.
+> **Con el lote 2 ya dentro, tampoco cambia nada**: sus facturas van del 2 de enero al 27 de agosto y R4 no
+> tumba ninguna (sección 12).
 
 **Avisos emitidos por el extractor** sobre los 500 (un PDF puede llevar varios):
 
@@ -208,6 +214,9 @@ ADR-0017 (era 438/53/9 en la entrega del sábado por la mañana).
 
 **Los dos juntos, que es lo entregado:** 540 facturas, **468 PAGAR · 62 ESCALAR · 10 NO_PAGAR** (entrega `d2ade3f`).
 
+Con el lote 2: **15** proveedores · **555** pedidos · **556** asientos y **10** PAGADA · **540** facturas ·
+**8** en divisa · **3** manuscritas · **7** idiomas · **461/69/10** en total (**23/1/16** las 40 nuevas).
+
 ## 11 · Cómo se reproduce
 
 Con el bridge levantado (`make erp-fast` en otra terminal), un script de lectura pura que carga el maestro
@@ -222,27 +231,82 @@ Los recuentos del maestro y de los pedidos salen de `openpyxl` sobre las hojas `
 
 ## 12 · El lote 2: 40 facturas que traen lo que el lote 1 no tenía
 
-Material: commit `f831e34` del repo de participantes (19/09 17:57). Las cifras salen de
-[`agentes/lote2/EXTRACCION.md`](agentes/lote2/EXTRACCION.md), que las midió PDF a PDF.
+**20/09/2026 · Mónica y Javier** · material: commit `f831e34` del repo de participantes (19/09 17:57),
+`data/lote2/` y los 40 hechos de `data/fixtures/hechos_lote2.jsonl`. El detalle PDF a PDF está en
+[`agentes/lote2/EXTRACCION.md`](agentes/lote2/EXTRACCION.md).
 
-**Las fuentes crecen, y en otro formato.** Los proveedores y pedidos nuevos vienen en **CSV**, no en el Excel:
-`proveedores_nuevos.csv` (P012 alemán, P013 francés, P014 brasileño, P015 japonés) y `pedidos_nuevos.csv` (39).
-El maestro pasa a 15 proveedores y 555 pedidos. El ERP suma 40 asientos (556) y uno de ellos, `AS-90001`, deja
-**PAGADA** a `PO-2026-0071`, que es un pedido **del lote 1**.
+**Las fuentes crecen, y en otro formato.** Los proveedores y pedidos nuevos vienen en **CSV**, no en el Excel.
+Los cuatro proveedores nuevos son **todos extranjeros**, que es lo que rompe los supuestos del lote 1:
+
+| | Razón social | Identificador | IBAN | Ciudad |
+|---|---|---|---|---|
+| P012 | Müller & Partner GmbH | `DE812345678` (IVA alemán) | DE89… | Hamburg |
+| P013 | Consulting Méridional SARL | `FR40303265045` (IVA francés) | FR76… | Marseille |
+| P014 | Serviços Aljarafe Ltda | `12.345.678/0001-95` (CNPJ) | BR97…`493C1` | São Paulo |
+| P015 | Tokyo Systems K.K. | `5010401075570` (número corporativo) | `JP01 0001…` | Tokyo |
+
+Ninguno de esos cuatro es un NIF español, así que el validador del lote 1 los habría marcado **todos** como
+`nif_invalido` y R6 los habría escalado. Por eso `formatos.py` valida ahora el IVA europeo, el CNPJ con sus dígitos
+de control y el número corporativo japonés, y el IBAN por longitud de país. **Japón no usa IBAN**: el de P015 no lo
+es y el sistema lo dice (`iban_invalido` en `e09`) en vez de callarse. El IBAN brasileño, con letras al final, sí
+es válido.
+
+El maestro pasa a **15 proveedores y 555 pedidos** (versión `f504377103b2`); los **39 pedidos nuevos** están todos
+`ABIERTO` y suman **149.657,38 €** (de 629,20 € a 15.596,90 €). El ERP suma 40 asientos (**556**, con **10**
+PAGADA) y uno de ellos, `AS-90001`, deja **PAGADA** a `PO-2026-0071`, que es un pedido **del lote 1**: el que pagó
+`factura_4635.pdf`. Ese asiento es la razón de que cada lote se decida en su contexto (ADR-0021).
 
 **Ninguna escaneada.** Las 40 tienen capa de texto: 23 se resuelven por plantilla y 17 por LLM de texto. Es la
 diferencia más grande con el lote 1, donde 29 iban por visión.
 
+| | |
+|---|---|
+| De dos páginas | 2, ambas con «Suma y sigue» — el total está en la última página |
+| Con tilde en el nombre | 2 (NFC, como el lote 1) |
+| Fechas | del **2 de enero al 27 de agosto de 2026**, ninguna ilegible y **ninguna futura** |
+| Avisos | `iva_no_estandar` 8 · `fecha_en_letra` 5 · `anotacion_a_mano` 3 · `duplicado_sospechoso` 1 · `iban_invalido` 1 · `total_no_cuadra` 1 |
+
 **Lo que sí es nuevo y cuesta:**
 - **Divisas: 8 facturas** en USD, GBP, CHF, BRL, MXN y JPY, contra pedidos en euros. Siete declaran **IVA 0 %** de
-  exportación. El Excel y el ERP no tienen columna de moneda: todo lo suyo es en euros. Los tipos implícitos son
-  fijos por moneda (el mismo en fechas distintas) y, convertidos, cuadran al céntimo con el pedido.
+  exportación. El Excel y el ERP no tienen columna de moneda: todo lo suyo es en euros.
 - **Siete idiomas** (castellano, inglés, catalán, portugués, francés, italiano y alemán) y **15 fechas escritas en
-  letra**, del tipo «am siebten März zweitausendsechsundzwanzig».
+  letra**, del tipo «am siebten März zweitausendsechsundzwanzig». Ojo con el aviso: `fecha_en_letra` sólo salta con
+  meses en español o portugués, así que marca 5 de esas 15. Es informativo y no decide nada.
 - **Tres facturas a mano:** `e16` sólo la fecha, `e17` entera, y `e18` con el total tachado y corregido
   («15.000,00 / 18.150,00 corregido A.»). `e18` es la peligrosa: el texto impreso cuadra con el ERP.
-- **Identificadores extranjeros:** IVA alemán y francés, CNPJ brasileño y número corporativo japonés. Ninguno es un
-  NIF español, y el «IBAN» japonés no existe como tal.
+- **Identificadores extranjeros:** IVA alemán y francés, CNPJ brasileño y número corporativo japonés.
+
+### 12.1 · Divisas: el tipo es fijo, no el del día, y no se deduce del IBAN
+
+El tipo implícito (pedido ÷ total) **es el mismo para la misma moneda en fechas distintas**: USD 0,92 el 7 de marzo
+y el 5 de mayo; CHF 1,05 el 22 de mayo y el 15 de junio. Es decir, **los pedidos se valoraron con un tipo fijo por
+moneda**, no con el del día de la factura, y convertidos cuadran al céntimo con el pedido. Convertir con el tipo de
+la fecha de devengo rompería ese cuadre.
+
+La divisa **no se deduce del IBAN**: hay facturas en dólares y en francos de proveedores españoles con IBAN ES, y
+la única con IBAN extranjero inesperado es `e11`, cuyo IBAN GB **no es su divisa, es el fraude** (el maestro tiene
+un ES para ese proveedor). Deducirla del IBAN sería, además de incorrecto, tapar esa trampa.
+
+Hoy **no convertimos**: `norma_v4.TIPOS_CAMBIO` está vacía a propósito (ADR-0022), R7 escala las 8 y deja en la
+evidencia el importe del pedido en euros y el tipo implícito. Medido: **si se rellenan los tipos fijos, las 8
+siguen siendo ESCALAR**, porque siete facturan con IVA 0 y en `e14` base + IVA no da el total. Lo que decide esas
+ocho es el IVA, no la moneda. Queda como pregunta para los mentores ([`hitos.md`](hitos.md)).
+
+### 12.2 · Qué falla, regla por regla
+
+El cruce sale más limpio que en el lote 1: **ningún pedido inexistente, ningún pedido facturado dos veces dentro
+del lote y ninguna fecha futura**. La única colisión es con el lote 1: `2026-08-22_P010.pdf` factura
+`PO-2026-0071`, que el ERP v2 ya da por PAGADA.
+
+| Regla | Facturas que la incumplen |
+|---|---|
+| R1 · proveedor (NIF/IBAN) | **5** — `FA-3955` y `FA-7532` cambian el IBAN «por carta adjunta»; `e06` y `e11` traen otro IBAN; `e05` usa el NIF de otro proveedor |
+| R2 · pedido | **10** — las 8 en divisa (compara divisa contra euros), `factura_6932` (2.674,10 frente a 2.120,10) y `e05` |
+| R3 · IVA y total | **8** — 7 con IVA 0 de exportación y `e14`, donde base + IVA no da el total |
+| R4 · fecha | **0** |
+| R5 · ERP | **11** — las mismas 8 en divisa, `2026-08-22_P010` (ya PAGADA), `factura_6932` y `e05` |
+| R6 · anomalía para humano | **4** — las 3 manuscritas y el duplicado |
+| R7 · moneda | **8** |
 
 **Las trampas del lote 2, una por tipo:** un pedido del lote 1 ya PAGADO que se vuelve a facturar
 (`2026-08-22_P010`), dos IBAN cambiados con nota de «nueva cuenta» (`FA-3955`, `FA-7532`), un total que no coincide
@@ -254,9 +318,8 @@ su propia base (`e09`).
 216 imprimen los importes sin símbolo: son las plantillas de la Caja con el número a secas, no facturas en otra
 moneda. Sólo 8 nombran una divisa, y las 8 son del lote 2.
 
-**Lo que la norma decide hoy (v4, ERP v2):** 23 PAGAR · 16 ESCALAR · 1 NO_PAGAR. De los 16 escalados, 8 son las de
-divisa: sin tabla de cambio oficial no convertimos, y queda como pregunta para los mentores
-([`hitos.md`](hitos.md)).
+**Lo que la norma decide hoy (v4, maestro `f504377103b2`, ERP v2, corte 18/09):** 23 PAGAR · 16 ESCALAR ·
+1 NO_PAGAR, la del pedido ya pagado. Como en el lote 1, **no es verdad etiquetada**: es lo que la norma hace.
 
 ---
 
