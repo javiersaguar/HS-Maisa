@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { AppShell } from '@/components/layout/AppShell'
+import { ChatPanel } from '@/components/chat/ChatPanel'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="antialiased">
         <AppShell>{children}</AppShell>
+        <ChatPanel />
       </body>
     </html>
   )

@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "api": 2,
+  "solo_lectura": true,
+  "bd_disponible": true,
+  "modelo_disponible": false,
+  "motivo": "fuera_de_ventana",
+  "modelo": "deepseek-v4-flash",
+  "respaldo": "glm5.3-flash",
+  "llamadas_restantes": 30,
+  "ventana": {
+    "desde": "2026-09-20T09:00:00+02:00",
+    "hasta": "2026-09-20T12:00:00+02:00"
+  }
+}

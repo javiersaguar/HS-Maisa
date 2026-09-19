@@ -1,0 +1,20 @@
+{
+  "fuente": "docs/api/ejemplos/chat-10-scan.json",
+  "pregunta": "¿Qué decisión tiene scan_025.pdf y cuál es el motivo?",
+  "respuesta": {
+    "respuesta": "scan_025.pdf tiene decisión vigente ESCALAR. Motivo: incumple la regla v3.R6, por una anomalía que debe ver una persona: documento_superpuesto (además del aviso sin_texto). Se trata de la factura 2026/27401 de Limpiezas Turia S.L. (P004), pedido PO-2026-0728, por 774,40 €; sin valor de confianza.",
+    "citas": [
+      "scan_025.pdf"
+    ],
+    "herramientas_usadas": [
+      "traza"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 3325,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "ESCALAR por documento_superpuesto, datos contrastados con traza."
+  }
+}

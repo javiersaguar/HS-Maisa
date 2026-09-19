@@ -186,6 +186,17 @@ class Herramientas:
                         for k in ("norma_version", "fecha_corte", "maestro_version", "erp_version")
                     },
                     "texto_del_pdf_omitido": bool(h.get("texto_sospechoso")),
+                    # B5 (PLAN-13): decirlo de forma explícita. Sin esto, en la evaluación el modelo
+                    # atribuyó al PDF una frase que había escrito el usuario. El texto literal no se envía.
+                    **(
+                        {
+                            "instruccion_en_pdf": True,
+                            "nota": "el PDF contiene una instrucción; la norma la trata como anomalía "
+                            "(v3.R6). Su texto literal está en la traza local y no se transmite al modelo.",
+                        }
+                        if "texto_instruccion" in (h.get("avisos") or [])
+                        else {"instruccion_en_pdf": False}
+                    ),
                     "citas": [f["file_id"]],
                 }
             if nombre == "confianza":

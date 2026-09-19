@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import Link from 'next/link'
 import { Check, ChevronRight, FileUp } from 'lucide-react'
-import { USE_MOCK } from '@/lib/config'
+import { API_BASE_URL, USE_MOCK } from '@/lib/config'
 import { toApiError } from '@/lib/api/client'
 import {
   BANDEJA_EN_CURSO,
@@ -20,7 +20,18 @@ import { Spinner } from '@/components/ui/Spinner'
 
 const MAX_FICHEROS = 20
 const POLL_MS = 1000
-const ARRANQUE = 'uv run python -m albertitos.console.api --bandeja'
+const REVISAR_MS = 5000
+
+/** El comando exacto, con el puerto del puente al que habla esta consola (sin --db: usa dist/bandeja.db). */
+function comandoArranque(): string {
+  let puerto = '8000'
+  try {
+    if (API_BASE_URL) puerto = new URL(API_BASE_URL).port || puerto
+  } catch {
+    /* URL rara: el puerto por defecto */
+  }
+  return `uv run python -m albertitos.console.api --bandeja${puerto === '8000' ? '' : ` --puerto ${puerto}`}`
+}
 
 const PASOS: Array<{ estado: EstadoBandeja; label: string; detalle: string }> = [
   { estado: 'ingiriendo', label: 'Registrar', detalle: 'Se guarda cada PDF con su huella' },
@@ -56,6 +67,8 @@ export function InvoiceDropzone({
   const [error, setError] = useState<string | null>(null)
   const [noDisponible, setNoDisponible] = useState(USE_MOCK)
   const [arrastrando, setArrastrando] = useState(false)
+  const [avisar, setAvisar] = useState(false)
+  const [copiado, setCopiado] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Al cargar: si el puente no tiene la bandeja activa se dice; si hay un trabajo en curso se retoma, y
@@ -84,6 +97,28 @@ export function InvoiceDropzone({
     // Sólo al montar: onSelect es estable y no debe reabrir la bandeja.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Sin bandeja, se vuelve a mirar cada 5 s: si el puente se reinicia con --bandeja, esto se activa solo.
+  useEffect(() => {
+    if (USE_MOCK || !noDisponible) return
+    let vivo = true
+    const timer = window.setInterval(async () => {
+      try {
+        const b = await fetchBandeja()
+        if (vivo && b.disponible) {
+          setNoDisponible(false)
+          setError(null)
+          onDone('Bandeja activa: ya puedes soltar facturas', 'success')
+        }
+      } catch {
+        /* el puente se está reiniciando: se vuelve a mirar en 5 s */
+      }
+    }, REVISAR_MS)
+    return () => {
+      vivo = false
+      window.clearInterval(timer)
+    }
+  }, [noDisponible, onDone])
 
   // Poll mientras la CLI trabaja.
   useEffect(() => {
@@ -146,10 +181,31 @@ export function InvoiceDropzone({
     }
   }
 
+  /** Pulsar o soltar sobre la zona desactivada: se señala el recuadro que explica cómo activarla. */
+  const explicar = () => {
+    setAvisar(true)
+    window.setTimeout(() => setAvisar(false), 1600)
+  }
+
   const onDrop = (event: DragEvent) => {
-    event.preventDefault()
+    event.preventDefault() // siempre: si no, el navegador abre el PDF y saca al usuario de la consola
     setArrastrando(false)
+    if (bloqueado) {
+      if (noDisponible) explicar()
+      return
+    }
     subir(event.dataTransfer.files)
+  }
+
+  const comando = comandoArranque()
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(comando)
+      setCopiado(true)
+      window.setTimeout(() => setCopiado(false), 1500)
+    } catch {
+      /* sin portapapeles: el comando se puede seleccionar a mano */
+    }
   }
 
   const pasoActual = PASOS.findIndex((p) => p.estado === bandeja?.estado)
@@ -189,23 +245,28 @@ export function InvoiceDropzone({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
+        <div
+          className="shrink-0"
           onDragOver={(event) => {
             event.preventDefault()
             if (!bloqueado) setArrastrando(true)
           }}
           onDragLeave={() => setArrastrando(false)}
           onDrop={onDrop}
-          disabled={bloqueado}
-          className={`flex w-full shrink-0 flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition disabled:cursor-not-allowed ${
+        >
+        <button
+          type="button"
+          onClick={() => (noDisponible ? explicar() : inputRef.current?.click())}
+          disabled={ocupado}
+          aria-disabled={bloqueado}
+          aria-describedby={noDisponible ? 'bandeja-como-activar' : undefined}
+          className={`flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 text-center transition disabled:cursor-not-allowed ${
             conLista ? 'py-5' : 'py-10'
           } ${
             arrastrando
               ? 'border-accent bg-accent-soft'
               : bloqueado
-                ? 'border-line bg-canvas opacity-70'
+                ? 'cursor-not-allowed border-line bg-canvas opacity-70'
                 : 'border-accent-line bg-canvas hover:border-accent hover:bg-accent-soft'
           }`}
         >
@@ -215,12 +276,17 @@ export function InvoiceDropzone({
               ? 'Subiendo…'
               : fase === 'procesando'
                 ? 'Procesando las facturas…'
-                : fase === 'hecho'
-                  ? 'Suelta más PDF para otro envío'
-                  : 'Suelta aquí los PDF o haz clic para elegirlos'}
+                : noDisponible
+                  ? 'Subir facturas está desactivado en este puente'
+                  : fase === 'hecho'
+                    ? 'Suelta más PDF para otro envío'
+                    : 'Suelta aquí los PDF o haz clic para elegirlos'}
           </span>
-          <span className="text-[12px] text-muted">Hasta {MAX_FICHEROS} facturas, 10 MB cada una</span>
+          <span className="text-[12px] text-muted">
+            {noDisponible ? 'Abajo tienes cómo activarlo' : `Hasta ${MAX_FICHEROS} facturas, 10 MB cada una`}
+          </span>
         </button>
+        </div>
         <input
           ref={inputRef}
           type="file"
@@ -234,12 +300,43 @@ export function InvoiceDropzone({
         />
 
         {noDisponible && (
-          <p className="rounded-lg border border-warn-line bg-warn-soft px-3 py-2 text-[13px] text-ink-soft">
-            {USE_MOCK
-              ? 'Con datos de ejemplo no se suben facturas: hace falta el puente real.'
-              : 'El puente sirve la BD de la entrega y no escribe en ella.'}{' '}
-            Arráncalo con <code className="font-mono text-[12px]">{ARRANQUE}</code>.
-          </p>
+          <div
+            id="bandeja-como-activar"
+            className={`shrink-0 rounded-lg border border-warn-line bg-warn-soft px-3 py-2.5 text-[13px] text-ink-soft transition ${
+              avisar ? 'ring-2 ring-warn' : ''
+            }`}
+          >
+            {USE_MOCK ? (
+              <p>
+                Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
+                NEXT_PUBLIC_USE_MOCK=false.
+              </p>
+            ) : (
+              <p>
+                Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
+                activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
+                proyecto, con este comando:
+              </p>
+            )}
+            <div className="mt-2 flex items-center gap-2">
+              <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
+                {comando}
+              </code>
+              <button
+                type="button"
+                onClick={copiar}
+                className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
+              >
+                {copiado ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+            {!USE_MOCK && (
+              <p className="mt-2 text-[12px] text-muted">
+                Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
+                vuelva con la bandeja, este recuadro desaparece sin recargar la página.
+              </p>
+            )}
+          </div>
         )}
 
         {fase === 'elegir' && !bandeja && (

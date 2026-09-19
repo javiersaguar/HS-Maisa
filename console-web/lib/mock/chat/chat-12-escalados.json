@@ -1,0 +1,24 @@
+{
+  "fuente": "docs/api/ejemplos/chat-12-escalados.json",
+  "pregunta": "Busca las facturas ESCALAR. ¿Cuántas son? Cita las primeras cinco.",
+  "respuesta": {
+    "respuesta": "Hay 53 facturas en estado ESCALAR, pero la búsqueda está truncada (muestra 20 de 53), por lo que la lista no es completa. Las cinco primeras por file_id: 2026-0233-A_catering.pdf (Catering Hermanos Pico S.L., 1512,50 €, duplicado sospechoso), 2026-03-19_P008.pdf (Seguridad Alcores S.L., 1137,40 €, campo ausente), 2026-07-08_P010.pdf (Informática Benimámet S.L., 4549,60 €, texto_instruccion), 2026-07-09_P010.pdf (Informática Benimámet S.L., 1427,80 €, texto_instruccion) y 2026-0811-B_catering.pdf (Catering Hermanos Pico S.L., 2920,10 €, texto_instruccion y total no cuadra).",
+    "citas": [
+      "2026-0233-A_catering.pdf",
+      "2026-03-19_P008.pdf",
+      "2026-07-08_P010.pdf",
+      "2026-07-09_P010.pdf",
+      "2026-0811-B_catering.pdf"
+    ],
+    "herramientas_usadas": [
+      "buscar_facturas"
+    ],
+    "modelo": "deepseek-v4-flash",
+    "latencia_ms": 5624,
+    "estado": "ok"
+  },
+  "evaluacion": {
+    "veredicto": "correcta",
+    "observacion": "53 ESCALAR, primeras cinco correctas, informa truncamiento."
+  }
+}

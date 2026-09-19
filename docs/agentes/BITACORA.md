@@ -807,6 +807,56 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - La bandeja sigue cada PDF por la sha256 que registró ingest, no por el nombre: `./<nombre>` si el nombre ya era de la Caja (P0-5); el del original si es una copia exacta. POST sólo con `--bandeja` y desde `localhost:3000`.
 - `make check` en verde: 574 tests. Uno pasa por la CLI real (ingest → extract por plantilla → decide) con 0 tokens.
 
+### 16:50 · C1 · arranco el backend del chat (PLAN-13, B1-B6)
+- toco: `src/albertitos/chat/*`, `tests/test_chat.py`, `docs/api/chat.md`, `docs/api/ejemplos/chat-salud*.json`, `docs/adr/0013-*`, y en el `Makefile` sólo el objetivo nuevo `chat`. Ninguna llamada al modelo (no hay `.env`).
+- **PARA C2:** implemento `/chat/salud` v2 exactamente como el contrato del plan (`api: 2`). En esta carpeta, sin `.env`, saldrá `modelo_disponible: false`, `motivo: "sin_clave"`.
+
+### 16:38 · C2 · arranco el chat en la consola (PLAN-13)
+- huella al empezar: `dist/albertitos.db` `8501d9975c38`.
+- toco: `console-web/lib/api/chat.ts`, `console-web/lib/mock/chat*`, `console-web/components/chat/*`, en `console-web/app/layout.tsx` sólo la línea que monta el panel y su import, `console-web/.env.example` y la sección «Chat» de `console-web/README.md`. Nada más de console-web (es de Alejandro) ni el backend (C1).
+- **RESPONDO A C1:** consumo `/chat/salud` v2 tal como lo fija el plan (`api: 2`). Si me llega `api: 1` (el backend de antes), lo trato como «disponibilidad desconocida» sin romper. Ninguna llamada al modelo.
+
+### 16:46 · C2 · el puerto 8001 ya está ocupado en este portátil (no es el chat)
+- `curl -s http://127.0.0.1:8001/chat/salud` contesta `{"detail":"Not Found"}` (estilo FastAPI; el chat contesta `{"error": …}`). `ss -ltnp` enseña `127.0.0.1:8001` y `127.0.0.1:3000` en escucha **sin proceso de WSL**: es algo del lado de Windows (red en espejo).
+- **PARA C1:** tu prueba con curl en 8001 puede estar hablando con otro servicio. Comprueba que `curl …/chat/salud` devuelve `"api": 2` antes de dar nada por bueno; si no, arranca con `--puerto 8011` (o `ALBERTITOS_CHAT_PUERTO`). Yo pruebo en 8011.
+- **PARA Javier:** antes de la prueba en vivo, mira qué hay en 8001 en Windows (`netstat -ano | findstr :8001`). Si no se puede cerrar, `make chat` con `ALBERTITOS_CHAT_PUERTO=8011` y la consola con `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8011`. El panel ya lo admite.
+
+### 16:58 · C1 · backend listo; aviso a C2
+- (Corrección: mi entrada anterior dice «16:50», pero eran las 16:36.)
+- Hecho B1-B6 (`14b8402`) y el puerto configurable. `/chat/salud` v2 sale EXACTAMENTE como el contrato del plan.
+- **PARA C2:** en este portátil **el 8001 lo ocupa un contenedor Docker de otro proyecto** (responde `{"detail":"Not Found"}`). Arranca el chat con `ALBERTITOS_CHAT_PUERTO=8101 make chat` y usa `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8101` en `console-web/.env.local`. Probado con curl en el 8101: salud → `motivo: "sin_clave"`; «paga la factura F26-2201_transportes.pdf» → `solo_lectura` en 0 ms con `Access-Control-Allow-Origin: http://127.0.0.1:3000`; pregunta normal → `degradado` con el texto «El chat no tiene clave del modelo configurada…»; Origin ajeno → 403.
+- Cada respuesta de `POST /chat` trae ahora `respaldo: true|false`.
+- 17:05 · C1 · **terminado** (parte en `PARTE.md`). 25 tests del chat, `make check` 594. La prueba en vivo queda para cuando haya «gateway libre»: preguntas y qué esperar, en el parte.
+- 16:51 · C1 · corrección de horas: mis entradas «16:58» y «17:05» fueron a las 16:45 y 16:51 (hora del reloj).
+
+### 16:55 · C2 · termino: el chat en la consola, probado contra el servidor de C1 sin modelo
+- hecho: cliente (`lib/api/chat.ts`), las 15 respuestas grabadas con su etiqueta (`lib/mock/chat*`), panel (`components/chat/`) montado con una línea en `app/layout.tsx`, y la sección «Chat» del README. `pnpm build` y `typecheck` en verde; 29 de 29 comprobaciones contra el servidor real en 8011. Detalle en PARTE.md, sección C2. Ninguna llamada al modelo. Huella de la BD, igual.
+- **PIDO A Javier:** añade a mano estas dos líneas a `console-web/.env.example`. Una regla de permisos no deja a los agentes leer ni escribir `.env*`:
+  `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8001` y `NEXT_PUBLIC_CHAT_GRABADAS=false` (el README ya las explica).
+- **PARA Alejandro:** en `console-web` sólo he tocado `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, la sección «Chat» del README y, en `app/layout.tsx`, el import y `<ChatPanel />` tras `<AppShell>`. Al mergear tu rama, respeta esa línea.
+
+### 16:58 · Javier · gateway libre para la prueba en vivo del chat (PLAN-13), acotada
+- Lo autoriza Javier: C1 y C2 han terminado. **Ventana hasta las 17:45 y tope de 30 llamadas** (`ALBERTITOS_CHAT_HASTA` y `ALBERTITOS_CHAT_MAX_LLAMADAS`; las cuenta el propio chat en `dist/chat/llamadas.db`), para no rozar el lote 2 de las 18:00, que va en la otra carpeta.
+- Revisión previa de la rama: `make check` → 594 passed, 2 skipped; `pnpm typecheck` y `pnpm build` en verde.
+- Chat en `:8101` (el 8001 es un contenedor Docker de otro proyecto). Resultado de la prueba, en la siguiente entrada.
+
+### 17:15 · Javier · prueba en vivo del chat (PLAN-13): todo en verde, 20 de 30 llamadas
+- **Montaje:** chat en `:8101` (ventana hasta las 17:45, tope 30), puente en `:8000` y consola en `next dev` en `:3001`, todo sobre la copia de la BD de esta carpeta. Las pruebas de interfaz, en Chromium sin interfaz gráfica (Playwright, fuera del repo, en `dist/ensayo/c2/pw/`); capturas e informe, allí.
+- **Sin gastar llamadas** (`--salud`): con clave, `modelo_disponible: true` y 30 restantes · ventana del domingo → `fuera_de_ventana` con su ventana · tope 0 → `presupuesto_agotado` · ventana cerrada a las 17:00 → `fuera_de_ventana`.
+- **Interfaz sin clave:** 14 de 14 (foco, «Sin modelo: sin clave del LLM», negativa en 48 ms, degradado visible, las 15 grabadas con su etiqueta, sin inventar, Escape, 0 errores en el navegador).
+- **Interfaz en vivo:** 20 de 20. Las 5 respuestas llegan entre 3,4 y 6,2 s, con `deepseek-v4-flash`, y las 5 son **correctas contra la BD**:
+  - reparto 438/53/9;
+  - F26-2201 → ESCALAR por R6, diciendo que el PDF trae una instrucción sin transmitirla;
+  - PO-2026-0492 → las 2 facturas, ambas ESCALAR;
+  - semana W38 → 2 facturas, 14.518,10 €;
+  - **la trampa de inyección, que ayer quedó parcial, ahora es correcta**: «no puedo confirmar la frase que tú citas» (B5 de C1).
+  La cita abre `/invoices/detalle?file=F26-2201_transportes.pdf`. Mientras consulta, el botón está bloqueado con «consultando… (hasta 60 s)».
+- **Concurrencia:** una segunda pregunta a la vez → `429` en < 1 ms («Hay una consulta en curso…»); la primera contesta bien (scan_025, ESCALAR por documento_superpuesto).
+- **Respaldo en vivo:** con un modelo principal inexistente, contesta `glm5.3-flash` con `"respaldo": true`, correcto (FA-2116 → NO_PAGAR por R5, AS-00473 PAGADA). **Tarda 28,5 s y gasta 6 llamadas.** **PARA C1** (mejora, no bloquea): si el principal falla en una pregunta, que las vueltas siguientes de esa pregunta vayan directas al respaldo.
+- **Hallazgo de la consola:** `next dev` bloquea sus recursos si se abre por `127.0.0.1:3001` (hay que usar `localhost:3001`, o `allowedDevOrigins: ['127.0.0.1']` en `next.config.mjs`, que es de Alejandro). Con `next build` + `next start` no pasa.
+- **Sigue pendiente:** las dos líneas de `console-web/.env.example` (a mano; la regla de permisos lo bloquea para los agentes).
+
+- **17:44 · Javier (sesión principal)** · bandeja «Añadir facturas»: no estaba rota, el puente del 8000 corre sin `--bandeja` (`/inbox` → `disponible: false`). La zona ahora lo explica, el comando va aparte con botón Copiar (antes se copiaba `--bandeja.`) y se activa sola al relanzar. Puerto ocupado → una línea con un puerto libre de verdad (puente y chat). `4483b82`, 597 tests en verde.
 ### 16:45 · Javier · el chat en la consola lo hacemos nosotros (PLAN-13, rama `javier/chat`)
 - **PARA Alejandro:** ya no te toca el prompt del chat (`PROMPT-ALEJANDRO-CHAT.md` queda sin efecto). Lo hacen C1 (backend) y C2 (panel) en la rama `javier/chat`, carpeta `../HS-Maisa-chat`. En console-web sólo tocamos `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, **una línea (y su import) en `app/layout.tsx`** para montar el panel, `.env.example` y la sección «Chat» del README. Si tu rama toca `app/layout.tsx`, respeta esa línea al mergear. Lo demás de console-web sigue siendo tuyo (pagos, confianza, bandeja).
 - El backend del chat cambia: ventana y tope por variable de entorno, `/chat/salud` v2 con la disponibilidad del modelo, orígenes `localhost:3000` y `127.0.0.1:3000`, y modelo de respaldo. Contrato en `docs/agentes/PLAN-13.md` (rama `javier/chat`).
