@@ -19,6 +19,8 @@ import { RecuentoResultados, ResultadoMarca } from '@/components/ui/Resultado'
 import { Spinner } from '@/components/ui/Spinner'
 
 const MAX_FICHEROS = 20
+/** La consola habla con un puente público (ADR-0023), no con el del portátil: ahí no hay comando que dar. */
+const DEMO_PUBLICA = !USE_MOCK && /^https:\/\//.test(API_BASE_URL)
 const POLL_MS = 1000
 const REVISAR_MS = 5000
 /** La lista acumulada de la portada sobrevive a cambiar de pantalla, no a cerrar la pestaña. */
@@ -395,35 +397,45 @@ export function InvoiceDropzone({
               avisar ? 'ring-2 ring-warn' : ''
             }`}
           >
-            {USE_MOCK ? (
+            {DEMO_PUBLICA ? (
               <p>
-                Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
-                NEXT_PUBLIC_USE_MOCK=false.
+                Esta es la demo pública, de sólo lectura: aquí se consultan las decisiones, su traza y el chat, pero no
+                se suben facturas (leer una factura nueva gasta el modelo). Subir facturas se enseña en la consola local
+                del equipo.
               </p>
             ) : (
-              <p>
-                Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
-                activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
-                proyecto, con este comando:
-              </p>
-            )}
-            <div className="mt-2 flex items-center gap-2">
-              <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
-                {comando}
-              </code>
-              <button
-                type="button"
-                onClick={copiar}
-                className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
-              >
-                {copiado ? 'Copiado' : 'Copiar'}
-              </button>
-            </div>
-            {!USE_MOCK && (
-              <p className="mt-2 text-[12px] text-muted">
-                Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
-                vuelva con la bandeja, este recuadro desaparece sin recargar la página.
-              </p>
+              <>
+              {USE_MOCK ? (
+                <p>
+                  Con datos de ejemplo no se suben facturas: hace falta el puente real y compilar la consola con
+                  NEXT_PUBLIC_USE_MOCK=false.
+                </p>
+              ) : (
+                <p>
+                  Este puente sirve la BD de la entrega, que nunca se toca, así que no admite facturas nuevas. Para
+                  activarlo, para el puente (Ctrl+C en su terminal) y vuelve a arrancarlo, desde la carpeta del
+                  proyecto, con este comando:
+                </p>
+              )}
+              <div className="mt-2 flex items-center gap-2">
+                <code className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-warn-line bg-surface px-2 py-1 font-mono text-[12px] text-ink">
+                  {comando}
+                </code>
+                <button
+                  type="button"
+                  onClick={copiar}
+                  className="shrink-0 rounded-md border border-warn-line bg-surface px-2 py-1 text-[12px] font-semibold text-warn hover:bg-warn-soft"
+                >
+                  {copiado ? 'Copiado' : 'Copiar'}
+                </button>
+              </div>
+              {!USE_MOCK && (
+                <p className="mt-2 text-[12px] text-muted">
+                  Sin --db: trabaja sobre dist/bandeja.db, una copia de la entrega que se crea sola. En cuanto el puente
+                  vuelva con la bandeja, este recuadro desaparece sin recargar la página.
+                </p>
+              )}
+              </>
             )}
           </div>
         )}
