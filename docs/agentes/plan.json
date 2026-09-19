@@ -1,7 +1,7 @@
 {
-  "ciclo": 8,
+  "ciclo": 9,
   "rama": "javier/ingesta",
-  "base": "012e693",
+  "base": "59ca8a7",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
@@ -9,27 +9,51 @@
     "docs/entregas.log"
   ],
   "agentes": {
-    "H1": [
-      "data/fixtures/lote2_identicos/*",
-      "tests/test_identicos.py",
+    "I1": [
+      ".claude/skills/lote2/SKILL.md",
+      "docs/agentes/ENSAYO-LOTE2.md",
+      "docs/agentes/CHULETA-LOTE2.md",
+      "data/fixtures/lote2_nombre_repetido/*",
+      "tests/test_nombre_repetido.py",
       "scripts/verificar_material.py",
       "tests/test_material.py",
-      "docs/agentes/P0-1-IDENTICOS.md",
-      ".claude/skills/lote2/SKILL.md"
+      "scripts/preflight_lote2.py",
+      "tests/test_preflight.py",
+      "docs/CIFRAS.md"
     ],
-    "H2": [
-      "scripts/comparar_muestra.py",
-      "tests/test_comparar_muestra.py",
-      "docs/agentes/MUESTRA-CONTRASTE.md",
-      "data/fixtures/esperado_muestra_agente.csv"
+    "I2": [
+      "scripts/mapa_politicas.py",
+      "tests/test_mapa_politicas.py",
+      "docs/agentes/MAPA-POLITICAS.md"
     ],
     "Javier": [
-      "docs/agentes/PLAN-08.md"
+      "docs/agentes/PLAN-09.md",
+      "docs/ESTADO-BACKEND.md",
+      "tests/test_identicos.py"
+    ],
+    "Miguel": [
+      "src/albertitos/core/*",
+      "src/albertitos/pipeline/*",
+      "src/albertitos/cli.py",
+      "tests/test_copias.py",
+      "tests/test_traza.py",
+      "tests/test_pipeline.py",
+      "tests/test_linaje.py",
+      "tests/test_db.py",
+      "tests/test_publicar_entrega.py",
+      "scripts/publicar_entrega.py",
+      "docs/contratos.md",
+      "docs/adr/0006*"
     ],
     "Mónica": [
       "src/albertitos/rules/*",
       "tests/test_rules.py",
-      "data/fixtures/esperado_muestra.csv"
+      "data/fixtures/esperado_muestra.csv",
+      "docs/adr/0010*",
+      "docs/adr/0011*"
+    ],
+    "Alejandro": [
+      "console-web/*"
     ]
   }
 }
