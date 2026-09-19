@@ -32,6 +32,15 @@ export function formatMs(ms: number | null): string {
   return `${(ms / 1000).toFixed(1).replace('.', ',')} s`
 }
 
+/** 9.933 → "9,9 s"; 754 → "12 min 34 s". */
+export function formatSeconds(seconds: number | null): string {
+  if (seconds === null || Number.isNaN(seconds)) return '—'
+  if (seconds < 60) return `${seconds.toFixed(1).replace('.', ',')} s`
+  const minutes = Math.floor(seconds / 60)
+  const rest = Math.round(seconds % 60)
+  return `${minutes} min ${rest} s`
+}
+
 export function formatDate(iso: string | null): string {
   if (!iso) return '—'
   return new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso).toLocaleDateString('es-ES', {

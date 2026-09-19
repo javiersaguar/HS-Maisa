@@ -1,4 +1,3 @@
-import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { AppShell } from '@/components/layout/AppShell'
 import './globals.css'
@@ -39,7 +38,6 @@ export default function RootLayout({
     <html lang="es">
       <body className="antialiased">
         <AppShell>{children}</AppShell>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )

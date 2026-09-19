@@ -5,7 +5,7 @@ import { apiFetch, buildQuery } from './client'
 import { toTraza } from './mappers'
 
 /**
- * GET /traza?file_id&etapa&categoria (provisional, fase 3)
+ * GET /traza?file_id&etapa&categoria → `PasoTraza[]`
  *
  * Alimenta la Chain of Work: `/audit`, la pestaña Traza del fichero y el detalle de etapa.
  * Equivale a `albertitos trace <file_id>` / `core.db.traza()`: eventos del fichero + motivos de su

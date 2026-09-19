@@ -5,10 +5,10 @@ import { apiFetch } from './client'
 import { toPanel } from './mappers'
 
 /**
- * GET /panel (provisional, fase 3)
+ * GET /panel → `PanelResumen`
  *
- * Contadores de la vista Panel de Streamlit: ficheros por lote, decisiones vigentes por resultado,
- * pendientes, versiones cargadas y eventos por etapa.
+ * Ficheros por lote, decisiones vigentes por resultado, pendientes, versiones que deciden hoy,
+ * ritmo y coste de la última pasada y eventos por etapa. Agregados SQL: no hidrata 500 ficheros.
  */
 export async function fetchPanel(): Promise<PanelResumen> {
   if (USE_MOCK) return mock.getPanel()

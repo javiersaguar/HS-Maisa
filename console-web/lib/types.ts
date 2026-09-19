@@ -142,8 +142,9 @@ export type EstadoFichero = Resultado | 'PENDIENTE'
 
 /** Lo que maestro y ERP dicen del fichero. Sólo viene en el detalle. */
 export interface Fuentes {
-  maestro_version: string
-  erp_version: string
+  /** Null si aún no hay snapshot (BD recién ingerida): la UI enseña "sin snapshot", no un 500. */
+  maestro_version: string | null
+  erp_version: string | null
   proveedor: Proveedor | null
   pedido: Pedido | null
   asientos: ErpEntry[]
@@ -245,16 +246,31 @@ export interface MesPunto {
 }
 
 export interface Versiones {
+  /** Norma de la decisión vigente más reciente. */
   norma: string | null
+  /** Reparto de las decisiones vigentes por norma: el sábado conviven v3 y v4. */
+  normas: Array<{ norma: string; ficheros: number }>
   maestro: string | null
   erp: string | null
   extractor: string | null
 }
 
+/** La última ráfaga de ingest/extract: de ahí sale el ritmo, no de todo el histórico. */
+export interface VentanaPasada {
+  ficheros: number
+  segundos: number
+  desde: string | null
+  hasta: string | null
+}
+
 export interface Operacion {
-  /** ingest+extract: nº ficheros / (último ts − primer ts). */
+  /** Ficheros de la última pasada / su duración. */
   ficherosPorSegundo: number | null
+  ventana: VentanaPasada | null
+  /** Coste de la extracción vigente (los hechos que deciden hoy). */
   costeEur: number
+  /** Todo lo gastado en la BD, runs anteriores incluidos. Null si el backend no lo distingue. */
+  costeEurHistorico: number | null
   /** Eventos con intento > 1 (ORA-00600, 429, SES-401 superados). */
   reintentos: number
   /** % de ficheros cuya extracción tocó el LLM (texto o visión). */
@@ -271,4 +287,23 @@ export interface PanelResumen {
   etapas: EtapaResumen[]
   porMes: MesPunto[]
   recientes: Fichero[]
+}
+
+/* --------------------------------------------------------------- salud --- */
+
+/** `GET /salud` del puente: si vive, si tiene BD y de qué tamaño. En mock, `modo: 'mock'`. */
+export interface Salud {
+  ok: boolean
+  modo: 'mock' | 'http'
+  /** Versión del contrato que declara el backend (`api`). */
+  api: number | null
+  bd: {
+    ficheros: number
+    decisionesVigentes: number
+    pendientes: number
+    ultimoEventoEn: string | null
+    /** P0-1: tabla aditiva `identidades`. El puente la detecta; no la exige. */
+    identidades: boolean
+    versiones: Versiones
+  } | null
 }

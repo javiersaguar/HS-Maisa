@@ -22,6 +22,11 @@ export interface AsyncOptions {
    * last good data on screen instead of replacing it with an error.
    */
   pollMs?: number | null
+  /**
+   * By default a failed poll is swallowed once there is data on screen. Health indicators want the
+   * opposite: a bridge that dies after connecting must show up, so they set this to true.
+   */
+  pollErrors?: boolean
 }
 
 /**
@@ -31,6 +36,7 @@ export interface AsyncOptions {
 export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = [], options: AsyncOptions = {}): AsyncState<T> {
   const enabled = options.enabled ?? true
   const pollMs = options.pollMs ?? null
+  const pollErrors = options.pollErrors ?? false
   const [data, setDataState] = useState<T | null>(null)
   const [error, setError] = useState<ApiError | null>(null)
   const [loading, setLoading] = useState(enabled)
@@ -93,7 +99,8 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = [], opti
           setError(null)
         })
         .catch((caught) => {
-          if (!active || requestId.current !== id || hasData.current) return
+          if (!active || requestId.current !== id) return
+          if (hasData.current && !pollErrors) return
           setError(toApiError(caught))
         })
     }, pollMs)
@@ -103,7 +110,7 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = [], opti
       window.clearInterval(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, pollMs, ...deps])
+  }, [enabled, pollMs, pollErrors, ...deps])
 
   const refresh = useCallback(() => setNonce((value) => value + 1), [])
 
