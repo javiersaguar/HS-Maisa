@@ -72,9 +72,17 @@ def resumen_erp_o_nada(conn: sqlite3.Connection, version: str) -> dict[str, Any]
         return None
 
 
-def duplicado_con(conn: sqlite3.Connection, sha256: str) -> dict[str, str]:
-    """file_id de los otros PDFs de su grupo de duplicados → qué comparten (vacío si no hay grupo)."""
-    return grupos_duplicados(hechos_vigentes(conn)).get(sha256, {})
+def duplicado_con(
+    conn: sqlite3.Connection, sha256: str, file_id: str | None = None, lote: int | None = None
+) -> dict[str, str]:
+    """file_id de los otros PDFs de su grupo de duplicados → qué comparten (vacío si no hay grupo):
+    mismo pedido, misma factura, o el mismo PDF con otro nombre (copia exacta), sin contarse a sí mismo."""
+    con = dict(grupos_duplicados(hechos_vigentes(conn)).get(sha256, {}))
+    for fid, lt in db.nombres_por_sha(conn).get(sha256, []):
+        if (fid, lt) != (file_id, lote):
+            clave = fid if fid != file_id else f"{fid} (lote {lt})"
+            con[clave] = f"el mismo PDF (copia exacta, lote {lt})"
+    return con
 
 
 def _v(x: Any) -> str:
@@ -123,10 +131,17 @@ def legible(conn: sqlite3.Connection, file_id: str) -> str | None:
     f = t["fichero"]
     if not f:
         return None
+    identidad = t.get("identidad")
+    lote = identidad["lote"] if identidad else f["lote"]
     L: list[str] = [
-        f"{file_id} · lote {f['lote']} · {_v(f['paginas'])} pág. · "
+        f"{file_id} · lote {lote} · {_v(f['paginas'])} pág. · "
         f"{'con texto' if f['tiene_texto'] else 'escaneada'} · sha256 {f['sha256'][:12]}"
     ]
+    if identidad:
+        L.append(
+            f"{SANGRIA}copia exacta de {f['file_id']} (lote {f['lote']}): mismos hechos y misma"
+            " decisión; cada nombre tiene su línea"
+        )
     eventos = t["eventos"]
     decisiones = t["decisiones"]
     vigente = next((d for d in decisiones if d["vigente"]), None)
@@ -206,7 +221,7 @@ def legible(conn: sqlite3.Connection, file_id: str) -> str | None:
                 L.append(f"{SANGRIA}ningún asiento para {h.pedido}")
 
     # 4 · duplicados, calculados al vuelo
-    pareja = duplicado_con(conn, f["sha256"])
+    pareja = duplicado_con(conn, f["sha256"], file_id, lote)
     if pareja:
         L.append(
             "4 DUPLICADO   "
@@ -235,7 +250,13 @@ def legible(conn: sqlite3.Connection, file_id: str) -> str | None:
             f"{SANGRIA}decidida {hora(vigente['decidido_en'])}"
             + (f" · por: {por[vigente['id']]}" if vigente["id"] in por else "")
         )
-        emit = [e for e in eventos if e["etapa"] == "emit" and e["estado"] in ("ok", "pendiente")]
+        emit = [
+            e
+            for e in eventos
+            if e["etapa"] == "emit"
+            and e["file_id"] == file_id
+            and e["estado"] in ("ok", "pendiente")
+        ]
         if emit:
             d = _json(emit[-1]["detalle"])
             L.append(

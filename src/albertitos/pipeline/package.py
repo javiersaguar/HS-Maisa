@@ -97,20 +97,31 @@ def empaquetar(
     generados: list[tuple[Path, InformeValidacion]] = []
     temporales: list[tuple[Path, Path]] = []
     entregados: list[tuple[int, str, list[sqlite3.Row]]] = []
+    # Un PDF con más de un nombre (copia exacta, P0-1): una línea por nombre, con la decisión de su
+    # sha256, y el motivo nombra a los demás. Sin copias (lote 1 de la Caja) no cambia nada.
+    copias = db.nombres_por_sha(conn)
     try:
         for lote, nombre, directorio in lotes:
             esperados = listar_pdfs(directorio)
             filas = db.decisiones_vigentes(conn, lote=lote)
+            extras = db.identidades_vigentes(conn, lote)
+            if extras:
+                filas = sorted([*filas, *extras], key=lambda x: str(x["file_id"]))
             outcomes: list[Outcome] = []
             for fila in filas:
                 extra: dict[str, str] = {}
                 if con_traza:
                     motivos = json.loads(fila["motivos_json"])
                     fallo = next((m for m in motivos if not m["ok"]), None)
-                    extra = {
-                        "norma_version": fila["norma_version"],
-                        "motivo": fallo["detalle"] if fallo else "todas las reglas cumplidas",
-                    }
+                    motivo = fallo["detalle"] if fallo else "todas las reglas cumplidas"
+                    otros = [
+                        f"{fid} (lote {lt})"
+                        for fid, lt in copias.get(fila["sha256"], [])
+                        if (fid, lt) != (fila["file_id"], lote)
+                    ]
+                    if otros:
+                        motivo += " · el mismo PDF que " + ", ".join(otros)
+                    extra = {"norma_version": fila["norma_version"], "motivo": motivo}
                     if fallo:
                         extra["regla"] = fallo["regla_id"]
                 outcomes.append(
@@ -227,6 +238,8 @@ def _eventos_rechazo(conn, codigo: str, detalle: dict, pendientes: dict[str, str
         ids = {
             r["file_id"]: r["sha256"] for r in conn.execute("SELECT file_id, sha256 FROM ficheros")
         }
+        for sha, nombres in db.nombres_por_sha(conn).items():  # los nombres extra, también
+            ids.update({fid: sha for fid, _ in nombres[1:]})
         for fid, porque in pendientes.items():
             registrar_transicion(
                 conn,

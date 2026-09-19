@@ -463,6 +463,8 @@ def status(
     rprint(
         f"ficheros por lote: {r['ficheros']} · decisiones vigentes: {r['decisiones']} · caché LLM: {r['cache_llm']}"
     )
+    if r["copias"]:
+        print(f"copias exactas con otro nombre, por lote: {r['copias']} (cada una con su línea)")
     if historico:
         t = Table(
             "etapa", "estado", "eventos", "lat media ms", "EUR", "reintentos", title="histórico"
@@ -525,7 +527,8 @@ def trace(
         print(traza.legible(conn, fid))  # print: los corchetes de los avisos no son markup de rich
         return
     vigente = next((d for d in t["decisiones"] if d["vigente"]), None)
-    t["duplicado_con"] = traza.duplicado_con(conn, t["fichero"]["sha256"])
+    lote = (t["identidad"] or t["fichero"])["lote"]
+    t["duplicado_con"] = traza.duplicado_con(conn, t["fichero"]["sha256"], fid, lote)
     t["erp"] = traza.resumen_erp_o_nada(conn, vigente["erp_version"]) if vigente else None
     print(json.dumps(t, ensure_ascii=False, indent=1, default=str))
 
