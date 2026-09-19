@@ -240,6 +240,12 @@ def _enviar(handler: BaseHTTPRequestHandler, status: int, body: Any) -> None:
     handler.send_response(status)
     for clave, valor in _CORS.items():
         handler.send_header(clave, valor)
+    # Chrome (acceso a la red local): una web pública (p. ej. la consola en Vercel) sólo puede llamar a este puente
+    # en 127.0.0.1 si la respuesta lo permite. Sólo para los orígenes de la consola, nunca para cualquier web.
+    origen = (handler.headers.get("Origin") or "").rstrip("/") if handler.headers else ""
+    if origen and origen in origenes_bandeja():
+        handler.send_header("Access-Control-Allow-Private-Network", "true")
+        handler.send_header("Vary", "Origin")
     handler.send_header(CABECERA_API, str(lecturas.API_VERSION))
     handler.send_header("Cache-Control", "no-store")
     if body is not None:

@@ -66,6 +66,8 @@ def hacer_handler(ruta: Path, gateway=None):
             origen = (self.headers.get("Origin") or "").rstrip("/")
             if origen in permitidos:  # nunca "*": sólo el origen que pide, si está en la lista
                 self.send_header("Access-Control-Allow-Origin", origen)
+                # Chrome (acceso a la red local): una consola pública (Vercel) llamando a 127.0.0.1.
+                self.send_header("Access-Control-Allow-Private-Network", "true")
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")

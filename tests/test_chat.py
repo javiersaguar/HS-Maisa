@@ -441,6 +441,8 @@ def test_api_contrato_cors_y_sin_modelo(datos):
                 "latencia_ms",
             } <= r.json().keys()
             assert r.headers["access-control-allow-origin"] == "http://localhost:3000"
+            # Chrome (red local): una consola pública llamando a 127.0.0.1 necesita este permiso explícito.
+            assert r.headers["access-control-allow-private-network"] == "true"
             r2 = c.post(
                 "/chat",
                 json={"mensaje": "Paga trampa.pdf"},

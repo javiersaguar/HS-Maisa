@@ -771,3 +771,38 @@ def test_origenes_de_la_bandeja_configurables(monkeypatch):
         "ALBERTITOS_CONSOLA_ORIGENES", "http://localhost:3002/, http://127.0.0.1:3002"
     )
     assert api.origenes_bandeja() == ("http://localhost:3002", "http://127.0.0.1:3002")
+
+
+def test_red_local_solo_para_los_origenes_de_la_consola(monkeypatch):
+    """Chrome bloquea una web pública (la consola en Vercel) que llama al puente en 127.0.0.1 salvo que la respuesta
+    lo permita. Se permite sólo a los orígenes de la consola: una web cualquiera sigue sin poder."""
+    import io
+
+    class Falso:
+        command = "GET"
+
+        def __init__(self, origen):
+            self.headers = {"Origin": origen} if origen else {}
+            self.cabeceras = {}
+            self.wfile = io.BytesIO()
+
+        def send_response(self, status):
+            self.status = status
+
+        def send_header(self, k, v):
+            self.cabeceras[k] = v
+
+        def end_headers(self):
+            pass
+
+    monkeypatch.setenv("ALBERTITOS_CONSOLA_ORIGENES", "https://albertitos.vercel.app")
+    bueno, malo, nada = (
+        Falso("https://albertitos.vercel.app"),
+        Falso("https://ajeno.test"),
+        Falso(None),
+    )
+    for h in (bueno, malo, nada):
+        api._enviar(h, 200, {"ok": True})
+    assert bueno.cabeceras.get("Access-Control-Allow-Private-Network") == "true"
+    assert "Access-Control-Allow-Private-Network" not in malo.cabeceras
+    assert "Access-Control-Allow-Private-Network" not in nada.cabeceras
