@@ -1,0 +1,351 @@
+$ uv run albertitos trace FA-2116_mensajería.pdf   # BD real, 19/09 07:25, COLUMNS=160
+{
+ "file_id": "FA-2116_mensajería.pdf",
+ "fichero": {
+  "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+  "file_id": "FA-2116_mensajería.pdf",
+  "lote": 1,
+  "bytes": 2024,
+  "paginas": 1,
+  "tiene_texto": 1,
+  "ingerido_en": "2026-09-18T18:07:33.297+00:00"
+ },
+ "hechos": [
+  {
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "extractor_version": "ext-0.1",
+   "metodo": "plantilla",
+   "hechos_json": 
+"{\"file_id\":\"FA-2116_mensajería.pdf\",\"sha256\":\"395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9\",\"num_factura\":\"FA-2116\",\"fecha\":\
+"2026-03-18\",\"razon_social\":\"Mensajería Rápida del Sur 
+S.L.\",\"nif_emisor\":\"B90233808\",\"iban\":\"ES9368884400123588900142\",\"pedido\":\"PO-2026-0473\",\"base\":\"1721.79\",\"iva_pct\":\"21.00\",\"iva\":\"361.5
+8\",\"total\":\"2083.37\",\"lineas\":[{\"concepto\":\"Revisión 
+anual\",\"unidades\":\"1.00\",\"importe\":\"1721.79\"}],\"metodo\":\"plantilla\",\"extractor_version\":\"ext-0.1\",\"avisos\":[],\"texto_sospechoso\":null,\"con
+fianza\":1.0}",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "creado_en": "2026-09-18T19:55:18.086+00:00"
+  }
+ ],
+ "decisiones": [
+  {
+   "id": 230,
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "resultado": "NO_PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P011 (Mensajería Rápida del Sur S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P011\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0473 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0473\", \"importe\": \"2083.37\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1721.79\", \"iva\": \"361.58\", \"total\": \"2083.37\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-03-18 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-03-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": false, 
+\"detalle\": \"el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces\", \"evidencia\": {\"pedido\": \"PO-2026-0473\", 
+\"asiento\": \"AS-00473\", \"no_pagar\": true}}, {\"regla_id\": \"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", 
+\"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T19:55:23.051713+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 730,
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "resultado": "NO_PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P011 (Mensajería Rápida del Sur S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P011\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0473 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0473\", \"importe\": \"2083.37\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1721.79\", \"iva\": \"361.58\", \"total\": \"2083.37\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-03-18 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-03-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": false, 
+\"detalle\": \"el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces\", \"evidencia\": {\"pedido\": \"PO-2026-0473\", 
+\"asiento\": \"AS-00473\", \"no_pagar\": true}}, {\"regla_id\": \"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", 
+\"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T19:55:37.093564+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1230,
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "resultado": "NO_PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v2-sim",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P011 (Mensajería Rápida del Sur S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P011\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0473 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0473\", \"importe\": \"2083.37\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1721.79\", \"iva\": \"361.58\", \"total\": \"2083.37\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-03-18 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-03-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": false, 
+\"detalle\": \"el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces\", \"evidencia\": {\"pedido\": \"PO-2026-0473\", 
+\"asiento\": \"AS-00473\", \"no_pagar\": true}}, {\"regla_id\": \"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", 
+\"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T20:09:16.950404+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1740,
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "resultado": "NO_PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P011 (Mensajería Rápida del Sur S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P011\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0473 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0473\", \"importe\": \"2083.37\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1721.79\", \"iva\": \"361.58\", \"total\": \"2083.37\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-03-18 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-03-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": false, 
+\"detalle\": \"el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces\", \"evidencia\": {\"pedido\": \"PO-2026-0473\", 
+\"asiento\": \"AS-00473\", \"no_pagar\": true}}, {\"regla_id\": \"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", 
+\"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T20:09:17.815366+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2250,
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "resultado": "NO_PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P011 (Mensajería Rápida del Sur S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P011\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0473 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0473\", \"importe\": \"2083.37\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1721.79\", \"iva\": \"361.58\", \"total\": \"2083.37\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-03-18 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-03-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": false, 
+\"detalle\": \"el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces\", \"evidencia\": {\"pedido\": \"PO-2026-0473\", 
+\"asiento\": \"AS-00473\", \"no_pagar\": true}}, {\"regla_id\": \"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", 
+\"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T22:48:53.274530+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2760,
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "resultado": "NO_PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "11816100e694d6b5b21c00a4096264a0fcd83cda4820d357a56df8eb75a85ee3",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P011 (Mensajería Rápida del Sur S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P011\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0473 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0473\", \"importe\": \"2083.37\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1721.79\", \"iva\": \"361.58\", \"total\": \"2083.37\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-03-18 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-03-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": false, 
+\"detalle\": \"el pedido PO-2026-0473 ya figura PAGADA en el ERP (asiento AS-00473): no pagar dos veces\", \"evidencia\": {\"pedido\": \"PO-2026-0473\", 
+\"asiento\": \"AS-00473\", \"no_pagar\": true}}, {\"regla_id\": \"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", 
+\"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T22:49:21.823374+00:00",
+   "vigente": 1
+  }
+ ],
+ "eventos": [
+  {
+   "id": 224,
+   "ts": "2026-09-18T18:07:33.297+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 848,
+   "ts": "2026-09-18T19:23:19.666+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 1384,
+   "ts": "2026-09-18T19:55:17.416+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 1884,
+   "ts": "2026-09-18T19:55:18.086+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "import:plantilla",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 2421,
+   "ts": "2026-09-18T19:55:23.051+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"NO_PAGAR\", \"reglas_ko\": [\"v3.R5\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 2915,
+   "ts": "2026-09-18T19:55:31.620+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 3473,
+   "ts": "2026-09-18T19:55:37.093+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"NO_PAGAR\", \"reglas_ko\": [\"v3.R5\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 3993,
+   "ts": "2026-09-18T20:09:16.950+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"NO_PAGAR\", \"reglas_ko\": [\"v3.R5\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 4503,
+   "ts": "2026-09-18T20:09:17.815+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"NO_PAGAR\", \"reglas_ko\": [\"v3.R5\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 5042,
+   "ts": "2026-09-18T22:48:53.275+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"NO_PAGAR\", \"reglas_ko\": [\"v3.R5\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 5564,
+   "ts": "2026-09-18T22:49:21.824+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"NO_PAGAR\", \"reglas_ko\": [\"v3.R5\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 6059,
+   "ts": "2026-09-18T23:16:58.350+00:00",
+   "sha256": "395a50e433b9d8f5abe1ee10e537da28ae15b3cb013b838c92b46ee9902dc1c9",
+   "file_id": "FA-2116_mensajería.pdf",
+   "etapa": "emit",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"entrega\": \"outcomes.jsonl\", \"result\": \"NO_PAGAR\"}",
+   "version": "v3"
+  }
+ ]
+}

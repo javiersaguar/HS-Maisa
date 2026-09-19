@@ -1,0 +1,447 @@
+$ uv run albertitos trace copia_2026_0518.pdf   # BD real, 19/09 07:25, COLUMNS=160
+{
+ "file_id": "copia_2026_0518.pdf",
+ "fichero": {
+  "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+  "file_id": "copia_2026_0518.pdf",
+  "lote": 1,
+  "bytes": 69586,
+  "paginas": 1,
+  "tiene_texto": 0,
+  "ingerido_en": "2026-09-18T18:07:33.405+00:00"
+ },
+ "hechos": [
+  {
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "extractor_version": "ext-0.1",
+   "metodo": "cache",
+   "hechos_json": 
+"{\"file_id\":\"copia_2026_0518.pdf\",\"sha256\":\"b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2\",\"num_factura\":\"2026/18902\",\"fecha\":\
+"2026-05-18\",\"razon_social\":\"Ofimática Cieza 
+S.L.\",\"nif_emisor\":\"B30455812\",\"iban\":\"ES6000825822130201588391\",\"pedido\":\"PO-2026-0721\",\"base\":\"760.00\",\"iva_pct\":\"21.00\",\"iva\":\"159.60
+\",\"total\":\"919.60\",\"lineas\":[{\"concepto\":\"Servicio mensual\",\"unidades\":null,\"importe\":\"380.00\"},{\"concepto\":\"Mantenimiento 
+trimestral\",\"unidades\":null,\"importe\":\"380.00\"}],\"metodo\":\"cache\",\"extractor_version\":\"ext-0.1\",\"avisos\":[\"sin_texto\",\"discrepancia_extracto
+res\"],\"texto_sospechoso\":null,\"confianza\":null}",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "creado_en": "2026-09-18T19:55:32.258+00:00"
+  }
+ ],
+ "decisiones": [
+  {
+   "id": 21,
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": false, \"detalle\": \"el IBAN de la factura no coincide con el del maestro para P003\", \"evidencia\": 
+{\"proveedor\": \"P003\", \"iban_factura\": \"ES6000825822130201588391\", \"iban_maestro\": \"ES6001825322180201588391\"}}, {\"regla_id\": \"v3.R2\", \"ok\": 
+true, \"detalle\": \"pedido PO-2026-0721 existe, es del proveedor y el importe coincide\", \"evidencia\": {\"pedido\": \"PO-2026-0721\", \"importe\": 
+\"919.60\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + IVA\", \"evidencia\": {\"base\": \"760.00\", \"iva\": 
+\"159.60\", \"total\": \"919.60\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 2026-05-18 válida y no futura\", \"evidencia\": {\"fecha\": 
+\"2026-05-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, \"detalle\": \"asiento AS-72005 PENDIENTE con el importe esperado\", 
+\"evidencia\": {\"asiento\": \"AS-72005\", \"importe_erp\": \"919.60\"}}, {\"regla_id\": \"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una 
+persona: discrepancia_extractores\", \"evidencia\": {\"avisos\": [\"discrepancia_extractores\"], \"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T19:55:23.012037+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 521,
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": false, \"detalle\": \"el IBAN de la factura no coincide con el del maestro para P003\", \"evidencia\": 
+{\"proveedor\": \"P003\", \"iban_factura\": \"ES6000825822130201588391\", \"iban_maestro\": \"ES6001825322180201588391\"}}, {\"regla_id\": \"v3.R2\", \"ok\": 
+true, \"detalle\": \"pedido PO-2026-0721 existe, es del proveedor y el importe coincide\", \"evidencia\": {\"pedido\": \"PO-2026-0721\", \"importe\": 
+\"919.60\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + IVA\", \"evidencia\": {\"base\": \"760.00\", \"iva\": 
+\"159.60\", \"total\": \"919.60\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 2026-05-18 válida y no futura\", \"evidencia\": {\"fecha\": 
+\"2026-05-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, \"detalle\": \"asiento AS-72005 PENDIENTE con el importe esperado\", 
+\"evidencia\": {\"asiento\": \"AS-72005\", \"importe_erp\": \"919.60\"}}, {\"regla_id\": \"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una 
+persona: discrepancia_extractores\", \"evidencia\": {\"avisos\": [\"discrepancia_extractores\"], \"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T19:55:37.046385+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1021,
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v2-sim",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": false, \"detalle\": \"el IBAN de la factura no coincide con el del maestro para P003\", \"evidencia\": 
+{\"proveedor\": \"P003\", \"iban_factura\": \"ES6000825822130201588391\", \"iban_maestro\": \"ES6001825322180201588391\"}}, {\"regla_id\": \"v3.R2\", \"ok\": 
+true, \"detalle\": \"pedido PO-2026-0721 existe, es del proveedor y el importe coincide\", \"evidencia\": {\"pedido\": \"PO-2026-0721\", \"importe\": 
+\"919.60\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + IVA\", \"evidencia\": {\"base\": \"760.00\", \"iva\": 
+\"159.60\", \"total\": \"919.60\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 2026-05-18 válida y no futura\", \"evidencia\": {\"fecha\": 
+\"2026-05-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, \"detalle\": \"asiento AS-72005 PENDIENTE con el importe esperado\", 
+\"evidencia\": {\"asiento\": \"AS-72005\", \"importe_erp\": \"919.60\"}}, {\"regla_id\": \"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una 
+persona: discrepancia_extractores\", \"evidencia\": {\"avisos\": [\"discrepancia_extractores\"], \"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T20:09:16.917218+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1531,
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": false, \"detalle\": \"el IBAN de la factura no coincide con el del maestro para P003\", \"evidencia\": 
+{\"proveedor\": \"P003\", \"iban_factura\": \"ES6000825822130201588391\", \"iban_maestro\": \"ES6001825322180201588391\"}}, {\"regla_id\": \"v3.R2\", \"ok\": 
+true, \"detalle\": \"pedido PO-2026-0721 existe, es del proveedor y el importe coincide\", \"evidencia\": {\"pedido\": \"PO-2026-0721\", \"importe\": 
+\"919.60\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + IVA\", \"evidencia\": {\"base\": \"760.00\", \"iva\": 
+\"159.60\", \"total\": \"919.60\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 2026-05-18 válida y no futura\", \"evidencia\": {\"fecha\": 
+\"2026-05-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, \"detalle\": \"asiento AS-72005 PENDIENTE con el importe esperado\", 
+\"evidencia\": {\"asiento\": \"AS-72005\", \"importe_erp\": \"919.60\"}}, {\"regla_id\": \"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una 
+persona: discrepancia_extractores\", \"evidencia\": {\"avisos\": [\"discrepancia_extractores\"], \"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T20:09:17.672130+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2041,
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": false, \"detalle\": \"el IBAN de la factura no coincide con el del maestro para P003\", \"evidencia\": 
+{\"proveedor\": \"P003\", \"iban_factura\": \"ES6000825822130201588391\", \"iban_maestro\": \"ES6001825322180201588391\"}}, {\"regla_id\": \"v3.R2\", \"ok\": 
+true, \"detalle\": \"pedido PO-2026-0721 existe, es del proveedor y el importe coincide\", \"evidencia\": {\"pedido\": \"PO-2026-0721\", \"importe\": 
+\"919.60\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + IVA\", \"evidencia\": {\"base\": \"760.00\", \"iva\": 
+\"159.60\", \"total\": \"919.60\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 2026-05-18 válida y no futura\", \"evidencia\": {\"fecha\": 
+\"2026-05-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, \"detalle\": \"asiento AS-72005 PENDIENTE con el importe esperado\", 
+\"evidencia\": {\"asiento\": \"AS-72005\", \"importe_erp\": \"919.60\"}}, {\"regla_id\": \"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una 
+persona: discrepancia_extractores\", \"evidencia\": {\"avisos\": [\"discrepancia_extractores\"], \"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T22:48:53.103721+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2551,
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "9059e5633f05d8df52f49ed2017670a16f5d7b99dcace503f2ce01a116f17bca",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": false, \"detalle\": \"el IBAN de la factura no coincide con el del maestro para P003\", \"evidencia\": 
+{\"proveedor\": \"P003\", \"iban_factura\": \"ES6000825822130201588391\", \"iban_maestro\": \"ES6001825322180201588391\"}}, {\"regla_id\": \"v3.R2\", \"ok\": 
+true, \"detalle\": \"pedido PO-2026-0721 existe, es del proveedor y el importe coincide\", \"evidencia\": {\"pedido\": \"PO-2026-0721\", \"importe\": 
+\"919.60\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + IVA\", \"evidencia\": {\"base\": \"760.00\", \"iva\": 
+\"159.60\", \"total\": \"919.60\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 2026-05-18 válida y no futura\", \"evidencia\": {\"fecha\": 
+\"2026-05-18\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, \"detalle\": \"asiento AS-72005 PENDIENTE con el importe esperado\", 
+\"evidencia\": {\"asiento\": \"AS-72005\", \"importe_erp\": \"919.60\"}}, {\"regla_id\": \"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una 
+persona: discrepancia_extractores\", \"evidencia\": {\"avisos\": [\"discrepancia_extractores\"], \"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T22:49:21.594383+00:00",
+   "vigente": 1
+  }
+ ],
+ "eventos": [
+  {
+   "id": 314,
+   "ts": "2026-09-18T18:07:33.405+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=no",
+   "version": null
+  },
+  {
+   "id": 546,
+   "ts": "2026-09-18T18:44:31.738+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "pendiente",
+   "intento": 1,
+   "latencia_ms": 175,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": "LLM-DOWN",
+   "detalle": "LLM-DOWN: caos: proveedor caído",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 582,
+   "ts": "2026-09-18T19:07:46.968+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "pendiente",
+   "intento": 1,
+   "latencia_ms": 21030,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": "LLM-INVALID",
+   "detalle": "LLM-INVALID: LLM-INVALID: sin tool_calls: ",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 604,
+   "ts": "2026-09-18T19:18:59.275+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 36898,
+   "tokens_in": 5425,
+   "tokens_out": 5031,
+   "coste_eur": 0.09174,
+   "error_codigo": null,
+   "detalle": "llm_vision avisos=['sin_texto', 'discrepancia_extractores']",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 626,
+   "ts": "2026-09-18T19:23:00.209+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 19752,
+   "tokens_in": 2904,
+   "tokens_out": 3711,
+   "coste_eur": 0.064377,
+   "error_codigo": null,
+   "detalle": "cache avisos=['sin_texto', 'discrepancia_extractores'] discrepancias={'iban': ('ES6000825822130201588391', 'ES6001825822180201588391')}",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 937,
+   "ts": "2026-09-18T19:23:20.100+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 254,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "cache avisos=['sin_texto', 'discrepancia_extractores'] discrepancias={'iban': ('ES6000825822130201588391', 'ES6001825822180201588391')}",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 1136,
+   "ts": "2026-09-18T19:36:33.877+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1084,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "cache avisos=['sin_texto', 'discrepancia_extractores'] discrepancias={'iban': ('ES6000825822130201588391', 'ES6001825822180201588391')}",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 1474,
+   "ts": "2026-09-18T19:55:17.535+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=no",
+   "version": null
+  },
+  {
+   "id": 1974,
+   "ts": "2026-09-18T19:55:18.092+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "import:cache",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 2212,
+   "ts": "2026-09-18T19:55:23.012+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R1\", \"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 3005,
+   "ts": "2026-09-18T19:55:31.724+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=no",
+   "version": null
+  },
+  {
+   "id": 3207,
+   "ts": "2026-09-18T19:55:32.258+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "import:cache",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 3264,
+   "ts": "2026-09-18T19:55:37.046+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R1\", \"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 3784,
+   "ts": "2026-09-18T20:09:16.917+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R1\", \"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 4294,
+   "ts": "2026-09-18T20:09:17.672+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R1\", \"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 4833,
+   "ts": "2026-09-18T22:48:53.104+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R1\", \"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 5355,
+   "ts": "2026-09-18T22:49:21.595+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R1\", \"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 6149,
+   "ts": "2026-09-18T23:16:58.352+00:00",
+   "sha256": "b738972687b4819d34799d86da87fd279194b805a43aa7d6a5d0a2610e6692d2",
+   "file_id": "copia_2026_0518.pdf",
+   "etapa": "emit",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"entrega\": \"outcomes.jsonl\", \"result\": \"ESCALAR\"}",
+   "version": "v3"
+  }
+ ]
+}

@@ -1,0 +1,426 @@
+$ uv run albertitos trace 2026-01-08_P001.pdf   # BD real, 19/09 07:25, COLUMNS=160
+{
+ "file_id": "2026-01-08_P001.pdf",
+ "fichero": {
+  "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+  "file_id": "2026-01-08_P001.pdf",
+  "lote": 1,
+  "bytes": 1904,
+  "paginas": 1,
+  "tiene_texto": 1,
+  "ingerido_en": "2026-09-18T18:07:33.022+00:00"
+ },
+ "hechos": [
+  {
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "extractor_version": "ext-0.1",
+   "metodo": "plantilla",
+   "hechos_json": 
+"{\"file_id\":\"2026-01-08_P001.pdf\",\"sha256\":\"12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836\",\"num_factura\":\"2026/11604\",\"fecha\":\
+"2026-01-08\",\"razon_social\":\"Suministros Levante 
+S.L.\",\"nif_emisor\":\"B46102331\",\"iban\":\"ES2100491500051234567890\",\"pedido\":\"PO-2026-0096\",\"base\":\"2489.99\",\"iva_pct\":\"21.00\",\"iva\":\"522.9
+0\",\"total\":\"3012.89\",\"lineas\":[{\"concepto\":\"Servicio 
+mensual\",\"unidades\":null,\"importe\":\"2489.99\"}],\"metodo\":\"plantilla\",\"extractor_version\":\"ext-0.1\",\"avisos\":[],\"texto_sospechoso\":null,\"confi
+anza\":1.0}",
+   "hechos_hash": "c609d41e74e1b42f5e1d2bed7c4409b05965704b2de76ca00ae264d139f73b7d",
+   "creado_en": "2026-09-18T22:49:20.867+00:00"
+  }
+ ],
+ "decisiones": [
+  {
+   "id": 1,
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "c609d41e74e1b42f5e1d2bed7c4409b05965704b2de76ca00ae264d139f73b7d",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P001 (Suministros Levante S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P001\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0096 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0096\", \"importe\": \"3012.89\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"2489.99\", \"iva\": \"522.90\", \"total\": \"3012.89\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-01-08 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-01-08\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00096 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00096\", \"importe_erp\": \"3012.89\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T19:55:23.006585+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 501,
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "c609d41e74e1b42f5e1d2bed7c4409b05965704b2de76ca00ae264d139f73b7d",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P001 (Suministros Levante S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P001\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0096 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0096\", \"importe\": \"3012.89\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"2489.99\", \"iva\": \"522.90\", \"total\": \"3012.89\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-01-08 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-01-08\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00096 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00096\", \"importe_erp\": \"3012.89\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T19:55:37.039206+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1001,
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "c609d41e74e1b42f5e1d2bed7c4409b05965704b2de76ca00ae264d139f73b7d",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v2-sim",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P001 (Suministros Levante S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P001\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0096 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0096\", \"importe\": \"3012.89\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"2489.99\", \"iva\": \"522.90\", \"total\": \"3012.89\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-01-08 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-01-08\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00096 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00096\", \"importe_erp\": \"3012.89\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T20:09:16.913140+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1511,
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "c609d41e74e1b42f5e1d2bed7c4409b05965704b2de76ca00ae264d139f73b7d",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P001 (Suministros Levante S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P001\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0096 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0096\", \"importe\": \"3012.89\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"2489.99\", \"iva\": \"522.90\", \"total\": \"3012.89\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-01-08 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-01-08\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00096 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00096\", \"importe_erp\": \"3012.89\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T20:09:17.657579+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2021,
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "4b0c15cf12c05e71f6e1931e2816efa2b0b62d21aef042125326f7e50606fbdf",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P001 (Suministros Levante S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P001\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0096 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0096\", \"importe\": \"3012.89\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"2489.99\", \"iva\": \"522.90\", \"total\": \"3012.89\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-01-08 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-01-08\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00096 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00096\", \"importe_erp\": \"3012.89\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una persona: duplicado_sospechoso\", \"evidencia\": {\"avisos\": [\"duplicado_sospechoso\"], 
+\"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T22:48:53.083953+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2531,
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "c609d41e74e1b42f5e1d2bed7c4409b05965704b2de76ca00ae264d139f73b7d",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P001 (Suministros Levante S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P001\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0096 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0096\", \"importe\": \"3012.89\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"2489.99\", \"iva\": \"522.90\", \"total\": \"3012.89\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-01-08 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-01-08\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00096 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00096\", \"importe_erp\": \"3012.89\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T22:49:21.570348+00:00",
+   "vigente": 1
+  }
+ ],
+ "eventos": [
+  {
+   "id": 1,
+   "ts": "2026-09-18T18:07:33.022+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 4,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 531,
+   "ts": "2026-09-18T18:44:31.529+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 4,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=['iban_invalido']",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 586,
+   "ts": "2026-09-18T19:18:22.353+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 31,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 613,
+   "ts": "2026-09-18T19:22:40.447+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 64,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 669,
+   "ts": "2026-09-18T19:23:19.304+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 134,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 1161,
+   "ts": "2026-09-18T19:55:17.134+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 4,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 1661,
+   "ts": "2026-09-18T19:55:18.071+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "import:plantilla",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 2192,
+   "ts": "2026-09-18T19:55:23.006+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 2692,
+   "ts": "2026-09-18T19:55:31.353+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 4,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 3192,
+   "ts": "2026-09-18T19:55:32.257+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "import:plantilla",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 3244,
+   "ts": "2026-09-18T19:55:37.040+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 3764,
+   "ts": "2026-09-18T20:09:16.913+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 4274,
+   "ts": "2026-09-18T20:09:17.658+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 4813,
+   "ts": "2026-09-18T22:48:53.085+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 2,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 5332,
+   "ts": "2026-09-18T22:49:21.053+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 199,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 5335,
+   "ts": "2026-09-18T22:49:21.573+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 2,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 5836,
+   "ts": "2026-09-18T23:16:58.347+00:00",
+   "sha256": "12a5e1eff4299d5bb0816e7d87aff2ba9be39928cf0478081d14067f02d22836",
+   "file_id": "2026-01-08_P001.pdf",
+   "etapa": "emit",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"entrega\": \"outcomes.jsonl\", \"result\": \"PAGAR\"}",
+   "version": "v3"
+  }
+ ]
+}

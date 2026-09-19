@@ -1,0 +1,364 @@
+$ uv run albertitos trace 2026-0233-A_catering.pdf   # BD real, 19/09 07:25, COLUMNS=160
+{
+ "file_id": "2026-0233-A_catering.pdf",
+ "fichero": {
+  "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+  "file_id": "2026-0233-A_catering.pdf",
+  "lote": 1,
+  "bytes": 1989,
+  "paginas": 1,
+  "tiene_texto": 1,
+  "ingerido_en": "2026-09-18T18:07:33.066+00:00"
+ },
+ "hechos": [
+  {
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "extractor_version": "ext-0.1",
+   "metodo": "plantilla",
+   "hechos_json": 
+"{\"file_id\":\"2026-0233-A_catering.pdf\",\"sha256\":\"0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52\",\"num_factura\":\"2026/0233-A\",\"fec
+ha\":\"2026-04-11\",\"razon_social\":\"CATERING HERMANOS PICO 
+S.L.\",\"nif_emisor\":\"B96233419\",\"iban\":\"ES1800815290070001234567\",\"pedido\":\"PO-2026-0492\",\"base\":\"1250.00\",\"iva_pct\":\"21.00\",\"iva\":\"262.5
+0\",\"total\":\"1512.50\",\"lineas\":[{\"concepto\":\"Suministro 
+pedido\",\"unidades\":\"1.00\",\"importe\":\"437.50\"},{\"concepto\":\"Instalación\",\"unidades\":\"1.00\",\"importe\":\"237.50\"},{\"concepto\":\"Reparación 
+equipo\",\"unidades\":\"1.00\",\"importe\":\"575.00\"}],\"metodo\":\"plantilla\",\"extractor_version\":\"ext-0.1\",\"avisos\":[\"duplicado_sospechoso\"],\"texto
+_sospechoso\":null,\"confianza\":1.0}",
+   "hechos_hash": "1e4f191c23f5926ed1dc2bb91d43114585ab09baf6b7e7bd9d18dc7dcc054629",
+   "creado_en": "2026-09-18T22:49:21.353+00:00"
+  }
+ ],
+ "decisiones": [
+  {
+   "id": 53,
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "b5caae4836fb2dd7ae18da0a8b7be956bc09cc1a9dee94fe6b2bcd0bbdbf132e",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P005 (Catering Hermanos Pico S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P005\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0492 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0492\", \"importe\": \"1512.50\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1250.00\", \"iva\": \"262.50\", \"total\": \"1512.50\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-04-11 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-04-11\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00492 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00492\", \"importe_erp\": \"1512.50\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T19:55:23.017876+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 553,
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "b5caae4836fb2dd7ae18da0a8b7be956bc09cc1a9dee94fe6b2bcd0bbdbf132e",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P005 (Catering Hermanos Pico S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P005\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0492 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0492\", \"importe\": \"1512.50\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1250.00\", \"iva\": \"262.50\", \"total\": \"1512.50\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-04-11 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-04-11\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00492 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00492\", \"importe_erp\": \"1512.50\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T19:55:37.053982+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1053,
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "b5caae4836fb2dd7ae18da0a8b7be956bc09cc1a9dee94fe6b2bcd0bbdbf132e",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v2-sim",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P005 (Catering Hermanos Pico S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P005\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0492 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0492\", \"importe\": \"1512.50\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1250.00\", \"iva\": \"262.50\", \"total\": \"1512.50\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-04-11 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-04-11\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00492 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00492\", \"importe_erp\": \"1512.50\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T20:09:16.922719+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 1563,
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "resultado": "PAGAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "b5caae4836fb2dd7ae18da0a8b7be956bc09cc1a9dee94fe6b2bcd0bbdbf132e",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P005 (Catering Hermanos Pico S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P005\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0492 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0492\", \"importe\": \"1512.50\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1250.00\", \"iva\": \"262.50\", \"total\": \"1512.50\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-04-11 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-04-11\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00492 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00492\", \"importe_erp\": \"1512.50\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": true, \"detalle\": \"sin anomalías que requieran revisión humana\", \"evidencia\": {\"avisos\": []}}]",
+   "decidido_en": "2026-09-18T20:09:17.694137+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2073,
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "1e4f191c23f5926ed1dc2bb91d43114585ab09baf6b7e7bd9d18dc7dcc054629",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P005 (Catering Hermanos Pico S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P005\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0492 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0492\", \"importe\": \"1512.50\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1250.00\", \"iva\": \"262.50\", \"total\": \"1512.50\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-04-11 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-04-11\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00492 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00492\", \"importe_erp\": \"1512.50\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una persona: duplicado_sospechoso\", \"evidencia\": {\"avisos\": [\"duplicado_sospechoso\"], 
+\"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T22:48:53.131773+00:00",
+   "vigente": 0
+  },
+  {
+   "id": 2583,
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "resultado": "ESCALAR",
+   "norma_version": "v3",
+   "fecha_corte": "2026-09-18",
+   "hechos_hash": "1e4f191c23f5926ed1dc2bb91d43114585ab09baf6b7e7bd9d18dc7dcc054629",
+   "maestro_version": "80911e429c6c",
+   "erp_version": "v1",
+   "motivos_json": "[{\"regla_id\": \"v3.R1\", \"ok\": true, \"detalle\": \"NIF y IBAN coinciden con P005 (Catering Hermanos Pico S.L.)\", \"evidencia\": 
+{\"proveedor\": \"P005\"}}, {\"regla_id\": \"v3.R2\", \"ok\": true, \"detalle\": \"pedido PO-2026-0492 existe, es del proveedor y el importe coincide\", 
+\"evidencia\": {\"pedido\": \"PO-2026-0492\", \"importe\": \"1512.50\"}}, {\"regla_id\": \"v3.R3\", \"ok\": true, \"detalle\": \"IVA al 21 % y total = base + 
+IVA\", \"evidencia\": {\"base\": \"1250.00\", \"iva\": \"262.50\", \"total\": \"1512.50\"}}, {\"regla_id\": \"v3.R4\", \"ok\": true, \"detalle\": \"fecha 
+2026-04-11 válida y no futura\", \"evidencia\": {\"fecha\": \"2026-04-11\", \"fecha_corte\": \"2026-09-18\"}}, {\"regla_id\": \"v3.R5\", \"ok\": true, 
+\"detalle\": \"asiento AS-00492 PENDIENTE con el importe esperado\", \"evidencia\": {\"asiento\": \"AS-00492\", \"importe_erp\": \"1512.50\"}}, {\"regla_id\": 
+\"v3.R6\", \"ok\": false, \"detalle\": \"anomalía que debe ver una persona: duplicado_sospechoso\", \"evidencia\": {\"avisos\": [\"duplicado_sospechoso\"], 
+\"texto_sospechoso\": null}}]",
+   "decidido_en": "2026-09-18T22:49:21.629270+00:00",
+   "vigente": 1
+  }
+ ],
+ "eventos": [
+  {
+   "id": 38,
+   "ts": "2026-09-18T18:07:33.066+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 662,
+   "ts": "2026-09-18T19:23:19.290+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 3,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 1198,
+   "ts": "2026-09-18T19:55:17.183+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 1698,
+   "ts": "2026-09-18T19:55:18.074+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "import:plantilla",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 2244,
+   "ts": "2026-09-18T19:55:23.017+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 2729,
+   "ts": "2026-09-18T19:55:31.401+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "ingest",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "lote=1 paginas=1 texto=si",
+   "version": null
+  },
+  {
+   "id": 3296,
+   "ts": "2026-09-18T19:55:37.054+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 3816,
+   "ts": "2026-09-18T20:09:16.922+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 4326,
+   "ts": "2026-09-18T20:09:17.694+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"PAGAR\", \"reglas_ko\": []}",
+   "version": "v3"
+  },
+  {
+   "id": 4865,
+   "ts": "2026-09-18T22:48:53.132+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 0,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 5328,
+   "ts": "2026-09-18T22:49:20.890+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "extract",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 3,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "coste_eur": 0.0,
+   "error_codigo": null,
+   "detalle": "plantilla avisos=[]",
+   "version": "ext-0.1"
+  },
+  {
+   "id": 5387,
+   "ts": "2026-09-18T22:49:21.630+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "decide",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": 1,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"resultado\": \"ESCALAR\", \"reglas_ko\": [\"v3.R6\"]}",
+   "version": "v3"
+  },
+  {
+   "id": 5873,
+   "ts": "2026-09-18T23:16:58.348+00:00",
+   "sha256": "0d1bd579a31b6aac567600f525a8ba9b1af6d446d2688c8298d450087b558a52",
+   "file_id": "2026-0233-A_catering.pdf",
+   "etapa": "emit",
+   "estado": "ok",
+   "intento": 1,
+   "latencia_ms": null,
+   "tokens_in": null,
+   "tokens_out": null,
+   "coste_eur": null,
+   "error_codigo": null,
+   "detalle": "{\"entrega\": \"outcomes.jsonl\", \"result\": \"ESCALAR\"}",
+   "version": "v3"
+  }
+ ]
+}
