@@ -1,4 +1,5 @@
-"""scripts/auditoria_entrega.py: los errores de la noche del 18/09 salen en ROJO y nombran el fichero.
+"""pipeline/auditoria.py (y su CLI, scripts/auditoria_entrega.py): los errores de la noche del 18/09 salen en
+ROJO y nombran el fichero; con un ROJO, `package` se niega a entregar.
 
 BD temporal construida a mano con el maestro y el ERP de conftest. Sin red y sin la Caja.
 """
@@ -20,20 +21,23 @@ from albertitos.core.contracts import (
     Aviso,
     ContextoDecision,
     Decision,
+    EstadoEvento,
+    Etapa,
     InvoiceFacts,
     MetodoExtraccion,
     Motivo,
     Resultado,
 )
-from albertitos.pipeline import etapas
+from albertitos.pipeline import auditoria as aud
+from albertitos.pipeline import etapas, package
 from albertitos.rules import norma_v3
 from albertitos.sources import snapshot
 
 _RUTA = Path(__file__).resolve().parents[1] / "scripts" / "auditoria_entrega.py"
 _spec = importlib.util.spec_from_file_location("auditoria_entrega", _RUTA)
-aud = importlib.util.module_from_spec(_spec)
-sys.modules[_spec.name] = aud  # las dataclasses del script buscan su módulo en sys.modules
-_spec.loader.exec_module(aud)
+cli = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = cli
+_spec.loader.exec_module(cli)
 
 CORTE = date(2026, 9, 18)
 # La factura perfecta de conftest: P001, pedido PO-2026-0001, asiento AS-00001 PENDIENTE por 3012.89.
@@ -54,8 +58,8 @@ PERFECTA = dict(
 def bd(conn, maestro, erp, tmp_path):
     snapshot.guardar_maestro(conn, maestro)
     snapshot.guardar_erp(conn, erp)
-    lote1 = tmp_path / "lote1"
-    lote1.mkdir()
+    lote1 = tmp_path / "caja" / "facturas"  # lo que espera package: <raíz>/facturas
+    lote1.mkdir(parents=True)
     return {"conn": conn, "maestro": maestro, "erp": erp, "tmp": tmp_path, "lote1": lote1}
 
 
@@ -112,8 +116,8 @@ def alta(
 def auditar(bd):
     return aud.auditar(
         bd["conn"],
+        {1: bd["lote1"], 2: bd["tmp"] / "no-existe"},
         lotes=[1],
-        dirs={1: bd["lote1"], 2: bd["tmp"] / "no-existe"},
         entrega=bd["tmp"] / "entrega",
     )
 
@@ -140,6 +144,8 @@ def test_dos_facturas_del_mismo_pedido_en_pagar_es_rojo(bd):
     assert "factura_41082.pdf=PAGAR" in doble.ejemplos[0]
     assert "2026-0233-A_catering.pdf=PAGAR" in doble.ejemplos[0]
     assert rojo(inf, "duplicado_sin_marcar_pagar").nivel == aud.ROJO
+    # lo que package anota como pendiente: los dos ficheros, por su nombre
+    assert inf.rojos["pago_doble"] == ["2026-0233-A_catering.pdf", "factura_41082.pdf"]
 
 
 def test_duplicado_marcado_y_escalado_no_es_rojo(bd):
@@ -308,9 +314,116 @@ def test_la_cli_sale_1_en_rojo_y_0_en_verde_y_da_json(bd, capsys):
     args = ["--db", ruta, "--lote", "1", "--dir-lote1", str(bd["lote1"])]
     args += ["--entrega", str(bd["tmp"] / "entrega"), "--json"]
     alta(bd, "factura_ok.pdf")
-    assert aud.main(args) == 0
+    assert cli.main(args) == 0
     assert json.loads(capsys.readouterr().out)["veredicto"] == "VERDE"
     alta(bd, "scan_025.pdf", num_factura="S-25", texto_sospechoso="None")
-    assert aud.main(args) == 1
+    assert cli.main(args) == 1
     salida = json.loads(capsys.readouterr().out)
     assert salida["veredicto"] == "ROJO" and "evidencia_falsa" in salida["rojos"]
+
+
+# ----------------------------------------------------------------------------- la puerta en package (punto G)
+
+
+def empaquetar(bd):
+    return package.empaquetar(
+        bd["conn"],
+        bd["tmp"] / "entrega",
+        bd["tmp"] / "caja",
+        None,
+        con_traza=True,
+        auditar=aud.auditar,
+    )
+
+
+def eventos_emit(bd, estado: EstadoEvento):
+    return (
+        bd["conn"]
+        .execute(
+            "SELECT file_id, error_codigo, detalle FROM eventos WHERE etapa=? AND estado=? ORDER BY id",
+            (Etapa.EMIT.value, estado.value),
+        )
+        .fetchall()
+    )
+
+
+def test_package_encuentra_la_auditoria_real():
+    assert package.auditor_de_entrega() is aud.auditar
+
+
+def test_package_con_la_auditoria_en_verde_entrega(bd):
+    alta(bd, "factura_ok.pdf")
+    [(ruta, informe)] = empaquetar(bd)
+    assert informe.ok and len(ruta.read_text(encoding="utf-8").splitlines()) == 1
+    resumen = [
+        json.loads(e["detalle"]) for e in eventos_emit(bd, EstadoEvento.OK) if not e["file_id"]
+    ]
+    assert resumen == [{"lote": 1, "entrega": "outcomes.jsonl", "lineas": 1, "auditoria": "verde"}]
+
+
+def test_package_se_niega_con_un_pago_doble_y_no_pisa_la_entrega(bd):
+    """PO-2026-0492: el JSONL era válido, pero pagaba dos veces. Con la puerta, package no lo escribe."""
+    alta(bd, "factura_ok.pdf")
+    [(ruta, _)] = empaquetar(bd)
+    antes = ruta.read_bytes()
+    alta(bd, "factura_41082.pdf", num_factura="F26-0233")  # el mismo pedido que factura_ok.pdf
+    with pytest.raises(package.EntregaInvalida, match="VEREDICTO: ROJO"):
+        empaquetar(bd)
+    assert ruta.read_bytes() == antes  # la última entrega válida sigue ahí
+    [rechazo] = [e for e in eventos_emit(bd, EstadoEvento.ERROR) if not e["file_id"]]
+    assert rechazo["error_codigo"] == "AUDITORIA-ROJA"
+    rojos = json.loads(rechazo["detalle"])["rojos"]
+    assert rojos["pago_doble"] == ["factura_41082.pdf", "factura_ok.pdf"]
+    pendientes = {
+        e["file_id"]: json.loads(e["detalle"])["pendiente"]
+        for e in bd["conn"].execute(
+            "SELECT file_id, detalle FROM eventos WHERE etapa=? AND estado='pendiente'",
+            (Etapa.EMIT.value,),
+        )
+    }
+    assert pendientes["factura_41082.pdf"].startswith("auditoría de entrega: ")
+
+
+def test_package_entrega_con_la_contingencia_en_ambar(bd):
+    """ADR-0009 (C4): la contingencia no bloquea la puerta; la línea dice su regla."""
+    alta(bd, "factura_ok.pdf")
+    conn = bd["conn"]
+    (bd["lote1"] / "scan_002.pdf").write_bytes(b"%PDF-1.4 vacio")
+    db.guardar_fichero(
+        conn,
+        sha256="sha-scan",
+        file_id="scan_002.pdf",
+        lote=1,
+        bytes_=1,
+        paginas=1,
+        tiene_texto=False,
+    )
+    db.guardar_decision(
+        conn,
+        Decision(
+            file_id="scan_002.pdf",
+            sha256="sha-scan",
+            resultado=Resultado.ESCALAR,
+            motivos=[
+                Motivo(
+                    regla_id="contingencia.C1",
+                    ok=False,
+                    detalle="sin hechos validados a la hora de entregar (LLM-RED): lo revisa una persona",
+                    evidencia={"ultimo_error": "LLM-RED", "motivo": "ensayo"},
+                )
+            ],
+            norma_version="v3",
+            fecha_corte=CORTE,
+            hechos_hash="sin-hechos",
+            maestro_version=bd["maestro"].version,
+            erp_version=bd["erp"].version,
+        ),
+    )
+    conn.commit()
+    [(ruta, informe)] = empaquetar(bd)
+    assert informe.ok
+    lineas = {
+        o["file_id"]: o for o in map(json.loads, ruta.read_text(encoding="utf-8").splitlines())
+    }
+    assert lineas["scan_002.pdf"]["result"] == "ESCALAR"
+    assert lineas["scan_002.pdf"]["regla"] == "contingencia.C1"
