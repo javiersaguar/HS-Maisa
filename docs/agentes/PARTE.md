@@ -188,3 +188,11 @@ _(pendiente)_
 - `make check` final se detiene en formato de sources/excel.py (J2 en edición; antes ficheros de J4). No toco esos ficheros; repetir al cerrar cambios concurrentes. Logs en dist/ensayo/j5/.
 - BD / outcomes al inicio y fin: c66d00e45be3 / 1ec4be206089. Copia hecha con SQLite backup, sin LLM ni red; ningún cambio en decisiones o entrega.
 - PIDO A Alejandro: conectar calendario.csv, avisos.csv y resumen.json si lo quiere en consola. Calendario HTML ya enseñable; CSV es borrador, no orden bancaria. La remesa con IBAN válido está probada sólo con datos sintéticos de tests.
+
+## Cierre del ciclo 10 (Javier, 13:45)
+- **J1** (sin terminal): sus dos scripts, ejecutados con tres arreglos del propio ensayo y versionados en `scripts/ensayo/`. Ensayo general del lote 2 con `main`: **14,2 s, todo en verde** (sin visión nueva). Desvío rojo: `package` se niega y `--aceptar-rojo` lo deja registrado. **P0-5: 39 s** del ROJO a los dos lotes APTO. Encontrado: con `ALBERTITOS_DB` exportada, 8 tests de `publicar_entrega` fallaban y a las 18:00 habría parecido que el merge de P0-5 estaba roto (arreglado). Chuleta y skill con los tiempos reales.
+- **J2:** terminado por él. Queda para Mónica: `Pedido.estado` (ANULADO en el Excel) no lo lee ninguna regla.
+- **J3:** terminado. Falta que Javier ponga `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash` en `.env`.
+- **J4** (sin terminal): `dato_en_vivo.py`, ejecutado. `--pagada` en 0,51 s (1 de 500 recalculada), y todos los modos por debajo de 0,6 s. Kit nuevo, `albertitos-kit-20260919-1337.tar.gz`, con esquema v3: antes hubo que aplicar `init_schema` a la BD real (idempotente; entrega idéntica, `1ec4be206089`). Instalado en un clon limpio: la chuleta entera funciona (`demo_caos --sin-red` en 3,0 s).
+- **J5:** su remesa salía con **0 pagos**, porque los 11 IBAN de la Caja son sintéticos y no pasan el mod-97. Ahora entran marcados (`iban_control_ok=false`, un aviso por proveedor) y `--estricto` reproduce su criterio. Sobre una copia de la BD real: **438 pagos, 2.428.159,06 €, 431 vencidos, 2 vencen esa semana**, en 0,19 s.
+- `make check`: 499 en verde + 1 xfail (P0-5). Auditoría VERDE. La BD real cambió **sólo** por `init_schema` (copia previa en `albertitos.db.bak`); la entrega, idéntica.

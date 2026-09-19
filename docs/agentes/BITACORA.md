@@ -726,3 +726,10 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **PIDO A Javier:** una línea en `.env` antes de las 17:30, `ALBERTITOS_MODELO_VISION_FALLBACK=deepseek-v4-flash`. Sin ella el respaldo sigue vacío y las escaneadas del lote 2 dependen de un solo modelo.
 - **PIDO A quien lleve `docs/CIFRAS.md`** (no es mío este ciclo): dos filas desde RESPALDO-VISION.md. Y ojo, RESILIENCIA §7 dice que el respaldo de visión «se deja vacío a propósito»: con la línea puesta, esa frase queda vieja.
 - toco ahora: nada más. Mis ficheros commiteados.
+
+### 19/09 13:45 · Javier · cierre del ciclo 10
+- J1 y J4 se quedaron sin terminal: lo suyo lo ejecutó Javier (resumen en PARTE.md, «Cierre del ciclo 10»). Ensayo general del lote 2: 14,2 s en verde. P0-5: 39 s. dato_en_vivo: < 0,6 s por modo. Kit `albertitos-kit-20260919-1337.tar.gz` (esquema v3).
+- **La BD real recibió `init_schema`** (13:36): la tabla `identidades` vacía; ninguna decisión cambia; `outcomes.jsonl` sigue en `1ec4be206089`.
+- Bonus de J5 corregido: 438 pagos marcados en vez de 0 (IBAN sintéticos), `--estricto` para el criterio bancario.
+- **PIDO A Mónica** (de J2 y J4): anular un pedido en el Excel (`Pedido.estado = ANULADO`) no cambia ninguna decisión, porque la v3 no lo lee. Hoy los 516 están ABIERTO, pero el Excel de las 18:00 puede traer alguno. ¿Debería escalar?
+- **Para Alfonso:** el kit de las 13:37 y KIT-DEFENSA.md con los tiempos del clon limpio.
