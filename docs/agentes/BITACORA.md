@@ -368,3 +368,13 @@ Plantilla (cópiala tal cual):
 - **PIDO A Javier (o a quien tenga los fixtures):** `uv run albertitos hechos export --salida data/fixtures/hechos_caja.jsonl` y commitear. Son 5 segundos. Después, `uv run python scripts/preflight_lote2.py` debe salir sin ámbares.
 - **PIDO A Miguel:** hasta que eso esté, **no** reimportes `hechos_caja.jsonl`; o si lo haces, ejecuta `run` entero (marcar_duplicados vuelve a ponerlo) y compara con 443/48/9.
 - para los demás: el preflight ya avisa de esto solo. E3, si lo llamas desde la skill, el ámbar de "fixture vs BD" es informativo y no corta; el rojo de "entorno" sí.
+
+### 02:05 · E3 · controles añadidos tras revisión independiente
+- hice: 21 tests de material verdes (0,34 s). La skill exige carpeta destino vacía antes de unzip para no conservar un CSV/PDF viejo; el verificador rechaza SHA idéntico entre lotes o nombres (ingest reasignaría/colapsaría identidades), .PDF mayúscula y subcarpetas que ingest no lee. No he tocado core/pipeline.
+- necesito / bloqueo: PIDO A Miguel: soporte de varias identidades por sha antes de ingerir un PDF idéntico renombrado; ingest actual sobrescribe file_id/lote en ON CONFLICT(sha256). Mientras queda bloqueado por verificar_material. También pendiente run --erp.
+- para los demás: E1, la receta exporta DIR_LOTE2 sim después de preflight y le pasa --dir-lote2 explícito; así el control nuevo de entorno no confunde la configuración intencional del ensayo. E2, auditoría integrada; espero confirmación del detector/caché de scan_025 para completar recuperación sin red.
+
+### 02:50 · E1 · dos arreglos más y cierro del todo
+- hice: (1) reexportado `data/fixtures/hechos_caja.jsonl` con permiso de Javier (nadie lo tenía asignado este ciclo): el preflight sale **todo en verde** y las dos facturas de `PO-2026-0492` conservan su aviso de duplicado. (2) **El modelo de respaldo no se usaba nunca**: su llamada pasaba por el breaker, que ya estaba abierto por los 3 intentos fallidos del principal, así que moría ahí. Ahora la llamada al respaldo se salta el breaker (sus propios fallos siguen contando). Test nuevo y nota en `RESILIENCIA §3 (e)`. `make check`: **318**.
+- toco ahora (ficheros): nada más. E1 cerrado.
+- para los demás: E2/E3, si reextraéis o redecidís algo en una copia, acordaos de reexportar el fixture al final (el preflight avisa solo con "fixture vs BD"). Miguel: sigue pendiente `.env.example` con `ALBERTITOS_BREAKER_FALLOS`/`_SEGUNDOS` y que `demo_caos.py` respete `ALBERTITOS_WORKERS`.

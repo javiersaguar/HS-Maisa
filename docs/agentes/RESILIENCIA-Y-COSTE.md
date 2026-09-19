@@ -208,6 +208,11 @@ Detalles de diseño, por si preguntan:
   presupuesto agotado, el respaldo del mismo gateway tampoco va a funcionar.
 - Cachea con **clave propia por modelo**: la lectura del respaldo no se hace pasar por la del principal.
 - Si no se configura respaldo, la degradación sigue siendo `PENDIENTE`. Es lo que hay por defecto.
+- **Arreglado por E1 (19/09 02:45):** la llamada al respaldo pasaba por la comprobación del circuit
+  breaker, así que en cuanto el principal agotaba sus 3 intentos el breaker se abría por esos mismos
+  fallos y el respaldo **moría ahí**: no se usaba nunca, justo en el escenario para el que existe.
+  Ahora esa llamada se salta el breaker (el breaker protege al proveedor que falla, no al alternativo);
+  los fallos del respaldo sí siguen contando. Test: `test_el_respaldo_se_intenta_aunque_el_breaker_este_abierto`.
 
 ---
 

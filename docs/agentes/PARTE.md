@@ -23,6 +23,10 @@ Partes anteriores en `partes/` (01: A1-A3 · 02: B1-B2 · 03: C1-C2 · 04: D1-D2
   - **Los hechos huérfanos no se pueden crear por la vía normal** (hay clave foránea), pero sí con el `DELETE` que documenta la skill: el cliente `sqlite3` no activa las claves foráneas. El test lo reproduce así.
   - `make demo-caos` fija 3 hilos y 3 facturas: con el umbral de 5, el breaker no llega a verse ahí (los tres entran antes de que ninguno falle). Por eso el comando de §3 usa 8 escaneadas y un hilo.
   - No hay copia de seguridad de la BD en ningún runbook. Ya existe `dist/albertitos.db.bak` (7,7 MB, API de backup).
+- Hecho después (mientras terminaban E2 y E3):
+  - **Tres comprobaciones más en el preflight**, con tests: *entorno* (variables de un ensayo aún exportadas; con `ALBERTITOS_BREAKER_FALLOS=2` una pasada real se cortaría a los dos fallos → rojo, era el riesgo que yo mismo había dejado abierto), *caché del LLM* (lecturas de otra versión de prompt) y *fixture vs BD*.
+  - **La comprobación nueva encontró un fallo real de elegibilidad**: `data/fixtures/hechos_caja.jsonl` estaba sin reexportar desde `marcar_duplicados`, así que quien lo importara devolvía a PAGAR `2026-0233-A_catering.pdf` y `factura_41082.pdf` (el mismo pedido, 1.512,50 € dos veces). Reexportado; el preflight sale **todo en verde**.
+  - **El modelo de respaldo no se usaba nunca**: su llamada pasaba por el breaker, que para entonces ya estaba abierto por los 3 intentos fallidos del principal. Ahora se salta el breaker (sus propios fallos siguen contando). Con test y documentado en `RESILIENCIA §3 (e)`.
 - Pendiente / no llegué a: nada de mi encargo.
 - Necesito de otros (quién · qué · para qué):
   - **E3**: el preflight ya acepta `--db`, `--dir-lote1`, `--dir-lote2`, `--fixture`, `--erp-url`, `--erp-lote2`, `--erp-esperado`, `--limpiar` y `--respaldar`; llámalo con `--db dist/ensayo/ensayo.db` y los directorios del simulado y no verás falsos fantasmas.
