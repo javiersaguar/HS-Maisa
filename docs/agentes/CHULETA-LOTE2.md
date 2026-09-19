@@ -1,25 +1,37 @@
-# Chuleta lote 2 · 18:00 sábado
+# Chuleta del lote 2 · **EJECUTADA** (19/09 18:00 → 20/09 00:17)
 
-> **Ensayada el 19/09 a las 13:12** con el código de `main` (`54b4171`), sobre una copia de la BD real, con 14 PDFs:
-> los 10 de `lote2_sim` y los 4 de `lote2_identicos`. `bash scripts/ensayo/lote2-ensayo.sh` → **14,3 s de principio a fin, todo
-> en verde**. Tiempos por paso en `dist/ensayo/j1/tiempos.tsv` y salidas literales en `ensayo.log`. BD real y entrega:
-> las mismas huellas antes y después.
->
-> **Lo que NO mide:** la visión. Las escaneadas del simulado ya estaban en la caché. Con escaneadas nuevas hay que
-> contar **0,065–0,106 escaneadas/s** con doble lectura (ESCALA-10K §4): con 40, entre 6 y 10 minutos. Por eso el
-> extract se lanza en cuanto el material está verificado.
+> **Ya no es una previsión: esto es lo que pasó.** El lote 2 está integrado, decidido y entregado
+> (`d2ade3f`: 500 líneas 445/46/9 + 40 líneas 23/16/1, auditoría VERDE). La receta de abajo se conserva porque
+> sirve para repetirlo: si mañana cambia la norma, se reprocesa y se vuelve a publicar con estos mismos pasos.
 
-| Paso | Tiempo medido |
+## Lo que pasó de verdad, con sus tiempos
+| Paso | Cómo salió |
 |---|---|
-| preflight · verificador (directorio / ZIP con hash) · `caja verify` | 0,3 s · 1,1 s / 0,4 s · 0,2 s |
-| `ingest` (14) · `run --erp v1` (sin visión nueva) · `status` | 0,3 s · 1,1 s · 0,2 s |
-| `erp pull --tag v2` (:8011) · `erp diff` · `reprocess --impacted` | **3,9 s** · 0,2 s · 0,2 s (2 de 510 cambian) |
-| `reprocess --todo` (la ruta de una v3 cambiada in situ) · inventario | 0,3 s · 0,4 s |
-| auditoría · `package` con auditoría · `validate` ×2 · `trace` | 0,3 s · 0,4 s · 0,2 s ×2 · 0,2 s |
-| `make publicar` en seco (repo bare local) | 1,0 s, VERDE |
-| **Desvío rojo:** `package` se niega (exit 1) · `--aceptar-rojo` | 0,4 s · 0,3 s; evento «roja aceptada: <motivo>» |
-| **P0-5** (nombre repetido con otro contenido): ya está en `main`, el verificador sólo avisa | sin merge ni `make check` (antes, 39 s); `2026-01-16_P004.pdf` sale en los dos lotes, ESCALAR (R1, 15:55) |
-| **Contingencia** en seco | 0,2 s |
+| **Material** | **No hubo ZIP ni hashes en el canal.** Llegó como el commit `f831e34` del repo de participantes: 40 PDF en `facturas_primin/` y tres CSV. Copiado a `data/lote2/` con su manifiesto; `caja verify --lote 2` → OK |
+| **La regla nueva** | **Nunca se publicó.** Mónica y Miguel decidieron con lo que dicen los datos: norma v4 con la regla de moneda (ADR-0022) |
+| Maestro del lote 2 | `maestro --lote2 data/lote2` → 15 proveedores, 555 pedidos (`f504377103b2`). Los IBAN de P013, P014 y P015 no pasan el control: avisos de calidad |
+| ERP v2 | 556 asientos (516 + 40 nuevos), 33 consultas, 3 reintentos, **4,3 s**. `AS-90001` deja `PO-2026-0071` PAGADA |
+| Ingesta y extracción | 40/40 sin pendientes: **23 por plantilla y 17 por LLM de texto**. **Ninguna escaneada**, así que los 6-10 minutos de visión que temíamos no hicieron falta |
+| Decisión | `reprocess --impacted --lote 2 --norma v4 --erp v2` → 40 de 40 en **0,03 s** |
+| Lote 1 | ADR-0017 aplicado (`hechos import` + `reprocess --impacted --lote 1`): 438/53/9 → **445/46/9**, cambian 7 escaneadas |
+| Auditoría y entrega | `package` → 500 + 40, las dos APTO; auditoría **VERDE** con un ámbar esperado (16 de 40 escalados en el lote 2, por las divisas); `make publicar` en seco y después de verdad |
+| **P0-5** (nombre repetido) y **P0-1** (copia exacta) | **No pasó ninguno** en el lote 2 real. El código estaba listo y no hizo falta |
+| Contingencia (ADR-0009) | No hizo falta: 0 pendientes |
+
+## Lo que no habíamos previsto
+- **Los proveedores nuevos vienen en CSV, no en el Excel**, y sin cargarlos las 18 facturas `e*` salían con «el
+  pedido no existe en el maestro». Se resolvió con `sources/lote2.py` y `maestro --lote2`.
+- **Ocho facturas en divisa** contra pedidos en euros, y **siete declarando IVA 0 %**. Escalan: sin tabla de cambio
+  oficial no convertimos. Es la pregunta abierta para los mentores (`docs/hitos.md`).
+- **Tres facturas manuscritas o corregidas a mano** (`e16`, `e17`, `e18`). La peligrosa es `e18`: el texto impreso
+  cuadra con el ERP y el papel dice otra cosa. La caza el aviso de anotación a mano (ADR-0020).
+- **Cuatro identificadores extranjeros** (IVA alemán y francés, CNPJ, número japonés) daban `NIF_INVALIDO` y
+  escalaban una factura limpia. Arreglado en `formatos.py`.
+
+## Ensayo previo (19/09 13:12), que es lo que nos dejó llegar preparados
+Con el código de `main` (`54b4171`), sobre una copia y con 14 PDF simulados: `bash scripts/ensayo/lote2-ensayo.sh`
+→ **14,3 s de principio a fin**, todo en verde. Tiempos por paso en `dist/ensayo/j1/tiempos.tsv`. No medía la
+visión, y al final no hizo falta: el lote 2 no trae escaneadas.
 
 ## Entorno
 ```bash
