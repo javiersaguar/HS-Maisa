@@ -211,3 +211,32 @@ def test_asientos_duplicados_no_se_silencian(tmp_path, contexto):
     ruta = zip_de(tmp_path, {"facturas/uno.pdf": pdf(), "erp.csv": datos})
     inf = material.verificar(ruta, **contexto)
     assert not inf.ok and "asiento_id repetido" in inf.texto()
+
+
+def test_pdf_identico_renombrado_no_puede_robar_identidad_del_lote1(tmp_path, contexto):
+    original = (contexto["lote1"] / "original.pdf").read_bytes()
+    ruta = zip_de(tmp_path, {"facturas/nuevo_nombre.pdf": original})
+    inf = material.verificar(ruta, **contexto)
+    assert not inf.ok
+    assert "idéntico por SHA-256 al lote 1" in inf.texto()
+    assert "original.pdf" in inf.texto()
+
+
+def test_pdf_identico_con_dos_nombres_no_puede_colapsar_en_ingest(tmp_path, contexto):
+    contenido = pdf()
+    ruta = zip_de(tmp_path, {"facturas/a.pdf": contenido, "facturas/b.pdf": contenido})
+    inf = material.verificar(ruta, **contexto)
+    assert not inf.ok and "idéntico por SHA-256 dentro del material" in inf.texto()
+
+
+@pytest.mark.parametrize(
+    "nombre,error",
+    [
+        ("facturas/nueva.PDF", "extensión incompatible con ingest"),
+        ("facturas/otra/nueva.pdf", "subcarpeta no ingerible"),
+    ],
+)
+def test_rutas_que_ingest_omite_no_salen_apto(tmp_path, contexto, nombre, error):
+    ruta = zip_de(tmp_path, {nombre: pdf()})
+    inf = material.verificar(ruta, **contexto)
+    assert not inf.ok and error in inf.texto()

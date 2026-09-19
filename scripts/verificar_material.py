@@ -263,10 +263,20 @@ def verificar(
     originales = {
         clave_nombre(p.name): p.name for p in lote1.glob("*") if p.suffix.lower() == ".pdf"
     }
+    try:
+        hashes_originales = {
+            hashlib.sha256(p.read_bytes()).hexdigest(): p.name
+            for p in lote1.glob("*")
+            if p.is_file() and p.suffix.lower() == ".pdf"
+        }
+    except OSError as exc:
+        inf.errores.append(f"no se pueden cotejar hashes del lote 1: {exc}")
+        return inf
     hay_carpeta = any(
         "facturas" in [p.casefold() for p in PurePosixPath(n).parts[:-1]] for n, _ in entradas
     )
     nombres = {}
+    hashes = {}
     asientos = {}
     for nombre, datos in entradas:
         p = PurePosixPath(nombre)
@@ -280,6 +290,25 @@ def verificar(
         )
         if es_factura:
             inf.facturas.append(nombre)
+            if p.suffix != ".pdf":
+                inf.errores.append(
+                    f"extensión incompatible con ingest: {nombre}; espera .pdf minúscula. "
+                    "No renombrar file_id oficial sin acordarlo con la organización; corregir ingest."
+                )
+            if hay_carpeta and p.parent.name.casefold() != "facturas":
+                inf.errores.append(f"factura en subcarpeta no ingerible: {nombre}")
+            huella = hashlib.sha256(datos).hexdigest()
+            if huella in hashes_originales:
+                inf.errores.append(
+                    f"PDF idéntico por SHA-256 al lote 1: {nombre} / {hashes_originales[huella]}; "
+                    "ingest reasignaría el original. Pedir a Miguel soporte de identidades múltiples."
+                )
+            if huella in hashes:
+                inf.errores.append(
+                    f"PDF idéntico por SHA-256 dentro del material: {hashes[huella]} / {nombre}; "
+                    "ingest colapsaría ambos nombres. No alterar el PDF para evitar este control."
+                )
+            hashes[huella] = nombre
             clave = clave_nombre(p.name)
             if clave in nombres:
                 inf.errores.append(
@@ -308,6 +337,8 @@ def verificar(
                 inf.errores.append(f"adjunto ilegible {nombre}: {exc}")
     if not inf.facturas:
         inf.errores.append("no hay facturas PDF en el material")
+    if len({PurePosixPath(n).parent for n in inf.facturas}) > 1:
+        inf.errores.append("facturas repartidas en varias carpetas; ingest sólo lee un directorio")
     if esperados is not None and len(inf.facturas) != esperados:
         inf.errores.append(f"hay {len(inf.facturas)} facturas PDF; se esperaban {esperados}")
     if inf.csvs:
