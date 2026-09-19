@@ -1,7 +1,11 @@
 {
   "ciclo": 5,
   "rama": "javier/ingesta",
-  "compartidos": ["docs/agentes/BITACORA.md", "docs/agentes/PARTE.md", "docs/agentes/plan.json"],
+  "compartidos": [
+    "docs/agentes/BITACORA.md",
+    "docs/agentes/PARTE.md",
+    "docs/agentes/plan.json"
+  ],
   "agentes": {
     "E1": [
       "scripts/preflight_lote2.py",
@@ -13,7 +17,8 @@
       "src/albertitos/sources/CLAUDE.md",
       "docs/adr/0002-plantillas-deterministas-y-contraste-llm.md",
       "docs/adr/0005-snapshot-del-erp-en-local-y-diff-por-version.md",
-      "docs/agentes/RESILIENCIA-Y-COSTE.md"
+      "docs/agentes/RESILIENCIA-Y-COSTE.md",
+      "data/fixtures/hechos_caja.jsonl"
     ],
     "E2": [
       "scripts/auditoria_entrega.py",
@@ -28,6 +33,15 @@
       "tests/test_material.py",
       ".claude/skills/lote2/SKILL.md",
       "docs/agentes/ENSAYO-LOTE2.md"
+    ],
+    "Javier": [
+      "docs/agentes/PLAN-05.md",
+      ".claude/hooks/guard_bash.py",
+      "tests/test_hooks.py",
+      ".claude/skills/entrega/SKILL.md",
+      "docs/agentes/ENSAYO-REPROCESADO.md",
+      "scripts/demo_caos.py",
+      "docs/demo/transcripcion-demo-caos.txt"
     ]
   }
 }
