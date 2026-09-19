@@ -1,0 +1,148 @@
+"""El guardián de Bash tiene que decidir igual en los cuatro portátiles.
+
+Estos tests simulan un portátil cualquiera (sin `.claude/dueno.local`, es decir, nadie es dueño del
+merge) y otro el de Miguel, y comprueban las prohibiciones que de verdad nos pueden costar la entrega.
+El caso que motivó el fichero: el runbook de entrega hace push a `main` del repo HS-Maisa-Entrega, y
+la regla "a main sólo Miguel" —que habla de ESTE repo— lo bloqueaba en el portátil de quien entregase.
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+HOOK = Path(__file__).resolve().parents[1] / ".claude" / "hooks" / "guard_bash.py"
+
+
+def decidir(comando: str, raiz: Path) -> str:
+    """Lanza el hook como lo lanza Claude Code y devuelve deny/ask/allow, o 'pasa' si no dice nada."""
+    entrada = json.dumps({"cwd": str(raiz), "tool_input": {"command": comando}})
+    proc = subprocess.run(
+        [sys.executable, str(HOOK)],
+        input=entrada,
+        capture_output=True,
+        text=True,
+        timeout=20,
+        env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CLAUDE_PROJECT_DIR": str(raiz)},
+    )
+    assert proc.returncode == 0, proc.stderr
+    salida = proc.stdout.strip()
+    if not salida:
+        return "pasa"
+    return json.loads(salida)["hookSpecificOutput"]["permissionDecision"]
+
+
+def git(*args: str, cwd: Path) -> None:
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+@pytest.fixture
+def portatil(tmp_path: Path) -> Path:
+    """Un clon de trabajo cualquiera: repo git en main, sin marcador de dueño."""
+    raiz = tmp_path / "HS-Maisa"
+    (raiz / ".claude").mkdir(parents=True)
+    git("init", "-q", "-b", "main", str(raiz), cwd=tmp_path)
+    # Sin un commit, `git rev-parse --abbrev-ref HEAD` no dice "main" y la regla no se activaría.
+    (raiz / "README.md").write_text("x", encoding="utf-8")
+    git("-c", "user.email=t@t", "-c", "user.name=t", "add", "README.md", cwd=raiz)
+    git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "inicial", cwd=raiz)
+    git("switch", "-q", "-c", "javier/ingesta", cwd=raiz)
+    return raiz
+
+
+def marcar_dueno(raiz: Path) -> Path:
+    (raiz / ".claude" / "dueno.local").write_text("merge\ncontratos\n", encoding="utf-8")
+    return raiz
+
+
+@pytest.fixture
+def portatil_de_miguel(portatil: Path) -> Path:
+    return marcar_dueno(portatil)
+
+
+@pytest.fixture
+def portatil_en_main(portatil: Path) -> Path:
+    git("switch", "-q", "main", cwd=portatil)
+    return portatil
+
+
+@pytest.fixture
+def repo_entrega(tmp_path: Path) -> Path:
+    destino = tmp_path / "HS-Maisa-Entrega"
+    destino.mkdir()
+    git("init", "-q", "-b", "main", str(destino), cwd=tmp_path)
+    return destino
+
+
+# --------------------------------------------------------------------------- main es de Miguel
+
+
+def test_push_a_main_bloqueado_para_el_resto(portatil: Path) -> None:
+    assert decidir("git push -u origin HEAD:main", portatil) == "deny"
+
+
+def test_push_de_tu_rama_permitido(portatil: Path) -> None:
+    assert decidir("git push -u origin javier/ingesta", portatil) == "pasa"
+
+
+def test_commit_en_main_bloqueado_para_el_resto(portatil_en_main: Path) -> None:
+    assert decidir("git commit -m 'sources: algo'", portatil_en_main) == "deny"
+
+
+def test_commit_en_tu_rama_permitido(portatil: Path) -> None:
+    assert decidir("git commit -m 'sources: algo'", portatil) == "pasa"
+
+
+def test_miguel_si_puede(portatil_de_miguel: Path) -> None:
+    git("switch", "-q", "main", cwd=portatil_de_miguel)
+    assert decidir("git push origin main", portatil_de_miguel) == "pasa"
+
+
+# --------------------------------------------------------------------------- repo de entrega
+
+
+def test_entrega_a_main_permitida_en_cualquier_portatil(portatil: Path, repo_entrega: Path) -> None:
+    """El runbook de entrega usa `git -C`: va a otro repo, así que la regla de main no aplica."""
+    assert decidir(f"git -C {repo_entrega} push -u origin HEAD:main", portatil) == "pasa"
+
+
+def test_push_forzado_prohibido_tambien_en_el_repo_de_entrega(
+    portatil: Path, repo_entrega: Path
+) -> None:
+    """`git -C` no puede ser una puerta trasera para reescribir historia."""
+    assert decidir(f"git -C {repo_entrega} push --force origin main", portatil) == "deny"
+
+
+def test_push_forzado_prohibido_aqui(portatil: Path) -> None:
+    assert decidir("git push --force-with-lease origin javier/ingesta", portatil) == "deny"
+
+
+# --------------------------------------------------------------------------- el resto de las reglas
+
+
+def test_los_outcomes_no_se_escriben_a_mano(portatil: Path) -> None:
+    assert decidir("echo '{}' >> dist/entrega/outcomes.jsonl", portatil) == "deny"
+
+
+def test_no_se_borra_la_caja(portatil: Path) -> None:
+    assert decidir("rm -rf data/caja/facturas", portatil) == "deny"
+
+
+def test_pip_prohibido(portatil: Path) -> None:
+    assert decidir("python -m pip install pandas", portatil) == "deny"
+
+
+def test_los_contratos_solo_los_toca_miguel(portatil: Path) -> None:
+    orden = "sed -i s/x/y/ src/albertitos/core/contracts.py"
+    assert decidir(orden, portatil) == "deny"
+    assert decidir(orden, marcar_dueno(portatil)) == "pasa"
+
+
+def test_la_documentacion_puede_hablar_de_comandos_prohibidos(portatil: Path) -> None:
+    """Un heredoc es contenido, no comandos: escribir 'git push main' en un doc no puede bloquear."""
+    orden = "cat > docs/nota.md <<'EOF'\nNunca hagas git push origin main\nEOF"
+    assert decidir(orden, portatil) == "pasa"
