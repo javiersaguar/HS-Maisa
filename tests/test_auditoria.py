@@ -175,8 +175,17 @@ def test_pagar_de_un_pedido_ya_pagado_es_rojo(bd):
 
 
 def test_pagar_con_documento_superpuesto_es_ambar_no_rojo(bd):
-    """scan_025 reextraído: con la v3 de hoy DOCUMENTO_SUPERPUESTO no escala. Se avisa; decide Mónica."""
-    alta(bd, "scan_025.pdf", avisos=[Aviso.SIN_TEXTO, Aviso.DOCUMENTO_SUPERPUESTO])
+    """Prueba el auditor, no la norma: un PAGAR que arrastra un aviso no benigno se enseña en ámbar.
+
+    Desde el ADR-0010 la norma ya escala DOCUMENTO_SUPERPUESTO, así que el PAGAR se fuerza con
+    `resultado`: es lo que vería el auditor si una norma futura, o una decisión a mano, lo pagara.
+    """
+    alta(
+        bd,
+        "scan_025.pdf",
+        avisos=[Aviso.SIN_TEXTO, Aviso.DOCUMENTO_SUPERPUESTO],
+        resultado=Resultado.PAGAR,
+    )
     inf = auditar(bd)
     c = rojo(inf, "pagar_con_avisos")
     assert inf.ok and c.nivel == aud.AMBAR

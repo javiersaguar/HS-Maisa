@@ -1,6 +1,7 @@
-# ADR-0009 · Un documento superpuesto lo mira una persona
+# ADR-0010 · Un documento superpuesto lo mira una persona
 
 - **Estado:** aceptado
+- **Número:** escrito como ADR-0009 en la rama de Mónica (commit `b97b648`); renumerado al mergear porque el 0009 ya era la contingencia.
 - **Fecha:** 2026-09-19 09:05 · **Dueño:** Mónica · **Módulos:** rules/
 
 ## Contexto

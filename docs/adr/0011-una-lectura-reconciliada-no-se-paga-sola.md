@@ -1,6 +1,7 @@
-# ADR-0010 · Una lectura reconciliada con el maestro no se paga sola
+# ADR-0011 · Una lectura reconciliada con el maestro no se paga sola
 
 - **Estado:** aceptado
+- **Número:** escrito como ADR-0010 en la rama de Mónica (commit `d18ee3d`); renumerado al mergear (el 0009 ya era la contingencia).
 - **Fecha:** 2026-09-19 09:40 · **Dueño:** Mónica · **Módulos:** rules/ (consecuencia para core/)
 
 ## Contexto
@@ -44,7 +45,7 @@ capa de texto) no se ven afectados.
   confianza no cambia el `hechos_hash` y el linaje no marcará la decisión para recalcular. Hoy no muerde
   porque el cambio de norma obliga a reprocesar de todos modos, pero el invariante "si cambia lo que decide,
   cambia el hash" está roto mientras siga excluido.
-- Como el ADR-0009, es un cambio in situ sobre la v3: la etiqueta de versión no cambia y hay que reprocesar
+- Como el ADR-0010, es un cambio in situ sobre la v3: la etiqueta de versión no cambia y hay que reprocesar
   explícitamente.
 
 ## Evidencia

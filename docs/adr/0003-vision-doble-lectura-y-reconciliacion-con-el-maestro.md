@@ -1,6 +1,8 @@
 # ADR-0003 · Las escaneadas se leen dos veces y el desacuerdo se resuelve con el maestro, no con el modelo
 
-- **Estado:** propuesto
+- **Estado:** aceptado, **acotado por el ADR-0011** (Mónica, 19/09): la reconciliación con el maestro sigue
+  eligiendo qué lectura vale, pero una lectura reconciliada (confianza < 1) ya no basta para pagar: R6 la escala.
+  Las 5 escaneadas que se pagaban así (`scan_006/009/011/012/017`) pasan a ESCALAR.
 - **Fecha:** 2026-09-18 23:45 · **Dueño:** Javier · **Módulos:** extract/
 
 ## Contexto
