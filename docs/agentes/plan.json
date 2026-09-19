@@ -71,7 +71,8 @@
       "docs/api/confianza.md",
       "docs/api/ejemplos/confianza-*",
       "docs/adr/0014-*",
-      "src/albertitos/extract/etapa.py"
+      "src/albertitos/extract/etapa.py",
+      "scripts/agentes_check.py"
     ],
     "Miguel": [
       "src/albertitos/core/*",
