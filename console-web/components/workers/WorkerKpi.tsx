@@ -22,7 +22,7 @@ export function WorkerKpi({
   children?: ReactNode
 }) {
   return (
-    <Card className="rounded-2xl border-[#e5e9e4] bg-[#fffefa] p-4 shadow-[0_7px_24px_rgba(20,55,45,0.045)]">
+    <Card className="rounded-2xl border-line bg-surface p-4 shadow-[0_7px_24px_rgba(43,55,51,0.045)]">
       <div className="flex items-center justify-between gap-3">
         <span
           className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[16px] font-semibold"
@@ -34,8 +34,8 @@ export function WorkerKpi({
           {value}
         </p>
       </div>
-      <h3 className="mt-3 text-[14px] font-semibold text-[#354940]">{label}</h3>
-      {children && <div className="mt-1.5 text-[13px] text-[#829088]">{children}</div>}
+      <h3 className="mt-3 text-[14px] font-semibold text-ink">{label}</h3>
+      {children && <div className="mt-1.5 text-[13px] text-muted">{children}</div>}
     </Card>
   )
 }

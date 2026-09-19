@@ -24,6 +24,16 @@ export function formatAmount(amount: number | null): string {
   return amount === null ? '—' : currency.format(amount)
 }
 
+/**
+ * Importe del contrato del bonus (string con 2 decimales, "2428159.06") → "2.428.159,06 €".
+ * Sólo para pintar: los totales vienen ya sumados de la API y aquí no se suma nada.
+ */
+export function formatImporte(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—'
+  const amount = Number(value)
+  return Number.isFinite(amount) ? currency.format(amount) : value
+}
+
 export function formatNumber(value: number): string {
   return number.format(value)
 }

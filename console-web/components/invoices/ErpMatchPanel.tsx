@@ -20,12 +20,12 @@ function Check({
 }) {
   return (
     <div
-      className="flex items-center justify-between gap-3 border-b border-[#edf0ec] px-3 py-2.5 last:border-0 animate-in fade-in slide-in-from-left-1 duration-300"
+      className="flex items-center justify-between gap-3 border-b border-line-soft px-3 py-2.5 last:border-0 animate-in fade-in slide-in-from-left-1 duration-300"
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
       <div className="min-w-0">
         <p className="font-medium">{label}</p>
-        {detail && <p className="mt-1 text-[12px] leading-5 text-[#68736d]">{detail}</p>}
+        {detail && <p className="mt-1 text-[12px] leading-5 text-ink-soft">{detail}</p>}
       </div>
       <StatusBadge tone={tone} className="shrink-0">
         {status}
@@ -56,19 +56,19 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
 
   return (
     <div className="flex flex-col gap-4 text-[14px]">
-      <div className="rounded-xl border border-[#dfe4de] bg-[#fafcfa] p-4">
+      <div className="rounded-xl border border-line bg-surface p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Maestro de proveedores</h3>
-          <span className="font-mono text-[12px] text-[#8a958e]">
+          <span className="font-mono text-[12px] text-muted">
             {fuentes.maestro_version ? `versión ${shortHash(fuentes.maestro_version, 12)}` : 'sin snapshot todavía'}
           </span>
         </div>
-        <p className="mt-2 leading-5 text-[#68736d]">
+        <p className="mt-2 leading-5 text-ink-soft">
           {proveedor
             ? `${proveedor.razon_social}${proveedor.ciudad ? `, de ${proveedor.ciudad}` : ''}${proveedor.condiciones_dias ? `. Pago a ${proveedor.condiciones_dias} días` : ''}.`
             : `El NIF ${hechos.nif_emisor ?? 'de la factura (no se pudo leer)'} no está en el maestro.`}
         </p>
-        <div className="mt-4 overflow-hidden rounded-lg border border-[#dfe4de] bg-white text-[13px]">
+        <div className="mt-4 overflow-hidden rounded-lg border border-line bg-surface text-[13px]">
           <Check
             index={0}
             label="NIF"
@@ -107,19 +107,19 @@ export function ErpMatchPanel({ fuentes, hechos }: { fuentes: Fuentes | null; he
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#dfe4de] bg-[#fafcfa] p-4">
+      <div className="rounded-xl border border-line bg-surface p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Asiento en el {ERP_NOMBRE}</h3>
-          <span className="text-[12px] text-[#8a958e]">
+          <span className="text-[12px] text-muted">
             {fuentes.erp_version ? `versión ${fuentes.erp_version}` : 'sin snapshot todavía'}
           </span>
         </div>
         {asientos.length === 0 ? (
-          <p className="mt-2 leading-5 text-[#68736d]">
+          <p className="mt-2 leading-5 text-ink-soft">
             {hechos.pedido ? `El pedido ${hechos.pedido} no tiene asiento en el ERP.` : 'Sin pedido no se puede cruzar con el ERP.'}
           </p>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-lg border border-[#dfe4de] bg-white text-[13px]">
+          <div className="mt-4 overflow-hidden rounded-lg border border-line bg-surface text-[13px]">
             {asientos.map((asiento, index) => (
               <Check
                 key={asiento.asiento_id}

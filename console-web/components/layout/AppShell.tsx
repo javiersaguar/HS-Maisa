@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname])
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f7f8f5] py-3 pl-3 text-[#17211e]">
+    <div className="flex h-screen w-full overflow-hidden bg-canvas py-3 pl-3 text-ink">
       <Sidebar />
       <main ref={mainRef} className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
         {children}

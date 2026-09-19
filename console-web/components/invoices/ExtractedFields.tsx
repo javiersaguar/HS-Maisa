@@ -57,12 +57,12 @@ export function ExtractedFields({
   onSelect: (key: CampoHecho) => void
 }) {
   if (!hechos) {
-    return <p className="mt-2 text-[13px] text-[#9aa39e]">La extracción no terminó: este fichero no tiene hechos todavía.</p>
+    return <p className="mt-2 text-[13px] text-muted">La extracción no terminó: este fichero no tiene hechos todavía.</p>
   }
 
   return (
     <>
-      <div className="mt-2 overflow-hidden rounded-lg border border-[#dfe4de] text-[13px]">
+      <div className="mt-2 overflow-hidden rounded-lg border border-line text-[13px]">
         {CAMPOS.map((campo) => {
           const value = campoValor(hechos, campo.key)
           return (
@@ -70,18 +70,18 @@ export function ExtractedFields({
               key={campo.key}
               onClick={() => onSelect(campo.key)}
               aria-pressed={activeField === campo.key}
-              className={`flex w-full justify-between gap-3 border-b border-l-2 border-b-[#edf0ec] px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-[#eff8f3] ${activeField === campo.key ? 'border-l-[#35b889] bg-[#eff8f3]' : 'border-l-transparent bg-[#fafbf9]'}`}
+              className={`flex w-full justify-between gap-3 border-b border-l-2 border-b-line-soft px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-accent-soft ${activeField === campo.key ? 'border-l-accent-dark bg-accent-soft' : 'border-l-transparent bg-surface'}`}
             >
-              <span className="shrink-0 text-[#7d8580]">{campo.label}</span>
-              <b className={`min-w-0 truncate text-right ${campo.mono ? 'font-mono text-[12px]' : ''} ${value ? '' : 'font-normal text-[#b0b8b3]'}`}>
+              <span className="shrink-0 text-muted">{campo.label}</span>
+              <b className={`min-w-0 truncate text-right ${campo.mono ? 'font-mono text-[12px]' : ''} ${value ? '' : 'font-normal text-muted'}`}>
                 {value ?? 'no legible'}
               </b>
             </button>
           )
         })}
       </div>
-      <p className="mt-3 text-[13px] leading-5 text-[#52605a]">{describirExtraccion(hechos)}</p>
-      <p className="mt-2 text-[12px] text-[#9aa39e]">Pulsa un campo para verlo señalado en el documento.</p>
+      <p className="mt-3 text-[13px] leading-5 text-ink-soft">{describirExtraccion(hechos)}</p>
+      <p className="mt-2 text-[12px] text-muted">Pulsa un campo para verlo señalado en el documento.</p>
     </>
   )
 }
