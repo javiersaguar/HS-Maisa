@@ -44,7 +44,8 @@
       "docs/adr/README.md",
       ".claude/skills/lote2/SKILL.md",
       "scripts/contingencia.py",
-      "tests/test_contingencia.py"
+      "tests/test_contingencia.py",
+      "data/fixtures/hechos_caja.jsonl"
     ]
   }
 }
