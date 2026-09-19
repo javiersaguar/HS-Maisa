@@ -68,16 +68,20 @@ Partes anteriores en `partes/` (01: A1-A3 · 02: B1-B2 · 03: C1-C2 · 04: D1-D2
 - Propongo como siguiente tarea: tras las 18:00, pasar la auditoría al lote 2 con la v4 y añadirle lo que la regla nueva exija para pagar; y que Miguel la enganche a `package`.
 
 ## E3 · Materiales verificados y runbook cronometrado de punta a punta
-- Estado:
-- Hecho (con cifras):
-- Verificado con:
-- Ficheros tocados:
-- Commits:
-- Descubierto:
-- Pendiente / no llegué a:
-- Necesito de otros:
-- Riesgos que veo:
-- Propongo como siguiente tarea:
+- Estado: implementación y ensayo **terminados**; cierre global pendiente de conciliar hashes concurrentes y propiedad de ocho rutas ajenas.
+- Hecho: verificador ZIP/directorio de sólo lectura con hash publicado, apertura PDF, NFC, colisiones de nombres y SHA, estructura compatible con ingest, CSV tipado y diff contra v1; adjuntos mostrados como datos. Skill lote2 reescrita con preflight, respaldo, hash, manifiesto antes de verify, duplicados, ERP explícito, linaje granular y auditoría antes/después de package.
+- Ensayo: copia SQLite en dist/ensayo/ensayo.db; 10 hechos nuevos, 20 marcas de duplicado y **9 originales PAGAR→ESCALAR**. Pull ERP 3 altas/2 cambios; reproceso **2/510**. Primera auditoría roja por scan_025; recuperación cacheada (0 tokens, sin caos, proveedor bloqueado en memoria), reproceso **1/510**, auditoría VERDE. Package APTO **500 + 10 líneas**, sólo en dist/ensayo/entrega. Lote 1 final 433 PAGAR / 57 ESCALAR / 10 NO_PAGAR; lote 2 10 ESCALAR. Ámbar DOCUMENTO_SUPERPUESTO pendiente de Mónica.
+- Tiempos: run 1,380 s; pull 3,969 s; diff 0,135 s; reproceso ERP 0,220 s; package final 0,163 s; auditoría final 0,381 s. Primera pasada 7,597 s, caliente, excluye recuperación y pausas. Tabla comparada y receta completa en docs/agentes/ENSAYO-LOTE2.md.
+- Verificado: `uv run pytest tests/test_material.py -q` → **21 passed**; `make check` → **323 passed, 9 skipped, 2 deselected**, Ruff verde. Frontmatter YAML válido, conservada política Claude disable-model-invocation.
+- `make agentes-check` → **8 problemas** fuera de E3: .claude/hooks/guard_bash.py, .claude/skills/entrega/SKILL.md, data/fixtures/hechos_caja.jsonl, docs/agentes/ENSAYO-REPROCESADO.md, docs/agentes/PLAN-05.md, docs/demo/transcripcion-demo-caos.txt, scripts/demo_caos.py, tests/test_hooks.py. No cambio plan.json ni ficheros ajenos.
+- Ficheros: scripts/verificar_material.py, tests/test_material.py, .claude/skills/lote2/SKILL.md, docs/agentes/ENSAYO-LOTE2.md; bitácora append y esta sección.
+- Commits: **58fc78f** verificador inicial y tests; **99ca183** protección de identidad; documentación y cierre en el commit que contiene este parte.
+- Descubierto: ingest sobrescribe identidad cuando dos nombres comparten SHA; omite .PDF y subcarpetas; run no admite --erp. Verificador bloquea los casos peligrosos; alternativa probada `extract` + `reprocess --todo --erp v1` incluye duplicados. PIDO A Miguel registrado.
+- Integridad: E3 sólo escribió artefactos de ejecución en dist/ensayo. **No se puede certificar igualdad global**: durante las sesiones concurrentes cambiaron BD real y PDF (origen no atribuido por E3), y hechos_caja.jsonl (reexportación anunciada por E1). JSONL oficial idéntico; 524/525 archivos de data idénticos y cero nuevos. No se revierten escrituras ajenas.
+  - dist/albertitos.db: antes `8c163e859dd63022c10fa55bed116b7a694e026ab8bfc9b6b037bbb5bbf4bcc7`; después `9ef061ed2fca79e82046fce4a78375b3d662d685a6ad05384c31ed88985170c0`.
+  - dist/entrega/outcomes.jsonl: antes `5ec17aaa50455f9459038520b14db8313cc1f1c8e2aeb787b9717023541d73a3`; después `5ec17aaa50455f9459038520b14db8313cc1f1c8e2aeb787b9717023541d73a3`.
+  - dist/entrega/albertitos_plan.pdf: antes `eaeb1f1f5cf443c56a305ae91514f3d58d8f89b1fa93cb5476c128f925ad8797`; después `a67e695b4e7990ba38fe09e9446eafb35af2482813334e0fb0543967cc4f5218`.
+- Necesito de otros: **Javier**, conciliar hashes BD/PDF y las ocho autorizaciones de agentes-check; **Mónica**, política DOCUMENTO_SUPERPUESTO y duplicados entre lotes; **Miguel**, run --erp, identidad por fichero y auditoría integrada en package. No queda implementación pendiente dentro de las rutas E3.
 
 ## Javier (a mano, al cerrar el ciclo)
 - `make check`:
