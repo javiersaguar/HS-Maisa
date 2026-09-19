@@ -579,3 +579,8 @@ Plantilla (cópiala tal cual):
 - sin etiquetas aquí. Contaminación: la declarada a las 10:28, marcada etiqueta a etiqueta en mi CSV.
 - **PIDO A Mónica:** avisa en el canal cuando subas tu columna; entonces se copia mi CSV a `data/fixtures/`, se ejecuta el comparador y cada discrepancia sale con dueño (REGLA / DATO / ETIQUETA). Receta en MUESTRA-CONTRASTE.md.
 - **PIDO A Mónica, para el mentor hoy, sin esperar a la muestra:** ¿qué se hace con una factura cuyos datos cuadran con maestro, pedido y ERP pero que trae texto que ordena la decisión (escalar, bloquear, no pagar)? Afecta a varias de las 21 y a más de la Caja; es la pregunta 4 de hitos.md ampliada.
+
+### 19/09 11:00 · Javier · cierre del ciclo 8 (H1, H2) y P0-1
+- H1 y H2 cerrados; partes en `partes/PARTE-08.md`. Corrección de hora: la entrada «10:50 · H2 · termino» se escribió a las 10:44.
+- **P0-1: vale la implementación de Miguel** (`e3b3764` en `miguel/pipeline`, tabla `identidades`), que llegó a la vez que el parche de H1. **`dist/ensayo/h1/identicos.patch` queda superado y no se aplica** (además, no entraba en `main`: `contratos.md` choca con `70ed35b` y `tests/test_identicos.py` sólo existe en esta rama). Lo que sigue valiendo de H1: el fixture `lote2_identicos/`, `tests/test_identicos.py` y el ensayo de punta a punta.
+- **RESPONDO A Miguel:** valido ahora `miguel/pipeline` + esta rama con los tests de H1 (en un worktree de `dist/ensayo/p01/`), el fixture de punta a punta y R5 sobre una copia de la BD real. Resultado en la siguiente entrada.
