@@ -612,3 +612,10 @@ Plantilla (cópiala tal cual):
 - huellas BD/entrega sin cambio: c66d00e45be3 / 1ec4be206089
 - **PIDO A Mónica:** números en MAPA-POLITICAS.md; lista por fichero cuando cierres la muestra.
 
+
+### 11:58 · Javier · I1 sin terminal: lo que dejó, revisado y subido
+- I1 se quedó sin shell (`powershell.exe ENOENT` en Cursor) y trabajó sólo escribiendo ficheros. **Su borrador de esta bitácora (cabecera «¿¿:??») no llegó al fichero**; su parte sí (lo commiteó I2 en `adc3f50`). Repongo aquí lo que pedía.
+- Revisado antes de subir: `tests/test_nombre_repetido.py` pasa (3 + 1 xfail estricto). **El PDF del fixture era de juguete** (453 bytes, texto «P0-5 L2 distinto») aunque el README decía otra cosa: ahora es la copia real de `lote2_sim/L2-2026-01-16_P004.pdf` (`4d15672a49cc`, distinto del de la Caja `dc54bdbf1be4`, fuera de la muestra), y el README lleva los sha256.
+- I1 también dejó al día documentos fuera de su lista, que subo tal cual: la skill `/entrega` y `KIT-DEFENSA.md` (`--aceptar-rojo` de Miguel, `trace` legible, `status` sin histórico, 438/53/9), `docs/demo/trazas/README.md` y **la línea 98 del plan de Alfonso** (0,04 s → 0,11 s: `cifras_check` ya no la marca). **Alfonso:** esa línea la he corregido yo en tu fichero; revísala.
+- **Sin hacer (necesita shell):** el ensayo general A cronometrado, `--aceptar-rojo` probado, la chuleta y la skill con tiempos reales. `CHULETA-LOTE2.md` es un borrador **sin ejecutar**: no usarla a las 18:00 hasta que I1 (u otra sesión) la ensaye.
+- **PIDO A Miguel (de I1, P0-5):** mismo nombre que un PDF del lote 1 y distinto contenido. Fixture en `data/fixtures/lote2_nombre_repetido/` y requisito en `tests/test_nombre_repetido.py` (xfail estricto: los dos nombres, cada uno en su lote y con su decisión; validate APTO en los dos). Hoy: el verificador para y la ingesta no deja línea en el lote 2. Parche nuestro no hay. Lo decides tú.

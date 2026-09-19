@@ -29,7 +29,10 @@
     "Javier": [
       "docs/agentes/PLAN-09.md",
       "docs/ESTADO-BACKEND.md",
-      "tests/test_identicos.py"
+      "tests/test_identicos.py",
+      ".claude/skills/entrega/SKILL.md",
+      "docs/agentes/KIT-DEFENSA.md",
+      "docs/demo/trazas/README.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -54,6 +57,9 @@
     ],
     "Alejandro": [
       "console-web/*"
+    ],
+    "Alfonso": [
+      "docs/plan/*"
     ]
   }
 }
