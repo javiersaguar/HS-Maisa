@@ -213,7 +213,11 @@ def test_asientos_duplicados_no_se_silencian(tmp_path, contexto):
     assert not inf.ok and "asiento_id repetido" in inf.texto()
 
 
-def test_pdf_identico_renombrado_no_puede_robar_identidad_del_lote1(tmp_path, contexto):
+def test_pdf_identico_renombrado_no_puede_robar_identidad_del_lote1(
+    tmp_path, contexto, monkeypatch
+):
+    """Sin el parche P0-1 se para (el estado se fija aquí: el test no depende de si está aplicado)."""
+    monkeypatch.setattr(material, "pipeline_admite_copias", lambda: False)
     original = (contexto["lote1"] / "original.pdf").read_bytes()
     ruta = zip_de(tmp_path, {"facturas/nuevo_nombre.pdf": original})
     inf = material.verificar(ruta, **contexto)
@@ -222,11 +226,39 @@ def test_pdf_identico_renombrado_no_puede_robar_identidad_del_lote1(tmp_path, co
     assert "original.pdf" in inf.texto()
 
 
-def test_pdf_identico_con_dos_nombres_no_puede_colapsar_en_ingest(tmp_path, contexto):
+def test_pdf_identico_con_dos_nombres_no_puede_colapsar_en_ingest(tmp_path, contexto, monkeypatch):
+    monkeypatch.setattr(material, "pipeline_admite_copias", lambda: False)
     contenido = pdf()
     ruta = zip_de(tmp_path, {"facturas/a.pdf": contenido, "facturas/b.pdf": contenido})
     inf = material.verificar(ruta, **contexto)
     assert not inf.ok and "idéntico por SHA-256 dentro del material" in inf.texto()
+
+
+def test_con_el_parche_p0_1_las_copias_exactas_avisan_y_no_paran(tmp_path, contexto, monkeypatch):
+    """Con el pipeline preparado (P0-1), las dos copias son AVISO, no error: el lote se puede ingerir."""
+    monkeypatch.setattr(material, "pipeline_admite_copias", lambda: True)
+    original = (contexto["lote1"] / "original.pdf").read_bytes()
+    contenido = pdf("Otra factura, repetida con dos nombres")  # distinta del original del lote 1
+    ruta = zip_de(
+        tmp_path,
+        {
+            "facturas/reenvio.pdf": original,
+            "facturas/a.pdf": contenido,
+            "facturas/b.pdf": contenido,
+        },
+    )
+    inf = material.verificar(ruta, **contexto)
+    texto = inf.texto()
+    assert "idéntico por SHA-256" not in texto, texto
+    assert "copia exacta (SHA-256) de original.pdf del lote 1: facturas/reenvio.pdf" in texto
+    assert "copia exacta (SHA-256) dentro del material: facturas/a.pdf / facturas/b.pdf" in texto
+    assert inf.ok, texto
+
+
+def test_la_capacidad_se_detecta_en_el_codigo():
+    from albertitos.core import db
+
+    assert material.pipeline_admite_copias() is hasattr(db, "guardar_identidad")
 
 
 @pytest.mark.parametrize(
