@@ -802,3 +802,7 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Corregido gracias a ellos: los ejemplos de confianza (faltaba `fuentes.revisor.opinion`), 6 enlaces rotos, la chuleta del lote 2 (P0-5 ya está en `main`: sin merge) y el estado del ADR-0012.
 - Descartado: el kit de las 15:55 de R4 como referencia (Alfonso tiene el de las 13:37, equivalente) y la nota de R1 sin `.env` en los tiempos de la chuleta (era un artefacto de su carpeta). El «tope superado en W35» de R4 no era un fallo: es el calendario natural, no el programa (aclarado en `docs/api/bonus.md`).
 - `make check`: 576 en verde. Preflight real: todo verde, con «LLM» en verde (respaldo de visión ya en `.env`). BD real y entrega sin cambios.
+### 15:50 · Alejandro · PR #5 (bandeja): arreglados los 3 bloqueantes de Miguel
+- **AVISO A Alfonso**: una línea en `extract/etapa.py`. `DIRECTORIOS[99]` sólo existe si viene `ALBERTITOS_DIR_BANDEJA`, que pasa `bandeja.cli` al subproceso. Sin la variable, extract hace lo mismo que antes.
+- La bandeja sigue cada PDF por la sha256 que registró ingest, no por el nombre: `./<nombre>` si el nombre ya era de la Caja (P0-5); el del original si es una copia exacta. POST sólo con `--bandeja` y desde `localhost:3000`.
+- `make check` en verde: 574 tests. Uno pasa por la CLI real (ingest → extract por plantilla → decide) con 0 tokens.

@@ -332,6 +332,18 @@ def fichero(conn: sqlite3.Connection, file_id: str) -> dict[str, Any] | None:
     return out
 
 
+def estados(conn: sqlite3.Connection, file_ids: list[str]) -> list[dict[str, Any]]:
+    """Resultado de cada file_id (copias exactas incluidas): el de la decisión vigente, PENDIENTE si
+    está ingerido sin ella, None si no llegó a ingerirse (PDF ilegible). Sin `fuentes`: es el poll
+    de la bandeja, cada segundo."""
+    out = []
+    for fid in file_ids:
+        fila, _identidad = _resolver(conn, fid)
+        estado = None if fila is None else (fila["resultado"] or "PENDIENTE")
+        out.append({"file_id": nfc(fid), "estado": estado})
+    return out
+
+
 def _resumen_etapa(conn: sqlite3.Connection, etapa: str) -> dict[str, Any]:
     por_estado = {e: 0 for e in ESTADOS_EVENTO}
     for r in conn.execute(
@@ -654,11 +666,21 @@ def traza_pasos(
         eventos_f = [_evento(e) for e in cruda["eventos"]]
         vigente = next((d for d in reversed(cruda["decisiones"]) if d.get("vigente")), None)
         decision = _decision_de_fila(vigente) if vigente else None
+        # Los motivos son de la vigente: van una vez, tras el último decide que decidió (no skip).
+        # Tras cada decide se repetían con el mismo id en un fichero decidido en varias pasadas.
+        ultimo_decide = max(
+            (
+                i
+                for i, ev in enumerate(eventos_f)
+                if ev.get("etapa") == "decide" and ev.get("estado") != "skip"
+            ),
+            default=None,
+        )
         pasos: list[dict[str, Any]] = []
         for i, ev in enumerate(eventos_f):
             ev["file_id"] = fid
             pasos.append(_evento_paso(ev, i))
-            if ev.get("etapa") == "decide" and decision:
+            if i == ultimo_decide and decision:
                 for j, m in enumerate(decision["motivos"]):
                     pasos.append(_motivo_paso(fid, m, decision, j))
         if decision and not any(p["tipo"] == "motivo" for p in pasos):

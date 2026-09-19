@@ -5,8 +5,7 @@ import { usePanel } from '@/hooks/usePanel'
 import { BRAND } from '@/lib/config'
 import { downloadCsv } from '@/lib/csv'
 import { motivoPrincipal } from '@/lib/format'
-import { ActivityChart } from '@/components/dashboard/ActivityChart'
-import { DecisionDistribution } from '@/components/dashboard/DecisionDistribution'
+import { InvoiceDropzone } from '@/components/dashboard/InvoiceDropzone'
 import { PipelineCard } from '@/components/dashboard/PipelineCard'
 import { ProcessingHealth } from '@/components/dashboard/ProcessingHealth'
 import { RecentDecisions } from '@/components/dashboard/RecentDecisions'
@@ -15,8 +14,15 @@ import { Toast } from '@/components/ui/Toast'
 
 export default function PanelPage() {
   const { data, error, loading, initialLoading, refresh } = usePanel({ live: true })
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null)
   const dismissToast = useCallback(() => setToast(null), [])
+  const facturasDecididas = useCallback(
+    (message: string, tone: 'success' | 'error') => {
+      setToast({ message, tone })
+      refresh()
+    },
+    [refresh],
+  )
 
   if (error) {
     return (
@@ -49,7 +55,7 @@ export default function PanelPage() {
         fichero.decision?.norma_version ?? '',
       ]),
     )
-    setToast(`${data.recientes.length} decisiones exportadas a CSV`)
+    setToast({ message: `${data.recientes.length} decisiones exportadas a CSV`, tone: 'success' })
   }
 
   return (
@@ -63,20 +69,20 @@ export default function PanelPage() {
             <button
               onClick={exportRecientes}
               disabled={!data.recientes.length}
-              className="hidden rounded-lg border border-[#dfe4de] px-3 py-1.5 text-[13px] font-medium text-[#59635e] transition hover:bg-[#f5f7f3] disabled:opacity-40 sm:block"
+              title="Exportar CSV"
+              className="hidden whitespace-nowrap rounded-lg border border-[#dfe4de] px-3 py-1.5 text-[13px] font-medium text-[#59635e] transition hover:bg-[#f5f7f3] disabled:opacity-40 sm:block"
             >
-              Exportar CSV
+              Exportar
             </button>
           }
         />
         <div className="flex flex-col gap-4">
+          <InvoiceDropzone onDone={facturasDecididas} />
           <ProcessingHealth panel={data} />
-          <DecisionDistribution shares={data.distribucion} />
-          <ActivityChart data={data.porMes} />
         </div>
       </div>
       <RecentDecisions ficheros={data.recientes} />
-      {toast && <Toast message={toast} onDismiss={dismissToast} />}
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={dismissToast} />}
     </div>
   )
 }

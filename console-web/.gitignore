@@ -21,3 +21,5 @@ tsconfig.tsbuildinfo
 debug.log
 .DS_Store
 Thumbs.db
+# Lo regenera next dev/build (apunta a .next/dev/types o .next/types según el último comando)
+next-env.d.ts

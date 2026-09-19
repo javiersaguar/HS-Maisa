@@ -31,6 +31,11 @@ verificador admite tres campos opcionales de traza por línea: `motivo`, `norma_
 - `albertitos` (typer) es el **único que escribe** en la BD. Cada verbo es una etapa o una operación.
 - La consola Streamlit abre la BD en sólo lectura (`db.conectar(..., solo_lectura=True)`). Tiene una única
   acción, "Reprocesar impactados", que llama a la CLI como subproceso.
+- La consola Next tiene una segunda acción, la **bandeja** (`POST /inbox`, `console/bandeja.py`): subir PDF
+  sueltos. Tampoco escribe ella: guarda el PDF y llama a la CLI por subproceso (`ingest --lote 99`,
+  `extract` y `decide --fixture`). Sólo se abre si el puente se arranca con `--bandeja`, que sirve
+  `dist/bandeja.db` (una copia de la BD). La BD de la entrega nunca ve el lote 99, y `package` sólo emite
+  los lotes 1 y 2.
 - `run` y `package` añaden `motivo`, `norma_version` y `regla` (esta última sólo si alguna regla falla).
   `--sin-traza` quita esos campos con un solo flag.
 - Toda entrega pasa por `validar.py`, que replica el verificador, y se escribe "todo o nada" (`.tmp`, se
@@ -44,6 +49,10 @@ verificador admite tres campos opcionales de traza por línea: `motivo`, `norma_
   la entrega saldría NO APTO. Lo mitigan dos cosas: la regla de entrega los permite de forma explícita, y
   `--sin-traza` los quita en un solo comando.
 - **`package` escribe eventos `emit` en la BD** (qué se entregó y cuándo). Por eso ya no abre la BD en sólo lectura.
+- **La bandeja decide sobre una copia.** Lo que se suba en la demo no llega a la entrega. Un PDF con el nombre
+  de uno de la Caja y otro contenido se guarda como `./<nombre>` (P0-5) y el panel enseña su decisión, no la
+  del original. El POST sólo acepta el origen de la consola (`localhost:3000`), para que otra web abierta en
+  el navegador no pueda gastar LLM.
 
 ## Evidencia
 - `dist/entrega/outcomes.jsonl`: 500 líneas, APTO, con `motivo` y `norma_version` en cada línea (18/09 23:05).
@@ -57,3 +66,8 @@ verificador admite tres campos opcionales de traza por línea: `motivo`, `norma_
 - Tiempos medidos con la CLI en el portátil de Miguel:
   - `reprocess --impacted` con el ERP v2-sim: 0,51 s de principio a fin (ADR-0006);
   - demo de caos (`make demo-caos`, tres `run` completos): 21,9 s.
+- Bandeja, en `tests/test_console.py`:
+  - `test_inbox_cli_real_decide_un_pdf_de_la_caja_editado_sin_llm`: ingest, extract y decide con la CLI real
+    sobre una factura de la Caja editada. Sale por plantilla, con 0 tokens;
+  - `test_inbox_nombre_de_la_caja_con_otro_contenido_no_hereda_su_decision`;
+  - `test_inbox_cerrado_sin_el_flag_aunque_la_bd_no_sea_la_de_la_entrega`.
