@@ -163,7 +163,7 @@ function FicheroDetail() {
     <div className="px-4 py-4 sm:px-6">
       <div className="mx-auto max-w-[1540px]">
         {header}
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_500px] lg:items-start">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_500px]">
           <InvoiceDocument
             fichero={fichero}
             zoom={zoom}
@@ -172,9 +172,9 @@ function FicheroDetail() {
             onToggleHighlight={() => setHighlight(!highlight)}
             activeField={activeField}
           />
-          <aside className="min-w-0">
-            <Card className="overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.06)]">
-              <div className="flex border-b border-line bg-surface px-2" role="tablist" aria-label="Análisis del fichero">
+          <aside className="relative min-w-0">
+            <Card className="flex flex-col overflow-hidden border-line shadow-[0_8px_30px_rgba(43,55,51,0.06)] lg:absolute lg:inset-0">
+              <div className="flex shrink-0 border-b border-line bg-surface px-2" role="tablist" aria-label="Análisis del fichero">
                 {TABS.map((item, index) => (
                   <button
                     key={item}
@@ -207,7 +207,7 @@ function FicheroDetail() {
                 id="fichero-tabpanel"
                 role="tabpanel"
                 aria-labelledby={`tab-${TABS.indexOf(tab)}`}
-                className="p-5 animate-in fade-in slide-in-from-bottom-1 duration-200"
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 animate-in fade-in slide-in-from-bottom-1 duration-200 [scrollbar-color:#b8d8ca_transparent] [scrollbar-width:thin]"
               >
                 {tab === 'Decisión' && (
                   <>
