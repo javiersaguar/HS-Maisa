@@ -1,3 +1,8 @@
+> **SUPERADO (20/09 01:25). Esto es la lectura a ciegas del sábado por la tarde, no el resultado.** Lo que de
+> verdad salió está en [`EXTRACCION.md`](EXTRACCION.md): los 40 extraídos, la auditoría de divisas de los 540 y
+> las decisiones (23 PAGAR · 1 NO_PAGAR · 16 ESCALAR). Este fichero se conserva porque es la evidencia que citan
+> el ADR-0022 y `rules/norma_v4.py`: se escribió **antes** de decidir nada, para poder etiquetar a ciegas.
+
 # Lote 2 · primera lectura de los 40 PDFs (Javier, sábado 19/09 19:00) · hipótesis, no etiquetas
 
 **L5: no leas esto hasta terminar tu etiquetado a ciegas.**
