@@ -5,11 +5,8 @@ import { usePathname } from 'next/navigation'
 import { Activity, Database, FileText, FlaskConical, LayoutDashboard, Sparkles, Workflow } from 'lucide-react'
 import { BRAND, USE_MOCK } from '@/lib/config'
 import { ORIGEN_DATOS } from '@/lib/api/salud'
-import type { Etapa } from '@/lib/types'
 import { formatNumber, formatRelative } from '@/lib/format'
-import { useEtapas } from '@/hooks/useEtapas'
 import { useSalud } from '@/hooks/useSalud'
-import { etapaConIncidencia, saludEtapa } from '@/components/workers/EtapaIcon'
 
 const ITEMS = [
   { label: 'Panel', href: '/', icon: LayoutDashboard },
@@ -21,22 +18,6 @@ const ITEMS = [
 function isActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
   return pathname === href || pathname.startsWith(`${href}/`)
-}
-
-function listarNombres(nombres: string[]): string {
-  if (nombres.length <= 1) return nombres[0] ?? ''
-  if (nombres.length === 2) return `${nombres[0]} y ${nombres[1]}`
-  return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
-}
-
-/** Nombres de etapa en minúscula, para caber en una frase del pie. */
-const ETAPA_EN_FRASE: Record<Etapa, string> = {
-  ingest: 'ingesta',
-  extract: 'extracción',
-  validate: 'validación',
-  enrich: 'maestro y ERP',
-  decide: 'la norma',
-  emit: 'entrega',
 }
 
 /**
@@ -97,72 +78,6 @@ function OrigenDatos() {
   )
 }
 
-function EstadoPipeline() {
-  const { data, error } = useEtapas({ live: true })
-  const etapas = data?.etapas ?? []
-  const ficheros = data?.ficheros ?? 0
-  const conAvisos = etapas.filter((etapa) => etapaConIncidencia(etapa, ficheros))
-  const sinCorrer = etapas.length > 0 && etapas.every((etapa) => saludEtapa(etapa, ficheros).tone === 'gray')
-  const ultimo = data?.recientes.find((evento) => evento.ts)?.ts ?? null
-
-  let titulo: string
-  let detalle: string
-  let tone: 'red' | 'pulse' | 'yellow' | 'green' = 'green'
-  if (error) {
-    titulo = 'No llegan los eventos'
-    detalle = 'Reintentando en segundo plano'
-    tone = 'red'
-  } else if (!data) {
-    titulo = 'Conectando…'
-    detalle = 'Leyendo el pipeline'
-    tone = 'pulse'
-  } else if (conAvisos.length > 0) {
-    const nombres = conAvisos.map((etapa) => ETAPA_EN_FRASE[etapa.etapa])
-    titulo = `Mirar ${listarNombres(nombres)}`
-    detalle = ultimo ? `Última actividad ${formatRelative(ultimo)}` : 'Ábrelo en Etapas'
-    tone = 'yellow'
-  } else if (sinCorrer) {
-    titulo = 'Aún no ha corrido'
-    detalle = 'El pipeline no ha dejado eventos'
-    tone = 'yellow'
-  } else {
-    titulo = 'Etapas al día'
-    detalle = ultimo ? `Última actividad ${formatRelative(ultimo)}` : 'Las seis etapas, sin avisos'
-    tone = 'green'
-  }
-
-  const irAEtapas = Boolean(data && !error && (conAvisos.length > 0 || sinCorrer))
-
-  const dot =
-    tone === 'red'
-      ? 'bg-[#f05b5b]'
-      : tone === 'pulse'
-        ? 'animate-pulse bg-[#c9cec9]'
-        : tone === 'yellow'
-          ? 'bg-[#e0c95a]'
-          : 'bg-[#63d5aa]'
-
-  const inner = (
-    <>
-      <div className="flex items-center gap-2 text-[14px] font-medium text-[#46504b]">
-        <span className={`size-2 rounded-full transition-colors ${dot}`} />
-        {titulo}
-      </div>
-      <p className="mt-1 pl-4 text-[13px] text-[#a0a6a2]">{detalle}</p>
-    </>
-  )
-
-  if (irAEtapas) {
-    return (
-      <Link href="/workers" className="rounded-lg outline-none hover:text-[#164f45] focus-visible:ring-2 focus-visible:ring-[#164f45]/30">
-        {inner}
-      </Link>
-    )
-  }
-
-  return <div>{inner}</div>
-}
-
 export function Sidebar() {
   const pathname = usePathname() ?? '/'
 
@@ -196,9 +111,8 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-[#e2e5df] p-4">
+      <div className="mt-auto shrink-0 border-t border-[#e2e5df] p-4">
         <OrigenDatos />
-        <EstadoPipeline />
       </div>
     </aside>
   )

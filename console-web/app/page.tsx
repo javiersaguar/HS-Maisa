@@ -3,19 +3,57 @@
 import { useCallback, useState } from 'react'
 import { usePanel } from '@/hooks/usePanel'
 import { BRAND } from '@/lib/config'
-import { downloadCsv } from '@/lib/csv'
-import { motivoPrincipal } from '@/lib/format'
+import { formatNumber } from '@/lib/format'
+import type { EstadoFichero } from '@/lib/types'
+import { Analisis } from '@/components/dashboard/Analisis'
 import { InvoiceDropzone } from '@/components/dashboard/InvoiceDropzone'
-import { PipelineCard } from '@/components/dashboard/PipelineCard'
-import { ProcessingHealth } from '@/components/dashboard/ProcessingHealth'
-import { RecentDecisions } from '@/components/dashboard/RecentDecisions'
-import { ErrorCard, LoadingCard } from '@/components/ui/states'
+import { Card } from '@/components/ui/Card'
+import { estiloResultado } from '@/components/ui/Resultado'
 import { Toast } from '@/components/ui/Toast'
 
-export default function PanelPage() {
-  const { data, error, loading, initialLoading, refresh } = usePanel({ live: true })
+const ORDEN: EstadoFichero[] = ['PAGAR', 'ESCALAR', 'NO_PAGAR', 'PENDIENTE']
+
+/**
+ * Recuento de las decisiones vigentes. Sin pastillas ni medallones: sólo la cifra, su palabra y una
+ * regla de color fina, para que el peso visual se lo lleve la bandeja.
+ */
+function Recuento({ porEstado, total }: { porEstado: Record<EstadoFichero, number>; total: number }) {
+  return (
+    <div className="flex flex-wrap items-stretch justify-center gap-x-10 gap-y-4">
+      {ORDEN.map((estado) => {
+        const e = estiloResultado(estado)
+        return (
+          <div key={estado} className="flex items-stretch gap-3">
+            <span aria-hidden className={`w-[3px] shrink-0 rounded-sm ${e.barra}`} />
+            <div className="text-left">
+              <p className={`text-[22px] font-semibold leading-none tracking-[-0.04em] tabular-nums ${e.texto}`}>
+                {formatNumber(porEstado[estado])}
+              </p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa39e]">{estado}</p>
+            </div>
+          </div>
+        )
+      })}
+      <div className="flex items-stretch gap-3">
+        <span aria-hidden className="w-[3px] shrink-0 rounded-sm bg-[#dfe4de]" />
+        <div className="text-left">
+          <p className="text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#17211e] tabular-nums">
+            {formatNumber(total)}
+          </p>
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa39e]">Facturas</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function PortadaPage() {
+  const { data, refresh } = usePanel({ live: true })
   const [toast, setToast] = useState<{ message: string; tone: 'success' | 'error' } | null>(null)
+  const [seleccionado, setSeleccionado] = useState<string | null>(null)
+
   const dismissToast = useCallback(() => setToast(null), [])
+  const seleccionar = useCallback((fileId: string) => setSeleccionado(fileId), [])
   const facturasDecididas = useCallback(
     (message: string, tone: 'success' | 'error') => {
       setToast({ message, tone })
@@ -24,64 +62,29 @@ export default function PanelPage() {
     [refresh],
   )
 
-  if (error) {
-    return (
-      <div className="mx-auto max-w-[1380px] p-6 pt-5">
-        <ErrorCard error={error} onRetry={refresh} retrying={loading} />
-      </div>
-    )
-  }
-
-  if (initialLoading || !data) {
-    return (
-      <div className="mx-auto flex max-w-[1380px] flex-col gap-4 p-6 pt-5">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[.9fr_1.1fr]">
-          <LoadingCard label="Cargando etapas" rows={3} />
-          <LoadingCard label="Cargando contadores" rows={4} />
-        </div>
-        <LoadingCard label="Cargando últimas decisiones" rows={5} />
-      </div>
-    )
-  }
-
-  const exportRecientes = () => {
-    downloadCsv(
-      'albertitos-ultimas-decisiones.csv',
-      ['file_id', 'result', 'motivo', 'norma_version'],
-      data.recientes.map((fichero) => [
-        fichero.file_id,
-        fichero.estado,
-        fichero.decision ? motivoPrincipal(fichero) : '',
-        fichero.decision?.norma_version ?? '',
-      ]),
-    )
-    setToast({ message: `${data.recientes.length} decisiones exportadas a CSV`, tone: 'success' })
-  }
-
   return (
-    <div className="mx-auto flex max-w-[1380px] flex-col gap-4 p-6 pt-5">
-      <title>{`Panel · ${BRAND}`}</title>
-      <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[.9fr_1.1fr]">
-        <PipelineCard
-          etapas={data.etapas}
-          ficheros={data.ficheros}
-          actions={
-            <button
-              onClick={exportRecientes}
-              disabled={!data.recientes.length}
-              title="Exportar CSV"
-              className="hidden whitespace-nowrap rounded-lg border border-[#dfe4de] px-3 py-1.5 text-[13px] font-medium text-[#59635e] transition hover:bg-[#f5f7f3] disabled:opacity-40 sm:block"
-            >
-              Exportar
-            </button>
-          }
-        />
-        <div className="flex flex-col gap-4">
-          <InvoiceDropzone onDone={facturasDecididas} />
-          <ProcessingHealth panel={data} />
-        </div>
+    <div className="mx-auto flex h-full max-w-[1460px] flex-col gap-6 px-6 pb-6 pt-9">
+      <title>{`${BRAND} · Cuentas a pagar`}</title>
+
+      <header className="shrink-0 text-center">
+        <h1 className="text-[44px] font-semibold leading-none tracking-[-0.045em] text-[#17211e]">{BRAND}</h1>
+        <p className="mx-auto mt-3 max-w-[58ch] text-[15px] leading-relaxed text-[#68736d]">
+          Suelta una factura y la norma dice qué hacer con ella — y por qué.
+        </p>
+        {data && (
+          <div className="mt-6 border-t border-[#e5e8e3] pt-5">
+            <Recuento porEstado={data.porEstado} total={data.ficheros} />
+          </div>
+        )}
+      </header>
+
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.8fr)_1.2fr]">
+        <InvoiceDropzone onDone={facturasDecididas} onSelect={seleccionar} seleccionado={seleccionado} />
+        <Card className="flex min-h-0 flex-col overflow-hidden">
+          <Analisis fileId={seleccionado} />
+        </Card>
       </div>
-      <RecentDecisions ficheros={data.recientes} />
+
       {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={dismissToast} />}
     </div>
   )

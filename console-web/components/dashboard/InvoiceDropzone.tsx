@@ -13,9 +13,8 @@ import {
   type Bandeja,
   type EstadoBandeja,
 } from '@/lib/api/inbox'
-import { ficheroHref } from '@/lib/routes'
-import { ResultadoBadge } from '@/components/invoices/badges'
 import { Card } from '@/components/ui/Card'
+import { ResultadoMarca } from '@/components/ui/Resultado'
 import { Spinner } from '@/components/ui/Spinner'
 
 const MAX_FICHEROS = 20
@@ -38,8 +37,19 @@ function esPdf(file: File) {
  * Entrada principal del panel: soltar o elegir PDF y verlos decididos. La consola no decide: el
  * puente guarda los PDF en la bandeja (lote 99, BD aparte de la entrega) y lanza la CLI. Aquí sólo
  * se enseña lo que la BD dice.
+ *
+ * Cada fila de la bandeja selecciona la factura que se argumenta en el panel de la derecha, así que
+ * el trabajo entero —soltar, leer, entender por qué— ocurre sin salir de la portada.
  */
-export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 'success' | 'error') => void }) {
+export function InvoiceDropzone({
+  onDone,
+  onSelect,
+  seleccionado = null,
+}: {
+  onDone: (message: string, tone: 'success' | 'error') => void
+  onSelect?: (fileId: string) => void
+  seleccionado?: string | null
+}) {
   const [fase, setFase] = useState<Fase>('elegir')
   const [bandeja, setBandeja] = useState<Bandeja | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +87,9 @@ export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 's
         setBandeja(b)
         if (BANDEJA_EN_CURSO.includes(b.estado)) return
         setFase('hecho')
+        // La primera decidida se abre sola a la derecha: ver el porqué no debería costar otro clic.
+        const primera = b.ficheros.find((f) => f.estado)
+        if (primera) onSelect?.(primera.fileId)
         const pendientes = b.ficheros.filter((f) => f.estado === 'PENDIENTE' || f.estado === null).length
         if (b.estado === 'error') onDone(`La bandeja se paró: ${b.error ?? 'error sin mensaje'}`, 'error')
         else if (pendientes)
@@ -92,7 +105,7 @@ export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 's
       vivo = false
       window.clearInterval(timer)
     }
-  }, [fase, onDone])
+  }, [fase, onDone, onSelect])
 
   const ocupado = fase === 'subiendo' || fase === 'procesando'
   const bloqueado = ocupado || noDisponible
@@ -142,24 +155,26 @@ export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 's
     <Card className="flex flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-[#e5e8e3] px-5 py-4">
         <div>
-          <h2 className="text-[14px] font-semibold">Añadir facturas</h2>
-          <p className="text-[14px] text-[#9aa39e]">Se leen y se deciden con la misma norma, fuera de la entrega</p>
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Bandeja de facturas</h2>
+          <p className="mt-0.5 text-[13px] text-[#8b9790]">
+            Se leen y se deciden con la misma norma, fuera de la entrega
+          </p>
         </div>
         {fase === 'hecho' ? (
           <Link
             href={`/invoices?lote=${LOTE_BANDEJA}`}
-            className="shrink-0 whitespace-nowrap text-[13px] font-semibold text-[#315d53] hover:underline"
+            className="shrink-0 whitespace-nowrap text-[13px] font-semibold text-[#176d59] hover:underline"
           >
             Ver la bandeja
           </Link>
         ) : (
-          <span className="shrink-0 whitespace-nowrap rounded-full bg-[#f3f4f1] px-2 py-0.5 text-[12px] font-medium text-[#68736d]">
+          <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa39e]">
             Lote {LOTE_BANDEJA}
           </span>
         )}
       </div>
 
-      <div className="flex flex-col gap-4 p-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 p-5">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -232,19 +247,28 @@ export function InvoiceDropzone({ onDone }: { onDone: (message: string, tone: 's
                 )
               })}
             </ol>
-            <ul className="max-h-[220px] divide-y divide-[#edf0ec] overflow-y-auto rounded-xl border border-[#edf0ec]">
-              {filas.map((f) => (
-                <li key={f.fileId} className="flex items-center justify-between gap-3 px-3 py-2 text-[13px]">
-                  {f.estado ? (
-                    <Link href={ficheroHref(f.fileId)} className="truncate font-medium text-[#176d59] hover:underline">
-                      {f.nombre}
-                    </Link>
-                  ) : (
-                    <span className="truncate font-medium text-[#233f35]">{f.nombre}</span>
-                  )}
-                  <ResultadoBadge estado={f.estado} />
-                </li>
-              ))}
+            <ul className="min-h-0 flex-1 divide-y divide-[#edf0ec] overflow-y-auto border-t border-[#edf0ec]">
+              {filas.map((f) => {
+                const activa = seleccionado === f.fileId
+                return (
+                  <li key={f.fileId}>
+                    <button
+                      type="button"
+                      onClick={() => f.estado && onSelect?.(f.fileId)}
+                      disabled={!f.estado}
+                      aria-current={activa ? 'true' : undefined}
+                      className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-[13px] transition ${
+                        activa ? 'bg-[#eff8f3]' : 'hover:bg-[#f7f9f6] disabled:hover:bg-transparent'
+                      } disabled:cursor-default`}
+                    >
+                      <span className={`truncate font-medium ${activa ? 'text-[#12584a]' : 'text-[#2c3632]'}`}>
+                        {f.nombre}
+                      </span>
+                      <ResultadoMarca estado={f.estado} />
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </>
         )}
