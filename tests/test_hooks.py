@@ -9,6 +9,7 @@ la regla "a main sólo Miguel" —que habla de ESTE repo— lo bloqueaba en el p
 from __future__ import annotations
 
 import json
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -146,3 +147,60 @@ def test_la_documentacion_puede_hablar_de_comandos_prohibidos(portatil: Path) ->
     """Un heredoc es contenido, no comandos: escribir 'git push main' en un doc no puede bloquear."""
     orden = "cat > docs/nota.md <<'EOF'\nNunca hagas git push origin main\nEOF"
     assert decidir(orden, portatil) == "pasa"
+
+
+@pytest.mark.parametrize("sin_decision", [0, 4])
+def test_inicio_cuenta_ficheros_sin_decision_no_eventos_antiguos(portatil, sin_decision):
+    ruta = portatil / "dist/albertitos.db"
+    ruta.parent.mkdir()
+    with sqlite3.connect(ruta) as c:
+        c.executescript(
+            "CREATE TABLE ficheros(sha256 TEXT, file_id TEXT);"
+            "CREATE TABLE decisiones(sha256 TEXT, vigente INTEGER);"
+            "CREATE TABLE eventos(estado TEXT);"
+            "INSERT INTO ficheros VALUES ('resuelto','resuelto.pdf');"
+            "INSERT INTO decisiones VALUES ('resuelto',1);"
+        )
+        c.executemany("INSERT INTO eventos VALUES (?)", [("pendiente",)] * 7)
+        for i in range(sin_decision):
+            c.execute("INSERT INTO ficheros VALUES (?,?)", (str(i), f"pendiente_{i}.pdf"))
+            c.execute("INSERT INTO decisiones VALUES (?,0)", (str(i),))
+    antes = ruta.read_bytes()
+    p = subprocess.run(
+        [sys.executable, str(HOOK.with_name("session_start.py"))],
+        input=json.dumps({"cwd": str(portatil)}),
+        capture_output=True,
+        text=True,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "CLAUDE_PROJECT_DIR": str(portatil),
+            "ALBERTITOS_ERP_URL": "http://127.0.0.1:1",
+        },
+        timeout=10,
+    )
+    assert p.returncode == 0
+    assert f"ficheros sin decisión={sin_decision}" in p.stdout
+    assert "eventos pendientes=" not in p.stdout
+    if sin_decision:
+        assert "pendiente_0.pdf, pendiente_1.pdf, pendiente_2.pdf" in p.stdout
+        assert "pendiente_3.pdf" not in p.stdout
+    assert ruta.read_bytes() == antes
+
+
+def test_inicio_bd_ilegible_no_rompe_sesion(portatil):
+    ruta = portatil / "dist/albertitos.db"
+    ruta.parent.mkdir()
+    ruta.write_bytes(b"no es sqlite")
+    p = subprocess.run(
+        [sys.executable, str(HOOK.with_name("session_start.py"))],
+        input=json.dumps({"cwd": str(portatil)}),
+        capture_output=True,
+        text=True,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "CLAUDE_PROJECT_DIR": str(portatil),
+            "ALBERTITOS_ERP_URL": "http://127.0.0.1:1",
+        },
+        timeout=10,
+    )
+    assert p.returncode == 0 and "existe pero no se lee" in p.stdout

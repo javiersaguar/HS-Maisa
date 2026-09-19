@@ -9,6 +9,7 @@ import os
 import sqlite3
 import subprocess
 import urllib.request
+from contextlib import closing
 from datetime import datetime
 
 from _common import es_dueno, leer_entrada, raiz_proyecto, rama_actual
@@ -36,15 +37,7 @@ lineas.append(f"- rama: {rama} (dueño: {dueno}) · ficheros sin commitear: {suc
 
 env = raiz / ".env"
 if env.exists():
-    claves = [
-        linea.split("=", 1)[0]
-        for linea in env.read_text(errors="ignore").splitlines()
-        if "=" in linea and not linea.startswith("#")
-    ]
-    tiene_key = any(k == "ANTHROPIC_API_KEY" for k in claves)
-    lineas.append(
-        f"- .env: presente ({len(claves)} variables){'' if tiene_key else ' · ⚠ falta ANTHROPIC_API_KEY'}"
-    )
+    lineas.append("- .env: presente (contenido privado; no se lee desde el hook)")
 else:
     lineas.append(
         "- .env: NO existe → `cp .env.example .env` y pon la key del LLM (sin key, extract/ sólo usa caché)"
@@ -69,12 +62,17 @@ except Exception:
 db = raiz / os.environ.get("ALBERTITOS_DB", "dist/albertitos.db")
 if db.exists():
     try:
-        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
-        n_f = con.execute("select count(*) from ficheros").fetchone()[0]
-        n_d = con.execute("select count(*) from decisiones where vigente=1").fetchone()[0]
-        n_p = con.execute("select count(*) from eventos where estado='pendiente'").fetchone()[0]
+        with closing(sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True)) as con:
+            n_f = con.execute("select count(*) from ficheros").fetchone()[0]
+            n_d = con.execute("select count(*) from decisiones where vigente=1").fetchone()[0]
+            pendientes = con.execute(
+                "SELECT f.file_id FROM ficheros f WHERE NOT EXISTS "
+                "(SELECT 1 FROM decisiones d WHERE d.sha256=f.sha256 AND d.vigente=1) "
+                "ORDER BY f.file_id"
+            ).fetchall()
         lineas.append(
-            f"- BD: {db.name} · ficheros={n_f} · decisiones vigentes={n_d} · eventos pendientes={n_p}"
+            f"- BD: {db.name} · ficheros={n_f} · decisiones vigentes={n_d} · ficheros sin decisión={len(pendientes)}"
+            + (" · " + ", ".join(r[0] for r in pendientes[:3]) if pendientes else "")
         )
     except Exception as e:
         lineas.append(f"- BD: {db.name} existe pero no se lee ({e}) → `make db`")
