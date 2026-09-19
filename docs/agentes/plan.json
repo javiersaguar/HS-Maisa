@@ -41,7 +41,8 @@
     "Javier": [
       "docs/agentes/PLAN-10.md",
       "docs/agentes/partes/PARTE-09.md",
-      "scripts/ensayo/*"
+      "scripts/ensayo/*",
+      "docs/agentes/RESILIENCIA-Y-COSTE.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
