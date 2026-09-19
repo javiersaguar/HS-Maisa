@@ -1,18 +1,18 @@
 {
-  "ciclo": 11,
-  "rama": "javier/ingesta",
-  "base": "c350f04",
+  "ciclo": 12,
+  "rama": "revision/grok",
+  "base": "3e0216f",
   "compartidos": [
     "docs/agentes/BITACORA.md",
     "docs/agentes/PARTE.md",
     "docs/agentes/plan.json",
-    "docs/entregas.log"
+    "docs/entregas.log",
+    "docs/revision/BITACORA-R.md"
   ],
   "agentes": {
     "Javier": [
       "docs/agentes/PLAN-10.md",
       "docs/agentes/partes/PARTE-09.md",
-      "scripts/ensayo/*",
       "docs/agentes/RESILIENCIA-Y-COSTE.md",
       "docs/agentes/ANALISIS-JEV.md",
       ".github/workflows/windows.yml",
@@ -20,11 +20,9 @@
       "tests/test_erp.py",
       "tests/test_hooks.py",
       "src/albertitos/sources/estado_bd.py",
-      "docs/ESTADO-BACKEND.md",
       "scripts/cifras_check.py",
       "tests/test_cifras.py",
       ".claude/skills/lote2/SKILL.md",
-      "docs/agentes/CHULETA-LOTE2.md",
       "docs/agentes/ENSAYO-LOTE2.md",
       "src/albertitos/sources/excel.py",
       "tests/test_excel.py",
@@ -36,7 +34,6 @@
       "tests/test_llm.py",
       "scripts/dato_en_vivo.py",
       "tests/test_dato_en_vivo.py",
-      "docs/agentes/KIT-DEFENSA.md",
       "docs/demo/*",
       "docs/agentes/PLAN-11.md",
       "docs/agentes/partes/PARTE-10.md",
@@ -44,8 +41,7 @@
       "docs/agentes/PROMPT-ALEJANDRO-CONFIANZA.md",
       "docs/agentes/PROMPT-ALEJANDRO-CHAT.md",
       "docs/adr/README.md",
-      "docs/agentes/PLAN-12.md",
-      "docs/revision/*"
+      "docs/agentes/PLAN-12.md"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -83,7 +79,6 @@
     "K1": [
       "src/albertitos/bonus/*",
       "tests/test_bonus.py",
-      "docs/BONUS.md",
       "docs/adr/0012-*",
       "docs/api/bonus.md",
       "docs/api/ejemplos/bonus-*"
@@ -102,6 +97,34 @@
       "docs/api/confianza.md",
       "docs/api/ejemplos/confianza-*",
       "docs/adr/0014-*"
+    ],
+    "R1": [
+      "docs/agentes/CHULETA-LOTE2.md",
+      "scripts/ensayo/*",
+      "docs/revision/RESUMEN-R1.md",
+      "docs/revision/r1/*"
+    ],
+    "R2": [
+      "scripts/enlaces_check.py",
+      "tests/test_enlaces.py",
+      "docs/ESTADO-BACKEND.md",
+      "docs/CIFRAS.md",
+      "docs/BONUS.md",
+      "docs/api/*.md",
+      "docs/revision/RESUMEN-R2.md",
+      "docs/revision/r2/*"
+    ],
+    "R3": [
+      "scripts/contrato_api_check.py",
+      "tests/test_contrato_api.py",
+      "docs/revision/RESUMEN-R3.md",
+      "docs/revision/r3/*"
+    ],
+    "R4": [
+      "scripts/smoke.sh",
+      "docs/agentes/KIT-DEFENSA.md",
+      "docs/revision/RESUMEN-R4.md",
+      "docs/revision/r4/*"
     ]
   }
 }
