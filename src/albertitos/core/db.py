@@ -14,6 +14,21 @@ from albertitos.core.contracts import Decision, Event, InvoiceFacts
 RUTA_POR_DEFECTO = Path(os.environ.get("ALBERTITOS_DB", "dist/albertitos.db"))
 _SCHEMA = Path(__file__).with_name("schema.sql")
 
+# P0-5: un PDF con el MISMO nombre que otro de otro lote y distinto contenido. `ficheros.file_id` es
+# UNIQUE, así que entra con este prefijo (`./X.pdf`): único en la BD y, contra la carpeta de su lote,
+# el mismo fichero (`data/lote2/facturas/./X.pdf`). Su nombre de entrega va a `identidades`. Nunca
+# sale en un JSONL (`Outcome` rechaza la barra, y `package` lo salta).
+PREFIJO_INTERNO = "./"
+
+
+def nombre_entrega(file_id: str) -> str:
+    """El nombre del PDF en su carpeta y en la entrega (quita el prefijo interno de P0-5)."""
+    return file_id.removeprefix(PREFIJO_INTERNO)
+
+
+def es_interno(file_id: str) -> bool:
+    return file_id.startswith(PREFIJO_INTERNO)
+
 
 def ahora_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="milliseconds")
@@ -174,8 +189,8 @@ def ultimo_snapshot(conn: sqlite3.Connection, tipo: str) -> tuple[str, str] | No
 
 
 def decisiones_vigentes(conn: sqlite3.Connection, lote: int | None = None) -> list[sqlite3.Row]:
-    sql = """SELECT d.*, f.lote FROM decisiones d JOIN ficheros f ON f.sha256 = d.sha256
-             WHERE d.vigente = 1"""
+    sql = """SELECT d.*, f.lote, f.file_id AS fichero_id FROM decisiones d
+             JOIN ficheros f ON f.sha256 = d.sha256 WHERE d.vigente = 1"""
     params: tuple[Any, ...] = ()
     if lote is not None:
         sql += " AND f.lote = ?"
@@ -212,8 +227,9 @@ def identidades_vigentes(conn: sqlite3.Connection, lote: int) -> list[sqlite3.Ro
 
 
 def nombres_por_sha(conn: sqlite3.Connection) -> dict[str, list[tuple[str, int]]]:
-    """sha256 que llega con más de un nombre (copias exactas) → [(file_id, lote)] de todos sus nombres,
-    el de `ficheros` primero. Vacío si no hay copias (el lote 1 de la Caja: 500 sha256 distintas)."""
+    """sha256 que llega con más de un nombre de entrega (copias exactas) → [(nombre, lote)] de todos,
+    el de `ficheros` primero. Vacío si no hay copias (el lote 1 de la Caja: 500 sha256 distintas).
+    Un nombre interno de P0-5 cuenta por su nombre de entrega, una sola vez: no es una copia."""
     out: dict[str, list[tuple[str, int]]] = {}
     if not hay_identidades(conn):
         return out
@@ -223,8 +239,10 @@ def nombres_por_sha(conn: sqlite3.Connection) -> dict[str, list[tuple[str, int]]
            UNION ALL SELECT sha256, file_id, lote, 1 FROM identidades
            ORDER BY 1, 4, 3, 2"""
     ):
-        out.setdefault(r[0], []).append((str(r[1]), int(r[2])))
-    return out
+        nombre = (nombre_entrega(str(r[1])), int(r[2]))
+        if nombre not in out.setdefault(r[0], []):
+            out[r[0]].append(nombre)
+    return {sha: nombres for sha, nombres in out.items() if len(nombres) > 1}
 
 
 def ficheros(conn: sqlite3.Connection, lote: int | None = None) -> list[sqlite3.Row]:
@@ -235,15 +253,20 @@ def ficheros(conn: sqlite3.Connection, lote: int | None = None) -> list[sqlite3.
     )
 
 
-def traza(conn: sqlite3.Connection, file_id: str) -> dict[str, Any]:
+def traza(conn: sqlite3.Connection, file_id: str, lote: int | None = None) -> dict[str, Any]:
     """Todo lo que sabemos de un fichero: para `albertitos trace` y la vista Traza de la consola.
-    Un nombre extra (copia exacta) lleva a su PDF: `identidad` dice cuál, y `copias` lista todos los
-    nombres de ese contenido."""
-    fichero = conn.execute("SELECT * FROM ficheros WHERE file_id=?", (file_id,)).fetchone()
+    Un nombre extra (copia exacta, o el nombre de entrega de un interno de P0-5) lleva a su PDF:
+    `identidad` dice cuál, y `copias` lista todos los nombres de ese contenido. Con el mismo nombre
+    en dos lotes, `lote` elige."""
+    fichero = conn.execute(
+        "SELECT * FROM ficheros WHERE file_id=? AND (? IS NULL OR lote=?)", (file_id, lote, lote)
+    ).fetchone()
     identidad = None
     if fichero is None and hay_identidades(conn):
         identidad = conn.execute(
-            "SELECT * FROM identidades WHERE file_id=? ORDER BY lote DESC LIMIT 1", (file_id,)
+            """SELECT * FROM identidades WHERE file_id=? AND (? IS NULL OR lote=?)
+               ORDER BY lote DESC LIMIT 1""",
+            (file_id, lote, lote),
         ).fetchone()
         if identidad is not None:
             fichero = conn.execute(
@@ -270,7 +293,10 @@ def traza(conn: sqlite3.Connection, file_id: str) -> dict[str, Any]:
         "eventos": [
             dict(r)
             for r in conn.execute(
-                "SELECT * FROM eventos WHERE sha256=? OR file_id=? ORDER BY ts", (sha, file_id)
+                # por nombre sólo los que no llevan sha256: con el mismo nombre en dos lotes, los
+                # eventos del otro PDF no son de este
+                "SELECT * FROM eventos WHERE sha256=? OR (file_id=? AND sha256 IS NULL) ORDER BY ts",
+                (sha, file_id),
             )
         ],
     }

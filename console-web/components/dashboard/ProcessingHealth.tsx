@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { EstadoFichero, PanelResumen } from '@/lib/types'
 import { ERP_NOMBRE } from '@/lib/config'
-import { formatEur, formatNumber, formatPercent, shortHash } from '@/lib/format'
+import { formatDateTime, formatEur, formatNumber, formatPercent, formatSeconds, shortHash } from '@/lib/format'
 import { Card } from '@/components/ui/Card'
 
 const TILES: Array<{
@@ -65,21 +65,40 @@ const TILES: Array<{
 export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
   const decididos = panel.ficheros - panel.porEstado.PENDIENTE
   const { operacion, versiones } = panel
-  const stats: Array<{ label: string; value: string; hint: string }> = [
+  const { ventana } = operacion
+  /** El histórico sólo se menciona si difiere: lo gastado en runs anteriores no es el coste de esta decisión. */
+  const historico =
+    operacion.costeEurHistorico !== null && Math.abs(operacion.costeEurHistorico - operacion.costeEur) >= 0.005
+      ? operacion.costeEurHistorico
+      : null
+  const stats: Array<{ label: string; value: string; hint: string; title?: string }> = [
     {
       label: 'Ritmo',
       value:
         operacion.ficherosPorSegundo === null ? '—' : `${String(operacion.ficherosPorSegundo).replace('.', ',')} ficheros/s`,
-      hint: 'velocidad del último run',
+      hint: ventana
+        ? `${formatNumber(ventana.ficheros)} ficheros en ${formatSeconds(ventana.segundos)} (última pasada)`
+        : 'velocidad de la última pasada',
+      title: ventana ? `Ingest/extract desde ${formatDateTime(ventana.desde)} hasta ${formatDateTime(ventana.hasta)}` : undefined,
     },
-    { label: 'Coste LLM', value: formatEur(operacion.costeEur, 2), hint: 'extracción con modelo' },
+    {
+      label: 'Coste LLM',
+      value: formatEur(operacion.costeEur, 2),
+      hint: historico === null ? 'extracción vigente' : `extracción vigente · ${formatEur(historico, 2)} acumulado`,
+      title: historico === null ? undefined : 'El acumulado incluye runs anteriores y relecturas; no es el coste de las decisiones de hoy.',
+    },
     { label: 'Con LLM', value: formatPercent(operacion.pctLlm), hint: 'el resto salió de plantilla o caché' },
     { label: 'Reintentos', value: formatNumber(operacion.reintentos), hint: 'ERP u otras etapas que tuvieron que repetir' },
   ]
   /** Sólo se enseña el reparto por lote cuando hay más de uno: con la Caja sola el total ya lo dice. */
   const lotes = panel.porLote.length > 1 || panel.porLote.some((lote) => lote.lote !== 1) ? panel.porLote : []
+  /** Si conviven dos normas (v3 y v4 el sábado), el chip lo dice y el tooltip reparte. */
+  const normas = versiones.normas.length > 1 ? versiones.normas : []
   const versionChips: Array<{ label: string; title?: string }> = [
-    { label: `Norma ${versiones.norma ?? '—'}` },
+    {
+      label: normas.length ? `Norma ${normas.map((item) => item.norma).join(' + ')}` : `Norma ${versiones.norma ?? '—'}`,
+      title: normas.length ? normas.map((item) => `${item.norma}: ${formatNumber(item.ficheros)} ficheros`).join(' · ') : undefined,
+    },
     { label: 'Excel proveedores', title: `Maestro ${shortHash(versiones.maestro, 12)}` },
     { label: `${ERP_NOMBRE} · ${versiones.erp ?? '—'}` },
   ]
@@ -154,7 +173,7 @@ export function ProcessingHealth({ panel }: { panel: PanelResumen }) {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-[#edf0ec] pt-4 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="min-w-0">
+            <div key={stat.label} className="min-w-0" title={stat.title}>
               <p className="text-[12px] text-[#8b9790]">{stat.label}</p>
               <p className="mt-0.5 text-[16px] font-bold tracking-[-0.03em] text-[#233f35] tabular-nums">{stat.value}</p>
               <p className="mt-0.5 text-[12px] leading-4 text-[#9aa39e]">{stat.hint}</p>

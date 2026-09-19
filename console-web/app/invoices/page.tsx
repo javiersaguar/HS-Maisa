@@ -88,7 +88,7 @@ function FicherosScreen() {
     pageSize: DEFAULT_PAGE_SIZE,
   }
   const { data, error, loading, refresh } = useFicheros(query)
-  const { data: summary } = usePanel()
+  const { data: summary, error: summaryError } = usePanel()
   const searching = loading || q !== filters.q
 
   useEffect(() => {
@@ -184,7 +184,7 @@ function FicherosScreen() {
                   </button>
                 )}
               </div>
-            ) : (
+            ) : summaryError ? null : (
               <Skeleton className="h-6 w-64" />
             )}
           </div>

@@ -8,6 +8,7 @@
  * Si el puente de la fase 3 usa otros nombres, se añaden aquí y ninguna pantalla cambia.
  */
 
+import { API_CONTRACT_VERSION } from '../config'
 import type {
   Aviso,
   Decision,
@@ -25,6 +26,7 @@ import type {
   MesPunto,
   MetodoExtraccion,
   Motivo,
+  Operacion,
   Paginated,
   PanelResumen,
   PasoTraza,
@@ -32,6 +34,9 @@ import type {
   Proveedor,
   Resultado,
   ResultadoShare,
+  Salud,
+  VentanaPasada,
+  Versiones,
 } from '../types'
 
 type Raw = Record<string, unknown>
@@ -81,6 +86,23 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
 }
 
 const array = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
+
+let apiJsonAvisada = false
+
+/**
+ * Las colecciones declaran `api` en el JSON (además de la cabecera). Si el backend sube de versión
+ * y un proxy se come `X-Albertitos-Api`, esto sigue avisando. Campos de más no avisan.
+ */
+function noteApi(raw: Raw) {
+  const declarada = numOrNull(pick(raw, 'api'))
+  if (declarada === null || apiJsonAvisada) return
+  if (declarada !== API_CONTRACT_VERSION) {
+    apiJsonAvisada = true
+    console.warn(
+      `[albertitos] el JSON declara contrato v${declarada} y esta consola espera v${API_CONTRACT_VERSION}: revisa lib/api/mappers.ts`,
+    )
+  }
+}
 
 /** Columnas `*_json` de la SQLite: aceptan string JSON u objeto ya parseado. */
 function json(value: unknown): unknown {
@@ -257,8 +279,8 @@ function toFuentes(input: unknown): Fuentes | null {
   if (!input) return null
   const raw = asRecord(input)
   return {
-    maestro_version: str(pick(raw, 'maestro_version'), '—'),
-    erp_version: str(pick(raw, 'erp_version'), '—'),
+    maestro_version: strOrNull(pick(raw, 'maestro_version')),
+    erp_version: strOrNull(pick(raw, 'erp_version')),
     proveedor: toProveedor(pick(raw, 'proveedor')),
     pedido: toPedido(pick(raw, 'pedido')),
     asientos: array(pick(raw, 'asientos')).map(toAsiento),
@@ -300,6 +322,7 @@ export function toPaginatedFicheros(input: unknown, fallbackPageSize: number): P
     return { items, total: items.length, page: 1, pageSize: fallbackPageSize }
   }
   const raw = asRecord(input)
+  noteApi(raw)
   const items = array(pick(raw, 'items', 'results', 'data', 'ficheros')).map(toFichero)
   return {
     items,
@@ -381,18 +404,19 @@ export function toEtapaResumen(input: unknown): EtapaResumen {
     porEstado: Object.fromEntries(
       ESTADOS_EVENTO.map((estado) => [estado, num(porEstado[estado], EMPTY_ESTADOS[estado])]),
     ) as Record<EstadoEvento, number>,
-    latenciaMediaMs: numOrNull(pick(raw, 'latenciaMediaMs', 'lat_media_ms')),
+    latenciaMediaMs: numOrNull(pick(raw, 'latenciaMediaMs', 'latencia_media_ms', 'lat_media_ms')),
     reintentos: num(pick(raw, 'reintentos'), 0),
     tokensIn: num(pick(raw, 'tokensIn', 'tokens_in'), 0),
     tokensOut: num(pick(raw, 'tokensOut', 'tokens_out'), 0),
     costeEur: num(pick(raw, 'costeEur', 'coste_eur'), 0),
     version: strOrNull(pick(raw, 'version')),
-    ultimoEventoEn: strOrNull(pick(raw, 'ultimoEventoEn', 'ultimo_ts')),
+    ultimoEventoEn: strOrNull(pick(raw, 'ultimoEventoEn', 'ultimo_evento_en', 'ultimo_ts')),
   }
 }
 
 export function toEtapasResumen(input: unknown): EtapasResumen {
   const raw = asRecord(input)
+  noteApi(raw)
   return {
     ficheros: num(pick(raw, 'ficheros'), 0),
     etapas: array(pick(raw, 'etapas')).map(toEtapaResumen),
@@ -416,11 +440,51 @@ function toMes(input: unknown): MesPunto {
   return { mes: str(pick(raw, 'mes')), ficheros: num(pick(raw, 'ficheros', 'n'), 0) }
 }
 
+export function toVersiones(input: unknown): Versiones {
+  const raw = asRecord(input)
+  const norma = strOrNull(pick(raw, 'norma'))
+  const normas = array(pick(raw, 'normas'))
+    .map((item) => {
+      const entry = asRecord(item)
+      return { norma: str(pick(entry, 'norma', 'norma_version')), ficheros: num(pick(entry, 'ficheros', 'n'), 0) }
+    })
+    .filter((item) => item.norma)
+  return {
+    norma,
+    normas,
+    maestro: strOrNull(pick(raw, 'maestro')),
+    erp: strOrNull(pick(raw, 'erp')),
+    extractor: strOrNull(pick(raw, 'extractor')),
+  }
+}
+
+function toVentana(input: unknown): VentanaPasada | null {
+  if (!input || typeof input !== 'object') return null
+  const raw = asRecord(input)
+  return {
+    ficheros: num(pick(raw, 'ficheros'), 0),
+    segundos: num(pick(raw, 'segundos'), 0),
+    desde: strOrNull(pick(raw, 'desde')),
+    hasta: strOrNull(pick(raw, 'hasta')),
+  }
+}
+
+export function toOperacion(input: unknown): Operacion {
+  const raw = asRecord(input)
+  return {
+    ficherosPorSegundo: numOrNull(pick(raw, 'ficherosPorSegundo', 'ficheros_s')),
+    ventana: toVentana(pick(raw, 'ventana')),
+    costeEur: num(pick(raw, 'costeEur', 'coste_eur'), 0),
+    costeEurHistorico: numOrNull(pick(raw, 'costeEurHistorico', 'coste_eur_historico')),
+    reintentos: num(pick(raw, 'reintentos'), 0),
+    pctLlm: numOrNull(pick(raw, 'pctLlm', 'pct_llm')),
+  }
+}
+
 export function toPanel(input: unknown): PanelResumen {
   const raw = asRecord(input)
+  noteApi(raw)
   const porEstado = asRecord(pick(raw, 'porEstado', 'por_estado'))
-  const versiones = asRecord(pick(raw, 'versiones'))
-  const operacion = asRecord(pick(raw, 'operacion'))
   return {
     ficheros: num(pick(raw, 'ficheros'), 0),
     porLote: array(pick(raw, 'porLote', 'por_lote')).map((item) => {
@@ -434,20 +498,35 @@ export function toPanel(input: unknown): PanelResumen {
       PENDIENTE: num(porEstado.PENDIENTE, 0),
     },
     distribucion: array(pick(raw, 'distribucion')).map(toShare),
-    versiones: {
-      norma: strOrNull(pick(versiones, 'norma')),
-      maestro: strOrNull(pick(versiones, 'maestro')),
-      erp: strOrNull(pick(versiones, 'erp')),
-      extractor: strOrNull(pick(versiones, 'extractor')),
-    },
-    operacion: {
-      ficherosPorSegundo: numOrNull(pick(operacion, 'ficherosPorSegundo', 'ficheros_s')),
-      costeEur: num(pick(operacion, 'costeEur', 'coste_eur'), 0),
-      reintentos: num(pick(operacion, 'reintentos'), 0),
-      pctLlm: numOrNull(pick(operacion, 'pctLlm', 'pct_llm')),
-    },
+    versiones: toVersiones(pick(raw, 'versiones')),
+    operacion: toOperacion(pick(raw, 'operacion')),
     etapas: array(pick(raw, 'etapas')).map(toEtapaResumen),
     porMes: array(pick(raw, 'porMes', 'por_mes')).map(toMes),
     recientes: array(pick(raw, 'recientes')).map(toFichero),
+  }
+}
+
+/* ------------------------------------------------------------------ salud --- */
+
+/** `GET /salud`: `{ ok, api, bd: { ficheros, decisiones_vigentes, pendientes, versiones } | null }`. */
+export function toSalud(input: unknown): Salud {
+  const raw = asRecord(input)
+  noteApi(raw)
+  const bd = pick(raw, 'bd')
+  const bdRaw = bd && typeof bd === 'object' ? asRecord(bd) : null
+  return {
+    ok: boolOrNull(pick(raw, 'ok')) ?? true,
+    modo: 'http',
+    api: numOrNull(pick(raw, 'api')),
+    bd: bdRaw
+      ? {
+          ficheros: num(pick(bdRaw, 'ficheros'), 0),
+          decisionesVigentes: num(pick(bdRaw, 'decisionesVigentes', 'decisiones_vigentes'), 0),
+          pendientes: num(pick(bdRaw, 'pendientes'), 0),
+          ultimoEventoEn: strOrNull(pick(bdRaw, 'ultimoEventoEn', 'ultimo_evento_en')),
+          identidades: boolOrNull(pick(bdRaw, 'identidades')) ?? false,
+          versiones: toVersiones(pick(bdRaw, 'versiones')),
+        }
+      : null,
   }
 }

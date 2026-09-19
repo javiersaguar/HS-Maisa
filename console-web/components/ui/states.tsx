@@ -88,13 +88,15 @@ export function ErrorState({
     (isUnauthorized
       ? 'No tienes acceso a estos datos'
       : isNetwork
-        ? 'No se puede contactar con el backend'
-        : error.isNotFound
-          ? 'No encontrado'
-          : 'Algo ha fallado')
+        ? 'No se puede contactar con el puente'
+        : error.isUnavailable
+          ? 'El puente no tiene base de datos'
+          : error.isNotFound
+            ? 'No encontrado'
+            : 'Algo ha fallado')
 
   const description = isNetwork
-    ? 'Revisa NEXT_PUBLIC_API_URL o pon NEXT_PUBLIC_USE_MOCK=true para trabajar sin red.'
+    ? 'Arranca `uv run python -m albertitos.console.api`, revisa NEXT_PUBLIC_API_URL o pon NEXT_PUBLIC_USE_MOCK=true para trabajar sin red.'
     : error.message
 
   return (

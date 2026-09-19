@@ -20,7 +20,9 @@ import type {
   PanelResumen,
   PasoTraza,
   Resultado,
+  Salud,
   TrazaQuery,
+  Versiones,
 } from '../types'
 import { EVENTOS, FICHEROS, VERSIONES, fuentesDe } from './data'
 
@@ -93,6 +95,33 @@ export async function listEventos(query: { etapa?: Etapa; limit?: number } = {})
 
 /* ----------------------------------------------------------------- panel --- */
 
+/** En el mock todas las decisiones vigentes salen de la misma norma. */
+const versiones = (decididos: number): Versiones => ({
+  ...VERSIONES,
+  normas: [{ norma: VERSIONES.norma, ficheros: decididos }],
+})
+
+/* ----------------------------------------------------------------- salud --- */
+
+export async function getSalud(): Promise<Salud> {
+  await delay(60)
+  const vigentes = FICHEROS.filter((fichero) => fichero.decision).length
+  const ultimo = [...EVENTOS].sort(byTsDesc)[0]?.ts ?? null
+  return clone({
+    ok: true,
+    modo: 'mock' as const,
+    api: null,
+    bd: {
+      ficheros: FICHEROS.length,
+      decisionesVigentes: vigentes,
+      pendientes: FICHEROS.length - vigentes,
+      ultimoEventoEn: ultimo,
+      identidades: false,
+      versiones: versiones(vigentes),
+    },
+  })
+}
+
 function porMes(): MesPunto[] {
   const counts = new Map<string, number>()
   FICHEROS.forEach((fichero) => {
@@ -116,11 +145,13 @@ export async function getPanel(): Promise<PanelResumen> {
   FICHEROS.forEach((fichero) => lotes.set(fichero.lote, (lotes.get(fichero.lote) ?? 0) + 1))
 
   const entrada = EVENTOS.filter((event) => event.etapa === 'ingest' || event.etapa === 'extract')
-    .map((event) => new Date(event.ts ?? 0).getTime())
-    .sort((a, b) => a - b)
-  const span = entrada.length > 1 ? (entrada[entrada.length - 1] - entrada[0]) / 1000 : 0
+    .map((event) => event.ts ?? '')
+    .filter(Boolean)
+    .sort()
+  const span = entrada.length > 1 ? (new Date(entrada[entrada.length - 1]).getTime() - new Date(entrada[0]).getTime()) / 1000 : 0
   const conHechos = FICHEROS.filter((fichero) => fichero.hechos)
   const conLlm = conHechos.filter((fichero) => fichero.hechos?.metodo === 'llm_texto' || fichero.hechos?.metodo === 'llm_vision')
+  const coste = EVENTOS.reduce((sum, event) => sum + (event.coste_eur ?? 0), 0)
 
   return clone({
     ficheros: FICHEROS.length,
@@ -131,10 +162,15 @@ export async function getPanel(): Promise<PanelResumen> {
       count: porEstado[resultado],
       percent: Math.round((porEstado[resultado] / decididos) * 100),
     })),
-    versiones: VERSIONES,
+    versiones: versiones(decididos),
     operacion: {
       ficherosPorSegundo: span > 0 ? Math.round((FICHEROS.length / span) * 100) / 100 : null,
-      costeEur: EVENTOS.reduce((sum, event) => sum + (event.coste_eur ?? 0), 0),
+      ventana:
+        span > 0
+          ? { ficheros: FICHEROS.length, segundos: Math.round(span * 1000) / 1000, desde: entrada[0], hasta: entrada[entrada.length - 1] }
+          : null,
+      costeEur: coste,
+      costeEurHistorico: coste,
       reintentos: EVENTOS.filter((event) => event.intento > 1).length,
       pctLlm: conHechos.length ? Math.round((conLlm.length / conHechos.length) * 1000) / 10 : null,
     },
