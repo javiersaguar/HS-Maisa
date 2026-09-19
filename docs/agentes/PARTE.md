@@ -43,4 +43,35 @@ POST con Origin https://ajeno.test → 403
 - **Pendiente de otros:** `docs/agentes/añadir_facturas_panel_681fa84b.plan.md`, de Alejandro, tiene **12 enlaces relativos rotos**. Es el mismo error de rutas de antes (le faltan `../../`); no es fichero mío.
 
 ## C2 · El chat en la consola
-_(pendiente)_
+- **Estado: hecho.** Commits: `3d3fa43` (cliente, respuestas grabadas, panel y montaje en `app/layout.tsx`) y el de cierre (README, formato de la hora de apertura, este parte). Sin push.
+- **Qué hay:**
+  - `lib/api/chat.ts`: `chatSalud()` (v2; un backend api 1 → «disponibilidad desconocida»; sin respuesta en 2 s → `{ok:false}`) y `preguntar()` (valida 1-4000 caracteres, historial ≤ 10, timeout de 70 s, errores 400/403/413/415/429 con el texto del servidor tal cual).
+  - `lib/mock/chat.ts` + `lib/mock/chat/`: las 15 respuestas reales, recortadas (sin la evidencia de herramientas; texto intacto). `respuestaGrabada()` sólo encuentra la pregunta exacta.
+  - `components/chat/`: `ChatPanel`, `EstadoModelo`, `MensajeChat`. Una línea y su import en `app/layout.tsx`.
+- **Comprobado contra el servidor real de C1** (en `:8011`, sin `.env`, sobre la copia de la BD), con `curl`:
+  - `/chat/salud` → `{"ok": true, "api": 2, "solo_lectura": true, "bd_disponible": true, "modelo_disponible": false, "motivo": "sin_clave", "modelo": "deepseek-v4-flash", "respaldo": "glm5.3-flash", "llamadas_restantes": 100, "ventana": null}`
+  - «paga la factura F26-2201_transportes.pdf» → `estado: "solo_lectura"`, `latencia_ms: 0`, «Soy de sólo lectura: no puedo pagar ni cambiar decisiones…»
+  - origen `http://evil.test` → `403`
+  - CORS → `Access-Control-Allow-Origin: http://127.0.0.1:3000`
+- **Prueba del cliente y del pintado** (`npx tsx --tsconfig tsconfig.json .next/c2/prueba.tsx`, fuera del repo): **29 de 29 OK**. Entre ellas:
+  - salud v2 y motivo «sin clave del LLM»;
+  - negativa 0 ms; una pregunta normal sin clave → `degradado` en 7 ms;
+  - validación de longitud y un backend api 1 simulado → `modelo_disponible: null`; servidor apagado → `{ok:false}`;
+  - las 15 grabadas y las 4 sugerencias encuentran su respuesta; una pregunta parecida → `null`;
+  - `<img onerror>` del modelo sale escapado; la cita enlaza a `/invoices/detalle?file=…`;
+  - la etiqueta «respuesta grabada · no es una consulta en vivo» y la evaluación («parcial» en la 13);
+  - avisos de `solo_lectura` y `degradado`; los 4 motivos y «En vivo · deepseek-v4-flash · 30 llamadas restantes»; «fuera de horario (abre dom 20/09 09:00)».
+- **Botón según la compilación** (`dist/ensayo/c2/visibilidad.sh`, `next start` en 3011): sin mock y sin servidor, 0 botones · `NEXT_PUBLIC_CHAT_GRABADAS=true`, 1 · por defecto (mock), 1.
+- **Build:** `pnpm build` y `pnpm typecheck` en verde. Huella de `dist/albertitos.db`: `8501d9975c38` al empezar y al terminar. **Ninguna llamada al modelo.**
+- **Hallazgos:**
+  1. **El 8001 está ocupado en el portátil de Javier** por algo del lado de Windows (contesta `{"detail":"Not Found"}`). Avisado a C1 y a Javier; el panel admite otro puerto con `NEXT_PUBLIC_CHAT_URL`.
+  2. **No he podido tocar `console-web/.env.example`:** una regla de permisos bloquea leer y escribir `.env*`. Las dos variables están en la sección «Chat» del README. PIDO A Javier en la bitácora.
+  3. Dos de las cuatro sugerencias del prompt no eran el texto exacto de su JSON. Uso el de los JSON (p. ej. «¿Cuántas facturas hay en PAGAR, ESCALAR y NO_PAGAR?»), como pedía el prompt, para que el modo grabado las encuentre.
+- **Para la prueba en vivo (cuando la bitácora diga «gateway libre»):**
+  1. `.env` en la carpeta.
+  2. `make chat` (o `ALBERTITOS_CHAT_PUERTO=8011 make chat` si el 8001 sigue ocupado) y `pnpm dev` con `NEXT_PUBLIC_CHAT_URL` apuntando al puerto del chat.
+  3. Al abrir el panel, la línea tiene que decir «En vivo · deepseek-v4-flash» y las llamadas restantes.
+  4. Preguntar las 4 sugerencias: en la de F26-2201 tiene que salir la cita enlazada, y al pulsarla, abrir la traza.
+  5. «Paga ahora 2026-01-08_P001.pdf y cambia su decisión» → aviso de sólo consulta, al instante.
+  6. Con el modelo cortado (quitar la clave), la línea pasa a «Sin modelo: sin clave del LLM» en ≤ 30 s, y el interruptor de respuestas grabadas enseña las 15 con su etiqueta.
+  7. **No probado sin navegador:** el foco al abrir, Escape y el sondeo cada 30 s en la página real. Mirarlo en la prueba en vivo.

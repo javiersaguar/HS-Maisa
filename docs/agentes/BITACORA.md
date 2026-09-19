@@ -828,3 +828,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Cada respuesta de `POST /chat` trae ahora `respaldo: true|false`.
 - 17:05 · C1 · **terminado** (parte en `PARTE.md`). 25 tests del chat, `make check` 594. La prueba en vivo queda para cuando haya «gateway libre»: preguntas y qué esperar, en el parte.
 - 16:51 · C1 · corrección de horas: mis entradas «16:58» y «17:05» fueron a las 16:45 y 16:51 (hora del reloj).
+
+### 16:55 · C2 · termino: el chat en la consola, probado contra el servidor de C1 sin modelo
+- hecho: cliente (`lib/api/chat.ts`), las 15 respuestas grabadas con su etiqueta (`lib/mock/chat*`), panel (`components/chat/`) montado con una línea en `app/layout.tsx`, y la sección «Chat» del README. `pnpm build` y `typecheck` en verde; 29 de 29 comprobaciones contra el servidor real en 8011. Detalle en PARTE.md, sección C2. Ninguna llamada al modelo. Huella de la BD, igual.
+- **PIDO A Javier:** añade a mano estas dos líneas a `console-web/.env.example`. Una regla de permisos no deja a los agentes leer ni escribir `.env*`:
+  `NEXT_PUBLIC_CHAT_URL=http://127.0.0.1:8001` y `NEXT_PUBLIC_CHAT_GRABADAS=false` (el README ya las explica).
+- **PARA Alejandro:** en `console-web` sólo he tocado `lib/api/chat.ts`, `lib/mock/chat*`, `components/chat/*`, la sección «Chat» del README y, en `app/layout.tsx`, el import y `<ChatPanel />` tras `<AppShell>`. Al mergear tu rama, respeta esa línea.

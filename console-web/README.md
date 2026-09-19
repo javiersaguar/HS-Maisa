@@ -70,6 +70,34 @@ Contrato (versión 1; detalle en `src/albertitos/console/CLAUDE.md`):
 `file_id` va en NFC y codificado en la URL. No hay escrituras: la consola no aprueba ni rechaza. Recalcular es
 `albertitos reprocess --impacted`.
 
+## Chat
+
+Botón «Pregunta a Albertitos» (abajo a la derecha) y un panel lateral contra el **chat de sólo lectura**: un proceso
+aparte, no el puente de `:8000`, porque necesita POST. Contrato: `docs/api/chat.md` y `/chat/salud` v2 en
+`docs/agentes/PLAN-13.md`. Código: `lib/api/chat.ts`, `components/chat/`, `lib/mock/chat.ts`.
+
+```bash
+make chat                                              # o: uv run python -m albertitos.chat --servidor
+                                                       # http://127.0.0.1:8001, lee dist/albertitos.db en sólo lectura
+uv run python -m albertitos.chat "¿Por qué se escala F26-2201_transportes.pdf?"   # repliegue por terminal
+```
+
+- `NEXT_PUBLIC_CHAT_URL` (por defecto `http://127.0.0.1:8001`). Si el 8001 está ocupado, arranca el chat con
+  `ALBERTITOS_CHAT_PUERTO=8011` y pon aquí `http://127.0.0.1:8011`. El chat sólo acepta los orígenes de
+  `ALBERTITOS_CHAT_ORIGENES` (por defecto `localhost:3000` y `127.0.0.1:3000`).
+- **La línea de estado va siempre arriba** y se refresca cada 30 s, sin gastar llamadas al modelo: «En vivo · <modelo>»
+  o «Sin modelo: sin clave del LLM / fuera de horario (abre …) / sin llamadas disponibles / el proveedor está fallando»,
+  con las llamadas restantes. Las respuestas son texto (nunca HTML del modelo), con las facturas citadas enlazadas a su
+  traza y, debajo, el modelo («respaldo» si contestó el de respaldo), la latencia y las herramientas usadas.
+- **Respuestas grabadas:** el interruptor «Ver respuestas grabadas (evaluación 19/09 15:00)» enseña las 15 respuestas
+  reales de `docs/api/ejemplos/chat-*.json`. Cada una lleva la etiqueta fija «respuesta grabada · no es una consulta en
+  vivo» y su evaluación. Sólo responde a esas 15 preguntas, tal cual: nunca inventa una. El interruptor está disponible
+  si el modelo no lo está, si una respuesta llega degradada, con `NEXT_PUBLIC_USE_MOCK=true` o con
+  `NEXT_PUBLIC_CHAT_GRABADAS=true`.
+- **Sin servidor del chat**, el botón no aparece y la consola no cambia. Con `NEXT_PUBLIC_USE_MOCK=true` o
+  `NEXT_PUBLIC_CHAT_GRABADAS=true` aparece, pero sólo con las respuestas grabadas.
+- Teclado: el foco va al campo al abrir, Intro envía (Mayús+Intro, salto de línea) y Escape cierra.
+
 ## Estructura
 
 ```
