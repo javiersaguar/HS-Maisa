@@ -31,7 +31,7 @@ services:
       - key: ALBERTITOS_MODELO_CHAT_FALLBACK
         value: glm5.3-flash
       - key: ALBERTITOS_CHAT_MAX_LLAMADAS
-        value: "60"
+        value: "200"  # la graban y la enseñan: 60 se quedaban cortas (cada pregunta gasta 2-4)
       - key: ALBERTITOS_CHAT_HASTA
         value: "2026-09-20T14:00"
       # El secreto: se pega a mano en el panel de Render (sync: false = nunca viene del repo)

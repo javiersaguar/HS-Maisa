@@ -7,8 +7,10 @@ name: despertar la demo pública
 
 on:
   schedule:
-    # cada 10 min, domingo 20/09 de 05:00 a 13:00 UTC (07:00 a 15:00 en Madrid)
-    - cron: '*/10 5-13 * * 0'
+    # cada 10 min, la noche del sábado al domingo (Alfonso graba la demo) y la mañana de la defensa.
+    # En UTC; Madrid va +2. Sábado 21:00-23:59 UTC = 23:00-01:59 Madrid; domingo 00:00-13:59 UTC = 02:00-15:59 Madrid.
+    - cron: '*/10 21-23 * * 6'
+    - cron: '*/10 0-13 * * 0'
   workflow_dispatch:
 
 permissions:
