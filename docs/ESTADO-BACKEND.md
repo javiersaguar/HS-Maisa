@@ -6,7 +6,7 @@ La versión anterior, con cada P0 tachado según se cerraba, está en el histori
 | Área | Estado | Evidencia |
 |---|---|---|
 | **Entrega del lote 1** | ✅ Publicada `232bb76`: 500 líneas, **438/53/9**, auditoría VERDE | `docs/entregas.log` · `outcomes.jsonl` `1ec4be206089` |
-| **Código en `main`** | ✅ `javier/ingesta` = `main` + arreglos de Windows. **513 tests en verde** en Linux | `make check` |
+| **Código en `main`** | ✅ `javier/ingesta` = `main` + arreglos de Windows. **tests en verde** en Linux y en Windows (ver la fila Windows) | `make check` |
 | **Riesgos de NO APTO del lote 2** | ✅ Cerrados los cinco: copias exactas (P0-1), nombre repetido (P0-5, ya en `main`), auditoría como puerta, `--aceptar-rojo` y contingencia ESCALAR (ADR-0009) | tests + ensayos |
 | **Lote 2 a las 18:00** | ✅ Ensayado con `main`: **14,2 s** de punta a punta sin visión nueva; nombre repetido en 39 s | `CHULETA-LOTE2.md` · `scripts/ensayo/` |
 | **Fuentes con otra forma** | ✅ El Excel se lee por nombre de columna; una hoja nueva que parezca la regla se avisa | `ENSAYO-FUENTES.md` (J2) |
@@ -16,7 +16,7 @@ La versión anterior, con cada P0 tachado según se cerraba, está en el histori
 | **Bonus (+10)** | ✅ Calendario y remesa: **438 pagos, 2.428.159,06 €**, en solo lectura | `docs/BONUS.md` · ADR-0012 |
 | **Consola** | 🟠 Alejandro la ha rehecho en **Next.js**, con un puente HTTP de solo lectura. Funciona contra la BD real, pero **necesita Node y pnpm** en el portátil de la defensa y **no tiene ADR** (el stack decía Streamlit). `make console` sigue lanzando el Streamlit viejo | `src/albertitos/console/CLAUDE.md` |
 | **La norma (Mónica)** | 🔴 **Muestra etiquetada: 0 de 21.** Ninguna respuesta de los mentores anotada. Tres políticas abiertas | abajo |
-| **Plan PDF (35 pts, Alfonso)** | 🔴 **Sin tocar en 12 h.** Tiene 4 ADRs más un hueco `ADR-000N · …`; hay 12 ADRs escritos | `docs/plan/albertitos_plan.md` |
+| **Plan PDF (35 pts, Alfonso)** | 🔴 **Sin tocar en 12 h.** Tiene 4 ADRs más un hueco `ADR-000N · …`; hay 14 ADRs escritos (0001-0014) | `docs/plan/albertitos_plan.md` |
 | **Guion de la defensa (Alfonso)** | 🔴 **Sin tocar desde el andamiaje** (18 h). Hay presentación v1 (`presentaciones/`, 13,5 MB) y la chuleta del bloque 4 | `docs/guion-defensa.md` |
 | **Windows** | ✅ Los 8 fallos que vio Miguel y 5 de codificación que salieron después, arreglados: **513 en verde en `windows-latest`, sin `PYTHONUTF8`**. El CI de Windows se lanza a mano o subiendo a una rama `windows-check/**` | `.github/workflows/windows.yml` |
 
@@ -38,7 +38,7 @@ La validación es binaria contra una referencia privada. Tenemos 438/53/9 **sin 
    etiqueta** (`v3.1`), para que el linaje los vea solos.
 
 ### 🔴 B · El PDF del plan (35 pts), antes de la entrega del domingo 08:00 · Alfonso
-- Elegir **2-5 ADRs** de los 12. Mi propuesta: 0001 (el LLM extrae, la norma decide), 0006 (linaje), 0009
+- Elegir **2-5 ADRs** de los 14. Mi propuesta: 0001 (el LLM extrae, la norma decide), 0006 (linaje), 0009
   (contingencia), 0011 (una lectura reconciliada no se paga sola) y 0003 o 0005.
 - Quitar el hueco `ADR-000N · …` y comprobar las cifras con `uv run python scripts/cifras_check.py`.
 - `make plan-pdf` y revisarlo impreso. Entra en la entrega final: es uno de los tres ficheros.

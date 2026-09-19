@@ -44,6 +44,11 @@ Cada handler tiene la firma del puente, `(conn, query) -> (status, body)`: `conn
 `fecha_ejecucion` (el vencimiento o, si ya pasó, el día de corte), `semana`, `vencido`, `maestro_version`,
 `apto_remesa`, `iban_control_ok`. Con `file_id` se abre la traza, igual que en el resto de la consola.
 
+**Ojo con las dos listas de semanas de `/bonus/tesoreria`** (lo confundió R4 en la revisión): `semanas` es el calendario
+**natural**, por vencimiento y **sin tope** (la 2026-W35, a finales de agosto, suma 184.374,50 €). El reparto con tope está en
+`programa.semanas`, que empieza en la semana del corte y nunca pasa del tope (con 150.000 €, el máximo es 149.999,99 €), salvo un pago que por sí solo lo supera
+(`supera_tope: true`). En pantalla, que no se pinten las dos con el mismo título.
+
 ## Las cifras de hoy (copia de la BD real, corte 2026-09-18)
 438 PAGAR · **2.428.159,06 €** · vencido **2.383.400,88 €** (431 facturas) · en plazo 44.758,18 € · 2 vencen en la semana
 del corte · 11 proveedores · remesa 438, todas con `iban_control_ok=false` · 11 avisos `IBAN_SIN_CONTROL` (uno por

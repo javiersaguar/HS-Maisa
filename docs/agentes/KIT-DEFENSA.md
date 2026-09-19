@@ -1,6 +1,6 @@
 # Chuleta de la defensa · bloque 4 (resiliencia, 2 min) · para Alfonso
 
-Tiempos medidos el 19/09 a las 15:55 por R4, con `revision/grok` (`a5a8366`) y el kit de las 15:55, en un clon limpio
+Tiempos medidos el 19/09 a las 15:55 por R4 (revisión PLAN-12), con el código de `main` de ese momento y un kit equivalente, en un clon limpio
 (`git worktree add … HEAD --detach`) en el portátil de Javier: `bootstrap` 2,3 s · `kit instalar` 0,2 s · `status` 0,3 s
 · `trace` 0,2 s · `demo_caos --sin-red` **3,7 s** · `dato_en_vivo --pagada PO-2026-0001` **0,7 s** · bonus 0,2 s · chat
 0,3 s. Todo con exit 0. **En el de Alfonso serán otros: cronométralos al llegar.** Todo es bash (WSL, Linux o Mac).
@@ -11,8 +11,9 @@ Antes de salir de casa: `bash scripts/smoke.sh` (6 pasos, 2,5 s aquí, `VEREDICT
    `miguel/pipeline` **ya está en `main` (`8935c3e`)**: trae el `trace` legible, el `status` nuevo y las copias exactas.
 2. Copia el kit que te pase Javier a `dist/kit/` e instálalo: `make kit-instalar KIT=dist/kit/albertitos-kit-<fecha>.tar.gz`.
    Tiene que acabar en `VEREDICTO: instalado` con `ficheros {'1': 500}`, **438 PAGAR · 53 ESCALAR · 9 NO_PAGAR** y caché 881.
-   **Pide el kit `albertitos-kit-20260919-1555.tar.gz`** (1,4 MB), empaquetado desde esta BD (esquema v3, `identidades`).
-   Los de las 13:37, 13:17 y 10:07 sirven de repliegue (mismos recuentos 438/53/9); el de las 10:07 es esquema v2.
+   **Usa el kit `albertitos-kit-20260919-1337.tar.gz`** (1,4 MB, esquema v3 con `identidades`), el que te pasó Javier.
+   R4 hizo uno equivalente a las 15:55 en la carpeta de revisión, con los mismos recuentos (438/53/9). Los de las 13:17 y
+   las 10:07 sirven de repliegue; el de las 10:07 es de esquema v2.
    Si te pide `--forzar`, es que ya tenías una BD con datos: añade `ARGS=--forzar` (la anterior queda en `…antes-del-kit`).
 3. `uv run albertitos status` (los mismos recuentos) y `make console` una vez: tres pestañas, Panel con 500/438/53/9.
 4. `bash scripts/smoke.sh`: una línea por paso, acaba en `VEREDICTO: OK` (~3 s). Si FALLA, no salgas.

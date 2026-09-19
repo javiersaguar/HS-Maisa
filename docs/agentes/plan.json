@@ -45,7 +45,32 @@
       "docs/agentes/PROMPT-ALEJANDRO-CHAT.md",
       "docs/adr/README.md",
       "docs/agentes/PLAN-12.md",
-      "docs/revision/*"
+      "docs/revision/*",
+      "scripts/enlaces_check.py",
+      "tests/test_enlaces.py",
+      "scripts/contrato_api_check.py",
+      "tests/test_contrato_api.py",
+      "scripts/smoke.sh",
+      "scripts/preflight_lote2.py",
+      "tests/test_preflight.py",
+      "docs/agentes/fix_invoice_detail_*",
+      "src/albertitos/bonus/*",
+      "tests/test_bonus.py",
+      "docs/BONUS.md",
+      "docs/adr/0012-*",
+      "docs/api/bonus.md",
+      "docs/api/ejemplos/bonus-*",
+      "src/albertitos/chat/*",
+      "tests/test_chat.py",
+      "docs/api/chat.md",
+      "docs/api/ejemplos/chat-*",
+      "docs/adr/0013-*",
+      "src/albertitos/confianza/*",
+      "tests/test_confianza.py",
+      "scripts/calibrar_confianza.py",
+      "docs/api/confianza.md",
+      "docs/api/ejemplos/confianza-*",
+      "docs/adr/0014-*"
     ],
     "Miguel": [
       "src/albertitos/core/*",
@@ -73,35 +98,11 @@
       "console-web/*",
       "src/albertitos/console/*",
       "tests/test_console.py",
-      "docs/agentes/FASE-3-UNION.md",
-      "docs/agentes/fix_invoice_detail_*"
+      "docs/agentes/FASE-3-UNION.md"
     ],
     "Alfonso": [
       "docs/plan/*",
       "presentaciones/*"
-    ],
-    "K1": [
-      "src/albertitos/bonus/*",
-      "tests/test_bonus.py",
-      "docs/BONUS.md",
-      "docs/adr/0012-*",
-      "docs/api/bonus.md",
-      "docs/api/ejemplos/bonus-*"
-    ],
-    "K2": [
-      "src/albertitos/chat/*",
-      "tests/test_chat.py",
-      "docs/api/chat.md",
-      "docs/api/ejemplos/chat-*",
-      "docs/adr/0013-*"
-    ],
-    "K3": [
-      "src/albertitos/confianza/*",
-      "tests/test_confianza.py",
-      "scripts/calibrar_confianza.py",
-      "docs/api/confianza.md",
-      "docs/api/ejemplos/confianza-*",
-      "docs/adr/0014-*"
     ]
   }
 }

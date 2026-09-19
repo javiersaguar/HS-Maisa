@@ -13,7 +13,7 @@
 | 0009 | Si a la hora de entregar no hay hechos, ESCALAR explícito y reversible | aceptado (Miguel con cuatro condiciones y Mónica, 19/09 09:00) | Javier |
 | 0010 | Un documento superpuesto lo mira una persona (`scan_025`) | aceptado | Mónica |
 | 0011 | Una lectura reconciliada con el maestro no se paga sola (5 escaneadas pasan a ESCALAR) | aceptado | Mónica |
-| 0012 | Calendario, tesorería y remesa de sólo lectura (bonus) | aceptado | Javier (J5, K1) |
+| 0012 | Calendario, tesorería y remesa de sólo lectura (bonus) | implementado (PLAN-10 y PLAN-11) | Javier (J5, K1) |
 | 0013 | Un chat de consulta con herramientas cerradas, sin SQL generado y sin escritura (bonus) | implementado y evaluado (14/15 + 1 parcial) | Javier (K2) |
 | 0014 | Confianza en la clasificación por factura: ordinal, por fuente y con razones, no una probabilidad (bonus) | propuesto (lo aceptan Javier y Mónica) | Javier (K3) |
 

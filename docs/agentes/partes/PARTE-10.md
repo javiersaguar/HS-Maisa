@@ -41,7 +41,7 @@ Ninguno: sin shell no puedo commitear ni pasar `make check`. Los ficheros quedan
 **Estado: terminado.** El loader ya no lee por posición, cada forma nueva tiene su test y el ensayo está medido sobre
 una copia de la BD real. `make check`: **497 passed, 2 deselected, 1 xfailed** (los 23 tests nuevos son míos;
 `tests/test_excel.py` pasa de 12 a 35). Detalle completo, con los comandos que dan cada cifra:
-[docs/agentes/ENSAYO-FUENTES.md](ENSAYO-FUENTES.md).
+[docs/agentes/ENSAYO-FUENTES.md](../ENSAYO-FUENTES.md).
 
 ### Lo que dejo hecho
 - `sources/excel.py` **tolerante a la forma y estricto con el contenido**: hojas y columnas por nombre normalizado
