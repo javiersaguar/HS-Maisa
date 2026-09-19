@@ -10,8 +10,6 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-import subprocess
-import sys
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -339,14 +337,15 @@ def test_la_confianza_no_cambia_la_entrega_ni_la_bd(tmp_path):
     origen.close()
 
     def package(salida: Path) -> str:
-        env = {k: v for k, v in __import__("os").environ.items() if not k.startswith("ALBERTITOS_")}
-        env.update(ALBERTITOS_DB=str(copia), PYTHONUTF8="1")
-        subprocess.run(
-            [sys.executable, "-m", "albertitos.cli", "package", "--salida", str(salida)],
-            env=env,
-            check=True,
-            capture_output=True,
-        )
+        # El lote 1 solo: con el material del lote 2 en data/lote2 y sin decidir, `albertitos package`
+        # se niega (falta una decisión), y aquí se compara outcomes.jsonl, que es lo que la confianza podría tocar.
+        from albertitos.pipeline import package as pk
+
+        conn = db.conectar(copia)
+        try:
+            pk.empaquetar(conn, salida, Path("data/caja"), None, con_traza=True)
+        finally:
+            conn.close()
         return hashlib.sha256((salida / "outcomes.jsonl").read_bytes()).hexdigest()
 
     antes = package(tmp_path / "antes")
