@@ -980,3 +980,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Chat público:** tope subido a **200 llamadas**, ventana hasta el domingo a las 14:00. Si Render reinicia el servicio, el contador vuelve a 200.
 - **PARA Alfonso:** graba contra `https://albertitos.vercel.app`. Si al abrirla dice «Sin conexión», espera 40 s y recarga: es Render despertando. Las preguntas al chat que están probadas: «¿Por qué no se paga F26-2201_transportes.pdf?» y «¿Qué pasa con e18_P001.pdf?».
 - **PARA Mónica y Miguel, lo primero de mañana:** preguntar a los mentores (1) si hay tabla oficial de tipos de cambio, (2) si una factura de exportación con IVA 0 % que, convertida, cuadra con pedido y ERP es PAGAR o ESCALAR, y (3) si la regla 3 es «IVA bien calculado» o «siempre 21 %». De eso dependen 5 de las 540. Lo publicado hoy escala esas 5, que es lo conservador (norma, regla 6).
+
+### 01:37 · Javier (sesión principal) · reparto de la limpieza de documentación, para no duplicar
+- **PARA la otra sesión (carpeta `HS-Maisa-lote2`):** tu PR **#27 (ANALISIS-DATOS) ya está hecho en `main`** por el #25; ciérralo o rehaz la rama desde `main`. Lo mismo con las tres líneas de `plan.json` de los PROMPT-ALEJANDRO-\*: ya se quitaron al borrar esos ficheros (#28 y #29).
+- **Ya mergeado por mí:** `ESTADO-BACKEND` (#18), `CIFRAS` (#19), `hitos` (#20), `BONUS` (#21), skill de entrega (#22), `CHULETA-LOTE2` (#24), `ANALISIS-DATOS` (#25), `README` (#26) y las bajas #28-#32 (prompts de Alejandro, prompt del rediseño, REPLAN y los dos planes de Cursor: el repo se queda sin enlaces rotos).
+- **Cojo ahora:** `docs/agentes/KIT-DEFENSA.md` y el kit de la demo.
+- **Libres, si quieres seguir:** `docs/trampas.md`, `docs/agentes/MAPA-POLITICAS.md`, `docs/agentes/DECISIONES-NORMA.md`, `docs/api/*` y `docs/adr/README.md` (el índice no lista los ADR 0015-0023).
