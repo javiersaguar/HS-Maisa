@@ -258,3 +258,30 @@
 .animate-import {
   animation: import-fill 550ms ease-out forwards;
 }
+
+
+/* AlbertitosAI: feedback and state changes, independent of the rest of the console. */
+:root { --chat-ease-out: cubic-bezier(0.23, 1, 0.32, 1); --chat-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); }
+.chat-panel { animation: chat-panel-in 240ms var(--chat-ease-drawer) both; }
+.chat-message { animation: chat-message-in 200ms var(--chat-ease-out) both; }
+.chat-cita { animation: chat-message-in 180ms var(--chat-ease-out) both; }
+.chat-bar { transition: transform 600ms var(--chat-ease-out); }
+.chat-delta { animation: chat-delta-up 600ms var(--chat-ease-out) both; }
+.chat-trigger[data-pulse="true"] { animation: chat-pulse 250ms var(--chat-ease-out) both; }
+.chat-press { transition: transform 120ms var(--chat-ease-out); }
+.chat-press:active:not(:disabled) { transform: scale(.97); }
+.chat-thinking i { width: 5px; height: 5px; border-radius: 50%; background: #176d59; animation: chat-dot 240ms ease-in-out infinite alternate; }
+.chat-thinking i:nth-child(2) { animation-delay: 80ms; }
+.chat-thinking i:nth-child(3) { animation-delay: 160ms; }
+.chat-texto-corto { max-height: 8.125em; overflow: hidden; }
+.chat-texto-corto[data-fade="true"] { mask-image: linear-gradient(#000 65%, transparent); }
+@keyframes chat-panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes chat-message-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes chat-delta-up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-14px); } }
+@keyframes chat-pulse { 50% { transform: scale(1.035); } }
+@keyframes chat-dot { from { opacity: .35; transform: translateY(1px); } to { opacity: 1; transform: translateY(-1px); } }
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel, .chat-message, .chat-cita, .chat-delta, .chat-trigger, .chat-thinking i { animation: none !important; }
+  .chat-bar, .chat-press { transition: none !important; }
+  .chat-press:active:not(:disabled) { transform: none; }
+}

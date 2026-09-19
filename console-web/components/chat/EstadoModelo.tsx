@@ -30,27 +30,23 @@ export function EstadoModelo({ salud, grabado }: { salud: SaludChat | null; grab
       </Linea>
     )
   }
-  const restantes =
-    typeof salud.llamadas_restantes === 'number' ? ` · ${salud.llamadas_restantes} llamadas restantes` : ''
   if (salud.modelo_disponible === true) {
     return (
       <Linea tono="verde" icono={<Radio className="size-3.5 shrink-0" aria-hidden="true" />}>
-        En vivo · {salud.modelo ?? 'modelo'}
-        {restantes}
+        En vivo
       </Linea>
     )
   }
   if (salud.modelo_disponible === false) {
     return (
       <Linea tono="ambar" icono={<CircleAlert className="size-3.5 shrink-0" aria-hidden="true" />}>
-        Sin modelo: {describirMotivo(salud)}
-        {restantes}
+        No disponible: {describirMotivo(salud)}
       </Linea>
     )
   }
   return (
     <Linea tono="gris" icono={<CircleCheck className="size-3.5 shrink-0" aria-hidden="true" />}>
-      Chat conectado · disponibilidad del modelo desconocida (servidor anterior al contrato v2)
+      Chat conectado · disponibilidad sin confirmar
     </Linea>
   )
 }

@@ -31,6 +31,8 @@ export interface RespuestaChat {
   modelo: string | null
   latencia_ms: number
   estado: EstadoChat
+  /** Saldo después de contestar; los servidores antiguos pueden omitirlo. */
+  llamadas_restantes?: number | null
   /** true si contestó el modelo de respaldo (PLAN-13, B4). */
   respaldo?: boolean
 }
@@ -54,6 +56,7 @@ export interface SaludChat {
   modelo?: string | null
   respaldo?: string | null
   llamadas_restantes?: number | null
+  max_llamadas?: number | null
   ventana?: VentanaChat | null
 }
 
@@ -104,6 +107,7 @@ export async function chatSalud(signal?: AbortSignal): Promise<SaludChat> {
       modelo: cuerpo.modelo ?? null,
       respaldo: cuerpo.respaldo ?? null,
       llamadas_restantes: typeof cuerpo.llamadas_restantes === 'number' ? cuerpo.llamadas_restantes : null,
+      max_llamadas: typeof cuerpo.max_llamadas === 'number' ? cuerpo.max_llamadas : null,
       ventana: cuerpo.ventana ?? null,
     }
   } catch {
@@ -180,7 +184,7 @@ export async function preguntar(
     }
     if (!r.ok) {
       const texto = (cuerpo as { error?: string } | null)?.error
-      throw new ApiError(texto || ERRORES_POR_ESTADO[r.status] || `${r.status} ${r.statusText}`, r.status, cuerpo)
+      throw new ApiError((r.status === 429 ? ERRORES_POR_ESTADO[429] : texto) || ERRORES_POR_ESTADO[r.status] || `${r.status} ${r.statusText}`, r.status, cuerpo)
     }
     if (!esRespuesta(cuerpo)) throw new ApiError('El chat devolvió una respuesta con forma inesperada.', r.status, cuerpo)
     return cuerpo

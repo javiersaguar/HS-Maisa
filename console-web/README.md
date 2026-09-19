@@ -70,9 +70,9 @@ Contrato (versión 1; detalle en `src/albertitos/console/CLAUDE.md`):
 `file_id` va en NFC y codificado en la URL. No hay escrituras: la consola no aprueba ni rechaza. Recalcular es
 `albertitos reprocess --impacted`.
 
-## Chat
+## AlbertitosAI
 
-Botón «Pregunta a Albertitos» (abajo a la derecha) y un panel lateral contra el **chat de sólo lectura**: un proceso
+Botón «AlbertitosAI» (abajo a la derecha) y un panel lateral contra el **chat de sólo lectura**: un proceso
 aparte, no el puente de `:8000`, porque necesita POST. Contrato: `docs/api/chat.md` y `/chat/salud` v2 en
 `docs/agentes/PLAN-13.md`. Código: `lib/api/chat.ts`, `components/chat/`, `lib/mock/chat.ts`.
 
@@ -85,10 +85,16 @@ uv run python -m albertitos.chat "¿Por qué se escala F26-2201_transportes.pdf?
 - `NEXT_PUBLIC_CHAT_URL` (por defecto `http://127.0.0.1:8001`). Si el 8001 está ocupado, arranca el chat con
   `ALBERTITOS_CHAT_PUERTO=8011` y pon aquí `http://127.0.0.1:8011`. El chat sólo acepta los orígenes de
   `ALBERTITOS_CHAT_ORIGENES` (por defecto `localhost:3000` y `127.0.0.1:3000`).
-- **La línea de estado va siempre arriba** y se refresca cada 30 s, sin gastar llamadas al modelo: «En vivo · <modelo>»
-  o «Sin modelo: sin clave del LLM / fuera de horario (abre …) / sin llamadas disponibles / el proveedor está fallando»,
-  con las llamadas restantes. Las respuestas son texto (nunca HTML del modelo), con las facturas citadas enlazadas a su
-  traza y, debajo, el modelo («respaldo» si contestó el de respaldo), la latencia y las herramientas usadas.
+- **Estado y presupuesto:** «En vivo» o el motivo de indisponibilidad, sin nombres de modelo, respaldo ni herramientas.
+  Salud se consulta cada 30 s sin gastar llamadas. El contador se actualiza además con cada respuesta:
+  barra verde (>50 %), ámbar (20–50 %) o roja (<20 %), descenso de 600 ms y «−N».
+  Con movimiento reducido no se anima. Un backend antiguo puede omitir los campos nuevos.
+- **Respuesta y trazabilidad:** texto plano, «Ver más» tras cinco líneas y botón Copiar. La primera cita lleva una
+  ficha obtenida de GET /ficheros/:id, con decisión, proveedor, importe, motivo y traza; las demás son enlaces.
+  Si hay veinte se advierte que puede haber más. En mock la ficha avisa «Datos de ejemplo · no es la BD».
+- **Entrada:** texto libre con atajos Factura, Pedido, Proveedor, Semana y Confianza que muestran la pregunta
+  antes de usarla. Cuatro sugerencias iniciales, Nueva conversación y panel a ancho completo en móvil.
+  Un 429 se traduce como «Ya hay una consulta en curso; espera a que termine».
 - **Respuestas grabadas:** el interruptor «Ver respuestas grabadas (evaluación 19/09 15:00)» enseña las 15 respuestas
   reales de `docs/api/ejemplos/chat-*.json`. Cada una lleva la etiqueta fija «respuesta grabada · no es una consulta en
   vivo» y su evaluación. Sólo responde a esas 15 preguntas, tal cual: nunca inventa una. El interruptor está disponible

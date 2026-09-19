@@ -1,12 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { MessageCircle, SendHorizontal, X } from 'lucide-react'
-import { Spinner } from '@/components/ui/Spinner'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { MessageCircle, RotateCcw, X } from 'lucide-react'
 import { toApiError } from '@/lib/api/client'
 import {
   CHAT_GRABADAS,
-  MAX_MENSAJE,
   chatSalud,
   preguntar,
   validarMensaje,
@@ -15,15 +13,15 @@ import {
 } from '@/lib/api/chat'
 import { USE_MOCK } from '@/lib/config'
 import { GRABACION, RESPUESTAS_GRABADAS, SUGERENCIAS, respuestaGrabada } from '@/lib/mock/chat'
+import { ChatComposer } from './ChatComposer'
+import { ContadorLlamadas } from './ContadorLlamadas'
 import { EstadoModelo } from './EstadoModelo'
 import { MensajeChat, type Mensaje } from './MensajeChat'
 
 const SONDEO_MS = 30_000
 /** Un mensaje antes de darle id (Omit distributivo: cada variante conserva sus campos). */
 type NuevoMensaje = Mensaje extends infer T ? (T extends unknown ? Omit<T, 'id'> : never) : never
-const AYUDA =
-  'Chat de sólo lectura sobre las decisiones. Arranque: make chat (o uv run python -m albertitos.chat --servidor), ' +
-  'que lee dist/albertitos.db en sólo lectura. Repliegue en terminal: uv run python -m albertitos.chat "pregunta".'
+const AYUDA = 'Pregunta a AlbertitosAI: consulta decisiones y facturas, sin modificar nada.'
 
 /**
  * El chat en la consola: botón flotante + panel lateral contra el proceso del chat (:8001, `make chat`).
@@ -39,6 +37,9 @@ export function ChatPanel() {
   const [grabado, setGrabado] = useState(false)
   const [huboDegradado, setHuboDegradado] = useState(false)
   const siguiente = useRef(0)
+  const boton = useRef<HTMLButtonElement>(null)
+  const [pulso, setPulso] = useState(false)
+  const pulsoHecho = useRef(false)
   const campo = useRef<HTMLTextAreaElement>(null)
   const lista = useRef<HTMLDivElement>(null)
   const peticion = useRef<AbortController | null>(null)
@@ -62,13 +63,26 @@ export function ChatPanel() {
     }
   }, [refrescarSalud])
 
+  useEffect(() => {
+    if (!salud?.modelo_disponible || pulsoHecho.current) return
+    pulsoHecho.current = true
+    setPulso(true)
+    const timer = setTimeout(() => setPulso(false), 250)
+    return () => clearTimeout(timer)
+  }, [salud?.modelo_disponible])
+
+  const cerrar = () => {
+    setAbierto(false)
+    requestAnimationFrame(() => boton.current?.focus())
+  }
+
   // Al abrir: estado al día y el foco en el campo. Escape cierra.
   useEffect(() => {
     if (!abierto) return
     void refrescarSalud()
     campo.current?.focus()
     const alPulsar = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') setAbierto(false)
+      if (e.key === 'Escape') cerrar()
     }
     window.addEventListener('keydown', alPulsar)
     return () => window.removeEventListener('keydown', alPulsar)
@@ -76,7 +90,7 @@ export function ChatPanel() {
 
   // Cada mensaje nuevo, a la vista.
   useEffect(() => {
-    lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: 'smooth' })
+    lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   }, [mensajes, enviando])
 
   const servidor = salud?.ok === true
@@ -142,6 +156,9 @@ export function ChatPanel() {
       const r = await preguntar(pregunta, previo, control.signal)
       if (control.signal.aborted) return
       anadir({ tipo: 'respuesta', respuesta: r })
+      if (r.llamadas_restantes !== undefined) {
+        setSalud(prev => prev ? { ...prev, llamadas_restantes: r.llamadas_restantes } : prev)
+      }
       if (r.estado === 'degradado') setHuboDegradado(true)
     } catch (error) {
       if (control.signal.aborted) return
@@ -150,18 +167,6 @@ export function ChatPanel() {
       if (peticion.current === control) peticion.current = null
       setEnviando(false)
       void refrescarSalud() // las llamadas restantes han podido cambiar
-    }
-  }
-
-  const alEnviar = (e: FormEvent) => {
-    e.preventDefault()
-    void enviar(entrada)
-  }
-
-  const alTeclear = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      void enviar(entrada)
     }
   }
 
@@ -178,7 +183,6 @@ export function ChatPanel() {
   if (!visible) return null
 
   const sugerencias = grabadoActivo ? RESPUESTAS_GRABADAS.map((r) => r.pregunta) : SUGERENCIAS
-  const largo = entrada.trim().length
 
   return (
     <>
@@ -186,13 +190,16 @@ export function ChatPanel() {
         <button
           type="button"
           onClick={() => setAbierto(true)}
+          ref={boton}
+          aria-label="Abrir AlbertitosAI"
           title={AYUDA}
+          data-pulse={pulso}
           aria-expanded={false}
           aria-controls={idPanel}
-          className="fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-[#164f45] px-4 py-3 text-[14px] font-semibold text-white shadow-lg hover:bg-[#0d4037] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#164f45]"
+          className="chat-trigger chat-press fixed right-6 bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-[#164f45] px-4 py-3 text-[14px] font-semibold text-white shadow-lg hover:bg-[#0d4037] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#164f45]"
         >
           <MessageCircle className="size-4" aria-hidden="true" />
-          Pregunta a Albertitos
+          AlbertitosAI
         </button>
       ) : null}
 
@@ -202,19 +209,19 @@ export function ChatPanel() {
           role="dialog"
           aria-modal="false"
           aria-labelledby={titulo}
-          className="fixed top-3 right-3 bottom-3 z-50 flex w-[420px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-2xl border border-[#e1e5df] bg-[#f7f8f5] shadow-2xl"
+          className="chat-panel fixed inset-0 z-50 flex w-full flex-col overflow-hidden sm:inset-auto sm:top-3 sm:right-3 sm:bottom-3 sm:w-[440px] sm:max-w-[calc(100vw-24px)] sm:rounded-2xl border border-[#e1e5df] bg-[#f7f8f5] shadow-2xl"
         >
           <header className="flex flex-col gap-2 border-b border-[#e1e5df] bg-white px-4 pt-3 pb-3">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h2 id={titulo} className="text-[15px] font-semibold text-[#17211e]">
-                  Pregunta a Albertitos
+                  AlbertitosAI
                 </h2>
                 <p className="text-[12px] font-medium text-[#68736d]">Consulta de sólo lectura · la norma decide</p>
               </div>
               <button
                 type="button"
-                onClick={() => setAbierto(false)}
+                onClick={cerrar}
                 aria-label="Cerrar el chat (Escape)"
                 title="Cerrar (Escape)"
                 className="rounded-lg p-1.5 text-[#68736d] hover:bg-[#f3f4f1] focus-visible:outline-2 focus-visible:outline-[#164f45]"
@@ -222,7 +229,13 @@ export function ChatPanel() {
                 <X className="size-4" aria-hidden="true" />
               </button>
             </div>
-            <EstadoModelo salud={salud} grabado={grabadoActivo} />
+            <div className="flex items-center justify-between gap-2">
+              <EstadoModelo salud={salud} grabado={grabadoActivo} />
+              <ContadorLlamadas salud={salud} />
+            </div>
+            <button type="button" disabled={enviando || mensajes.length === 0} onClick={() => { setMensajes([]); setEntrada(''); campo.current?.focus() }} className="flex w-fit items-center gap-1 text-[11px] text-[#68736d] disabled:opacity-40">
+              <RotateCcw className="size-3" />Nueva conversación
+            </button>
             {grabadoDisponible ? (
               <label className="flex items-center gap-2 text-[12px] text-[#17211e]">
                 <input
@@ -240,69 +253,30 @@ export function ChatPanel() {
 
           <div ref={lista} aria-live="polite" className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
             {mensajes.length === 0 ? (
-              <p className="text-[13px] leading-relaxed text-[#68736d]">
+              <div className="space-y-3"><p className="text-[13px] leading-relaxed text-[#68736d]">
                 Pregunta por una factura, un pedido o los pagos. El chat consulta la Caja en sólo lectura y cita las
                 facturas en que se apoya. No paga ni cambia decisiones: las toma la norma.
               </p>
+              <div className="flex flex-col gap-2" aria-label="Preguntas sugeridas">
+                {SUGERENCIAS.map(s => <button type="button" key={s} onClick={() => void enviar(s)} className="chat-press rounded-xl border border-[#e1e5df] bg-white p-3 text-left text-xs text-[#164f45]">{s}</button>)}
+              </div></div>
             ) : null}
             {mensajes.map((m) => (
-              <MensajeChat key={m.id} mensaje={m} />
+              <div key={m.id} className="chat-message"><MensajeChat mensaje={m} /></div>
             ))}
             {enviando ? (
-              <p className="flex items-center gap-2 text-[12px] font-medium text-[#68736d]">
-                <Spinner />
-                consultando… (hasta 60 s)
-              </p>
+              <div role="status" className="chat-message flex w-fit items-center gap-3 rounded-2xl border border-[#e1e5df] bg-white px-4 py-3 text-xs text-[#68736d]">
+                <span className="chat-thinking flex gap-1" aria-hidden="true"><i /><i /><i /></span>
+                AlbertitosAI está consultando…
+              </div>
             ) : null}
           </div>
 
-          <div className="border-t border-[#e1e5df] bg-white px-4 pt-2.5 pb-3">
-            <div
-              className={`mb-2 flex flex-wrap gap-1.5 ${grabadoActivo ? 'max-h-28 overflow-y-auto' : ''}`}
-              aria-label={grabadoActivo ? 'Las 15 preguntas de la evaluación' : 'Sugerencias'}
-            >
-              {sugerencias.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={enviando}
-                  onClick={() => void enviar(s)}
-                  className="rounded-full border border-[#e1e5df] bg-[#f7f8f5] px-2 py-0.5 text-left text-[12px] text-[#17211e] hover:border-[#164f45] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[#164f45]"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-            <form onSubmit={alEnviar} className="flex items-end gap-2">
-              <label className="sr-only" htmlFor={`${idPanel}-campo`}>
-                Tu pregunta
-              </label>
-              <textarea
-                id={`${idPanel}-campo`}
-                ref={campo}
-                value={entrada}
-                onChange={(e) => setEntrada(e.target.value)}
-                onKeyDown={alTeclear}
-                rows={2}
-                placeholder={grabadoActivo ? 'Una de las 15 preguntas de la evaluación…' : '¿Por qué se escala…?'}
-                className="min-h-[44px] flex-1 resize-none rounded-xl border border-[#e1e5df] bg-white px-3 py-2 text-[13px] text-[#17211e] focus-visible:outline-2 focus-visible:outline-[#164f45]"
-              />
-              <button
-                type="submit"
-                disabled={enviando || largo === 0 || largo > MAX_MENSAJE}
-                aria-label={enviando ? 'Consultando' : 'Enviar la pregunta'}
-                className="inline-flex h-[44px] items-center gap-1.5 rounded-xl bg-[#164f45] px-3 text-[13px] font-semibold text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#164f45]"
-              >
-                {enviando ? <Spinner /> : <SendHorizontal className="size-4" aria-hidden="true" />}
-                {enviando ? 'consultando…' : 'Enviar'}
-              </button>
-            </form>
-            {largo > MAX_MENSAJE - 500 ? (
-              <p className={`mt-1 text-right text-[11px] ${largo > MAX_MENSAJE ? 'text-[#bd3434]' : 'text-[#68736d]'}`}>
-                {largo}/{MAX_MENSAJE}
-              </p>
-            ) : null}
-          </div>
+          {grabadoActivo && mensajes.length > 0 ? <details className="border-t border-[#e1e5df] px-4 py-2 text-xs">
+            <summary className="cursor-pointer text-[#68736d]">Más preguntas grabadas</summary>
+            <div className="mt-2 flex max-h-28 flex-col gap-1 overflow-y-auto">{sugerencias.map(s => <button type="button" key={s} onClick={() => void enviar(s)} className="rounded border border-[#e1e5df] p-2 text-left">{s}</button>)}</div>
+          </details> : null}
+          <ChatComposer entrada={entrada} cambiar={setEntrada} enviar={s => void enviar(s)} enviando={enviando} campo={campo} />
         </aside>
       ) : null}
     </>

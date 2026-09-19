@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Archive, CircleAlert, Info, Lock, TriangleAlert } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { FichaResolucion } from './FichaResolucion'
+import { Archive, CircleAlert, Copy, Check, Info, Lock, TriangleAlert } from 'lucide-react'
 import type { EstadoChat, RespuestaChat } from '@/lib/api/chat'
 import { ETIQUETA_GRABADA, GRABACION, type RespuestaGrabada } from '@/lib/mock/chat'
 import { ficheroHref } from '@/lib/routes'
@@ -82,22 +84,24 @@ export function MensajeChat({ mensaje }: { mensaje: Mensaje }) {
       ) : null}
       {respuesta.estado === 'degradado' ? (
         <Aviso icono={<TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />} tono="aviso">
-          Respuesta degradada: el modelo no ha podido contestar. La decisión y su traza siguen en la consola.
+          Respuesta degradada: no se ha podido contestar. La decisión y su traza siguen en la consola.
         </Aviso>
       ) : null}
 
       {/* Texto plano: nunca HTML del modelo. */}
-      <p className="whitespace-pre-wrap break-words leading-relaxed">{respuesta.respuesta}</p>
+      <TextoRespuesta texto={respuesta.respuesta} />
+      {citas[0] ? <FichaResolucion fileId={citas[0]} /> : null}
 
-      {citas.length > 0 ? (
+      {citas.length > 1 ? (
         <div className="flex flex-wrap gap-1.5">
           <span className="sr-only">Facturas citadas:</span>
-          {citas.map((c) => (
+          {citas.slice(1).map((c, i) => (
             <Link
               key={c}
+              style={{ animationDelay: Math.min(i, 4) * 40 + 'ms' }}
               href={ficheroHref(c)}
               title={`Abrir la traza de ${c}`}
-              className="rounded-full border border-[#dcefe6] bg-[#eff8f3] px-2 py-0.5 text-[12px] font-medium text-[#176d59] hover:bg-[#dcefe6] focus-visible:outline-2 focus-visible:outline-[#164f45]"
+              className="chat-cita rounded-full border border-[#dcefe6] bg-[#eff8f3] px-2 py-0.5 text-[12px] font-medium text-[#176d59] hover:bg-[#dcefe6] focus-visible:outline-2 focus-visible:outline-[#164f45]"
             >
               {respuesta.estado === 'degradado' ? `Ver la traza de ${c}` : c}
             </Link>
@@ -105,12 +109,11 @@ export function MensajeChat({ mensaje }: { mensaje: Mensaje }) {
         </div>
       ) : null}
 
+      {citas.length >= 20 ? <p className="text-xs text-[#68736d]">Puede haber más facturas; la consulta está limitada.</p> : null}
       <p className="text-[11px] text-[#68736d]">
         {[
           ETIQUETA_ESTADO[respuesta.estado],
-          respuesta.modelo ? `${respuesta.modelo}${respuesta.respaldo ? ' (respaldo)' : ''}` : null,
           `${segundos.format((respuesta.latencia_ms ?? 0) / 1000)} s`,
-          respuesta.herramientas_usadas?.length ? `herramientas: ${respuesta.herramientas_usadas.join(', ')}` : null,
         ]
           .filter(Boolean)
           .join(' · ')}
@@ -139,4 +142,35 @@ function Aviso({ icono, tono, children }: { icono: React.ReactNode; tono: 'info'
       <span>{children}</span>
     </p>
   )
+}
+
+
+function TextoRespuesta({ texto }: { texto: string }) {
+  const [expandido, setExpandido] = useState(false)
+  const [largo, setLargo] = useState(false)
+  const [copia, setCopia] = useState<'copiar' | 'copiado' | 'error'>('copiar')
+  const parrafo = useRef<HTMLParagraphElement>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    const el = parrafo.current
+    if (!el) return
+    const medir = () => setLargo(el.scrollHeight > parseFloat(getComputedStyle(el).lineHeight) * 5 + 1)
+    const observer = new ResizeObserver(medir)
+    observer.observe(el)
+    medir()
+    return () => { observer.disconnect(); if (timer.current) clearTimeout(timer.current) }
+  }, [texto])
+  const copiar = async () => {
+    try { await navigator.clipboard.writeText(texto); setCopia('copiado') }
+    catch { setCopia('error') }
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => setCopia('copiar'), 1800)
+  }
+  return <div>
+    <p ref={parrafo} className={'whitespace-pre-wrap break-words leading-relaxed ' + (!expandido ? 'chat-texto-corto' : '')} data-fade={!expandido && largo}>{texto}</p>
+    <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-[#176d59]">
+      {largo ? <button type="button" aria-expanded={expandido} onClick={() => setExpandido(!expandido)}>{expandido ? 'Ver menos' : 'Ver más'}</button> : <span />}
+      <button type="button" onClick={() => void copiar()} className="flex items-center gap-1">{copia === 'copiado' ? <Check className="size-3" /> : <Copy className="size-3" />}{copia === 'copiado' ? 'Copiado' : copia === 'error' ? 'No se pudo copiar' : 'Copiar respuesta'}</button>
+    </div>
+  </div>
 }
