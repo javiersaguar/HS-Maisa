@@ -18,7 +18,7 @@ La versión anterior, con cada P0 tachado según se cerraba, está en el histori
 | **La norma (Mónica)** | 🔴 **Muestra etiquetada: 0 de 21.** Ninguna respuesta de los mentores anotada. Tres políticas abiertas | abajo |
 | **Plan PDF (35 pts, Alfonso)** | 🔴 **Sin tocar en 12 h.** Tiene 4 ADRs más un hueco `ADR-000N · …`; hay 12 ADRs escritos | `docs/plan/albertitos_plan.md` |
 | **Guion de la defensa (Alfonso)** | 🔴 **Sin tocar desde el andamiaje** (18 h). Hay presentación v1 (`presentaciones/`, 13,5 MB) y la chuleta del bloque 4 | `docs/guion-defensa.md` |
-| **Windows** | 🟡 Los 8 fallos que vio Miguel, arreglados. Se comprueba en un CI de Windows (`windows-check/javier`) | `.github/workflows/windows.yml` |
+| **Windows** | ✅ Los 8 fallos que vio Miguel y 5 de codificación que salieron después, arreglados: **513 en verde en `windows-latest`, sin `PYTHONUTF8`**. El CI de Windows se lanza a mano o subiendo a una rama `windows-check/**` | `.github/workflows/windows.yml` |
 
 **En resumen:** el sistema está terminado y ensayado. Lo que queda es **lo que no puede hacer un agente**: que la norma
 se valide contra personas y mentores, y que el PDF y el guion cuenten lo que ya existe.
