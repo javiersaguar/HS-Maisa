@@ -2,7 +2,7 @@
 
 Implementado por J5 (PLAN-10); tesorería, proveedores, programa con tope y rutas para la consola, por K1 (PLAN-11). Lee los PAGAR vigentes, los hechos de su linaje y el snapshot del maestro usado al decidir. No escribe en SQLite, no cambia decisiones, no genera outcomes y no conecta con bancos, ERP ni LLM.
 
-## Lo nuevo de K1 (19/09 15:45)
+## Lo nuevo de K1 (19/09 14:55)
 - **Tesorería por semana**: lo que se paga cada semana ISO, lo acumulado y lo vencido a la fecha de corte
   (`tesoreria.json` y la sección «Tesorería» de `calendario.html`).
 - **Por proveedor**: facturas, importe, vencidas y la primera y última fecha de pago (`proveedores.csv`).

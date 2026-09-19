@@ -1,4 +1,4 @@
-# API del bonus: calendario de pagos y tesorería · contrato para la consola (K1, 19/09 15:45)
+# API del bonus: calendario de pagos y tesorería · contrato para la consola (K1, 19/09 14:55)
 
 **Sólo lectura.** Estas rutas recalculan el calendario en cada petición a partir de las decisiones PAGAR vigentes: no
 escriben en la BD ni cambian ninguna decisión (hay un test que lo comprueba contra una copia de la BD real). Tardan
@@ -33,7 +33,7 @@ Cada handler tiene la firma del puente, `(conn, query) -> (status, body)`: `conn
 | Ruta | Parámetros | Devuelve | Ejemplo real |
 |---|---|---|---|
 | `GET /bonus/resumen` | `estricto` | totales: PAGAR, calendario y remesa (número y €), vencido y en plazo (€), vencidos, los que vencen en la semana del corte, avisos por código, lotes, número de proveedores y totales por semana | `ejemplos/bonus-resumen.json` |
-| `GET /bonus/calendario` | `semana`, `proveedor` (id `P001` o razón social exacta), `lote`, `vencido` (`true`/`false`), `limite` (500 por defecto), `estricto` | `{filtros, total, mostrados, pagos: [Pago]}` ordenado por vencimiento | `ejemplos/bonus-calendario.json` |
+| `GET /bonus/calendario` | `semana`, `proveedor` (id `P001` o razón social exacta), `lote`, `vencido` (`true`/`false`), `limite` (500 por defecto), `estricto`, `con_confianza` (`true`: cada pago lleva `confianza`, lo que devuelva la métrica de K3; `null` si K3 no está, con `confianza_nota` explicándolo) | `{filtros, total, mostrados, pagos: [Pago]}` ordenado por vencimiento | `ejemplos/bonus-calendario.json` |
 | `GET /bonus/proveedores` | `estricto` | `{proveedores: [{proveedor_id, beneficiario, numero, importe_eur, vencidos_numero, vencidos_importe_eur, primera_ejecucion, ultima_ejecucion, lotes, iban_control_ok, en_remesa_numero}]}`, de mayor a menor importe | `ejemplos/bonus-proveedores.json` |
 | `GET /bonus/remesa` | `limite`, `estricto` | `{tipo: "BORRADOR…", iban_sin_control, total, mostrados, pagos: [Pago]}` (sólo los que entran en la remesa) | `ejemplos/bonus-remesa.json` |
 | `GET /bonus/avisos` | `estricto` | `{total, avisos: [{file_id, codigo, detalle}]}` | `ejemplos/bonus-avisos.json` |

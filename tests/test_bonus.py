@@ -401,3 +401,41 @@ def test_el_bonus_no_cambia_la_entrega_ni_la_bd(tmp_path, monkeypatch):
     exportar(informe, tmp_path / "bonus", ruta_bd=copia, tope_semanal=Decimal("150000"))
     assert hashlib.sha256(copia.read_bytes()).hexdigest() == huella_bd
     assert package(tmp_path / "despues") == antes
+
+
+def test_confianza_opcional_en_el_calendario(escenario, conn, monkeypatch):
+    """Con K3 presente, cada pago lleva su confianza tal cual; sin K3, `null` y una nota. Nunca falla."""
+    import types
+
+    from albertitos import bonus
+
+    ruta, _ = _informe_varios(escenario, conn)
+    ro = db.conectar(ruta, solo_lectura=True)
+    try:
+        calendario = bonus.rutas()["/bonus/calendario"]
+        monkeypatch.setitem(sys.modules, "albertitos.confianza", None)  # sin K3: el import falla
+        st, body = calendario(ro, {"con_confianza": ["true"]})
+        assert st == 200 and all(p["confianza"] is None for p in body["pagos"])
+        assert "no disponible" in body["confianza_nota"]
+        falso = types.ModuleType("albertitos.confianza")
+
+        def puntuar(conn, file_id):
+            if file_id == "b.pdf":
+                raise RuntimeError("una factura rara")
+            return {"puntuacion": 90, "banda": "alta"}
+
+        falso.puntuar = puntuar
+        monkeypatch.setitem(sys.modules, "albertitos.confianza", falso)
+        st, body = calendario(ro, {"con_confianza": ["true"]})
+        por_id = {p["file_id"]: p["confianza"] for p in body["pagos"]}
+        assert st == 200 and por_id == {
+            "a.pdf": {"puntuacion": 90, "banda": "alta"},
+            "b.pdf": None,
+            "c.pdf": {"puntuacion": 90, "banda": "alta"},
+        }
+        assert body["confianza_nota"] == "confianza de K3 en 2 de 3 pagos"
+        assert (
+            "confianza_nota" not in calendario(ro, {})[1]
+        )  # sin pedirla, el calendario no la toca
+    finally:
+        ro.close()

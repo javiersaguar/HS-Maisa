@@ -96,6 +96,26 @@ def resumen(conn: sqlite3.Connection, query: Query) -> dict:
     }
 
 
+def _confianza(conn: sqlite3.Connection, pagos: list[dict]) -> str:
+    """Añade a cada pago la confianza de K3 (`albertitos.confianza.puntuar(conn, file_id)`), tal cual la
+    devuelva, para que Alberto vea primero lo que es seguro pagar. Opcional: si el módulo no está (o
+    falla con una factura), el pago sale con `confianza: null` y se dice por qué. Nunca cambia el pago."""
+    try:
+        from albertitos.confianza import puntuar  # type: ignore[import-not-found]
+    except ImportError:
+        for p in pagos:
+            p["confianza"] = None
+        return "sin albertitos.confianza (K3): confianza no disponible"
+    fallos = 0
+    for p in pagos:
+        try:
+            p["confianza"] = puntuar(conn, p["file_id"])
+        except Exception:  # noqa: BLE001 — una señal opcional no puede tumbar el calendario
+            p["confianza"] = None
+            fallos += 1
+    return f"confianza de K3 en {len(pagos) - fallos} de {len(pagos)} pagos"
+
+
 def calendario(conn: sqlite3.Connection, query: Query) -> dict:
     informe = _informe(conn, query)
     semana, proveedor = _param(query, "semana"), _param(query, "proveedor")
@@ -109,7 +129,10 @@ def calendario(conn: sqlite3.Connection, query: Query) -> dict:
         and (vencido is None or p.vencido == vencido)
     ]
     filtros = {"semana": semana, "proveedor": proveedor, "lote": lote, "vencido": vencido}
-    return {"filtros": filtros, **_pagos(pagos, query)}
+    out = {"filtros": filtros, **_pagos(pagos, query)}
+    if _bool(query, "con_confianza"):
+        out["confianza_nota"] = _confianza(conn, out["pagos"])
+    return out
 
 
 def proveedores(conn: sqlite3.Connection, query: Query) -> dict:
