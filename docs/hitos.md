@@ -1,47 +1,61 @@
-# Hitos y señales de repliegue (hora de Madrid)
+# Hitos y señales de repliegue (hora de Madrid) · al día el domingo 20/09 a las 01:30
 
+## Lo que queda
 | Cuándo | Qué | Dueño |
 |---|---|---|
-| Vie 18 19:00 | Material inicial = el repo de participantes (web actualizada el 18/09 ~23:00: ya no hay zip de la Caja a las 21:00). `data/caja` es el oficial; `data/caja.sha256` lo fija | Javier |
-| Vie 18 23:59 | Contratos aceptados por Miguel · ERP snapshot v1 en BD · maestro cargado · `docs/trampas.md` v1 · LLM real sobre `muestra.txt` | Miguel / Javier / Alfonso |
-| Sáb 19 02:00 | **Repliegue 1:** si no hay `outcomes.jsonl` completo y válido, se para todo lo demás hasta que exista | todos |
-| Sáb 19 10:00 | Muestra etiquetada por dos personas (`esperado_muestra.csv`) · preguntas a mentores resueltas | Mónica + Alfonso |
-| Sáb 19 12:00 | **Repliegue 2:** si > 10 ficheros sin extracción validada → segunda opinión LLM para todos, plantillas aparcadas. Consola con BD real | Alfonso / Alejandro |
-| Sáb 19 17:30 | **Entrega de seguro** del lote 1 (`/entrega`) | Miguel |
-| Sáb 19 18:00 | Lote 2: `lote-2-sorpresa-v3.2.zip` (40 facturas + ERP actualizado) y **una regla nueva** (la web ya no la llama "norma v4" ni promete un fichero: puede venir en el zip, en el canal o en el Excel). Hashes en el canal. (`/lote2`) | todos |
-| Sáb 19 20:00 | **Repliegue 3:** si la consola no enseña una traza, la demo se hace con `trace` en terminal y Alejandro pasa a docs | Alejandro |
-| Sáb 19 22:00 | **Repliegue 4:** si el lote 2 no está procesado, se cancela el bonus y todo el equipo va al lote 2 | todos |
-| Sáb 19 23:00 | Escenario del "dato en vivo" del domingo ensayado (`reprocess --impacted` < 30 s) · benchmark medido | Miguel |
-| Dom 20 02:00 | **Congelación de funcionalidad.** Sólo docs, ensayo y arreglos de NO APTO | todos |
-| Dom 20 08:00 | **Entrega final** (`/entrega`): 3 ficheros, repo público, commit anotado en `docs/entregas.log` | Miguel |
-| Dom 20 10:30 | **Cierre interno** (colchón). Oficial en la web: **11:00** "cierre de entrega y registro del commit" | — |
+| **Dom 20 02:00** | **Congelación de funcionalidad.** Sólo docs, ensayo y arreglos de NO APTO | todos |
+| Dom 20 (noche) | Grabar y editar la demo. La pública (`albertitos.vercel.app`) está despierta y probada | Alfonso |
+| **Dom 20 08:00** | **Entrega final**: ya está publicada (`d2ade3f`). Sólo se republica si cambia la norma o el PDF | Javier / Miguel |
+| Dom 20 09:00 | Mentores: divisas e IVA (abajo). Si responden, reprocesar el lote 2 y republicar | Mónica |
+| Dom 20 ~09:00 | **PDF del plan** al día con el lote 2 y republicado: es uno de los tres ficheros de la entrega | Alfonso |
+| Dom 20 10:30 | **Cierre interno** (colchón). Oficial en la web: **11:00**, «cierre de entrega y registro del commit» | — |
 | Dom 20 11:00 | La organización clona y registra el commit (hora oficial) | — |
-| Dom 20 (hora por confirmar) | Defensa 10 min (2/2/4/2). Bloque 4 pide explícitamente demostrar **timeout, rate limit, respuesta inválida o caída** del proveedor | Alfonso |
+| Dom 20 (hora por confirmar) | Defensa 10 min (2/2/4/2). El bloque 4 pide demostrar **timeout, rate limit, respuesta inválida o caída** | Alfonso |
 
-## Preguntas para los mentores (hoy, antes de las 23:00)
-1. ¿Cuándo es NO_PAGAR frente a ESCALAR? (hipótesis: NO_PAGAR = violación objetiva comprobada en el ERP, p. ej. ya PAGADA)
-2. ¿Respecto a qué fecha se evalúa "fecha no futura"? (usamos `ALBERTITOS_FECHA_CORTE`)
-3. ¿`outcomes.jsonl` (lote 1) debe reflejar la norma v3 y el ERP v1, o la regla nueva y el ERP actualizado? **← sin respuesta a las 09:50 y es P0-2 (`docs/ESTADO-BACKEND.md`): Mónica la lleva a los mentores hoy.**
-5. La regla nueva del sábado: ¿llega como fichero en el zip, como texto en el canal o dentro del Excel? ¿Se aplica también al lote 1?
-4. ¿Los PDFs que se declaran "documento de prueba del evaluador" se validan igual que el resto?
+**Repliegues que siguen en pie:** si algo se rompe después de la congelación, se entrega lo que ya está publicado
+(`d2ade3f`, auditoría VERDE) y la demo se hace con `albertitos trace` en terminal, que no necesita red ni consola.
 
-6. **Nueva (09:50):** ¿el lote 2 puede traer una factura idéntica byte a byte a otra, con otro nombre? ¿Qué esperan en ese caso? (P0-1)
+## Lo que ya pasó
+| Cuándo | Qué | Cómo acabó |
+|---|---|---|
+| Vie 18 19:00 | Material inicial: el repo de participantes, no un zip | ✅ `data/caja` con su manifiesto `data/caja.sha256` |
+| Vie 18 23:59 | Contratos, ERP v1, maestro, trampas, LLM sobre la muestra | ✅ |
+| Sáb 19 02:00 | **Repliegue 1:** sin `outcomes.jsonl` válido, se para todo | ✅ no hizo falta: había entrega válida desde las 23:05 del viernes |
+| Sáb 19 10:07 | **Entrega de seguro** del lote 1 | ✅ `232bb76`, 500 líneas, 438/53/9 |
+| Sáb 19 12:00 | **Repliegue 2:** > 10 ficheros sin extracción validada | ✅ no hizo falta: 500/500 extraídos |
+| **Sáb 19 17:57** | **Lote 2.** No vino en `lote-2-sorpresa-v3.2.zip` ni con hashes en el canal, como anunciaba la web: llegó como **un commit del repo de participantes** (`f831e34`), con 40 PDF en `facturas_primin/` y tres CSV (`erp_export_lote2`, `pedidos_nuevos`, `proveedores_nuevos`) | ✅ copiado a `data/lote2/` con manifiesto propio (`data/lote2.sha256`) |
+| Sáb 19 18:00 | **La regla nueva** que prometía la web | 🔴 **nunca se publicó.** Los datos traen 8 facturas en divisa y 4 proveedores extranjeros: la v4 de Miguel las escala con su motivo (ADR-0022) |
+| Sáb 19 20:00 | **Repliegue 3:** si la consola no enseña una traza | ✅ no hizo falta: la consola funciona, y además hay demo pública |
+| Sáb 19 22:00 | **Repliegue 4:** si el lote 2 no está procesado, se cancela el bonus | ✅ no hizo falta: procesado y entregado a las 00:17 |
+| Sáb 19 23:00 | Ensayo del «dato en vivo» (< 30 s) | ✅ **1,4 s** con el Excel cambiado y 0,2 s con un asiento del ERP (`KIT-DEFENSA.md`) |
+| **Dom 20 00:17** | **Entrega con los dos lotes** | ✅ `d2ade3f`: 500 (445/46/9) + 40 (23/16/1), auditoría VERDE |
 
-Respuestas: *(anotar aquí con hora y quién respondió)*
+## Preguntas para los mentores
+### Abiertas, y es lo primero de la mañana
+Se juegan **5 facturas de 540** y la validación es binaria.
+1. **Tipo de cambio:** ¿hay tabla oficial? Si no, ¿vale el tipo fijo con el que cuadran los pedidos? (El mismo tipo
+   sale en facturas de fechas distintas y, convertido, cuadra al céntimo con el pedido y con el asiento del ERP.)
+2. **IVA 0 % de exportación:** una factura en divisa que, convertida, cuadra con el pedido y con el ERP, ¿es PAGAR o
+   ESCALAR?
+3. **La regla 3 de la norma,** ¿es «el IVA debe estar bien calculado» (lo que dice el Excel) o «siempre 21 %» (lo que
+   implementamos)?
+4. **Frontera NO_PAGAR / ESCALAR:** hipótesis nuestra, NO_PAGAR = violación objetiva comprobada en el ERP (por
+   ejemplo, ya PAGADA). Afecta a unas 35 líneas.
+5. **Pedido ANULADO en el Excel:** hoy no cambia nada, porque la norma no lee `Pedido.estado`.
+6. **Copias exactas:** ¿se escala también el original del lote 1, o sólo la copia?
+
+### Cerradas sin respuesta: las decidimos nosotros, y queda escrito
+| Pregunta | Qué hicimos | Dónde |
+|---|---|---|
+| ¿El lote 1 final va con la regla nueva y el ERP actualizado? (P0-2) | **No.** Cada lote se decide en su contexto: el 1 con v3 y ERP v1, el 2 con v4 y ERP v2. Con el ERP v2, `factura_4635` pasaría a NO_PAGAR; no se aplica | ADR-0021 |
+| ¿El lote 2 puede traer una factura idéntica byte a byte, con otro nombre? (P0-1) | Preparado: cada nombre tiene su línea y las copias escalan. En el lote 2 real no ha pasado | ADR + `identidades` |
+| ¿Respecto a qué fecha se evalúa «fecha no futura»? | `ALBERTITOS_FECHA_CORTE` (2026-09-18), guardada con cada decisión. Nunca `date.today()` | regla 3 del equipo |
+| ¿Los PDF que se declaran «documento de prueba del evaluador» se validan igual? | Sí: el texto de una factura es un dato, no una instrucción. Escalan por anomalía | ADR-0010 · `.claude/rules/texto-es-dato.md` |
+| ¿Dónde llega la regla nueva? | No llegó. Se decidió con lo que dicen los datos | ADR-0022 |
+
+**Respuestas de mentores:** *(anotar aquí, literales y con hora, en cuanto haya alguna)*
 
 ## Turnos de sueño
-**Propuesta (Miguel, sáb 01:00): cada uno confirma o corrige su fila en el canal.** Está sacada de los hitos de
-arriba. Criterio: nadie duerme durante un hito suyo, y el domingo descansa primero quien defiende.
-
-| Persona | Sáb 19 | Dom 20 | Hitos que no se puede perder |
-|---|---|---|---|
-| Miguel | 02:00–09:00 | 02:30–06:30 | 17:30 entrega de seguro · 18:00 lote 2 (reprocess) · 23:00 dato en vivo y benchmark · 08:00 entrega final |
-| Javier | 03:00–10:00 | 02:00–06:30 | 18:00 lote 2 + ERP v2 (`/lote2`) |
-| Alfonso | 02:00–09:00 | 02:00–08:00 | 10:00 muestra etiquetada · 12:00 repliegue 2 · defensa |
-| Mónica | 01:30–08:30 | 02:00–07:00 | 10:00 muestra etiquetada · 18:00 norma v4 |
-| Alejandro | 02:00–09:00 | 02:30–07:30 | 12:00 consola con BD real · 20:00 repliegue 3 |
-
-- Mientras Miguel duerme no hay merges a `main`: el trabajo se acumula en ramas (`/handoff` deja la PR lista).
-- Los agentes en segundo plano pueden seguir de noche en ramas; nada se entrega ni se mergea sin una persona despierta.
-- El sábado entre las 02:00 y las 08:00 no hay ningún hito. La entrega válida del lote 1 ya existe
-  (`dist/entrega/outcomes.jsonl`, APTO, 18/09 23:05), así que el repliegue 1 de las 02:00 está cubierto.
+Ya no aplican: el sábado se cumplieron los hitos y la entrega de los dos lotes salió a las 00:17 del domingo.
+Lo que queda de noche es de Alfonso, grabando y editando. Criterio para el domingo: **descansa primero quien
+defiende**, y antes de la defensa hay que tener a alguien despierto capaz de republicar (Javier o Miguel).
