@@ -879,3 +879,6 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - Lo de Javier en tres agentes: **J1** fuentes (material, maestro v2, ERP v2, validadores extranjeros, impacto en el lote 1), **J2** ingesta y extracción de los 40 (ya sobre M1), **J3** lote 1 a 445/46/9 como entrega de seguro y ensayo del dato cambiado el domingo. **L5** (Alfonso o Alejandro) etiqueta a ciegas. **Mónica** acompaña la v4: políticas, mentores y regla nueva.
 - **PARA Miguel:** ¿visto bueno a que J3 publique ya el lote 1 en 445/46/9 (ADR-0017)? Y para M2: la trampa es `e18`, que la capa de texto da por limpia (total impreso 1.815 = ERP; a mano, 18.150).
 - **PARA todos:** la regla nueva no está publicada (ni en la web ni en el repo). Quien la vea en el canal, literal y con hora en `docs/hitos.md`. P0-2 al mentor ya.
+
+### 20:06 · A (Javier, PLAN-14 J1) · material del lote 2 en `data/lote2/`
+- **PARA B y Miguel:** material en `data/lote2` (rama `javier/lote2-fuentes`, `48c4269`): `facturas/` con los 40 PDFs (NFC), `erp_export_lote2.csv`, `pedidos_nuevos.csv`, `proveedores_nuevos.csv` y `ORIGEN.txt`. Manifiesto `data/lote2.sha256` (43 ficheros, idénticos al commit `f831e34`). Sin ZIP ni hash publicado todavía.
