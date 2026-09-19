@@ -503,12 +503,36 @@ def banda(puntuacion: int) -> str:
     return "baja"
 
 
-def puntuar_expediente(e: Expediente) -> dict[str, Any]:
+def _revisor(
+    e: Expediente, ev: Evaluacion, revision: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """La segunda opinión del LLM, si está activada y es de esta misma decisión (si no, está caducada)."""
+    if revision is None:
+        from albertitos.confianza.revisor import opiniones_guardadas
+
+        revision = opiniones_guardadas()
+    op = revision.get(e.file_id)
+    if not op or op.get("sha256") != e.sha256 or op.get("resultado") != e.resultado:
+        return None
+    if op.get("opinion") == "desacuerdo":
+        ev.dudas(
+            "revisor.desacuerdo",
+            f"una segunda opinión (LLM) no la ve coherente: {op.get('frase', '')}",
+        )
+    elif op.get("opinion") == "de_acuerdo":
+        ev.bien("revisor", f"una segunda opinión (LLM) está de acuerdo: {op.get('frase', '')}")
+    return {k: op.get(k) for k in ("opinion", "frase", "modelo")}
+
+
+def puntuar_expediente(e: Expediente, revision: dict[str, Any] | None = None) -> dict[str, Any]:
+    """`revision`: opiniones del revisor LLM por file_id; None = las del fichero de ALBERTITOS_CONFIANZA_REVISOR
+    (si no está puesto, ninguna); {} = sin revisor."""
     ev = Evaluacion()
     _pdf(e, ev)
     _coherencia(e, ev)
     _maestro_erp(e, ev)
     factor_lectura = _decision_y_politica(e, ev)
+    opinion = _revisor(e, ev, revision)
     for s in ev.senales:
         if s.peso.fuente == "pdf":
             s.factor = round(s.factor * factor_lectura, 2)
@@ -539,6 +563,7 @@ def puntuar_expediente(e: Expediente) -> dict[str, Any]:
             "a_favor": [f for fu, f in ev.a_favor if fu == nombre],
         }
     fuentes["politica"]["tope"] = TOPE_POLITICA
+    fuentes["revisor"]["opinion"] = opinion  # None: apagado, sin opinión o caducada
 
     regla = next(
         (str(m.get("regla_id")) for m in e.motivos if not m.get("ok", True)),
