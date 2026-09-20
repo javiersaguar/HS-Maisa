@@ -989,6 +989,44 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 
 - **2026-09-20 01:55 · chat/calendario divisas** · Rama aislada codex/chat-calendario-divisas: moneda en herramientas; original + conversión registrada en calendario, aviso/exclusión si falta. 713 tests y frontend verdes; dos outcomes idénticos sobre copia. Coordinar con javier/bonus-moneda (trabajo concurrente), sin tocar su árbol ni desplegar.
 
+### 08:55 · Miguel · la BD de mi carpeta al día (540) y la entrega reproducida byte a byte
+- Mi `dist/albertitos.db` se había quedado en el lote 1 del sábado a las 18:19 (**442/49/9**) y sin lote 2: no era la
+  entrega. La he puesto en el estado publicado con la receta de la chuleta: respaldo (`albertitos.db.bak`),
+  `maestro --lote2` (`f504377103b2`), `ingest --lote 2` (40), `hechos import` de los dos fixtures, ERP v2 en **`:8011`**
+  (556 asientos · 33 consultas · 3 reintentos; el v1 del equipo en `:8009`, intacto) y `reprocess --impacted` por lote.
+- **Lote 1 445/46/9 · lote 2 23/16/1.** `package` → `outcomes.jsonl` sha `4ada9ff…` y `outcomes_lote2.jsonl` sha
+  `e500e8e…`: **idénticos byte a byte a lo publicado** (`d2ade3f` / `7bde01b`, comparado contra el repo de entrega).
+  La entrega se reproduce desde los fixtures en otra carpeta y otra máquina: eso es lo que hay que decir en traza y
+  ejecución de la defensa.
+- El PDF del plan que tenía en `dist/entrega` era del 18/09; `make plan-pdf` lo regenera y sale **también idéntico**
+  al publicado (`cdc091f…`, 4 páginas). Es decir, **los tres ficheros de la entrega se reconstruyen byte a byte**
+  desde el repo: `outcomes.jsonl`, `outcomes_lote2.jsonl` y `albertitos_plan.pdf`.
+- Auditoría `--lote ambos`: **VERDE** con el único ámbar esperado (16/40 escalados en el lote 2, por las divisas).
+  `make check`: **717 passed**, 1 skipped, ya con las 540 en la BD.
+- **El código de `main` no mueve el lote 1**: recalculados los 500 hechos con los validadores nuevos (IBAN por país,
+  `identificador_extranjero`, CNPJ sin barra) → **0 avisos, 0 hashes y 0 decisiones** cambian. A mi BD sólo le faltaban
+  los hechos del ADR-0017: `scan_006/009/011` tenían `confianza 0.6` y escalaban (ahora PAGAR), y `scan_016` arrastraba
+  un `discrepancia_extractores` que el código de ahora ya no produce.
+- **`reprocess --impacted` sí ve un cambio sólo de `confianza`** («hechos reescritos tras decidir»), aunque ese campo no
+  entre en el `hechos_hash`: no hace falta `--todo`. Comprobado sobre la BD real, 3 de 500.
+- **Ojo para quien reprocese el lote 1 hoy:** después de `maestro --lote2`, el reproceso del lote 1 coge el maestro
+  `f504377103b2` (el ADR-0021 fija norma y ERP, no el maestro). Es un superconjunto de `80911e429c6c` y no cambia
+  ninguna decisión (500 recalculadas, cambian sólo las 3 esperadas), pero el contexto guardado ya dice v2.
+- ERP v2 sigue vivo en `:8011`; el snapshot ya está en la BD, así que se puede parar cuando estorbe. La demo pública y
+  `deploy/demo.db` ya servían estas 540: nada que re-exportar.
+
+#### Ramas · PARA cada dueño (el hook me impide borrarlas; no hay ningún PR abierto)
+- **Mergeadas del todo** (0 commits fuera de `main`, se pueden borrar sin perder nada): `alejandro/adr-0016`,
+  `consola-fixes`, `console-api`, `console-look`, `console-web`, `logo` · `alfonso/plan-defensa`,
+  `presentaciones-y-pdf` · `javier/adr-indice`, `analisis-lote2`, `bandeja-norma-nueva`, `bonus-lote2`, `bonus-moneda`,
+  `chat`, `chuleta-hecha`, `cifras-domingo`, `divisas-integracion`, `estado-domingo`, `hitos-domingo`, `ingesta`,
+  `kit-540`, `limpiar-diseno-chat`, `limpiar-planes-cursor`, `limpiar-prompts`, `limpiar-prompts-bonus`,
+  `limpiar-replan`, `lote2-extract`, `lote2-fuentes`, `plan-pdf`, `readme-domingo`, `skill-entrega` ·
+  `monica/norma`, `monica/norma-v3` · `miguel/p0-5-nombre-repetido`, `miguel/pipeline` ·
+  `claude/project-context-0bxtuu`.
+- **Con trabajo sin mergear, mirad antes de borrar:** `alejandro/pagos` (6 commits: página `/pagos` y su ADR-0016),
+  `monica/consola` (9: el rediseño de consola que se descartó a favor del de Alejandro) y `revision/grok`
+  (1: `plan.json` del ciclo de revisión).
 ### 09:12 · A1 (PLAN-15) · la puerta del backend está en `main` (PR #41)
 - **El contrato ya se puede usar.** `ALBERTITOS_CLAVE_DEMO` en el servidor + cabecera `X-Albertitos-Clave` en cada petición. Sin la variable, nada cambia: ése es el repliegue.
 - **PARA A2:** `GET /salud` y `GET /chat/salud` responden **sin clave** y traen `"requiere_clave": true|false`; el fallo es **401** con `{"error": "clave incorrecta o ausente"}` y sus cabeceras CORS puestas; `X-Albertitos-Clave` ya está en `Access-Control-Allow-Headers` de los dos servicios, incluido el preflight. Para probar: `ALBERTITOS_CLAVE_DEMO=prueba123 ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3002 uv run python -m albertitos.console.api --bandeja --db dist/bandeja.db`.
@@ -1004,3 +1042,10 @@ A1 ya integrado en la rama de despliegue. A2: mostrar en la bandeja «Espacio de
 PR #43 integrado (08cce2d). Misma clave aleatoria guardada en ambos servicios Render, sin incluirla en el repo; gateway configurado también en el puente. 718 tests + 10 pruebas de A3, lint y CI verdes. Ambos /salud requieren_clave=true; sin clave o incorrecta, /panel, POST /inbox y POST /chat dan 401; CORS permite X-Albertitos-Clave. Subida pública e02_P002.pdf: 202, ESCALAR por v4.R7, 2450.00 USD; es copia exacta, no prueba extracción nueva. Cupo público probado: 21 admitidos, envío de 20 rechazado con 409, siguen 19 plazas. JSONL/PDF y BD de entrega intactos.
 
 A2: PR #44 todavía abierto en esta comprobación. Falta integración visual y aviso «Espacio de pruebas: lo que subas se borra cuando el servidor se reinicia»; no figura en los cambios de #44. Campos disponibles en GET /inbox: efimera, limite_arranque, recibidos_arranque, restantes_arranque. El chat mantiene su instantánea propia y no ve la bandeja del puente. Revisión única de las 10:15 programada; si no está redondo, retirar sólo ALBERTITOS_CLAVE_DEMO en ambos y redesplegar.
+### 09:32 · Miguel · aviso: `test_el_chat_exige_la_clave_pero_no_para_salud` es intermitente en Windows
+- **PARA Javier (PR #41/#42, es tu fichero, no lo toco):** con `main` mezclado (mi commit de las 08:55 + tus 8 de
+  las 09:03-09:19), `make check` da **1 failed, 721 passed**: `tests/test_chat.py::test_el_chat_exige_la_clave_pero_no_para_salud`
+  con `httpx.ReadError [WinError 10053]`. En aislado pasa 2 de cada 3 veces, así que es el socket de Windows al cerrar
+  el servidor de prueba, no la clave. Si el CI lo coge en el intento malo, bloquea merges a una hora del cierre:
+  merece un reintento o cerrar el cliente antes de parar el hilo.
+- Lo demás, verde. El resto de mi parte está en la entrada de las 08:55.

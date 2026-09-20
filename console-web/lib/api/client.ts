@@ -7,6 +7,7 @@
  */
 
 import { API_BASE_URL, API_CONTRACT_VERSION, API_VERSION_HEADER } from '../config'
+import { cabeceraClave, claveRechazada } from '@/components/auth/clave'
 
 export class ApiError extends Error {
   readonly status: number
@@ -104,6 +105,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       headers: {
         Accept: 'application/json',
         ...(isFormData || body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        // Sin clave guardada no se manda cabecera: la petición es idéntica a la de siempre (PLAN-15).
+        ...cabeceraClave(),
         ...headers,
       },
       body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
@@ -119,6 +122,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   comprobarVersion(response)
 
   if (!response.ok) {
+    // 401: la clave de la demo ya no vale. Se olvida y la puerta vuelve a pedirla, sin recargar.
+    if (response.status === 401) claveRechazada()
     let details: unknown
     let message = `${response.status} ${response.statusText}`
     try {

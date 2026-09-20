@@ -9,6 +9,7 @@
  */
 
 import { ApiError } from './client'
+import { cabeceraClave, claveRechazada } from '@/components/auth/clave'
 
 export const CHAT_URL = (process.env.NEXT_PUBLIC_CHAT_URL ?? 'http://127.0.0.1:8001').replace(/\/+$/, '')
 
@@ -160,7 +161,7 @@ export async function preguntar(
   try {
     r = await fetch(`${CHAT_URL}/chat`, {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...cabeceraClave() },
       body: JSON.stringify({ mensaje: mensaje.trim(), historial: historial.slice(-MAX_HISTORIAL) }),
       signal: s,
     })
@@ -183,6 +184,7 @@ export async function preguntar(
       /* sin JSON */
     }
     if (!r.ok) {
+      if (r.status === 401) claveRechazada()
       const texto = (cuerpo as { error?: string } | null)?.error
       throw new ApiError((r.status === 429 ? ERRORES_POR_ESTADO[429] : texto) || ERRORES_POR_ESTADO[r.status] || `${r.status} ${r.statusText}`, r.status, cuerpo)
     }

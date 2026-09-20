@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { AppShell } from '@/components/layout/AppShell'
+import { PuertaClave } from '@/components/auth/PuertaClave'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import './globals.css'
 
@@ -28,8 +29,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="antialiased">
-        <AppShell>{children}</AppShell>
-        <ChatPanel />
+        <PuertaClave>
+          <AppShell>{children}</AppShell>
+          <ChatPanel />
+        </PuertaClave>
       </body>
     </html>
   )
