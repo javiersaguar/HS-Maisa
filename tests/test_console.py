@@ -881,3 +881,26 @@ def test_red_local_solo_para_los_origenes_de_la_consola(monkeypatch):
     assert bueno.cabeceras.get("Access-Control-Allow-Private-Network") == "true"
     assert "Access-Control-Allow-Private-Network" not in malo.cabeceras
     assert "Access-Control-Allow-Private-Network" not in nada.cabeceras
+
+
+def test_la_bandeja_decide_con_la_norma_mas_nueva_de_la_bd(tmp_path, conn, monkeypatch):
+    """Una factura subida hoy se decide con la norma de hoy. En la BD de la entrega lo último reprocesado fue el
+    lote 1 (v3): coger la norma de la última decisión habría decidido una factura en divisa con la v3, que no
+    tiene la regla de moneda, y el motivo habría sido «el total no coincide con el pedido»."""
+    from albertitos.console import bandeja as bandeja_mod
+
+    monkeypatch.delenv("ALBERTITOS_BANDEJA_NORMA", raising=False)
+    ruta = Path(conn.execute("PRAGMA database_list").fetchone()[2])
+    assert bandeja_mod.norma_de(ruta) is None  # sin decisiones, `decide` aplica su defecto
+    for i, (norma, cuando) in enumerate((("v4", "2026-09-20T00:10"), ("v3", "2026-09-20T00:20"))):
+        db.guardar_fichero(
+            conn, sha256=str(i), file_id=f"{i}.pdf", lote=1, bytes_=1, paginas=1, tiene_texto=True
+        )
+        conn.execute(
+            "INSERT INTO decisiones (file_id, sha256, resultado, motivos_json, norma_version,"
+            " fecha_corte, hechos_hash, maestro_version, erp_version, decidido_en, vigente)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,1)",
+            (f"{i}.pdf", f"{i}", "PAGAR", "[]", norma, "2026-09-18", "h", "m", "v1", cuando),
+        )
+    conn.commit()
+    assert bandeja_mod.norma_de(ruta) == "v4"  # la más nueva, no la decidida más tarde

@@ -20,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -134,20 +135,32 @@ def carpeta_de(ruta_bd: Path) -> Path:
 
 
 def norma_de(ruta_bd: Path) -> str | None:
-    """La norma de la decisión vigente más reciente de esa BD (la misma que enseña el panel), o None si aún no
-    hay ninguna. Un PDF de la bandeja se decide con la norma con la que se decidió el resto: con el lote 2
-    dentro es la v4 y, sin pasarla, `decide` aplicaría la v3 y una factura en divisa no daría su motivo."""
+    """La norma **más nueva** de las que decidieron algo en esa BD, o None si no hay ninguna.
+
+    Una factura que se sube hoy se decide con la norma de hoy. No vale coger la de la última decisión: en la BD de
+    la entrega, lo último que se reprocesó fue el lote 1 (norma v3, ADR-0017), así que una factura en divisa
+    subida por la consola habría salido por "el total no coincide con el pedido" en vez de por su moneda (v4.R7).
+    `ALBERTITOS_BANDEJA_NORMA` la fija a mano si hiciera falta otra cosa.
+    """
     try:
         with closing(db.conectar(Path(ruta_bd), solo_lectura=True)) as conn:
-            fila = conn.execute(
-                "SELECT norma_version FROM decisiones WHERE vigente = 1 ORDER BY decidido_en DESC LIMIT 1"
-            ).fetchone()
+            versiones = [
+                str(f["norma_version"])
+                for f in conn.execute(
+                    "SELECT DISTINCT norma_version FROM decisiones WHERE vigente = 1"
+                )
+            ]
     except sqlite3.Error:
         logger.exception(
             "bandeja: no se pudo leer la norma vigente; decide con su valor por defecto"
         )
         return None
-    return fila["norma_version"] if fila else None
+    # "v10" es más nueva que "v9": se ordena por los números que trae, no por el texto.
+    return max(versiones, key=_orden_norma, default=None) or None
+
+
+def _orden_norma(version: str) -> tuple:
+    return tuple(int(x) if x.isdigit() else x for x in re.split(r"(\d+)", version))
 
 
 def cli(args: list[str], ruta: Path) -> tuple[int, str]:
