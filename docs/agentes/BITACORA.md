@@ -1037,6 +1037,11 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 
 A1 ya integrado en la rama de despliegue. A2: mostrar en la bandeja «Espacio de pruebas: lo que subas se borra cuando el servidor se reinicia». GET /inbox añade efimera, limite_arranque, recibidos_arranque y restantes_arranque; límite por defecto 40. Render pendiente de acceso; todavía no se ha configurado la clave ni probado la subida pública. La entrega publicada permanece intacta.
 
+### 2026-09-20 · 09:25 Madrid · PLAN-15 · A3 · backend público probado
+
+PR #43 integrado (08cce2d). Misma clave aleatoria guardada en ambos servicios Render, sin incluirla en el repo; gateway configurado también en el puente. 718 tests + 10 pruebas de A3, lint y CI verdes. Ambos /salud requieren_clave=true; sin clave o incorrecta, /panel, POST /inbox y POST /chat dan 401; CORS permite X-Albertitos-Clave. Subida pública e02_P002.pdf: 202, ESCALAR por v4.R7, 2450.00 USD; es copia exacta, no prueba extracción nueva. Cupo público probado: 21 admitidos, envío de 20 rechazado con 409, siguen 19 plazas. JSONL/PDF y BD de entrega intactos.
+
+A2: PR #44 todavía abierto en esta comprobación. Falta integración visual y aviso «Espacio de pruebas: lo que subas se borra cuando el servidor se reinicia»; no figura en los cambios de #44. Campos disponibles en GET /inbox: efimera, limite_arranque, recibidos_arranque, restantes_arranque. El chat mantiene su instantánea propia y no ve la bandeja del puente. Revisión única de las 10:15 programada; si no está redondo, retirar sólo ALBERTITOS_CLAVE_DEMO en ambos y redesplegar.
 ### 09:32 · Miguel · aviso: `test_el_chat_exige_la_clave_pero_no_para_salud` es intermitente en Windows
 - **PARA Javier (PR #41/#42, es tu fichero, no lo toco):** con `main` mezclado (mi commit de las 08:55 + tus 8 de
   las 09:03-09:19), `make check` da **1 failed, 721 passed**: `tests/test_chat.py::test_el_chat_exige_la_clave_pero_no_para_salud`
