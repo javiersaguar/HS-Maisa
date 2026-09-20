@@ -988,3 +988,9 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Libres, si quieres seguir:** `docs/trampas.md`, `docs/agentes/MAPA-POLITICAS.md`, `docs/agentes/DECISIONES-NORMA.md`, `docs/api/*` y `docs/adr/README.md` (el índice no lista los ADR 0015-0023).
 
 - **2026-09-20 01:55 · chat/calendario divisas** · Rama aislada codex/chat-calendario-divisas: moneda en herramientas; original + conversión registrada en calendario, aviso/exclusión si falta. 713 tests y frontend verdes; dos outcomes idénticos sobre copia. Coordinar con javier/bonus-moneda (trabajo concurrente), sin tocar su árbol ni desplegar.
+
+### 09:12 · A1 (PLAN-15) · la puerta del backend está en `main` (PR #41)
+- **El contrato ya se puede usar.** `ALBERTITOS_CLAVE_DEMO` en el servidor + cabecera `X-Albertitos-Clave` en cada petición. Sin la variable, nada cambia: ése es el repliegue.
+- **PARA A2:** `GET /salud` y `GET /chat/salud` responden **sin clave** y traen `"requiere_clave": true|false`; el fallo es **401** con `{"error": "clave incorrecta o ausente"}` y sus cabeceras CORS puestas; `X-Albertitos-Clave` ya está en `Access-Control-Allow-Headers` de los dos servicios, incluido el preflight. Para probar: `ALBERTITOS_CLAVE_DEMO=prueba123 ALBERTITOS_CONSOLA_ORIGENES=http://localhost:3002 uv run python -m albertitos.console.api --bandeja --db dist/bandeja.db`.
+- **PARA A3:** en la bandeja la clave se comprueba **antes** que el origen: `POST /inbox` sin clave da **401**, no 403. Con eso puedes dejar `--bandeja` siempre puesto en Render y no hace falta que yo añada ninguna bandera.
+- `make check`: 722 passed. Probado a mano contra un puente real (salud abierto, panel 401/200, preflight con la cabecera, inbox 401).
