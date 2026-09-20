@@ -988,3 +988,42 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Libres, si quieres seguir:** `docs/trampas.md`, `docs/agentes/MAPA-POLITICAS.md`, `docs/agentes/DECISIONES-NORMA.md`, `docs/api/*` y `docs/adr/README.md` (el índice no lista los ADR 0015-0023).
 
 - **2026-09-20 01:55 · chat/calendario divisas** · Rama aislada codex/chat-calendario-divisas: moneda en herramientas; original + conversión registrada en calendario, aviso/exclusión si falta. 713 tests y frontend verdes; dos outcomes idénticos sobre copia. Coordinar con javier/bonus-moneda (trabajo concurrente), sin tocar su árbol ni desplegar.
+
+### 08:55 · Miguel · la BD de mi carpeta al día (540) y la entrega reproducida byte a byte
+- Mi `dist/albertitos.db` se había quedado en el lote 1 del sábado a las 18:19 (**442/49/9**) y sin lote 2: no era la
+  entrega. La he puesto en el estado publicado con la receta de la chuleta: respaldo (`albertitos.db.bak`),
+  `maestro --lote2` (`f504377103b2`), `ingest --lote 2` (40), `hechos import` de los dos fixtures, ERP v2 en **`:8011`**
+  (556 asientos · 33 consultas · 3 reintentos; el v1 del equipo en `:8009`, intacto) y `reprocess --impacted` por lote.
+- **Lote 1 445/46/9 · lote 2 23/16/1.** `package` → `outcomes.jsonl` sha `4ada9ff…` y `outcomes_lote2.jsonl` sha
+  `e500e8e…`: **idénticos byte a byte a lo publicado** (`d2ade3f` / `7bde01b`, comparado contra el repo de entrega).
+  La entrega se reproduce desde los fixtures en otra carpeta y otra máquina: eso es lo que hay que decir en traza y
+  ejecución de la defensa.
+- El PDF del plan que tenía en `dist/entrega` era del 18/09; `make plan-pdf` lo regenera y sale **también idéntico**
+  al publicado (`cdc091f…`, 4 páginas). Es decir, **los tres ficheros de la entrega se reconstruyen byte a byte**
+  desde el repo: `outcomes.jsonl`, `outcomes_lote2.jsonl` y `albertitos_plan.pdf`.
+- Auditoría `--lote ambos`: **VERDE** con el único ámbar esperado (16/40 escalados en el lote 2, por las divisas).
+  `make check`: **717 passed**, 1 skipped, ya con las 540 en la BD.
+- **El código de `main` no mueve el lote 1**: recalculados los 500 hechos con los validadores nuevos (IBAN por país,
+  `identificador_extranjero`, CNPJ sin barra) → **0 avisos, 0 hashes y 0 decisiones** cambian. A mi BD sólo le faltaban
+  los hechos del ADR-0017: `scan_006/009/011` tenían `confianza 0.6` y escalaban (ahora PAGAR), y `scan_016` arrastraba
+  un `discrepancia_extractores` que el código de ahora ya no produce.
+- **`reprocess --impacted` sí ve un cambio sólo de `confianza`** («hechos reescritos tras decidir»), aunque ese campo no
+  entre en el `hechos_hash`: no hace falta `--todo`. Comprobado sobre la BD real, 3 de 500.
+- **Ojo para quien reprocese el lote 1 hoy:** después de `maestro --lote2`, el reproceso del lote 1 coge el maestro
+  `f504377103b2` (el ADR-0021 fija norma y ERP, no el maestro). Es un superconjunto de `80911e429c6c` y no cambia
+  ninguna decisión (500 recalculadas, cambian sólo las 3 esperadas), pero el contexto guardado ya dice v2.
+- ERP v2 sigue vivo en `:8011`; el snapshot ya está en la BD, así que se puede parar cuando estorbe. La demo pública y
+  `deploy/demo.db` ya servían estas 540: nada que re-exportar.
+
+#### Ramas · PARA cada dueño (el hook me impide borrarlas; no hay ningún PR abierto)
+- **Mergeadas del todo** (0 commits fuera de `main`, se pueden borrar sin perder nada): `alejandro/adr-0016`,
+  `consola-fixes`, `console-api`, `console-look`, `console-web`, `logo` · `alfonso/plan-defensa`,
+  `presentaciones-y-pdf` · `javier/adr-indice`, `analisis-lote2`, `bandeja-norma-nueva`, `bonus-lote2`, `bonus-moneda`,
+  `chat`, `chuleta-hecha`, `cifras-domingo`, `divisas-integracion`, `estado-domingo`, `hitos-domingo`, `ingesta`,
+  `kit-540`, `limpiar-diseno-chat`, `limpiar-planes-cursor`, `limpiar-prompts`, `limpiar-prompts-bonus`,
+  `limpiar-replan`, `lote2-extract`, `lote2-fuentes`, `plan-pdf`, `readme-domingo`, `skill-entrega` ·
+  `monica/norma`, `monica/norma-v3` · `miguel/p0-5-nombre-repetido`, `miguel/pipeline` ·
+  `claude/project-context-0bxtuu`.
+- **Con trabajo sin mergear, mirad antes de borrar:** `alejandro/pagos` (6 commits: página `/pagos` y su ADR-0016),
+  `monica/consola` (9: el rediseño de consola que se descartó a favor del de Alejandro) y `revision/grok`
+  (1: `plan.json` del ciclo de revisión).
