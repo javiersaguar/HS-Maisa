@@ -214,9 +214,6 @@ ADR-0017 (era 438/53/9 en la entrega del sábado por la mañana).
 
 **Los dos juntos, que es lo entregado:** 540 facturas, **468 PAGAR · 62 ESCALAR · 10 NO_PAGAR** (entrega `d2ade3f`).
 
-Con el lote 2: **15** proveedores · **555** pedidos · **556** asientos y **10** PAGADA · **540** facturas ·
-**8** en divisa · **3** manuscritas · **7** idiomas · **461/69/10** en total (**23/1/16** las 40 nuevas).
-
 ## 11 · Cómo se reproduce
 
 Con el bridge levantado (`make erp-fast` en otra terminal), un script de lectura pura que carga el maestro
