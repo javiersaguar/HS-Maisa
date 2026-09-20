@@ -580,7 +580,16 @@ def panel(conn: sqlite3.Connection) -> dict[str, Any]:
 
 def salud(conn: sqlite3.Connection | None) -> dict[str, Any]:
     """Lo mínimo para que la UI sepa si habla con una BD real y de qué tamaño. Sin BD, `bd` es None."""
-    out: dict[str, Any] = {"ok": True, "lectura": True, "api": API_VERSION, "bd": None}
+    from albertitos.console.api import clave_exigida
+
+    # Campo aditivo (PLAN-15): la consola lo mira para saber si tiene que pedir la clave. No sube API_VERSION.
+    out: dict[str, Any] = {
+        "ok": True,
+        "lectura": True,
+        "api": API_VERSION,
+        "requiere_clave": bool(clave_exigida()),
+        "bd": None,
+    }
     if conn is None:
         return out
     n = int(conn.execute("SELECT count(*) n FROM ficheros").fetchone()["n"])

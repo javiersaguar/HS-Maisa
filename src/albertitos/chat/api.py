@@ -11,6 +11,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from albertitos.chat.agente import Gateway, Peticion, preguntar
+from albertitos.console.api import CABECERA_CLAVE, clave_exigida, clave_ok
 
 ORIGENES_DEFECTO = "http://localhost:3000,http://127.0.0.1:3000"
 API = 2  # versión del contrato de /chat/salud (PLAN-13)
@@ -43,6 +44,8 @@ def salud(ruta: Path, gateway) -> dict:
         "ok": True,
         "api": API,
         "solo_lectura": True,
+        # Aditivo (PLAN-15): la consola lo mira para pedir la clave antes de preguntar. No sube API.
+        "requiere_clave": bool(clave_exigida()),
         "bd_disponible": ruta.is_file(),
         **disponible,
     }
@@ -70,7 +73,7 @@ def hacer_handler(ruta: Path, gateway=None):
                 self.send_header("Access-Control-Allow-Private-Network", "true")
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Headers", f"Content-Type, {CABECERA_CLAVE}")
             self.end_headers()
             self.wfile.write(contenido)
 
@@ -86,6 +89,9 @@ def hacer_handler(ruta: Path, gateway=None):
         def do_POST(self):  # noqa: N802
             if self.path != "/chat":
                 self.enviar(404, {"error": "Ruta inexistente"})
+                return
+            if not clave_ok(self.headers.get(CABECERA_CLAVE)):
+                self.enviar(401, {"error": "clave incorrecta o ausente"})
                 return
             if self.headers.get("Origin") is not None and (
                 self.headers.get("Origin").rstrip("/") not in permitidos

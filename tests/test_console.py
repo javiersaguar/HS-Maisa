@@ -904,3 +904,70 @@ def test_la_bandeja_decide_con_la_norma_mas_nueva_de_la_bd(tmp_path, conn, monke
         )
     conn.commit()
     assert bandeja_mod.norma_de(ruta) == "v4"  # la más nueva, no la decidida más tarde
+
+
+def _servidor_puente(ruta, bandeja_activa=False):
+    """Un puente de verdad en un puerto libre: la clave se comprueba en el handler, no en `despachar`."""
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    servidor = ThreadingHTTPServer(
+        ("127.0.0.1", 0), api.hacer_handler(ruta, bandeja_activa=bandeja_activa)
+    )
+    threading.Thread(target=servidor.serve_forever, daemon=True).start()
+    return servidor
+
+
+def test_sin_clave_configurada_el_puente_responde_como_siempre(conn, tmp_path, monkeypatch):
+    """El interruptor del PLAN-15: sin ALBERTITOS_CLAVE_DEMO no se exige nada y `requiere_clave` es false."""
+    import httpx
+
+    monkeypatch.delenv("ALBERTITOS_CLAVE_DEMO", raising=False)
+    ruta = Path(conn.execute("PRAGMA database_list").fetchone()[2])
+    servidor = _servidor_puente(ruta)
+    try:
+        with httpx.Client(
+            base_url=f"http://127.0.0.1:{servidor.server_port}", trust_env=False
+        ) as c:
+            salud = c.get("/salud").json()
+            assert salud["ok"] and salud["requiere_clave"] is False
+            assert c.get("/panel").status_code == 200
+    finally:
+        servidor.shutdown()
+        servidor.server_close()
+
+
+def test_con_clave_el_puente_exige_la_cabecera(conn, monkeypatch):
+    """Con clave: /salud sigue abierto (la consola lo necesita para saber que hay que pedirla) y el resto, 401."""
+    import httpx
+
+    monkeypatch.setenv("ALBERTITOS_CLAVE_DEMO", "la-buena")
+    ruta = Path(conn.execute("PRAGMA database_list").fetchone()[2])
+    servidor = _servidor_puente(ruta, bandeja_activa=True)
+    try:
+        with httpx.Client(
+            base_url=f"http://127.0.0.1:{servidor.server_port}", trust_env=False
+        ) as c:
+            salud = c.get("/salud")
+            assert salud.status_code == 200 and salud.json()["requiere_clave"] is True
+            assert c.get("/panel").status_code == 401
+            mala = c.get("/panel", headers={api.CABECERA_CLAVE: "otra"})
+            assert mala.status_code == 401
+            assert mala.json() == {"error": "clave incorrecta o ausente"}
+            # Sin esta cabecera el navegador enseña un error de red en vez del 401.
+            assert mala.headers["access-control-allow-origin"] == "*"
+            assert api.CABECERA_CLAVE in mala.headers["access-control-allow-headers"]
+            assert c.get("/panel", headers={api.CABECERA_CLAVE: "la-buena"}).status_code == 200
+            # La subida se corta por la clave antes de mirar el origen.
+            assert c.post("/inbox", content=b"x").status_code == 401
+    finally:
+        servidor.shutdown()
+        servidor.server_close()
+
+
+def test_clave_ok_compara_en_tiempo_constante(monkeypatch):
+    monkeypatch.setenv("ALBERTITOS_CLAVE_DEMO", "  la-buena  ")  # se recorta al leerla
+    assert api.clave_exigida() == "la-buena"
+    assert api.clave_ok("la-buena") and not api.clave_ok("la-buen") and not api.clave_ok(None)
+    monkeypatch.delenv("ALBERTITOS_CLAVE_DEMO")
+    assert api.clave_ok(None) and api.clave_ok("cualquiera")  # sin clave configurada, pasa todo
