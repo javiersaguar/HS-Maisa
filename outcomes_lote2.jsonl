@@ -1,0 +1,40 @@
+{"file_id":"2026-08-05_P005.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"2026-08-09_P001.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"2026-08-22_P010.pdf","result":"NO_PAGAR","motivo":"el pedido PO-2026-0071 ya figura PAGADA en el ERP (asiento AS-90001): no pagar dos veces","norma_version":"v4","regla":"v4.R5"}
+{"file_id":"2026-08-26_P010.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"2026-08-27_P007.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"2026-27450_suministros.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"2026-42111_construcciones.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"2026-72452_suministros.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"FA-3955_electricidad.pdf","result":"ESCALAR","motivo":"el IBAN de la factura no coincide con el del maestro para P006","norma_version":"v4","regla":"v4.R1"}
+{"file_id":"FA-5103_electricidad.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"FA-6217_transportes.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"FA-7357_papelería.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"FA-7532_informática.pdf","result":"ESCALAR","motivo":"el IBAN de la factura no coincide con el del maestro para P010","norma_version":"v4","regla":"v4.R1"}
+{"file_id":"e01_P001.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"e02_P002.pdf","result":"ESCALAR","motivo":"factura en USD (el pedido PO-2026-1302 está en EUR: 2254.00); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e03_P002.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"e04_P003.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"e05_P004.pdf","result":"ESCALAR","motivo":"el IBAN de la factura no coincide con el del maestro para P011","norma_version":"v4","regla":"v4.R1"}
+{"file_id":"e06_P013.pdf","result":"ESCALAR","motivo":"el IBAN de la factura no coincide con el del maestro para P013","norma_version":"v4","regla":"v4.R1"}
+{"file_id":"e07_P006.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"e08_P012.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"e09_P015.pdf","result":"ESCALAR","motivo":"factura en JPY (el pedido PO-2026-1309 está en EUR: 5244.50); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e10_P006.pdf","result":"ESCALAR","motivo":"factura en USD (el pedido PO-2026-1310 está en EUR: 3174.00); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e11_P011.pdf","result":"ESCALAR","motivo":"el IBAN de la factura no coincide con el del maestro para P011","norma_version":"v4","regla":"v4.R1"}
+{"file_id":"e12_P010.pdf","result":"ESCALAR","motivo":"factura en CHF (el pedido PO-2026-1312 está en EUR: 4410.00); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e13_P014.pdf","result":"ESCALAR","motivo":"factura en BRL (el pedido PO-2026-1313 está en EUR: 2500.00); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e14_P004.pdf","result":"ESCALAR","motivo":"factura en MXN (el pedido PO-2026-1314 está en EUR: 2290.00); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e15_P012.pdf","result":"ESCALAR","motivo":"factura en CHF (el pedido PO-2026-1315 está en EUR: 5670.00); sin tipo de cambio acordado, la conversión la valida una persona","norma_version":"v4","regla":"v4.R7"}
+{"file_id":"e16_P011.pdf","result":"ESCALAR","motivo":"anomalía que debe ver una persona: anotacion_a_mano","norma_version":"v4","regla":"v4.R6"}
+{"file_id":"e17_P007.pdf","result":"ESCALAR","motivo":"anomalía que debe ver una persona: anotacion_a_mano","norma_version":"v4","regla":"v4.R6"}
+{"file_id":"e18_P001.pdf","result":"ESCALAR","motivo":"anomalía que debe ver una persona: anotacion_a_mano","norma_version":"v4","regla":"v4.R6"}
+{"file_id":"factura_1210.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_1221.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_2923.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_6932.pdf","result":"ESCALAR","motivo":"el total de la factura (2674.10) no coincide con el pedido PO-2026-0535 (2120.10)","norma_version":"v4","regla":"v4.R2"}
+{"file_id":"factura_6990.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_7036.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_7495.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_7713.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
+{"file_id":"factura_9660.pdf","result":"PAGAR","motivo":"todas las reglas cumplidas","norma_version":"v4"}
