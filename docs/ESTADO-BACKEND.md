@@ -1,7 +1,24 @@
-# Estado del proyecto y lo que falta · domingo 20/09, 01:00
+# Estado del proyecto y lo que falta · domingo 20/09, 10:35 (repaso previo a la defensa)
 
-Lo de ayer a las 14:30, con los P0 tachados según se cerraban, está en el historial (`git log -p docs/ESTADO-BACKEND.md`).
-**Quedan 7 horas para la entrega final (08:00) y 10 para el cierre (11:00).**
+Lo de las 01:00 y lo de ayer está en el historial (`git log -p docs/ESTADO-BACKEND.md`).
+**La entrega ya está publicada y cierra a las 11:00. Lo de abajo es lo que se enseña y con qué repliegue.**
+
+## 0 · Repaso de las 10:35, medido
+
+| Qué | Resultado |
+|---|---|
+| Raíz de `../HS-Maisa-Entrega` | ✅ exactamente `.git`, `outcomes.jsonl`, `outcomes_lote2.jsonl`, `albertitos_plan.pdf` |
+| `validate` lote 1 / lote 2 | ✅ **APTO** 500 líneas (445/46/9) y **APTO** 40 líneas (23/1/16), en 0,9 s y 0,2 s |
+| Elegibilidad | ✅ 540 `file_id` = los 540 PDF, en NFC, sin repetidos; `result` siempre PAGAR/NO_PAGAR/ESCALAR |
+| `albertitos_plan.pdf` | ✅ 4 páginas, «1. Arquitectura» y «2. ADRs / trade-offs», ADR-0001/0006/0017/0021/0022; sin «(rellenar» ni «ADR-000N» |
+| Subagente `auditor-outcomes` | ✅ **VERDE**, 0 discrepancias con la BD; las 31 facturas con texto inyectado, ninguna en PAGAR |
+| `make check` · enlaces · cifras | ✅ 718 passed · sin enlaces rotos · sin cifras obsoletas |
+| `scripts/smoke.sh` | ✅ **VEREDICTO: OK**, 6 comprobaciones, **1,4 s** |
+| `scripts/demo.sh estado` | ✅ los seis endpoints en 200 (local < 10 ms, público 0,23-0,36 s) |
+| `dato_en_vivo.py --pagada PO-2026-0003` | 🟠 funciona en **0,2 s**, pero cambia **2** facturas, no 1 (ver §2 R2) |
+| `demo_caos.py --sin-red` | 🔴 **no demuestra nada desde el lote 2** (ver §2 R1) |
+| Ventana del chat local | ✅ movida a las **20:00** de hoy (`CHAT_HASTA=2026-09-20T20:00 bash scripts/demo.sh arrancar`) |
+| Ventana del chat público | 🔴 cierra hoy a las **14:00**; lo cambia Javier en Render (ver §2 R3) |
 
 ## 1 · Dónde estamos, en una frase por área
 | Área | Estado | Evidencia |
@@ -22,6 +39,34 @@ Lo de ayer a las 14:30, con los P0 tachados según se cerraban, está en el hist
 | **Guion de la defensa** | 🔴 Sin tocar desde el viernes. Alfonso está grabando la demo esta noche | `docs/guion-defensa.md` |
 
 ## 2 · Lo que falta, por orden de lo que nos cuesta si no se hace
+
+### 🔴 R1 · `demo_caos.py` ya no demuestra la resiliencia (bloque 4 de la defensa, 10 pts)
+Desde que entró el lote 2, **los tres pasos de la demo del caos acaban en `run → exit 2`**: `run` se niega porque
+el lote 1 está decidido con la v3 y el ERP v1 y el lote 2 con la v4 y el ERP v2 (ADR-0021, y hace bien). Las tres
+facturas nuevas salen con «decisión: NINGUNA» en los pasos 1 y 2, así que no se ve caer el LLM ni reanudar: se ve
+una negativa por otro motivo. El guion dice «mira, se cae el LLM y el pipeline reanuda», y lo que se proyecta no
+es eso. **No lo he tocado** (`scripts/demo_caos.py` no es mío). Arreglo previsible: que la demo use
+`reprocess --impacted --lote 2 --norma v4 --erp v2` o que fije `--lote 1`, como ya se hizo con `dato_en_vivo.py`.
+**Repliegue para hoy si no da tiempo:** enseñar el corte de LLM con `scripts/smoke.sh` y la contingencia de
+ADR-0009, y no proyectar `demo_caos.py`.
+
+### 🟠 R2 · «Cambia un dato» cambia dos facturas, no una
+`uv run python scripts/dato_en_vivo.py --pagada PO-2026-0003` recalcula **2 de 500 en 0,2 s** y cambian las dos:
+`factura_8764` (la del dato que toca el jurado) y `factura_4635`, que cambia por `AS-90001` del **ERP v2 del lote
+2**, no por lo que acaba de tocar nadie. El guion cuenta «1 de 500». La causa: el guion construye el ERP «vivo»
+desde el último snapshot (v2) y el lote 1 se decidió con el v1. **Tampoco lo he tocado** (`scripts/dato_en_vivo.py`
+no es mío). **Repliegue inmediato, probado:** hacerlo sobre el lote 2, que sale limpio —
+`uv run python scripts/dato_en_vivo.py --lote 2 --norma v4 --pagada PO-2026-0517` → **1 de 40 recalculadas, 1
+cambia**, `2026-08-26_P010.pdf` PAGAR → NO_PAGAR por R5, con su traza.
+
+### 🔴 R3 · La ventana del chat público cierra a las 14:00
+`https://albertitos-chat.onrender.com/chat/salud` dice `ventana.hasta = 2026-09-20T14:00:00+02:00`. Si la defensa
+se alarga, el chat de la demo pública dirá «fuera de horario» en mitad de la exposición. **Lo cambia Javier en
+Render** (servicio `albertitos-chat` → Environment): variable **`ALBERTITOS_CHAT_HASTA`**, valor
+**`2026-09-20T20:00`**. Se confirma con `curl -s https://albertitos-chat.onrender.com/chat/salud`. El chat local ya
+está hasta las 20:00.
+
+
 ### 🔴 A · Preguntar a los mentores por las divisas y el IVA · Mónica (o quien pille a un mentor)
 **Se juegan 5 facturas de 540, y la validación es binaria.** Las ocho en divisa escalan hoy por dos motivos: no
 convertimos (no hay tabla de cambio) y nuestra R3 exige un 21 % que la norma del Excel no pide («el IVA debe estar
