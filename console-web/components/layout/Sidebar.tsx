@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, Workflow } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Activity, CalendarDays, Database, FileText, FlaskConical, LayoutDashboard, LogOut, Workflow } from 'lucide-react'
 import { BRAND, USE_MOCK } from '@/lib/config'
 import { ORIGEN_DATOS } from '@/lib/api/salud'
 import type { Etapa } from '@/lib/types'
@@ -10,6 +11,7 @@ import { formatNumber, formatRelative } from '@/lib/format'
 import { useEtapas } from '@/hooks/useEtapas'
 import { useSalud } from '@/hooks/useSalud'
 import { etapaConIncidencia, saludEtapa } from '@/components/workers/EtapaIcon'
+import { alCambiarLaClave, borrarClave, claveActual, registrarSalida } from '@/components/auth/clave'
 
 const ITEMS = [
   { label: 'Panel', href: '/', icon: LayoutDashboard },
@@ -164,8 +166,43 @@ function EstadoPipeline() {
   return <div>{inner}</div>
 }
 
+
+/** ¿Hay una clave de demo en esta pestaña? Sin ella la barra queda exactamente como estaba. */
+function useHayClave(): boolean {
+  const [hay, setHay] = useState(false)
+  useEffect(() => {
+    setHay(Boolean(claveActual()))
+    return alCambiarLaClave(() => setHay(Boolean(claveActual())))
+  }, [])
+  return hay
+}
+
+/**
+ * Soltar la clave de la demo (PLAN-15): borra `sessionStorage` y la puerta vuelve sola, sin recargar. Se
+ * registra al montarse para que `PuertaClave` sepa que ya hay una salida a la vista y no ponga la suya.
+ */
+function SalirDeLaDemo({ collapsed }: { collapsed: boolean }) {
+  useEffect(() => registrarSalida(), [])
+
+  return (
+    <button
+      type="button"
+      onClick={() => borrarClave()}
+      aria-label={collapsed ? 'Salir de la demo' : undefined}
+      title="Olvidar la clave en esta pestaña"
+      className={`flex h-9 items-center rounded-lg text-[13px] font-medium text-muted transition-colors hover:bg-raised hover:text-accent-dark focus-visible:ring-2 focus-visible:ring-accent-dark/30 ${
+        collapsed ? 'justify-center px-0' : 'gap-3 px-3'
+      }`}
+    >
+      <LogOut className="size-[17px] shrink-0" aria-hidden="true" />
+      {!collapsed && <span className="whitespace-nowrap">Salir</span>}
+    </button>
+  )
+}
+
 export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname() ?? '/'
+  const hayClave = useHayClave()
 
   return (
     <aside
@@ -205,10 +242,17 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
         ))}
       </nav>
 
-      {!collapsed && (
-        <div className="mt-auto flex shrink-0 flex-col gap-3 border-t border-line p-4">
-          <OrigenDatos />
-          <EstadoPipeline />
+      {(!collapsed || hayClave) && (
+        <div
+          className={`mt-auto flex shrink-0 flex-col border-t border-line ${collapsed ? 'gap-1 p-3' : 'gap-3 p-4'}`}
+        >
+          {!collapsed && (
+            <>
+              <OrigenDatos />
+              <EstadoPipeline />
+            </>
+          )}
+          {hayClave && <SalirDeLaDemo collapsed={collapsed} />}
         </div>
       )}
     </aside>
