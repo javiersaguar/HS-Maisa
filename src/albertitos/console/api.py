@@ -34,6 +34,7 @@ import argparse
 import json
 import logging
 import os
+import secrets
 import socket
 import sqlite3
 from collections.abc import Callable
@@ -70,12 +71,33 @@ CABECERA_API = "X-Albertitos-Api"
 _CORS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Accept, Content-Type",
+    "Access-Control-Allow-Headers": "Accept, Content-Type, X-Albertitos-Clave",
     "Access-Control-Expose-Headers": CABECERA_API,
 }
 # Un POST multipart no pide preflight: sin esto, cualquier web abierta en el navegador podría subir
 # PDF a la bandeja y gastar LLM. Como el chat, sólo la consola Next (o curl, que no manda Origin).
 ORIGENES_BANDEJA_DEFECTO = "http://localhost:3000,http://127.0.0.1:3000"
+
+
+CABECERA_CLAVE = "X-Albertitos-Clave"
+
+
+def clave_exigida() -> str:
+    """La clave que pide este servidor, o "" si no pide ninguna (PLAN-15, ADR-0024).
+
+    Es el interruptor de toda la puerta: sin `ALBERTITOS_CLAVE_DEMO`, el puente responde como siempre. Quitarla
+    del entorno es el repliegue de un paso si algo sale mal en la demo pública."""
+    return os.environ.get("ALBERTITOS_CLAVE_DEMO", "").strip()
+
+
+def clave_ok(cabecera: str | None) -> bool:
+    """`compare_digest` y no `==`: comparar cadenas con `==` corta en la primera letra distinta."""
+    esperada = clave_exigida()
+    return not esperada or secrets.compare_digest(cabecera or "", esperada)
+
+
+#: Se responden sin clave: la consola necesita /salud para saber si tiene que pedirla.
+RUTAS_ABIERTAS = ("/", "/salud")
 
 
 def origenes_bandeja() -> set[str]:
@@ -301,8 +323,17 @@ def hacer_handler(ruta: Path, *, bandeja_activa: bool = False) -> type[BaseHTTPR
 
         do_PUT = do_PATCH = do_DELETE = _no_escritura  # noqa: N815
 
+        def _sin_clave(self, path: str) -> bool:
+            """True (y ya ha respondido 401) si esta petición necesitaba clave y no la trae."""
+            if path in RUTAS_ABIERTAS or clave_ok(self.headers.get(CABECERA_CLAVE)):
+                return False
+            _enviar(self, 401, {"error": "clave incorrecta o ausente"})
+            return True
+
         def do_POST(self) -> None:  # noqa: N802
             path, query = self._ruta()
+            if self._sin_clave(path):
+                return
             if path != "/inbox":
                 self._no_escritura()
                 return
@@ -347,6 +378,8 @@ def hacer_handler(ruta: Path, *, bandeja_activa: bool = False) -> type[BaseHTTPR
 
         def do_GET(self) -> None:  # noqa: N802
             path, query = self._ruta()
+            if self._sin_clave(path):
+                return
             conn: sqlite3.Connection | None = None
             if ruta.exists():
                 try:
