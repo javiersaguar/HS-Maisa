@@ -1,6 +1,6 @@
 # ADR-0024 · Clave compartida y bandeja efímera para la demo
 
-Estado: propuesto; implementación local probada, validación pública pendiente.
+Estado: propuesto; backend desplegado y probado; integración visual de A2 pendiente.
 Responsable: Javier (A3). Fecha: 20/09/2026.
 
 ## Contexto
@@ -39,8 +39,12 @@ deploy/test_auth_deploy.py comprueba arranque sin clave, fallo cerrado sin puert
 copia nueva tras reinicio, conservación byte a byte del original, cupo y errores
 de configuración, rechazo sin escritura ni ejecución al agotarlo.
 Los tests de A1 comprueban las rutas y cabeceras de autenticación.
-Pendiente: configurar Render y probar la consola pública, CORS y e02_P002.pdf.
-No se considera operativa hasta cerrar esas comprobaciones.
+Render, 20/09 09:25 Madrid: ambos servicios requieren clave; GET /panel, POST /inbox
+y POST /chat sin clave o con una incorrecta responden 401. CORS permite la cabecera.
+POST /inbox con e02_P002.pdf devuelve 202, y su detalle conserva 2450.00 USD,
+ESCALAR y v4.R7. Es copia exacta: reutiliza los hechos, no hace extracción nueva.
+Tras 21 admisiones, otro envío de 20 responde 409 y mantiene 19 plazas disponibles.
+Pendiente: comprobar pantalla de A2, aviso temporal y navegación pública tras integrarla.
 
 ## Resumen para el plan (5 líneas)
 La demo admite una clave compartida opcional en Render, común a puente y chat.
