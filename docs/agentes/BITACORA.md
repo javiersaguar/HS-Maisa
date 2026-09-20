@@ -1049,3 +1049,17 @@ A2: PR #44 todavía abierto en esta comprobación. Falta integración visual y a
   el servidor de prueba, no la clave. Si el CI lo coge en el intento malo, bloquea merges a una hora del cierre:
   merece un reintento o cerrar el cliente antes de parar el hilo.
 - Lo demás, verde. El resto de mi parte está en la entrada de las 08:55.
+### 09:20 · A2 (la consola pide la clave) · PR #44, probado contra el puente de A1
+- **`javier/auth-consola`**, sólo mis ficheros del reparto: `components/auth/{clave.ts,PuertaClave.tsx}` (nuevos), `lib/api/client.ts`, `lib/api/chat.ts`, `app/layout.tsx`. `tsc` y `pnpm build` en verde; `make check` **718 passed**.
+- **Cómo queda:** `GET /salud` dice `requiere_clave`. Si es `false`, la consola es exactamente la de hoy y no se enseña nada. Si es `true`, pantalla de clave → se comprueba contra `/panel` → `sessionStorage` (nunca `localStorage`, nunca en el build). `X-Albertitos-Clave` se añade en `apiFetch` (todas las llamadas, subidas incluidas) y en el `POST /chat`.
+- **`GET /chat/salud` va sin cabecera a propósito:** es una ruta abierta y, con cabecera, el navegador le metería un preflight. Si A1 prefiere que también la lleve, se cambia en una línea.
+- **Probado con navegador de verdad contra el puente de A1** (`ALBERTITOS_CLAVE_DEMO=prueba123`), 13/13: sin clave configurada no se pide nada; con clave, la mala dice «Esa clave no es» y la buena entra y enseña las 540; la clave está en `sessionStorage` y no en `localStorage`; recargar no la vuelve a pedir; **rotando la clave en el servidor, la consola la vuelve a pedir sola en el siguiente sondeo, sin recargar**; «Salir» la borra.
+- **PARA A3:** el texto del espacio de pruebas que me pediste (disco efímero) lo pongo yo en el Dropzone en cuanto me digas la frase exacta que quieres, o dímelo y lo redacto: es `console-web`, mío. No he tocado `render.yaml` ni `bandeja.py`.
+- **PARA quien lleve `components/layout/AppShell.tsx`** (no es mío): el «Salir» es un botón flotante abajo a la izquierda, no un enlace en la barra lateral, porque el AppShell no entra en mi reparto. Son dos líneas moverlo a la barra: `borrarClave()` de `components/auth/clave` y listo.
+- **Ojo en local:** con `pnpm dev`, el indicador de Next se pone justo en esa esquina y se comía el clic; por eso el botón va a `bottom-14`. En producción no existe ese indicador.
+
+### 09:37 · A3 (cierre) · el aviso del espacio de pruebas, y A2 y A3 integrados
+- **PR #44 (A2) y #45 (A3) mergeados.** El #45 chocaba en la bitácora: resuelto trayendo `main`.
+- **Aviso que faltaba, ya puesto** (lo pedía A3 y lo dejaba en manos de A2): en la tarjeta de subir facturas, cuando `/inbox` dice `efimera`, sale «Espacio de pruebas: lo que subas se lee y se decide con la misma norma, pero vive en una copia temporal del servidor y desaparece cuando se reinicia. La entrega no se toca», con las plazas que quedan del cupo. `lib/api/inbox.ts` ahora mapea `efimera` y `restantes_arranque`.
+- **Ojo (lo importante de este rato):** los dos servicios de Render ya exigían clave **antes** de que la consola supiera pedirla, así que entre las 09:20 y las 09:50 la pública enseñaba «Sin conexión». Al mergear el #44, Vercel redespliega y vuelve. Para la próxima: primero la consola, después la clave en el servidor.
+- `make check` 722 · `tsc` y `pnpm build` en verde.

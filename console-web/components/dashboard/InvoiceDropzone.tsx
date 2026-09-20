@@ -396,6 +396,14 @@ export function InvoiceDropzone({
           }}
         />
 
+        {bandeja?.efimera && !noDisponible && (
+          <p className="shrink-0 rounded-lg border border-warn-line bg-warn-soft px-3 py-2 text-[12px] text-ink-soft">
+            Espacio de pruebas: lo que subas se lee y se decide con la misma norma, pero vive en una copia temporal
+            del servidor y desaparece cuando se reinicia. La entrega no se toca.
+            {typeof bandeja.restantes === 'number' && ` Quedan ${bandeja.restantes} facturas en este arranque.`}
+          </p>
+        )}
+
         {noDisponible && (
           <div
             id="bandeja-como-activar"
