@@ -190,7 +190,9 @@ def test_una_orden_inyectada_en_una_factura_limpia_es_media_por_la_pregunta_q1(b
     p = confianza.puntuar(bd["conn"], "inyectada.pdf")
     assert (p["resultado"], p["banda"], p["puntuacion"]) == ("ESCALAR", "media", 75)
     assert ids(p) == ["politica.q1_texto"]
-    assert "Q4" in p["razones"][0]  # dice ser del evaluador
+    # La razón dice que el documento se declara una prueba del evaluador, sin códigos internos en pantalla.
+    assert "evaluador" in p["razones"][0]
+    assert "Q4" not in p["razones"][0] and "mentor" not in p["razones"][0]
 
 
 def test_una_orden_inyectada_con_otro_fallo_claro_no_es_pregunta_q1(bd):

@@ -11,7 +11,7 @@ La idea que ordena los pesos: una duda sólo pesa en la medida en que la decisi�
   aguanta aunque la lectura sea mejorable: también a la mitad.
 - Un ESCALAR sólo porque no se leyó con seguridad no dice nada de la factura: si el original está limpio, lo
   correcto sería PAGAR. Ésa es la duda grande (`decision.escala_por_lectura`).
-- Si la clasificación depende de una política que el mentor no ha confirmado (mapa de I2), también es una duda.
+- Si la clasificación depende de una política de empresa aún no fijada (mapa de I2), también es una duda.
 """
 
 from __future__ import annotations
@@ -126,26 +126,30 @@ PESOS: dict[str, Peso] = {
     "decision.sin_hechos": Peso(
         "decision", 100, "No hay hechos extraídos: no hay nada que respalde la clasificación."
     ),
-    # --- las políticas que el mentor no ha confirmado (docs/agentes/MAPA-POLITICAS.md)
+    # --- las políticas de empresa que aún no están fijadas (docs/agentes/MAPA-POLITICAS.md)
     "politica.q1_texto": Peso(
         "politica",
         25,
-        "Lo único que la frena es un texto que ordena qué hacer; si el mentor dice que manda la norma, sería PAGAR (Q1).",
+        "Lo único que la frena es un texto del documento que intenta dictar la decisión: según la política de\n"
+        "la empresa sobre esos textos, podría ser PAGAR.",
     ),
     "politica.q2_anulado": Peso(
         "politica",
         25,
-        "El PDF dice que el pedido está anulado y el Excel y el ERP no: sin política confirmada (Q2).",
+        "El PDF dice que el pedido está anulado y el Excel y el ERP no: la política de anulaciones\n"
+        "determina cuál manda.",
     ),
     "politica.q3_frontera": Peso(
         "politica",
         25,
-        "Falla una comprobación objetiva; hoy es ESCALAR, pero sería NO_PAGAR si el mentor fija así la frontera (Q3).",
+        "Falla una comprobación objetiva: dónde está la frontera entre escalar y no pagar la fija la\n"
+        "política de la empresa.",
     ),
     "politica.q5_duplicado": Peso(
         "politica",
         25,
-        "Comparte pedido o factura con otro PDF y la política de duplicados no está confirmada (Q5).",
+        "Comparte pedido o número de factura con otro PDF: la política de duplicados determina si se paga\n"
+        "uno, otro o ninguno.",
     ),
     # --- el revisor LLM, si se pide
     "revisor.desacuerdo": Peso(
@@ -458,7 +462,7 @@ def _decision_y_politica(e: Expediente, ev: Evaluacion) -> float:
             )
             break
 
-    # Las preguntas abiertas del mentor (MAPA-POLITICAS.md): si las lee distinto, la clasificación cambia.
+    # Las políticas aún no fijadas (MAPA-POLITICAS.md): si se leen distinto, la clasificación cambia.
     # Q3 movería a NO_PAGAR cualquier fallo de R1-R4, venga de la factura o de una mala lectura (la clasificación
     # cambiaría igual). Sólo se excluye el dato que falta en una escaneada: ahí no hay nada que comprobar.
     objetivas_r1_r4 = [
@@ -477,15 +481,13 @@ def _decision_y_politica(e: Expediente, ev: Evaluacion) -> float:
         ev.dudas(
             "politica.q1_texto",
             "la única pega es un texto que ordena qué hacer"
-            + (" y que dice ser una prueba del evaluador (Q4)" if evaluador else ""),
+            + (" y que dice ser una prueba del evaluador" if evaluador else ""),
         )
     if "pedido_anulado_segun_pdf" in graves:
         ev.dudas("politica.q2_anulado", "el PDF dice que el pedido está anulado")
     if resultado == "ESCALAR" and objetivas_r1_r4:
         regla = str(objetivas_r1_r4[0].get("regla_id", "")).split(".")[-1]
-        ev.dudas(
-            "politica.q3_frontera", f"falla {regla} de forma objetiva: ESCALAR o NO_PAGAR (Q3)"
-        )
+        ev.dudas("politica.q3_frontera", f"falla {regla} de forma objetiva: ESCALAR o NO_PAGAR")
     if "duplicado_sospechoso" in graves:
         pareja = f" (mismo PDF que {', '.join(e.mismo_pdf_que)})" if e.mismo_pdf_que else ""
         ev.dudas("politica.q5_duplicado", "comparte pedido o factura con otro PDF" + pareja)
