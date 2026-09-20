@@ -16,14 +16,50 @@ chat over the decisions; it asks for a shared key, see [Cómo verlo](#cómo-verl
 
 ---
 
+## El stack
+
+### Lenguajes y base
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-WAL-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![uv](https://img.shields.io/badge/uv-DE5FE9?style=for-the-badge&logo=uv&logoColor=white)
+
+### Motor y extracción
+![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
+![Typer](https://img.shields.io/badge/Typer-CLI-0B7285?style=for-the-badge&logo=typer&logoColor=white)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-1.26-B5121B?style=for-the-badge)
+![openpyxl](https://img.shields.io/badge/openpyxl-Excel-217346?style=for-the-badge)
+![httpx](https://img.shields.io/badge/httpx-0.28-1F6FEB?style=for-the-badge)
+![Anthropic SDK](https://img.shields.io/badge/Anthropic%20SDK-LLM-D97757?style=for-the-badge&logo=anthropic&logoColor=white)
+
+### Consola
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-3-FF6384?style=for-the-badge)
+![Streamlit](https://img.shields.io/badge/Streamlit-consola%20interna-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+
+### Calidad y despliegue
+![pytest](https://img.shields.io/badge/pytest-718%20tests-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![Ruff](https://img.shields.io/badge/Ruff-lint%20%2B%20format-D7FF64?style=for-the-badge&logo=ruff&logoColor=black)
+![Playwright](https://img.shields.io/badge/Playwright-UI-2EAD33?style=for-the-badge)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Render](https://img.shields.io/badge/Render-puente%20y%20chat-46E3B7?style=for-the-badge&logo=render&logoColor=black)
+![Vercel](https://img.shields.io/badge/Vercel-consola-000000?style=for-the-badge&logo=vercel&logoColor=white)
+
+Sin ORM, sin cola, sin framework de agentes: SQLite en WAL, funciones puras para la norma y la CLI como única
+puerta de escritura. Lo que no está aquí, no está en el proyecto.
+
 ## El equipo
 | Persona | De qué se ocupó |
 |---|---|
 | Javier Saguar ([@javiersaguar](https://github.com/javiersaguar)) | Fuentes (ERP y Excel), extracción, entrega y despliegue |
 | Miguel Vera ([@Mveradc](https://github.com/Mveradc)) | Contratos, pipeline, linaje y las decisiones de norma del lote 2 |
 | Alejandro Cuevas ([@DRO98](https://github.com/DRO98)) | La consola web |
-| Alfonso Jimena | Documentación, plan de arquitectura y defensa |
-| Mónica Fernández | La norma de pagos y su validación |
+| Alfonso Jimena ([@AlfonsoJimena](https://github.com/AlfonsoJimena)) | Documentación, plan de arquitectura y defensa |
+| Mónica Fernández ([@monicafdezlortal](https://github.com/monicafdezlortal)) | La norma de pagos y su validación |
 
 ## El reto
 Llegan **540 facturas en PDF**: algunas escaneadas, algunas que en su propio texto piden «escalar», «ignorar el
@@ -85,6 +121,8 @@ bash scripts/demo.sh arrancar                       # consola, puente y chat en 
 ```
 
 ## Para seguir leyendo
+- [`docs/README.md`](docs/README.md) · **el índice de los 100 documentos**, ordenados por a qué vienes: producto,
+  defensa, código o el material de trabajo que se conserva como evidencia.
 - [`docs/adr/`](docs/adr/) · las decisiones, con alternativas, consecuencias y evidencia. Las cinco que más se
   preguntan están resumidas en el plan.
 - [`docs/plan/albertitos_plan.md`](docs/plan/albertitos_plan.md) · arquitectura y ADRs; es el PDF que se entrega.
