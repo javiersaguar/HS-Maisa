@@ -26,6 +26,8 @@
 | 0022 | La norma v4 es la v3 más R7 (moneda): la divisa escala hasta que haya tipo de cambio | propuesto; revisa Mónica | Miguel |
 | 0023 | La demo pública vive en Render y es de sólo lectura (la consola en Vercel) | propuesto | Javier |
 
+| 0024 | Clave compartida y bandeja efímera para la demo | propuesto; validación pública pendiente | Javier (A3) |
+
 Cada ADR termina con un **Resumen para el plan (5 líneas)** listo para pegar en
 `docs/plan/albertitos_plan.md` § ADRs (lo hace Alfonso; los dueños no tocan el plan).
 El PDF sólo admite de 2 a 5: la selección la hace Alfonso con Miguel.
