@@ -1036,3 +1036,11 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 ### 2026-09-20 · PLAN-15 · A3 · integración
 
 A1 ya integrado en la rama de despliegue. A2: mostrar en la bandeja «Espacio de pruebas: lo que subas se borra cuando el servidor se reinicia». GET /inbox añade efimera, limite_arranque, recibidos_arranque y restantes_arranque; límite por defecto 40. Render pendiente de acceso; todavía no se ha configurado la clave ni probado la subida pública. La entrega publicada permanece intacta.
+
+### 09:32 · Miguel · aviso: `test_el_chat_exige_la_clave_pero_no_para_salud` es intermitente en Windows
+- **PARA Javier (PR #41/#42, es tu fichero, no lo toco):** con `main` mezclado (mi commit de las 08:55 + tus 8 de
+  las 09:03-09:19), `make check` da **1 failed, 721 passed**: `tests/test_chat.py::test_el_chat_exige_la_clave_pero_no_para_salud`
+  con `httpx.ReadError [WinError 10053]`. En aislado pasa 2 de cada 3 veces, así que es el socket de Windows al cerrar
+  el servidor de prueba, no la clave. Si el CI lo coge en el intento malo, bloquea merges a una hora del cierre:
+  merece un reintento o cerrar el cliente antes de parar el hilo.
+- Lo demás, verde. El resto de mi parte está en la entrada de las 08:55.
