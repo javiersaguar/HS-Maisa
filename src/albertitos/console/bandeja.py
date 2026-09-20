@@ -198,13 +198,25 @@ class Bandeja:
         self.activa = activa
         self.carpeta = carpeta_de(self.ruta)
         self.runner = runner or cli
+        try:
+            self.maximo = int(os.environ.get("ALBERTITOS_BANDEJA_MAX", "40"))
+        except ValueError:
+            raise ValueError("ALBERTITOS_BANDEJA_MAX debe ser un entero no negativo") from None
+        if self.maximo < 0:
+            raise ValueError("ALBERTITOS_BANDEJA_MAX debe ser un entero no negativo")
+        self._recibidos = 0
+        self.efimera = os.environ.get("ALBERTITOS_BANDEJA_EFIMERA") == "1"
         self._lock = threading.Lock()
         self._hilo: threading.Thread | None = None
         self._estado: dict[str, Any] = _estado_vacio()
 
     @property
     def disponible(self) -> bool:
-        return self.activa and not es_bd_de_entrega(self.ruta)
+        return (
+            self.activa
+            and not es_bd_de_entrega(self.ruta)
+            and (not self.efimera or bool(os.environ.get("ALBERTITOS_CLAVE_DEMO", "").strip()))
+        )
 
     def estado(self) -> dict[str, Any]:
         with self._lock:
@@ -212,6 +224,10 @@ class Bandeja:
                 **self._estado,
                 "log": list(self._estado["log"][-LINEAS_LOG:]),
                 "subidos": [dict(s) for s in self._estado["subidos"]],
+                "limite_arranque": self.maximo,
+                "recibidos_arranque": self._recibidos,
+                "restantes_arranque": max(0, self.maximo - self._recibidos),
+                "efimera": self.efimera,
             }
         return out | {"lote": LOTE, "disponible": self.disponible, "bd": str(self.ruta)}
 
@@ -303,6 +319,14 @@ class Bandeja:
         with self._lock:
             if self._estado["estado"] in EN_CURSO:
                 return 409, {"error": "ya hay facturas de la bandeja en curso; espera a que acaben"}
+            if self._recibidos + len(ficheros) > self.maximo:
+                return 409, {
+                    "error": f"Límite de {self.maximo} facturas por arranque alcanzado: "
+                    f"quedan {max(0, self.maximo - self._recibidos)} plazas y envías {len(ficheros)}."
+                }
+            # Reserva bajo el mismo candado que el trabajo. Los fallos también consumen plaza:
+            # reintentar una extracción fallida no debe convertir el límite en gasto ilimitado.
+            self._recibidos += len(ficheros)
             self._estado = _estado_vacio() | {"estado": "ingiriendo"}
 
         # Hasta que el hilo arranca, cualquier fallo deja un estado final: si no, todos los POST

@@ -1,5 +1,5 @@
 # Demo pública de Albertitos en Render (ADR-0023). Blueprint: New → Blueprint → este repo.
-# La consola sigue en Vercel; aquí sólo el puente (lectura) y el chat, sobre deploy/demo.db.
+# La consola sigue en Vercel; el puente activa la bandeja efímera sólo con clave (ADR-0024).
 services:
   - type: web
     name: albertitos-puente
@@ -10,6 +10,23 @@ services:
     dockerContext: .
     healthCheckPath: /salud
     autoDeploy: true
+    envVars:
+      - key: ALBERTITOS_CLAVE_DEMO
+        sync: false
+      - key: ALBERTITOS_CONSOLA_ORIGENES
+        value: https://albertitos.vercel.app
+      - key: ALBERTITOS_BANDEJA_MAX
+        value: "40"
+      - key: ALBERTITOS_LLM_BASE_URL
+        value: https://api.helmcode.com/v1
+      - key: ALBERTITOS_MODELO_TEXTO
+        value: deepseek-v4-flash
+      - key: ALBERTITOS_MODELO_VISION
+        value: qwen3.6
+      - key: ALBERTITOS_PRESUPUESTO_EUR
+        value: "3"
+      - key: ALBERTITOS_LLM_API_KEY
+        sync: false
 
   - type: web
     name: albertitos-chat
@@ -22,6 +39,8 @@ services:
     healthCheckPath: /chat/salud
     autoDeploy: true
     envVars:
+      - key: ALBERTITOS_CLAVE_DEMO
+        sync: false
       - key: ALBERTITOS_CHAT_ORIGENES
         value: https://albertitos.vercel.app
       - key: ALBERTITOS_LLM_BASE_URL

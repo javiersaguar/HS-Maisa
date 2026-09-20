@@ -600,3 +600,54 @@ def test_busqueda_y_traza_conservan_la_moneda(datos, conn, moneda, total):
         assert datos_h["moneda"] == moneda
         assert Decimal(datos_h["total"]) == Decimal(total)
     assert "No sumes monedas distintas" in agente.SISTEMA
+
+
+def test_el_chat_exige_la_clave_pero_no_para_salud(datos, monkeypatch):
+    """PLAN-15: /chat/salud queda abierto (la consola lo mira para pedir la clave) y /chat la exige."""
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    from albertitos.console.api import CABECERA_CLAVE
+
+    monkeypatch.setenv("ALBERTITOS_CLAVE_DEMO", "la-buena")
+    servidor = ThreadingHTTPServer(("127.0.0.1", 0), hacer_handler(datos, Grabado()))
+    threading.Thread(target=servidor.serve_forever, daemon=True).start()
+    try:
+        with httpx.Client(
+            base_url=f"http://127.0.0.1:{servidor.server_port}", trust_env=False
+        ) as c:
+            salud = c.get("/chat/salud")
+            assert salud.status_code == 200 and salud.json()["requiere_clave"] is True
+            sin = c.post("/chat", json={"mensaje": "hola"})
+            assert sin.status_code == 401 and sin.json() == {"error": "clave incorrecta o ausente"}
+            mala = c.post("/chat", json={"mensaje": "hola"}, headers={CABECERA_CLAVE: "otra"})
+            assert mala.status_code == 401
+            buena = c.post(
+                "/chat",
+                json={"mensaje": "Paga trampa.pdf"},
+                headers={CABECERA_CLAVE: "la-buena", "Origin": "http://localhost:3000"},
+            )
+            assert buena.status_code == 200 and buena.json()["estado"] == "solo_lectura"
+            assert CABECERA_CLAVE in buena.headers["access-control-allow-headers"]
+    finally:
+        servidor.shutdown()
+        servidor.server_close()
+
+
+def test_sin_clave_configurada_el_chat_no_pide_nada(datos, monkeypatch):
+    monkeypatch.delenv("ALBERTITOS_CLAVE_DEMO", raising=False)
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    servidor = ThreadingHTTPServer(("127.0.0.1", 0), hacer_handler(datos, Grabado()))
+    threading.Thread(target=servidor.serve_forever, daemon=True).start()
+    try:
+        with httpx.Client(
+            base_url=f"http://127.0.0.1:{servidor.server_port}", trust_env=False
+        ) as c:
+            assert c.get("/chat/salud").json()["requiere_clave"] is False
+            r = c.post("/chat", json={"mensaje": "Paga trampa.pdf"})
+            assert r.status_code == 200
+    finally:
+        servidor.shutdown()
+        servidor.server_close()
