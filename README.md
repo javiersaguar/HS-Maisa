@@ -35,19 +35,11 @@ Por cada factura hay que decidir **PAGAR, NO_PAGAR o ESCALAR**, sin pagar dos ve
 debería mirar antes. La validación del reto es binaria: o están bien las 540, o no hay premio.
 
 ## Cómo funciona
-```
- PDF ─► ingest ─► extract ─► decide ─► package ─► outcomes*.jsonl
-        (sha256)  plantilla   norma     validador    (la entrega)
-                  o LLM       v3 / v4   + auditoría
-                     │          ▲
-          caché por sha256      │
-                        maestro (Excel + CSV) · ERP 2009 (v1/v2)
-                                 │
-   SQLite: ficheros, hechos, snapshots, decisiones, eventos, caché
-                                 │
-    consola web · chat de consulta · calendario (todo sólo lectura)
-```
-- **Motor por lotes:** una CLI que va de PDF a entrega en cuatro etapas y deja un evento en cada una.
+![Diagrama de la arquitectura: las facturas, el Excel y el ERP entran en una SQLite; de ahí salen los pasos de leer, decidir, revisar y entregar, y encima de esa base están la consola, el chat y el calendario, que sólo leen.](docs/img/arquitectura.png)
+
+*Las tres fuentes entran en una sola base de datos. El programa recorre los pasos y guarda lo que hace en cada uno. La consola, el chat y el calendario viven encima y no deciden nada: sólo miran.*
+
+- **Motor por lotes:** una CLI que va del PDF a la entrega paso a paso y deja un evento en cada uno.
 - **Fuentes:** el ERP se descarga entero a un *snapshot* versionado, con sus reintentos; el Excel y los CSV se leen
   por nombre de columna y forman un maestro versionado por el hash de su contenido. Nada se consulta por factura.
 - **Extracción:** seis plantillas deterministas resuelven la mayoría; lo demás va al modelo con un esquema cerrado,
