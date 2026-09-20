@@ -328,6 +328,10 @@ export interface Pago {
   iban: string
   referencia: string
   importe_eur: string
+  /** Original de la factura; importe_eur conserva la conversión guardada en la decisión. */
+  importe_original?: string | null
+  moneda?: string
+  tipo_cambio?: string | null
   fecha_factura: string
   vencimiento: string
   fecha_ejecucion: string
@@ -353,6 +357,8 @@ export interface BonusResumen {
   sin_vencimiento_calculable: number
   vencidos: number
   vencen_semana_corte: number
+  excluidos_moneda?: number
+  avisos_divisas?: { file_id: string; codigo: string; detalle: string }[]
   avisos_por_codigo: Record<string, number>
   semanas: Record<string, { numero: number; importe_eur: string }>
   vencido_importe_eur: string

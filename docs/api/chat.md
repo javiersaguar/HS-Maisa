@@ -161,3 +161,13 @@ make check: 555 passed, 1 skipped, 2 deselected (35,11 s); 17 pruebas propias. p
 Integración K3 comprobada sin gateway: confianza(scan_025.pdf) devuelve 45, banda baja, resultado ESCALAR. Ejemplo separado: [herramienta confianza](ejemplos/chat-herramienta-confianza.json), fuera de las 15 preguntas evaluadas.
 
 Huellas de inicio y cierre: BD 0dc1c7817fda; outcomes 1ec4be206089. Ambas idénticas.
+
+
+## Monedas en las consultas
+
+`buscar_facturas` y `traza` conservan `moneda` junto a total, base e IVA.
+El chat usa `pagos` para responder sobre el calendario: cada fila incluye el importe original,
+su moneda, el importe en EUR y el tipo de cambio registrado, si existe. El total se calcula en el
+bonus, nunca sumando cifras de monedas distintas en el modelo. `avisos_divisas` identifica los
+PAGAR que no entran en el calendario ni en la remesa por falta de conversión verificable.
+Las decisiones ESCALAR y NO_PAGAR siguen fuera del calendario de pagos.

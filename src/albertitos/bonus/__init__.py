@@ -9,7 +9,7 @@ import re
 import sqlite3
 from collections import Counter
 from datetime import date, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
@@ -18,7 +18,8 @@ from albertitos.core import db
 from albertitos.core.contracts import InvoiceFacts, MasterSnapshot
 from albertitos.formatos import iban_valido, normalizar_iban
 
-#: El calendario, la tesorería y la remesa van en euros, como el maestro y el ERP (ADR-0019).
+#: El calendario, la tesorería y la remesa van en euros, como el maestro y el ERP (ADR-0019). Una
+#: factura en otra divisa sólo entra con la conversión que registró su propia decisión (R7 de la norma v4).
 MONEDA_BASE = "EUR"
 
 
@@ -31,6 +32,11 @@ class Pago(BaseModel):
     iban: str
     referencia: str
     importe_eur: Decimal
+    importe_original: Decimal | None = None
+    moneda: str = "EUR"
+    tipo_cambio: Decimal | None = (
+        None  # EUR por unidad; evidencia de la decisión, no cotización actual
+    )
     fecha_factura: date
     vencimiento: date
     fecha_ejecucion: date
@@ -52,14 +58,15 @@ class Informe(BaseModel):
     decisiones_pagar: int
     calendario: list[Pago] = Field(default_factory=list)
     avisos: list[Incidencia] = Field(default_factory=list)
-    #: PAGAR que no están en euros: fuera del calendario, porque sumarlas sería sumar peras con manzanas.
-    excluidos_moneda: int = 0
 
     @property
     def remesa(self) -> list[Pago]:
         return [p for p in self.calendario if p.apto_remesa]
 
     def resumen(self) -> dict:
+        avisos_divisas = [
+            a.model_dump() for a in self.avisos if a.codigo == "CONVERSION_NO_VERIFICABLE"
+        ]
         semanas = {}
         for p in self.calendario:
             grupo = semanas.setdefault(p.semana, {"numero": 0, "importe_eur": Decimal("0.00")})
@@ -76,15 +83,16 @@ class Informe(BaseModel):
             "remesa_numero": len(self.remesa),
             "remesa_total_eur": str(sum((p.importe_eur for p in self.remesa), Decimal("0.00"))),
             "excluidos_remesa": self.decisiones_pagar - len(self.remesa),
-            "excluidos_moneda": self.excluidos_moneda,
             "remesa_iban_sin_control": sum(not p.iban_control_ok for p in self.remesa),
+            "excluidos_moneda": len(avisos_divisas),
             "sin_vencimiento_calculable": (
-                self.decisiones_pagar - len(self.calendario) - self.excluidos_moneda
+                self.decisiones_pagar - len(self.calendario) - len(avisos_divisas)
             ),
             "vencidos": sum(p.vencido for p in self.calendario),
             "vencen_semana_corte": sum(
                 p.semana == semana_iso(self.fecha_corte) for p in self.calendario
             ),
+            "avisos_divisas": avisos_divisas,
             "avisos_por_codigo": dict(sorted(Counter(a.codigo for a in self.avisos).items())),
             "semanas": {
                 k: {**v, "importe_eur": str(v["importe_eur"])} for k, v in sorted(semanas.items())
@@ -102,6 +110,34 @@ def _forma_iban_ok(iban: str) -> bool:
     if not re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{11,30}", iban):
         return False
     return not iban.startswith("ES") or len(iban) == 24
+
+
+def _importe_en_euros(h: InvoiceFacts, decision) -> tuple[Decimal, Decimal | None]:
+    """Proyecta sólo la conversión registrada en R7 de ESTA decisión. Nunca usa tipos actuales."""
+    if (h.moneda or MONEDA_BASE).strip().upper() == MONEDA_BASE:
+        return h.total.quantize(Decimal("0.01")), None
+    regla = f"{decision['norma_version']}.R7"
+    for motivo in json.loads(decision["motivos_json"]):
+        if motivo.get("regla_id") != regla or motivo.get("ok") is not True:
+            continue
+        evidencia = motivo.get("evidencia") or {}
+        if evidencia.get("moneda") != h.moneda:
+            continue
+        try:
+            tipo = Decimal(str(evidencia.get("tipo")))
+            importe = Decimal(str(evidencia.get("total_eur")))
+            if not tipo.is_finite() or tipo <= 0 or not importe.is_finite() or importe <= 0:
+                continue
+            esperado = (h.total * tipo).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            if importe != esperado or importe.as_tuple().exponent < -2:
+                continue
+            return importe.quantize(Decimal("0.01")), tipo
+        except (InvalidOperation, ValueError):
+            continue
+    raise ValueError(
+        f"{h.total} {h.moneda}: falta una conversión a EUR verificable en la decisión. "
+        "No se incluye en los totales del calendario ni en la remesa; revisar la traza."
+    )
 
 
 def calcular(ruta_bd: Path, fecha_corte: date | None = None, estricto: bool = False) -> Informe:
@@ -187,21 +223,16 @@ def calcular_conn(
             if h.fecha is None or not h.num_factura or not h.num_factura.strip() or h.total is None:
                 aviso("FACTURA_INCOMPLETA", "Falta fecha, referencia o importe.")
                 continue
-            if h.moneda is not None and h.moneda != MONEDA_BASE:
-                # El calendario, la tesorería y la remesa están en euros, y el maestro y el ERP también.
-                # Convertir es decisión de la norma (ADR-0022), no de un informe: aquí se dice y se aparta.
-                informe.excluidos_moneda += 1
-                aviso(
-                    "MONEDA_NO_EUR",
-                    f"La factura está en {h.moneda} ({h.total}) y el calendario va en euros: "
-                    "queda fuera hasta que la norma fije el tipo de cambio.",
-                )
-                continue
             if not h.total.is_finite() or h.total <= 0 or h.total.as_tuple().exponent < -2:
                 aviso(
                     "IMPORTE_INVALIDO",
-                    "Se requiere un importe positivo en EUR, con un máximo de dos decimales.",
+                    "Se requiere un importe positivo en la moneda de la factura, con un máximo de dos decimales.",
                 )
+                continue
+            try:
+                importe_eur, tipo_cambio = _importe_en_euros(h, d)
+            except ValueError as exc:
+                aviso("CONVERSION_NO_VERIFICABLE", str(exc))
                 continue
             try:
                 vencimiento = h.fecha + timedelta(days=proveedor.condiciones_dias)
@@ -246,7 +277,10 @@ def calcular_conn(
                     beneficiario=proveedor.razon_social,
                     iban=iban,
                     referencia=h.num_factura,
-                    importe_eur=h.total.quantize(Decimal("0.01")),
+                    importe_eur=importe_eur,
+                    importe_original=h.total,
+                    moneda=(h.moneda or MONEDA_BASE).strip().upper(),
+                    tipo_cambio=tipo_cambio,
                     fecha_factura=h.fecha,
                     vencimiento=vencimiento,
                     fecha_ejecucion=max(vencimiento, fecha_corte),
@@ -353,7 +387,9 @@ def exportar(
                 p.vencimiento,
                 p.file_id,
                 p.beneficiario,
-                p.importe_eur,
+                f"{p.importe_original} {p.moneda} → {p.importe_eur} EUR"
+                if p.moneda != "EUR"
+                else p.importe_eur,
                 "Vencido" if p.vencido else "En plazo",
                 ("Preparado" if p.iban_control_ok else "Preparado · IBAN sin control")
                 if p.apto_remesa
