@@ -21,6 +21,20 @@ Antes de salir de casa: `bash scripts/smoke.sh` (6 pasos, 2,5 s aquí, `VEREDICT
 4. `bash scripts/smoke.sh`: una línea por paso, acaba en `VEREDICTO: OK` (~3 s). Si FALLA, no salgas.
 5. Ensaya el bloque entero con cronómetro. El ERP no hace falta para nada de esto.
 
+## ⚠ Dos avisos del repaso de las 10:35 (antes de proyectar nada)
+
+1. **`demo_caos.py --sin-red` ya no demuestra la resiliencia.** Desde que entró el lote 2, sus tres pasos acaban en
+   `run → exit 2`: `run` se niega porque el lote 1 va con la v3 y el ERP v1 y el lote 2 con la v4 y el ERP v2
+   (ADR-0021, y hace bien en negarse). Las tres facturas salen «decisión: NINGUNA», así que **no se ve caer el LLM
+   ni reanudar**. Lo de la fila 1 de la tabla ya no pasa. **Repliegue:** enseña el corte con los cinco comandos de
+   RESILIENCIA §3 (fila 2, que sí funciona) y la contingencia de ADR-0009, y no proyectes `demo_caos.py`.
+2. **«Cambia un dato» mueve dos facturas, no una.** `--pagada PO-2026-0003` recalcula 2 de 500 en 0,2 s: la del
+   dato tocado y `factura_4635`, que cambia por `AS-90001` del ERP v2 del lote 2. **Repliegue probado, hazlo sobre
+   el lote 2:** `uv run python scripts/dato_en_vivo.py --lote 2 --norma v4 --pagada PO-2026-0517` → **1 de 40
+   recalculadas, 1 cambia**, `2026-08-26_P010.pdf` PAGAR → NO_PAGAR por R5, con su traza.
+
+Detalle y arreglo previsible de los dos, en [`../ESTADO-BACKEND.md`](../ESTADO-BACKEND.md) §2 R1 y R2.
+
 ## En la sala, en orden
 | # | Comando | Qué se ve (una línea) | Tarda | Qué dices |
 |---|---|---|---|---|
@@ -44,6 +58,8 @@ delante de ellos las veces que haga falta y siempre sale lo mismo.
 ```bash
 uv run python scripts/dato_en_vivo.py --listar               # pedidos que hoy se pagan y siguen PENDIENTE
 uv run python scripts/dato_en_vivo.py --pagada PO-2026-XXXX  # ese asiento pasa a PAGADA en el ERP
+# En la sala, mejor sobre el lote 2: sale 1 de 40 y cambia 1, sin arrastrar el ERP v2 del otro lote
+uv run python scripts/dato_en_vivo.py --lote 2 --norma v4 --pagada PO-2026-0517
 ```
 
 Enseña, en este orden: el dato que cambia → `reprocess --impacted` → **N de 500 recalculadas, K cambian** → la traza
