@@ -25,7 +25,14 @@ def escenario(conn, maestro, tmp_path):
     db.guardar_snapshot(conn, "maestro", maestro.version, maestro.model_dump_json())
 
     def agregar(
-        nombre="a.pdf", resultado="PAGAR", total="10.10", referencia=None, lote=1, **campos
+        nombre="a.pdf",
+        resultado="PAGAR",
+        total="10.10",
+        referencia=None,
+        lote=1,
+        motivos=None,
+        norma="v3",
+        **campos,
     ):
         h = InvoiceFacts(
             file_id=nombre,
@@ -50,8 +57,8 @@ def escenario(conn, maestro, tmp_path):
                 file_id=nombre,
                 sha256=nombre,
                 resultado=resultado,
-                motivos=[],
-                norma_version="v3",
+                motivos=motivos or [],
+                norma_version=norma,
                 fecha_corte=date(2026, 9, 18),
                 hechos_hash=h.hash(),
                 maestro_version=maestro.version,
@@ -442,23 +449,23 @@ def test_confianza_opcional_en_el_calendario(escenario, conn, monkeypatch):
         ro.close()
 
 
-def test_una_factura_en_divisa_no_entra_en_el_calendario(escenario):
-    """El calendario, la tesorería y la remesa van en euros, como el maestro y el ERP. Si una PAGAR viniera en
-    otra moneda (el lote 2 trae 8, hoy todas ESCALAR), sumar su total sería sumar dólares como si fueran euros."""
+def test_divisa_sin_conversion_guardada_no_entra_en_el_calendario(escenario):
+    """Si la decisión no registró una conversión verificable, sumar su total sería sumar dólares como euros."""
     ruta, agregar = escenario
     agregar(nombre="euros.pdf", total="100.00", moneda="EUR")
     agregar(nombre="dolares.pdf", total="2450.00", moneda="USD")
     agregar(nombre="yenes.pdf", total="850000.00", moneda="JPY")
     informe = calcular(ruta)
     assert [p.file_id for p in informe.calendario] == ["euros.pdf"]
-    assert informe.excluidos_moneda == 2
     resumen = informe.resumen()
     assert resumen["calendario_total_eur"] == "100.00" and resumen["excluidos_moneda"] == 2
-    assert (
-        resumen["sin_vencimiento_calculable"] == 0
-    )  # no es que falte el vencimiento: es la moneda
+    # No es que falte el vencimiento: es la moneda, y tiene su propio contador.
+    assert resumen["sin_vencimiento_calculable"] == 0
     codigos = {(a.file_id, a.codigo) for a in informe.avisos}
-    assert codigos == {("dolares.pdf", "MONEDA_NO_EUR"), ("yenes.pdf", "MONEDA_NO_EUR")}
+    assert codigos == {
+        ("dolares.pdf", "CONVERSION_NO_VERIFICABLE"),
+        ("yenes.pdf", "CONVERSION_NO_VERIFICABLE"),
+    }
     assert "USD" in next(a.detalle for a in informe.avisos if a.file_id == "dolares.pdf")
 
 
@@ -467,6 +474,110 @@ def test_sin_moneda_en_los_hechos_se_trata_como_euros(escenario):
     ruta, agregar = escenario
     agregar(nombre="vieja.pdf", total="50.00", moneda=None)
     informe = calcular(ruta)
-    assert [p.file_id for p in informe.calendario] == [
-        "vieja.pdf"
-    ] and informe.excluidos_moneda == 0
+    assert [p.file_id for p in informe.calendario] == ["vieja.pdf"]
+    assert informe.resumen()["excluidos_moneda"] == 0
+
+
+def _conversion(moneda, tipo, total_eur, **extra):
+    return {
+        "regla_id": "v4.R7",
+        "ok": True,
+        "detalle": "Conversión registrada",
+        "evidencia": {"moneda": moneda, "tipo": tipo, "total_eur": total_eur, **extra},
+    }
+
+
+@pytest.mark.parametrize(
+    "moneda,total,tipo,euros",
+    [
+        ("USD", "2450.00", "0.92", "2254.00"),
+        ("JPY", "10000", "0.00617", "61.70"),
+    ],
+)
+def test_divisas_con_conversion_guardada_en_calendario_chat_y_remesa(
+    escenario, conn, tmp_path, moneda, total, tipo, euros
+):
+    from albertitos.bonus import rutas, tesoreria
+    from albertitos.chat.herramientas import Herramientas
+
+    ruta, agregar = escenario
+    agregar("eur.pdf", total="10.10")
+    agregar(
+        "divisa.pdf",
+        moneda=moneda,
+        total=total,
+        motivos=[_conversion(moneda, tipo, euros)],
+        norma="v4",
+    )
+    antes = [tuple(f) for f in conn.execute("SELECT * FROM decisiones")]
+    cambios = conn.total_changes
+    informe = calcular(ruta)
+    pago = next(p for p in informe.calendario if p.file_id == "divisa.pdf")
+    assert (pago.importe_original, pago.moneda, pago.importe_eur, pago.tipo_cambio) == (
+        Decimal(total),
+        moneda,
+        Decimal(euros),
+        Decimal(tipo),
+    )
+    esperado = Decimal("10.10") + Decimal(euros)
+    assert Decimal(informe.resumen()["calendario_total_eur"]) == esperado
+    assert Decimal(tesoreria.tesoreria(informe)["importe_eur"]) == esperado
+    assert Decimal(tesoreria.proveedores(informe)[0]["importe_eur"]) == esperado
+    status, calendario = rutas()["/bonus/calendario"](conn, {})
+    assert status == 200
+    assert next(p for p in calendario["pagos"] if p["file_id"] == "divisa.pdf")["moneda"] == moneda
+    chat = Herramientas(ruta).ejecutar("pagos", {})
+    assert Decimal(chat["importe_eur"]) == esperado
+    assert next(p for p in chat["items"] if p["file_id"] == "divisa.pdf")[
+        "importe_original"
+    ] == str(Decimal(total))
+    exportar(informe, tmp_path / "divisas", ruta_bd=ruta)
+    with (tmp_path / "divisas/remesa.csv").open() as f:
+        filas = list(csv.DictReader(f, delimiter=";"))
+    assert sum(Decimal(f["importe_eur"]) for f in filas) == esperado
+    assert next(f for f in filas if f["file_id"] == "divisa.pdf")["moneda"] == moneda
+    assert [tuple(f) for f in conn.execute("SELECT * FROM decisiones")] == antes
+    assert conn.total_changes == cambios
+
+
+@pytest.mark.parametrize("moneda", ["USD", "JPY"])
+def test_divisas_sin_conversion_no_se_suman_como_euros(escenario, conn, moneda):
+    from albertitos.bonus import rutas
+    from albertitos.chat.herramientas import Herramientas
+
+    ruta, agregar = escenario
+    agregar("eur.pdf")
+    agregar("divisa.pdf", moneda=moneda, total="2450.00")
+    informe = calcular(ruta)
+    assert [p.file_id for p in informe.calendario] == ["eur.pdf"]
+    assert [p.file_id for p in informe.remesa] == ["eur.pdf"]
+    assert informe.resumen()["calendario_total_eur"] == "10.10"
+    status, resumen = rutas()["/bonus/resumen"](conn, {})
+    assert status == 200
+    assert resumen["excluidos_moneda"] == 1
+    assert resumen["sin_vencimiento_calculable"] == 0
+    (aviso,) = resumen["avisos_divisas"]
+    assert aviso["file_id"] == "divisa.pdf"
+    assert "2450.00 " + moneda in aviso["detalle"]
+    chat = Herramientas(ruta).ejecutar("pagos", {})
+    assert chat["importe_eur"] == "10.10"
+    assert chat["avisos_divisas"] == resumen["avisos_divisas"]
+
+
+@pytest.mark.parametrize(
+    "motivo",
+    [
+        _conversion("USD", "0.92", "999.00"),
+        _conversion("JPY", "0.92", "2254.00"),
+        _conversion("USD", "NaN", "2254.00"),
+        _conversion("USD", "-1", "2254.00"),
+        {**_conversion("USD", "0.92", "2254.00"), "ok": False},
+        {**_conversion("USD", "0.92", "2254.00"), "regla_id": "v3.R7"},
+    ],
+)
+def test_conversion_incoherente_no_entra_en_remesa(escenario, motivo):
+    ruta, agregar = escenario
+    agregar(moneda="USD", total="2450.00", motivos=[motivo], norma="v4")
+    informe = calcular(ruta)
+    assert not informe.calendario and not informe.remesa
+    assert informe.resumen()["avisos_divisas"][0]["codigo"] == "CONVERSION_NO_VERIFICABLE"

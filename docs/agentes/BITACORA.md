@@ -986,3 +986,5 @@ eprocess --impacted\ **0 de 500 · 0 cambian**. Las **8 variantes de forma** dan
 - **Ya mergeado por mí:** `ESTADO-BACKEND` (#18), `CIFRAS` (#19), `hitos` (#20), `BONUS` (#21), skill de entrega (#22), `CHULETA-LOTE2` (#24), `ANALISIS-DATOS` (#25), `README` (#26) y las bajas #28-#32 (prompts de Alejandro, prompt del rediseño, REPLAN y los dos planes de Cursor: el repo se queda sin enlaces rotos).
 - **Cojo ahora:** `docs/agentes/KIT-DEFENSA.md` y el kit de la demo.
 - **Libres, si quieres seguir:** `docs/trampas.md`, `docs/agentes/MAPA-POLITICAS.md`, `docs/agentes/DECISIONES-NORMA.md`, `docs/api/*` y `docs/adr/README.md` (el índice no lista los ADR 0015-0023).
+
+- **2026-09-20 01:55 · chat/calendario divisas** · Rama aislada codex/chat-calendario-divisas: moneda en herramientas; original + conversión registrada en calendario, aviso/exclusión si falta. 713 tests y frontend verdes; dos outcomes idénticos sobre copia. Coordinar con javier/bonus-moneda (trabajo concurrente), sin tocar su árbol ni desplegar.
