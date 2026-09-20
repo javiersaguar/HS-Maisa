@@ -1057,3 +1057,9 @@ A2: PR #44 todavía abierto en esta comprobación. Falta integración visual y a
 - **PARA A3:** el texto del espacio de pruebas que me pediste (disco efímero) lo pongo yo en el Dropzone en cuanto me digas la frase exacta que quieres, o dímelo y lo redacto: es `console-web`, mío. No he tocado `render.yaml` ni `bandeja.py`.
 - **PARA quien lleve `components/layout/AppShell.tsx`** (no es mío): el «Salir» es un botón flotante abajo a la izquierda, no un enlace en la barra lateral, porque el AppShell no entra en mi reparto. Son dos líneas moverlo a la barra: `borrarClave()` de `components/auth/clave` y listo.
 - **Ojo en local:** con `pnpm dev`, el indicador de Next se pone justo en esa esquina y se comía el clic; por eso el botón va a `bottom-14`. En producción no existe ese indicador.
+
+### 09:37 · A3 (cierre) · el aviso del espacio de pruebas, y A2 y A3 integrados
+- **PR #44 (A2) y #45 (A3) mergeados.** El #45 chocaba en la bitácora: resuelto trayendo `main`.
+- **Aviso que faltaba, ya puesto** (lo pedía A3 y lo dejaba en manos de A2): en la tarjeta de subir facturas, cuando `/inbox` dice `efimera`, sale «Espacio de pruebas: lo que subas se lee y se decide con la misma norma, pero vive en una copia temporal del servidor y desaparece cuando se reinicia. La entrega no se toca», con las plazas que quedan del cupo. `lib/api/inbox.ts` ahora mapea `efimera` y `restantes_arranque`.
+- **Ojo (lo importante de este rato):** los dos servicios de Render ya exigían clave **antes** de que la consola supiera pedirla, así que entre las 09:20 y las 09:50 la pública enseñaba «Sin conexión». Al mergear el #44, Vercel redespliega y vuelve. Para la próxima: primero la consola, después la clave en el servidor.
+- `make check` 722 · `tsc` y `pnpm build` en verde.

@@ -16,6 +16,10 @@ export interface Bandeja {
   error: string | null
   /** false si el puente sirve la BD de la entrega: arráncalo con `--bandeja`. */
   disponible: boolean
+  /** true en la demo pública: la bandeja es una copia en disco temporal que se rehace al reiniciar. */
+  efimera: boolean
+  /** Plazas que quedan en este arranque (cupo del servidor público); null si no hay cupo. */
+  restantes: number | null
 }
 
 export const BANDEJA_EN_CURSO: EstadoBandeja[] = ['ingiriendo', 'extrayendo', 'decidiendo']
@@ -38,6 +42,8 @@ function toBandeja(raw: unknown): Bandeja {
     log: Array.isArray(r.log) ? (r.log as string[]) : [],
     error: (r.error as string | null) ?? null,
     disponible: r.disponible !== false,
+    efimera: r.efimera === true,
+    restantes: typeof r.restantes_arranque === 'number' ? r.restantes_arranque : null,
   }
 }
 
