@@ -1063,3 +1063,8 @@ A2: PR #44 todavía abierto en esta comprobación. Falta integración visual y a
 - **Aviso que faltaba, ya puesto** (lo pedía A3 y lo dejaba en manos de A2): en la tarjeta de subir facturas, cuando `/inbox` dice `efimera`, sale «Espacio de pruebas: lo que subas se lee y se decide con la misma norma, pero vive en una copia temporal del servidor y desaparece cuando se reinicia. La entrega no se toca», con las plazas que quedan del cupo. `lib/api/inbox.ts` ahora mapea `efimera` y `restantes_arranque`.
 - **Ojo (lo importante de este rato):** los dos servicios de Render ya exigían clave **antes** de que la consola supiera pedirla, así que entre las 09:20 y las 09:50 la pública enseñaba «Sin conexión». Al mergear el #44, Vercel redespliega y vuelve. Para la próxima: primero la consola, después la clave en el servidor.
 - `make check` 722 · `tsc` y `pnpm build` en verde.
+
+### 10:00 · B2 · README del repositorio, para que se entienda en un minuto
+- Eran 42 líneas correctas pero secas. Ahora: bloque corto **en inglés** arriba (qué es, el resultado y el enlace a la demo), el equipo con lo que hizo cada uno, el reto en tres frases, cómo funciona el producto con el diagrama del plan, las cifras **sacadas de `docs/CIFRAS.md`** y los límites sin maquillar (datos sintéticos, IBAN sin dígito de control, divisas que escalan, clave compartida y que no sabemos si acertamos las 540).
+- **Handles comprobados en `git log` y en los PR:** javiersaguar, Mveradc y DRO98. Alfonso y Mónica van sólo con su nombre: no tengo su usuario y no me lo invento.
+- Comprobado: `enlaces_check` sin enlaces rotos y `cifras_check` en verde. No he tocado `console-web` (lo lleva B1) ni el repo de entrega, que sigue con sus tres ficheros.
