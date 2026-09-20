@@ -83,3 +83,31 @@ export function alCambiarLaClave(oyente: () => void): () => void {
 export function claveRechazada(): void {
   if (claveActual()) borrarClave()
 }
+
+/**
+ * Quién enseña hoy un «Salir». Lo natural es el pie de la barra lateral, pero la barra puede no estar montada
+ * (pantalla estrecha, una vista sin `AppShell`), y entonces nadie podría soltar la clave. Cada botón se registra
+ * al montarse y `PuertaClave` pone el suyo de respaldo sólo si no hay ninguno.
+ */
+let salidasMontadas = 0
+const oyentesSalida = new Set<() => void>()
+
+export function registrarSalida(): () => void {
+  salidasMontadas += 1
+  for (const oyente of oyentesSalida) oyente()
+  return () => {
+    salidasMontadas -= 1
+    for (const oyente of oyentesSalida) oyente()
+  }
+}
+
+export function haySalida(): boolean {
+  return salidasMontadas > 0
+}
+
+export function alCambiarLasSalidas(oyente: () => void): () => void {
+  oyentesSalida.add(oyente)
+  return () => {
+    oyentesSalida.delete(oyente)
+  }
+}

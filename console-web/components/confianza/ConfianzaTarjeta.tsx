@@ -41,15 +41,16 @@ function peso(aplicado: number): { texto: string; clase: string } {
   return { texto: 'pesa poco', clase: 'bg-raised text-ink-soft' }
 }
 
-/** `por_que` es la frase para personas; se le quitan referencias internas (ADR, pesos) y la pregunta va aparte. */
-function explicar(duda: ConfianzaDuda): { texto: string; pregunta: string | null } {
-  const base = duda.por_que || duda.texto
-  const pregunta = base.match(/\((Q\d+)\)/)?.[1] ?? null
-  const texto = base
+/**
+ * `por_que` es la frase para personas: se le quitan las referencias internas (ADR, pesos y los códigos de
+ * política `(Qn)` que pudiera traer un backend anterior). Nada de estado interno del equipo en pantalla.
+ */
+function explicar(duda: ConfianzaDuda): { texto: string } {
+  const texto = (duda.por_que || duda.texto)
     .replace(/\s*\((Q\d+)\)/g, '')
     .replace(/\s*\([^()]*(ADR|por aviso)[^()]*\)/g, '')
     .trim()
-  return { texto: frase(texto.endsWith('.') ? texto : `${texto}.`), pregunta }
+  return { texto: frase(texto.endsWith('.') ? texto : `${texto}.`) }
 }
 
 /** «se escala por: anomalía…: texto_instruccion, discrepancia_extractores · el documento dice: "…"» → frase. */
@@ -93,18 +94,13 @@ export function ConfianzaTarjeta({ ficha }: { ficha: ConfianzaFicha }) {
           <h4 className="text-[12px] font-bold text-ink">Qué nos hace dudar</h4>
           <ul className="mt-2 flex flex-col gap-2.5">
             {cuentan.map(({ clave, duda }) => {
-              const { texto, pregunta } = explicar(duda)
+              const { texto } = explicar(duda)
               const { texto: cuanto, clase } = peso(duda.aplicado)
               return (
                 <li key={duda.id} className="flex flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2">
                     <Fuente clave={clave} />
                     <span className={`rounded-full px-1.5 py-px text-[11px] font-semibold ${clase}`}>{cuanto}</span>
-                    {pregunta && (
-                      <span className="rounded-full border border-line px-1.5 py-px text-[11px] font-semibold text-ink-soft">
-                        pendiente del mentor · {pregunta}
-                      </span>
-                    )}
                   </span>
                   <span className="text-[13px] leading-5 text-ink-soft">{texto}</span>
                 </li>

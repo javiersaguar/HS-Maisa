@@ -2,7 +2,7 @@
 
 Una puntuación 0-100 con su banda (alta / media / baja) y las tres razones que más pesan, construida con lo que el
 sistema ya sabe de cada fuente por la que entró la factura: el PDF y sus lecturas, la coherencia de los importes, el
-maestro, el ERP, la propia decisión y las políticas que el mentor no ha confirmado. Tabla de pesos en `modelo.PESOS`
+maestro, el ERP, la propia decisión y las políticas de empresa aún no fijadas. Tabla de pesos en `modelo.PESOS`
 y en el ADR-0014.
 
 Sólo lee: no cambia decisiones, hechos, avisos ni la entrega. No es una probabilidad calibrada (ver
